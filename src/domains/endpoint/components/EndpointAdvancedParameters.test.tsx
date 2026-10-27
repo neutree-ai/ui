@@ -81,13 +81,13 @@ describe("EndpointAdvancedParameters", () => {
       />,
     );
 
-    expect(screen.getByText("endpoints.sections.advancedOptions")).toBeTruthy();
-    expect(screen.getByText("endpoints.fields.engineVariables")).toBeTruthy();
+    screen.getByText("endpoints.sections.advancedOptions");
+    screen.getByText("endpoints.fields.engineVariables");
     expect(
       screen.getByText("endpoints.sections.environmentVariables"),
     ).toBeTruthy();
-    expect(screen.getByText("3 parameters")).toBeTruthy();
-    expect(screen.getByText("1 parameters")).toBeTruthy();
+    screen.getByText("3 parameters");
+    screen.getByText("1 parameters");
     expect(screen.getAllByText("4").length).toBeGreaterThan(0);
     expect(screen.getAllByText("true").length).toBeGreaterThan(0);
     expect(screen.getAllByText('{"eager":false}').length).toBeGreaterThan(0);

@@ -77,11 +77,11 @@ describe("ClusterResourceSummary", () => {
   it("summarizes compute and accelerator allocation", () => {
     render(<ClusterResourceSummary resourceInfo={resourceInfo} t={t} />);
 
-    expect(screen.getByText("CPU")).toBeTruthy();
-    expect(screen.getByText("4.0 / 16.0")).toBeTruthy();
+    screen.getByText("CPU");
+    screen.getByText("4.0 / 16.0");
     expect(screen.getAllByText("25% used")).toHaveLength(2);
-    expect(screen.getByText("Memory")).toBeTruthy();
-    expect(screen.getByText("16.0 / 64.0")).toBeTruthy();
+    screen.getByText("Memory");
+    screen.getByText("16.0 / 64.0");
 
     const cardBar = screen.getByRole("img", {
       name: "GPU Cards: 1 / 2",
@@ -90,10 +90,10 @@ describe("ClusterResourceSummary", () => {
     expect(cardBar.children[0].className).toContain("--nt-chart-series-5");
     expect(cardBar.children[1].className).toContain("bg-muted");
 
-    expect(screen.getByText("20.0 / 30.0")).toBeTruthy();
-    expect(screen.getByText("67% used")).toBeTruthy();
-    expect(screen.getByText("150 / 200")).toBeTruthy();
-    expect(screen.getByText("75% used")).toBeTruthy();
+    screen.getByText("20.0 / 30.0");
+    screen.getByText("67% used");
+    screen.getByText("150 / 200");
+    screen.getByText("75% used");
 
     const progressBars = screen.getAllByRole("progressbar");
     expect(progressBars).toHaveLength(4);
@@ -236,9 +236,9 @@ describe("ClusterResourceSummary", () => {
       />,
     );
 
-    expect(screen.getByText("1 / 1")).toBeTruthy();
-    expect(screen.getByText("100% allocated")).toBeTruthy();
-    expect(screen.getByText("0 cards")).toBeTruthy();
+    screen.getByText("1 / 1");
+    screen.getByText("100% allocated");
+    screen.getByText("0 cards");
   });
 
   it("displays fractional card allocation with decimal precision", () => {
@@ -260,9 +260,9 @@ describe("ClusterResourceSummary", () => {
       />,
     );
 
-    expect(screen.getByText("0.5 / 2.0")).toBeTruthy();
-    expect(screen.getByText("25% allocated")).toBeTruthy();
-    expect(screen.getByText("1.5 cards")).toBeTruthy();
+    screen.getByText("0.5 / 2.0");
+    screen.getByText("25% allocated");
+    screen.getByText("1.5 cards");
     expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
     expect(
       screen.getByRole("progressbar", { name: "GPU Cards: 0.5 / 2.0" }),
@@ -311,7 +311,7 @@ describe("ClusterResourceSummary", () => {
       />,
     );
 
-    expect(screen.getByText("0.0 / 1.0")).toBeTruthy();
+    screen.getByText("0.0 / 1.0");
     expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
     expect(
       screen.getByRole("progressbar", { name: "GPU Cards: 0.0 / 1.0" }),

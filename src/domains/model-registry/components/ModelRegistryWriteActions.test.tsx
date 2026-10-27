@@ -62,8 +62,8 @@ describe("ModelRegistryWriteActions", () => {
       pointerType: "mouse",
     });
 
-    expect(screen.getByText("buttons.edit")).toBeTruthy();
-    expect(screen.getByText("buttons.delete")).toBeTruthy();
+    screen.getByText("buttons.edit");
+    screen.getByText("buttons.delete");
   });
 
   it("reads the annotation, not the registry's name or kind", () => {
@@ -75,6 +75,6 @@ describe("ModelRegistryWriteActions", () => {
       />,
     );
 
-    expect(screen.getByTestId("row-actions-trigger")).toBeTruthy();
+    screen.getByTestId("row-actions-trigger");
   });
 });

@@ -175,11 +175,11 @@ describe("useModelRegistryForm", () => {
       // already typed.
       render(<CreateForm />);
 
-      expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
+      screen.getByTestId("field-spec.credentials");
 
       selectType("model_registries.types.modelScope");
       await waitFor(() => {
-        expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
+        screen.getByTestId("field-spec.credentials");
       });
     });
   });

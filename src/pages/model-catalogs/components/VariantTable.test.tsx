@@ -27,7 +27,7 @@ describe("VariantTable", () => {
       />,
     );
 
-    expect(screen.getByTestId("variant-selector-table")).toBeTruthy();
+    screen.getByTestId("variant-selector-table");
     expect(
       (
         screen.getByLabelText(
@@ -35,7 +35,7 @@ describe("VariantTable", () => {
         ) as HTMLInputElement
       ).checked,
     ).toBe(true);
-    expect(screen.getByText("1 GPU · 16 CPU · 64 GiB")).toBeTruthy();
+    screen.getByText("1 GPU · 16 CPU · 64 GiB");
 
     fireEvent.click(
       screen.getByLabelText("model_catalogs.recipe.selectProfile:default"),

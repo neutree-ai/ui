@@ -23,9 +23,9 @@ describe("ShowPage.Section", () => {
     expect(
       screen.getByRole("heading", { name: "Runtime Allocation" }),
     ).toBeTruthy();
-    expect(screen.getByText("GPU placement details")).toBeTruthy();
-    expect(screen.getByText("2 replicas / 8 cards")).toBeTruthy();
-    expect(screen.getByText("Allocation content")).toBeTruthy();
+    screen.getByText("GPU placement details");
+    screen.getByText("2 replicas / 8 cards");
+    screen.getByText("Allocation content");
   });
 
   it("frames itself with the shared card surface rather than its own", () => {

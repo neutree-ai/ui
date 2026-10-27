@@ -116,8 +116,8 @@ describe("TrendTooltip", () => {
     ]);
     // The footer total covers every listed row: 60 + 30 + 5 + 2 (the entry with
     // no value contributes nothing).
-    expect(screen.getByText("model_usage.daily.tooltip.total")).toBeDefined();
-    expect(screen.getByText("97")).toBeDefined();
+    screen.getByText("model_usage.daily.tooltip.total");
+    screen.getByText("97");
   });
 });
 
@@ -150,12 +150,12 @@ describe("DayTooltip", () => {
       />,
     );
 
-    expect(screen.getByText("Key one · owned by ops")).toBeDefined();
-    expect(screen.getByText("model_usage.promptTokens")).toBeDefined();
-    expect(screen.getByText("80")).toBeDefined();
-    expect(screen.getByText("model_usage.completionTokens")).toBeDefined();
-    expect(screen.getByText("20")).toBeDefined();
-    expect(screen.getByText("100")).toBeDefined();
+    screen.getByText("Key one · owned by ops");
+    screen.getByText("model_usage.promptTokens");
+    screen.getByText("80");
+    screen.getByText("model_usage.completionTokens");
+    screen.getByText("20");
+    screen.getByText("100");
   });
 
   it("falls back to the name when the key has no description", () => {

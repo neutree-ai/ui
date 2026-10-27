@@ -1371,7 +1371,7 @@ describe("useEndpointForm", () => {
   describe("create vs edit mode", () => {
     it("create mode shows model catalog selector", () => {
       render(<CreateForm />);
-      expect(screen.getByTestId("field--model-catalog")).toBeTruthy();
+      screen.getByTestId("field--model-catalog");
     });
 
     it("edit mode hides model catalog selector", () => {
@@ -2687,14 +2687,14 @@ describe("useEndpointForm", () => {
       expect(screen.queryByRole("tab")).toBeNull();
 
       const panel = within(screen.getByTestId("endpoint-resource-context"));
-      expect(panel.getByText("clusters.fields.gpuType")).toBeTruthy();
+      panel.getByText("clusters.fields.gpuType");
       expect(
         panel.queryByText("endpoints.messages.clusterSchedulingOnly"),
       ).toBeNull();
       expect(
         panel.getByTestId("endpoint-cluster-resource-summary"),
       ).toBeTruthy();
-      expect(panel.getByTestId("endpoint-compact-node-resources")).toBeTruthy();
+      panel.getByTestId("endpoint-compact-node-resources");
       const nodeCards = panel.getAllByTestId("endpoint-compact-node-card");
       expect(nodeCards.length).toBe(3);
       for (const nodeCard of nodeCards) {
@@ -2709,7 +2709,7 @@ describe("useEndpointForm", () => {
         expect(nodeName.className).toContain("break-words");
         expect(nodeName.className).not.toContain("truncate");
       }
-      expect(panel.getByText("node-c")).toBeTruthy();
+      panel.getByText("node-c");
       expect(nodeCards[0].textContent).toContain("node-a");
       expect(nodeCards[1].textContent).toContain("node-b");
       expect(nodeCards[2].textContent).toContain("node-c");
@@ -3180,7 +3180,7 @@ describe("useEndpointForm", () => {
         expect(freeValue.textContent).toContain("clusters.options.free");
       }
 
-      expect(panel.getByTestId("endpoint-compact-node-resources")).toBeTruthy();
+      panel.getByTestId("endpoint-compact-node-resources");
       for (const nodeCard of panel.getAllByTestId(
         "endpoint-compact-node-card",
       )) {
@@ -3211,7 +3211,7 @@ describe("useEndpointForm", () => {
         expect(
           within(nodeMetrics).queryByText("endpoints.fields.physicalGpu"),
         ).toBeNull();
-        expect(within(nodeMetrics).getByText("common.fields.cpu")).toBeTruthy();
+        within(nodeMetrics).getByText("common.fields.cpu");
         expect(
           within(nodeMetrics).getByText("common.fields.memory"),
         ).toBeTruthy();
@@ -3327,14 +3327,14 @@ describe("useEndpointForm", () => {
           "endpoint-accelerator-resource-metrics",
         ),
       ).toBeNull();
-      expect(screen.getByTestId("endpoint-resource-config-grid")).toBeTruthy();
+      screen.getByTestId("endpoint-resource-config-grid");
       expect(
         screen.getByTestId("endpoint-resource-config-grid").className,
       ).toContain("space-y-4");
       expect(
         screen.getByTestId("endpoint-resource-layout-grid").className,
       ).toContain("xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]");
-      expect(screen.getByTestId("endpoint-resource-config-main")).toBeTruthy();
+      screen.getByTestId("endpoint-resource-config-main");
       expect(resourceContext).toBeTruthy();
       expect(
         screen.getByText("endpoints.sections.currentRequest"),
@@ -3347,7 +3347,7 @@ describe("useEndpointForm", () => {
           "endpoints.fields.matchingGpuCards",
         ),
       ).toBeNull();
-      expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
+      screen.getByTestId("endpoint-current-request-panel");
       expect(
         screen.getByTestId("endpoint-current-request-grid").className,
       ).toContain("grid-cols-[repeat(auto-fit,minmax(110px,1fr))]");
@@ -5978,7 +5978,7 @@ describe("useEndpointForm", () => {
       expect(
         screen.getByTestId("endpoint-virtual-card-split-group"),
       ).toBeTruthy();
-      expect(screen.getByTestId("endpoint-current-request-panel")).toBeTruthy();
+      screen.getByTestId("endpoint-current-request-panel");
     });
 
     it("keeps the vGPU split group hidden in simplified mode on non-vGPU clusters", async () => {
@@ -6181,7 +6181,7 @@ describe("what the chosen registry costs at deploy time", () => {
       "hub",
     );
 
-    expect(screen.getByTestId("endpoint-runtime-download-hint")).toBeDefined();
+    screen.getByTestId("endpoint-runtime-download-hint");
     expect(
       screen.queryByTestId("endpoint-runtime-download-unknown"),
     ).toBeNull();
@@ -6889,8 +6889,8 @@ describe("the weights section is reachable from both modes", () => {
       formInstance?.setValue("spec.model.info", { num_hidden_layers: 32 });
     });
 
-    expect(screen.getByTestId("endpoint-weights-estimate")).toBeDefined();
-    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    screen.getByTestId("endpoint-weights-estimate");
+    screen.getByTestId("kv-cache-estimate");
     expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
   });
 
@@ -6917,7 +6917,7 @@ describe("the weights section is reachable from both modes", () => {
 
     const block = screen.getByTestId("endpoint-declared-weights");
     // The requirement travels with the check on it, in the same block.
-    expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
+    within(block).getByTestId("vram-check-badge");
     // Once the badge answers "how much", the checkpoint facts would only
     // repeat that in a less useful form, so they give way to the badge.
     expect(within(block).queryByText("35B")).toBeNull();
@@ -6948,7 +6948,7 @@ describe("the weights section is reachable from both modes", () => {
       formInstance?.setValue("spec.engine", { engine: "vllm", version: "v1" });
     });
     await withModelInfo();
-    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    screen.getByTestId("kv-cache-estimate");
 
     await act(async () => {
       formInstance?.setValue("spec.engine", { engine: "flex", version: "v1" });

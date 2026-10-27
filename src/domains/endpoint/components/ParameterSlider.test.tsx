@@ -77,6 +77,6 @@ describe("ParameterSlider", () => {
     renderSlider({
       valuePreview: <span>64K</span>,
     });
-    expect(screen.getByText("64K")).toBeTruthy();
+    screen.getByText("64K");
   });
 });

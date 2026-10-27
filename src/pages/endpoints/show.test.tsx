@@ -223,6 +223,6 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    expect(screen.getByTestId("endpoint-status")).toBeTruthy();
+    screen.getByTestId("endpoint-status");
   });
 });

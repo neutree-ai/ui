@@ -147,9 +147,9 @@ describe("useClusterForm", () => {
     expect(
       screen.getByText("clusters.sections.clusterConfiguration"),
     ).toBeTruthy();
-    expect(screen.getByText("common.fields.type")).toBeTruthy();
-    expect(screen.getByText("common.fields.imageRegistry")).toBeTruthy();
-    expect(screen.getByText("common.fields.version")).toBeTruthy();
+    screen.getByText("common.fields.type");
+    screen.getByText("common.fields.imageRegistry");
+    screen.getByText("common.fields.version");
   });
 
   describe("edit mode — NodeIPsField props", () => {
@@ -180,7 +180,7 @@ describe("useClusterForm", () => {
     it("defaults to SSH with auth fields and no router fields", () => {
       render(<CreateForm />);
 
-      expect(screen.getByTestId("node-ips-field-mock")).toBeTruthy();
+      screen.getByTestId("node-ips-field-mock");
       expect(
         screen.getByTestId("field-spec.config.ssh_config.auth.ssh_user"),
       ).toBeTruthy();
@@ -304,7 +304,7 @@ describe("useClusterForm", () => {
       selectType("clusters.options.multipleStaticNodes");
 
       await waitFor(() => {
-        expect(screen.getByTestId("node-ips-field-mock")).toBeTruthy();
+        screen.getByTestId("node-ips-field-mock");
         expect(
           screen.getByTestId("field-spec.config.ssh_config.auth.ssh_user"),
         ).toBeTruthy();

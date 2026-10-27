@@ -301,7 +301,7 @@ describe("ModelReadme — what the server said", () => {
 
     render(<ModelReadme modelRef={modelRef} />);
 
-    expect(screen.getByTestId("readme-truncated")).toBeDefined();
+    screen.getByTestId("readme-truncated");
   });
 
   it("hides the front matter every hub card starts with", () => {

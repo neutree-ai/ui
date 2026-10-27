@@ -28,17 +28,17 @@ describe("ModelRegistryType", () => {
   it("names a ModelScope registry rather than showing its raw type", () => {
     render(<ModelRegistryType type="model-scope" />);
 
-    expect(screen.getByText("ModelScope")).toBeTruthy();
+    screen.getByText("ModelScope");
     expect(screen.queryByText("model-scope")).toBeNull();
   });
 
   it("names the kinds that were already supported", () => {
     const { unmount } = render(<ModelRegistryType type="hugging-face" />);
-    expect(screen.getByText("Hugging Face")).toBeTruthy();
+    screen.getByText("Hugging Face");
     unmount();
 
     render(<ModelRegistryType type="bentoml" />);
-    expect(screen.getByText("File System")).toBeTruthy();
+    screen.getByText("File System");
   });
 
   it("falls back to the raw identifier for a kind it cannot describe", () => {
@@ -46,7 +46,7 @@ describe("ModelRegistryType", () => {
     // of. Showing the identifier is the honest answer; an empty cell is not.
     render(<ModelRegistryType type="some-future-hub" />);
 
-    expect(screen.getByText("some-future-hub")).toBeTruthy();
+    screen.getByText("some-future-hub");
   });
 
   it("draws the ModelScope icon locally", () => {

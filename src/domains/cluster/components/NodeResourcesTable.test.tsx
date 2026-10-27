@@ -112,7 +112,7 @@ describe("NodeResourcesTable", () => {
       />,
     );
 
-    expect(screen.getByText("Tesla-T4 · 0 in use · 1 total")).toBeTruthy();
+    screen.getByText("Tesla-T4 · 0 in use · 1 total");
     expect(screen.queryByText("GPU-1")).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();
 
@@ -122,10 +122,10 @@ describe("NodeResourcesTable", () => {
       }),
     ).toBeTruthy();
     expect(screen.queryByTitle("GPU-1")).toBeNull();
-    expect(screen.getByText("clusters.options.healthy")).toBeTruthy();
+    screen.getByText("clusters.options.healthy");
     expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
-    expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
-    expect(screen.getByText("50 / 100")).toBeTruthy();
+    screen.getByText("7.5 / 15.0 GiB");
+    screen.getByText("50 / 100");
     const nodeProgressBars = screen.getAllByRole("progressbar").slice(0, 2);
     expect(nodeProgressBars[0].className).toContain("--nt-chart-series-4");
     expect(nodeProgressBars[1].className).toContain("--nt-chart-series-3");

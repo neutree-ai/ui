@@ -136,7 +136,7 @@ describe("ClusterUpgradeAction", () => {
     const targetVersion = await screen.findByLabelText("target-version");
     expect((targetVersion as HTMLSelectElement).value).toBe("v1.2.0");
     expect(screen.getAllByRole("option")).toHaveLength(1);
-    expect(screen.getByRole("option", { name: "v1.2.0" })).toBeTruthy();
+    screen.getByRole("option", { name: "v1.2.0" });
   });
 
   it("submits the selected newer version and refreshes cluster data", async () => {

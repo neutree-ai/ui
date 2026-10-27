@@ -12,7 +12,7 @@ describe("ApiKeyLabel", () => {
       />,
     );
 
-    expect(screen.getByText("Customer support")).toBeTruthy();
+    screen.getByText("Customer support");
     expect(screen.getByText("Customer support").className).toContain("text-sm");
     expect(screen.getByText("Production calls").className).toContain(
       "text-[10px]",
@@ -41,7 +41,7 @@ describe("ApiKeyLabel", () => {
       <ApiKeyLabel name="apikey-technical" description="" />,
     );
 
-    expect(screen.getByText("apikey-technical")).toBeTruthy();
+    screen.getByText("apikey-technical");
     expect(container.querySelectorAll("div")).toHaveLength(2);
   });
 

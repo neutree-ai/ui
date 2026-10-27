@@ -74,7 +74,7 @@ describe("ExternalEndpointsList", () => {
         },
       ],
     });
-    expect(within(cell).getByText("gpt-6-astra")).toBeTruthy();
+    within(cell).getByText("gpt-6-astra");
     expect(within(cell).queryByText("modelSource.unspecified")).toBeNull();
   });
 

@@ -141,7 +141,7 @@ describe("TraceNameFilter", () => {
   it("shows the notice under the list", () => {
     openFilter("", OPTIONS, "Only some values are listed.");
 
-    expect(screen.getByText("Only some values are listed.")).toBeTruthy();
+    screen.getByText("Only some values are listed.");
   });
 
   it("offers a typed name when there are no suggestions", () => {

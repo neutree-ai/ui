@@ -326,7 +326,7 @@ describe("AITracesList endpoint and model filters", () => {
     });
 
     fireEvent.click(screen.getByTestId("model-filter"));
-    expect(screen.getByText("ai_traces.filters.optionsTruncated")).toBeTruthy();
+    screen.getByText("ai_traces.filters.optionsTruncated");
   });
 
   it("still filters by a typed name when the options request fails", () => {
@@ -382,7 +382,7 @@ describe("AITracesList without trace permission", () => {
 
     renderList();
 
-    expect(screen.getByText("ai_traces.forbidden")).toBeTruthy();
+    screen.getByText("ai_traces.forbidden");
     expect(screen.queryByText(/insufficient permissions/)).toBeNull();
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryAllByRole("combobox")).toHaveLength(0);
@@ -396,8 +396,8 @@ describe("AITracesList without trace permission", () => {
 
     renderList();
 
-    expect(screen.getByText("ai-traces request failed: 500")).toBeTruthy();
-    expect(screen.getByRole("table")).toBeTruthy();
+    screen.getByText("ai-traces request failed: 500");
+    screen.getByRole("table");
   });
 });
 

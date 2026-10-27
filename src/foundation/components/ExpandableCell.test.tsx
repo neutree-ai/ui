@@ -30,7 +30,7 @@ describe("ExpandableCell", () => {
     // The control is the affordance, so its absence has to mean "there is
     // nothing more to see".
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText('{"a":1}')).toBeTruthy();
+    screen.getByText('{"a":1}');
   });
 
   it("offers the control, named after the field, once the content is cut off", () => {

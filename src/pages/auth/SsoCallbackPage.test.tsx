@@ -48,7 +48,7 @@ describe("SsoCallbackPage", () => {
 
     render(<SsoCallbackPage />);
 
-    expect(screen.getByText("pages.ssoCallback.signingIn")).toBeTruthy();
+    screen.getByText("pages.ssoCallback.signingIn");
     await waitFor(() =>
       expect(mockGo).toHaveBeenCalledWith({
         to: "/default/endpoints",

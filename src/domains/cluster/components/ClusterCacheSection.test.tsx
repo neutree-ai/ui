@@ -71,7 +71,7 @@ describe("ClusterCacheSection", () => {
       },
     } as unknown as Cluster;
     render(<ClusterCacheSection cluster={cluster} />);
-    expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
+    screen.getByText("clusters.zcache.reconciling");
   });
 
   it("shows rejected submission separately from current nodes and historical operations", () => {
@@ -107,17 +107,17 @@ describe("ClusterCacheSection", () => {
       },
     } as unknown as Cluster;
     render(<ClusterCacheSection cluster={cluster} />);
-    expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
-    expect(screen.getByText("a")).toBeTruthy();
-    expect(screen.getByText("8 GiB")).toBeTruthy();
+    screen.getByText("clusters.zcache.failed");
+    screen.getByText("a");
+    screen.getByText("8 GiB");
     expect(screen.queryByText("API 422")).toBeNull();
     expect(screen.queryByText(/old-operation/)).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "clusters.zcache.operations" }),
     );
-    expect(screen.getByText("API 422")).toBeTruthy();
-    expect(screen.getByText(/clusters.zcache.notAccepted/)).toBeTruthy();
-    expect(screen.getByText(/old-operation/)).toBeTruthy();
+    screen.getByText("API 422");
+    screen.getByText(/clusters.zcache.notAccepted/);
+    screen.getByText(/old-operation/);
   });
 });
 
@@ -163,8 +163,8 @@ it("renders heterogeneous node capacities instead of a uniform capacity summary"
     },
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByText("2 GiB")).toBeTruthy();
-  expect(screen.getByText("8 GiB")).toBeTruthy();
+  screen.getByText("2 GiB");
+  screen.getByText("8 GiB");
   expect(screen.getByRole("status").textContent).toContain("5 GiB");
   expect(screen.getByRole("status").textContent).toContain(
     "clusters.zcache.latestTarget",
@@ -198,7 +198,7 @@ it("does not label stale node observations ready", () => {
   expect(screen.getByRole("alert").textContent).toContain(
     "clusters.zcache.stale",
   );
-  expect(screen.getByText("2 GiB")).toBeTruthy();
+  screen.getByText("2 GiB");
 });
 
 it("shows failed configuration without hiding current availability", () => {
@@ -230,7 +230,7 @@ it("shows failed configuration without hiding current availability", () => {
     },
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByText("clusters.zcache.failed")).toBeTruthy();
+  screen.getByText("clusters.zcache.failed");
   expect(screen.getByRole("alert").textContent).toContain(
     "clusters.zcache.stillAvailable",
   );
@@ -262,7 +262,7 @@ it("distinguishes unknown availability from confirmed unavailability", () => {
   );
   cluster.status!.cache!.conditions[0].status = "False";
   rerender(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByText("clusters.zcache.unavailable")).toBeTruthy();
+  screen.getByText("clusters.zcache.unavailable");
 });
 
 it("exposes a retry for initial installation failure with no node inventory", () => {
@@ -289,7 +289,7 @@ it("exposes a retry for initial installation failure with no node inventory", ()
     },
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByRole("button", { name: "Retry service" })).toBeTruthy();
+  screen.getByRole("button", { name: "Retry service" });
   expect(screen.queryByText("clusters.zcache.controlPlane.title")).toBeNull();
   expect(screen.queryByText("clusters.cache.providerLabel")).toBeNull();
 });
@@ -312,7 +312,7 @@ it("shows pending enablement over an old Disabled observation", () => {
     },
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
+  screen.getByText("clusters.zcache.reconciling");
   expect(screen.queryByText("clusters.zcache.disabled")).toBeNull();
 });
 it("omits node counts when disabled with no nodes", () => {

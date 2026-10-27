@@ -176,7 +176,7 @@ describe("EndpointLogTabs toolbar", () => {
     render(<EndpointLogTabs endpoint={endpoint} clusterType="ssh" />);
 
     expect(screen.queryByTestId("endpoint-log-toolbar")).toBeNull();
-    expect(screen.getByTestId("endpoint-log-viewer")).toBeTruthy();
+    screen.getByTestId("endpoint-log-viewer");
   });
 
   it("keeps the toolbar when log types can be switched", () => {
@@ -184,7 +184,7 @@ describe("EndpointLogTabs toolbar", () => {
 
     render(<EndpointLogTabs endpoint={endpoint} clusterType="ssh" />);
 
-    expect(screen.getByTestId("endpoint-log-toolbar")).toBeTruthy();
+    screen.getByTestId("endpoint-log-toolbar");
     expect(
       screen.getByRole("group", { name: "common.tabs.logs" }),
     ).toBeTruthy();
@@ -195,8 +195,8 @@ describe("EndpointLogTabs toolbar", () => {
 
     render(<EndpointLogTabs endpoint={endpoint} clusterType="ssh" />);
 
-    expect(screen.getByTestId("endpoint-log-toolbar")).toBeTruthy();
-    expect(screen.getByRole("combobox")).toBeTruthy();
+    screen.getByTestId("endpoint-log-toolbar");
+    screen.getByRole("combobox");
   });
 
   it("switches the active replica", () => {
@@ -408,9 +408,9 @@ describe("Kubernetes log sources", () => {
         <EndpointLogTabs endpoint={endpoint} clusterType="kubernetes" />,
       );
       expectLogSource("pod-a", containerName);
-      expect(screen.getByLabelText("endpoints.logs.containerRun")).toBeTruthy();
-      expect(screen.getByText("endpoints.logs.current")).toBeTruthy();
-      expect(screen.getByText("endpoints.logs.previous")).toBeTruthy();
+      screen.getByLabelText("endpoints.logs.containerRun");
+      screen.getByText("endpoints.logs.current");
+      screen.getByText("endpoints.logs.previous");
     },
   );
 
@@ -434,7 +434,7 @@ describe("Kubernetes log sources", () => {
 
     logSources.isLoading = true;
     rerender(<EndpointLogTabs endpoint={endpoint} clusterType="kubernetes" />);
-    expect(screen.getByText("loading")).toBeTruthy();
+    screen.getByText("loading");
   });
 });
 
@@ -477,6 +477,6 @@ describe("Ray log compatibility", () => {
       "/endpoints/default/qwen/logs/replica-0/stderr?lines=1000",
       true,
     );
-    expect(screen.getByTestId("endpoint-log-viewer")).toBeTruthy();
+    screen.getByTestId("endpoint-log-viewer");
   });
 });

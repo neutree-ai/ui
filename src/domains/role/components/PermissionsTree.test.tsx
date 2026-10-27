@@ -14,7 +14,7 @@ describe("PermissionsTree", () => {
       />,
     );
 
-    expect(screen.getByText("workspaces.title")).toBeTruthy();
+    screen.getByText("workspaces.title");
     expect(screen.queryByText("static_node_clusters.title")).toBeNull();
     expect(screen.queryByText("static_nodes.title")).toBeNull();
   });

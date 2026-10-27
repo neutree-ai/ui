@@ -76,7 +76,7 @@ it("confirms disabling even when capacity is unchanged", () => {
   );
   fireEvent.click(screen.getByText("save"));
   expect(save).not.toHaveBeenCalled();
-  expect(screen.getByText("clusters.zcache.disableDescription")).toBeTruthy();
+  screen.getByText("clusters.zcache.disableDescription");
   fireEvent.click(
     screen.getByRole("button", { name: "clusters.zcache.disableTitle" }),
   );

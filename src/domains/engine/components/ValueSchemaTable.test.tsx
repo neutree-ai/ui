@@ -152,7 +152,7 @@ describe("ValueSchemaTable", () => {
     renderTable();
 
     // Four declared parameters, two of which have nested children.
-    expect(screen.getByText("6 parameters")).toBeTruthy();
+    screen.getByText("6 parameters");
     expect(row("command")?.textContent).toContain("Command");
     expect(row("command")?.textContent).toContain("command");
     expect(row("command")?.textContent).toContain("required");
@@ -248,12 +248,12 @@ describe("ValueSchemaTable", () => {
     expect(row("command")).toBeTruthy();
     expect(row("health_path")).toBeNull();
     expect(row("rope_scaling.factor")).toBeNull();
-    expect(screen.getByText("1 of 6 parameters")).toBeTruthy();
+    screen.getByText("1 of 6 parameters");
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Required only" }));
 
     expect(row("health_path")).toBeTruthy();
-    expect(screen.getByText("6 parameters")).toBeTruthy();
+    screen.getByText("6 parameters");
   });
 
   it("says so when a filter matches nothing", () => {
@@ -264,7 +264,7 @@ describe("ValueSchemaTable", () => {
       { target: { value: "no such parameter" } },
     );
 
-    expect(screen.getByTestId("value-schema-no-matches")).toBeTruthy();
+    screen.getByTestId("value-schema-no-matches");
     expect(screen.queryAllByTestId("value-schema-row")).toHaveLength(0);
   });
 
@@ -282,7 +282,7 @@ describe("ValueSchemaTable", () => {
     expect(
       screen.queryByRole("checkbox", { name: "Required only" }),
     ).toBeNull();
-    expect(screen.getByTestId("value-schema-type-filter")).toBeTruthy();
+    screen.getByTestId("value-schema-type-filter");
   });
 
   it("narrows by the type picked in the toolbar", () => {
@@ -296,7 +296,7 @@ describe("ValueSchemaTable", () => {
     expect(row("rope_scaling.factor")).toBeTruthy();
     expect(row("rope_scaling")).toBeTruthy();
     expect(row("health_path")).toBeNull();
-    expect(screen.getByText("2 of 6 parameters")).toBeTruthy();
+    screen.getByText("2 of 6 parameters");
 
     // The "all types" entry clears the filter again.
     fireEvent.change(screen.getByTestId("value-schema-type-filter"), {
@@ -381,7 +381,7 @@ describe("ValueSchemaTable", () => {
       .find((element) => element.textContent?.includes("Starts the workload"))!;
     expect(panel.textContent).toContain("Starts the workload. Example:");
     expect(panel.querySelector("pre")?.textContent).toContain('"port": 8000');
-    expect(screen.getByRole("button", { name: "Copy JSON" })).toBeTruthy();
+    screen.getByRole("button", { name: "Copy JSON" });
   });
 
   it("copies the pretty-printed example rather than the cell's one line", () => {
@@ -417,14 +417,14 @@ describe("ValueSchemaTable", () => {
   it("renders an empty state for a version that declares nothing", () => {
     renderTable({ type: "object", additionalProperties: true });
 
-    expect(screen.getByText("engines.schema.empty")).toBeTruthy();
-    expect(screen.getByText("engines.schema.allowsAdditional")).toBeTruthy();
+    screen.getByText("engines.schema.empty");
+    screen.getByText("engines.schema.allowsAdditional");
   });
 
   it("adds no extras note to a schema that declares nothing and accepts nothing", () => {
     renderTable({ type: "object" });
 
-    expect(screen.getByText("engines.schema.empty")).toBeTruthy();
+    screen.getByText("engines.schema.empty");
     expect(screen.queryByText("engines.schema.allowsAdditional")).toBeNull();
   });
 
@@ -435,8 +435,8 @@ describe("ValueSchemaTable", () => {
       properties: { dtype: { type: "string" } },
     });
 
-    expect(screen.getByTestId("value-schema-row")).toBeTruthy();
-    expect(screen.getByText("engines.schema.allowsAdditional")).toBeTruthy();
+    screen.getByTestId("value-schema-row");
+    screen.getByText("engines.schema.allowsAdditional");
   });
 
   it("measures the toolbar so the sticky header can clear it", () => {

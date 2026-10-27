@@ -259,7 +259,7 @@ describe("ZCacheFields", () => {
   });
   it("explains bootstrap before enabling runtime on a new cluster", () => {
     render(<Form onSubmit={vi.fn()} isEdit={false} />);
-    expect(screen.getByText("clusters.zcache.createHint")).toBeTruthy();
+    screen.getByText("clusters.zcache.createHint");
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
 });

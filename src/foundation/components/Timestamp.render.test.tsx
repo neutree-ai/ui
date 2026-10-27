@@ -31,7 +31,7 @@ describe("Timestamp rendering", () => {
   it("renders an absolute timestamp by default", () => {
     render(<Timestamp timestamp="2026-08-10T12:00:00Z" />);
 
-    expect(screen.getByText("2026-08-10 12:00")).toBeTruthy();
+    screen.getByText("2026-08-10 12:00");
     expect(screen.queryByTestId("absolute-time")).toBeNull();
   });
 
@@ -49,7 +49,7 @@ describe("Timestamp rendering", () => {
     language.current = "zh-CN";
     render(<Timestamp timestamp="2026-08-10T12:00:00Z" relative />);
 
-    expect(screen.getByText("1 天前")).toBeTruthy();
+    screen.getByText("1 天前");
   });
 
   it("renders a placeholder for a missing timestamp", () => {

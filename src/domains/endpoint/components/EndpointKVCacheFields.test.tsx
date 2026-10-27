@@ -91,7 +91,7 @@ it("enables cache with its provider and default timeout without a selector", asy
   render(<Editor cache={null} save={save} />);
   fireEvent.click(screen.getByRole("switch"));
   expect(screen.queryByRole("combobox")).toBeNull();
-  expect(screen.getByRole("spinbutton")).toBeTruthy();
+  screen.getByRole("spinbutton");
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toEqual({

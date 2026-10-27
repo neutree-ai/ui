@@ -77,7 +77,7 @@ describe("StatusCodeFilter", () => {
     fireEvent.change(search, { target: { value: "12" } });
 
     expect(codesInList()).toEqual([]);
-    expect(screen.getByText("ai_traces.filters.statusHint")).toBeTruthy();
+    screen.getByText("ai_traces.filters.statusHint");
   });
 
   it("keeps a previously picked unlisted code in the list", () => {

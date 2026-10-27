@@ -39,7 +39,7 @@ describe("MetadataTimestampMeta", () => {
 
     render(<MetadataTimestampMeta metadata={metadata} />);
 
-    expect(screen.getByText("common.fields.createdAt")).toBeTruthy();
+    screen.getByText("common.fields.createdAt");
     expect(
       screen
         .getByText(metadata.creation_timestamp)

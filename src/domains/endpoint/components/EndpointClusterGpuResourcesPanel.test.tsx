@@ -165,12 +165,12 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("endpoint-node-gpu-card-grid")).toBeTruthy();
+    screen.getByTestId("endpoint-node-gpu-card-grid");
     const clusterSummary = within(
       screen.getByTestId("endpoint-cluster-resource-summary"),
     );
-    expect(clusterSummary.getByText("Memory Usage")).toBeTruthy();
-    expect(clusterSummary.getByText("Core Usage")).toBeTruthy();
+    clusterSummary.getByText("Memory Usage");
+    clusterSummary.getByText("Core Usage");
     expect(
       screen.getByRole("button", {
         name: "GPU 1 Copy UUID",
@@ -201,7 +201,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       "endpoint-resource-summary-card",
     );
     const cardCountCard = findByExactLabel(summaryCards, "Card Count");
-    expect(within(cardCountCard).getByText("Free 1.5")).toBeTruthy();
+    within(cardCountCard).getByText("Free 1.5");
     expect(
       screen.getByText((_, node) => node?.textContent === "Usable 1"),
     ).toBeTruthy();
@@ -556,7 +556,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const compactResources = within(
       screen.getByTestId("endpoint-compact-node-resources"),
     );
-    expect(compactResources.getByText("Card Count")).toBeTruthy();
+    compactResources.getByText("Card Count");
   });
 
   it("shows resource units in card titles instead of appending them to every value", () => {
@@ -580,9 +580,9 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const vramCard = findByExactLabel(summaryCards, "Memory Usage");
     const coreCard = findByExactLabel(summaryCards, "Core Usage");
 
-    expect(within(cpuCard).getByText("cores")).toBeTruthy();
-    expect(within(memoryCard).getByText("GiB")).toBeTruthy();
-    expect(within(vramCard).getByText("GiB")).toBeTruthy();
+    within(cpuCard).getByText("cores");
+    within(memoryCard).getByText("GiB");
+    within(vramCard).getByText("GiB");
     expect(within(cardCountCard).queryByText("cores")).toBeNull();
     expect(within(cardCountCard).queryByText("GiB")).toBeNull();
     expect(within(coreCard).queryByText("cores")).toBeNull();
@@ -590,8 +590,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     expect(within(cpuCard).queryByText("32.0 cores")).toBeNull();
     expect(within(memoryCard).queryByText("128.0 GiB")).toBeNull();
-    expect(within(cpuCard).getByText("32.0")).toBeTruthy();
-    expect(within(memoryCard).getByText("128.0")).toBeTruthy();
+    within(cpuCard).getByText("32.0");
+    within(memoryCard).getByText("128.0");
     expect(vramCard.textContent).not.toContain("7.5 / 30.0 GiB");
     expect(
       within(vramCard).getByText((text) => text.includes("7.5 / 30.0")),
@@ -691,7 +691,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const toolbar = within(
       screen.getByTestId("endpoint-cluster-resource-target-notes"),
     );
-    expect(toolbar.getByText("Tesla-T4")).toBeTruthy();
+    toolbar.getByText("Tesla-T4");
     expect(toolbar.queryByText("L4")).toBeNull();
   });
 
@@ -709,7 +709,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const toolbar = within(
       screen.getByTestId("endpoint-cluster-resource-target-notes"),
     );
-    expect(toolbar.getByText("Tesla-T4")).toBeTruthy();
+    toolbar.getByText("Tesla-T4");
   });
 
   it("keeps cluster pool values visible when the preset accelerator matches no product", () => {

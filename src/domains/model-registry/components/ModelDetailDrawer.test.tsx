@@ -84,10 +84,10 @@ describe("ModelDetailDrawer", () => {
   it("uses the registry as context and frames the model document", () => {
     renderDrawer();
 
-    expect(screen.getByText("team-models")).toBeDefined();
-    expect(screen.getByRole("heading", { name: "org/model" })).toBeDefined();
-    expect(screen.getByText("resolved-revision")).toBeDefined();
-    expect(screen.getByText("54.8 GB")).toBeDefined();
+    screen.getByText("team-models");
+    screen.getByRole("heading", { name: "org/model" });
+    screen.getByText("resolved-revision");
+    screen.getByText("54.8 GB");
     expect(screen.queryByText("common.sections.basicInformation")).toBeNull();
     expect(screen.getByTestId("model-readme").dataset.framed).toBe("true");
   });
@@ -128,7 +128,7 @@ describe("ModelDetailDrawer", () => {
       await screen.findByText("model_registries.models.actions.edit"),
     );
 
-    expect(screen.getByTestId("model-edit-dialog")).toBeDefined();
+    screen.getByTestId("model-edit-dialog");
   });
 
   it("opens delete from the writable management menu", async () => {
@@ -140,7 +140,7 @@ describe("ModelDetailDrawer", () => {
     });
     fireEvent.click(await screen.findByText("buttons.delete"));
 
-    expect(screen.getByTestId("model-delete-dialog")).toBeDefined();
+    screen.getByTestId("model-delete-dialog");
     fireEvent.click(screen.getByTestId("model-delete-dialog"));
   });
 
@@ -155,7 +155,7 @@ describe("ModelDetailDrawer", () => {
     const { container } = renderDrawer();
 
     expect(container.querySelector("[data-testid='model-deploy']")).toBeNull();
-    expect(screen.getByTitle("Loading...")).toBeDefined();
+    screen.getByTitle("Loading...");
   });
 
   it("shows an error and retries the model request", () => {
@@ -191,7 +191,7 @@ describe("ModelDetailDrawer", () => {
 
     renderDrawer({ ...registry, visibility: undefined });
 
-    expect(screen.getByText("-")).toBeDefined();
+    screen.getByText("-");
     expect(
       screen.getByText("model_registries.fields.visibility").parentElement
         ?.textContent,

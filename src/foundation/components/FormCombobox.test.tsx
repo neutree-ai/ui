@@ -88,7 +88,7 @@ describe("FormCombobox", () => {
 
     fireEvent.click(getTrigger());
 
-    expect(screen.getByText("Text Generation status")).toBeTruthy();
+    screen.getByText("Text Generation status");
     expect(screen.queryByTestId("combobox-option-check")).toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe("FormCombobox with allowCustomValue", () => {
     render(<Harness fieldValue="" allowCustomValue />);
     fireEvent.click(getTrigger());
     fireEvent.change(searchBox(), { target: { value: "acme-research-lab" } });
-    expect(screen.getByText(/acme-research-lab/)).toBeTruthy();
+    screen.getByText(/acme-research-lab/);
   });
 
   it("does not offer text that already matches an option value", () => {

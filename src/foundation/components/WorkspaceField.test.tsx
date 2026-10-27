@@ -51,8 +51,8 @@ describe("WorkspaceField", () => {
     render(<WorkspaceField />);
     openField();
 
-    expect(screen.getByRole("option", { name: "ws-alpha" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "ws-beta" })).toBeTruthy();
+    screen.getByRole("option", { name: "ws-alpha" });
+    screen.getByRole("option", { name: "ws-beta" });
   });
 
   it("hands what was typed to the search query instead of filtering locally", () => {
@@ -93,6 +93,6 @@ describe("WorkspaceField", () => {
     openField();
 
     // Matched as an option, not just as the trigger's label.
-    expect(screen.getByRole("option", { name: "ws-elsewhere" })).toBeTruthy();
+    screen.getByRole("option", { name: "ws-elsewhere" });
   });
 });

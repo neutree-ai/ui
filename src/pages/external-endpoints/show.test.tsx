@@ -218,14 +218,14 @@ describe("ExternalEndpointsShow", () => {
     const loading = render(<ExternalEndpointsShow />, {
       wrapper: MemoryRouter,
     });
-    expect(screen.getByTestId("loader")).toBeTruthy();
+    screen.getByTestId("loader");
     loading.unmount();
 
     useShowMock.mockReturnValue({
       query: { data: undefined, isLoading: false },
     });
     render(<ExternalEndpointsShow />, { wrapper: MemoryRouter });
-    expect(screen.getByText("pages.error.notFound")).toBeTruthy();
+    screen.getByText("pages.error.notFound");
   });
 
   it("puts the timeout and the service URLs in the header, not a configuration block", () => {
@@ -233,8 +233,8 @@ describe("ExternalEndpointsShow", () => {
       phase: "Running",
       service_url: "https://gateway.example.com",
     });
-    expect(screen.getByText("model-lb")).toBeTruthy();
-    expect(screen.getByTestId("status-badge")).toBeTruthy();
+    screen.getByText("model-lb");
+    screen.getByTestId("status-badge");
     expect(
       screen.getByText("external_endpoints.fields.timeout: 30s"),
     ).toBeTruthy();
@@ -261,7 +261,7 @@ describe("ExternalEndpointsShow", () => {
     expect(
       screen.getByText("external_endpoints.sections.modelServices"),
     ).toBeTruthy();
-    expect(screen.getByText("primary")).toBeTruthy();
+    screen.getByText("primary");
     expect(
       screen.getByText("external_endpoints.options.upstreamTypeExternal"),
     ).toBeTruthy();
@@ -278,8 +278,8 @@ describe("ExternalEndpointsShow", () => {
       { phase: "Running", service_url: "https://gateway.example.com" },
       "/?tab=monitor",
     );
-    expect(screen.getByTestId("monitor")).toBeTruthy();
-    expect(screen.getByTestId("monitor-link")).toBeTruthy();
+    screen.getByTestId("monitor");
+    screen.getByTestId("monitor-link");
   });
 
   it.each([undefined, null])(
@@ -306,7 +306,7 @@ describe("ExternalEndpointsShow", () => {
         within(cards[0]).getByText("modelSource.unspecified"),
       ).toBeTruthy();
       expect(cards[1].textContent).toContain("model-010");
-      expect(within(cards[1]).getByText("third-party-public")).toBeTruthy();
+      within(cards[1]).getByText("third-party-public");
       expect(cards[0].getAttribute("data-monitoring")).toBe("false");
     },
   );

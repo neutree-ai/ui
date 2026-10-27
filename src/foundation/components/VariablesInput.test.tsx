@@ -308,7 +308,7 @@ describe("VariablesInput value inputs", () => {
       target: { value: "image" },
     });
 
-    expect(screen.getByTestId("image-widget")).toBeTruthy();
+    screen.getByTestId("image-widget");
   });
 
   it("saves a drafted row once the supplied input is left, not mid-word", () => {
@@ -354,6 +354,6 @@ describe("VariablesInput value inputs", () => {
     render(<ValueInputForm onSubmit={vi.fn()} />);
 
     expect(screen.queryByTestId("image-widget")).toBeNull();
-    expect(screen.getByDisplayValue("my-workload:v1")).not.toBeNull();
+    screen.getByDisplayValue("my-workload:v1");
   });
 });

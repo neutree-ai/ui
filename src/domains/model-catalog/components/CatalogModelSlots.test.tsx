@@ -171,9 +171,9 @@ describe("CatalogModelSlots", () => {
   it("shows a row per variant, labelled by variant key", () => {
     renderPanel();
 
-    expect(screen.getByTestId("catalog-model-slot-variant.bf16")).toBeDefined();
-    expect(screen.getByTestId("catalog-model-slot-variant.fp8")).toBeDefined();
-    expect(screen.getByText("bf16")).toBeDefined();
+    screen.getByTestId("catalog-model-slot-variant.bf16");
+    screen.getByTestId("catalog-model-slot-variant.fp8");
+    screen.getByText("bf16");
   });
 
   // The server refuses a variant with no model, so this only happens mid-edit
@@ -224,7 +224,7 @@ describe("CatalogModelSlots", () => {
     );
 
     expect(screen.queryByTestId("catalog-model-slots")).toBeNull();
-    expect(screen.getByText("model_catalogs.models.unparsable")).toBeDefined();
+    screen.getByText("model_catalogs.models.unparsable");
   });
 
   it("cannot pick a model before a registry is chosen", () => {
@@ -273,7 +273,7 @@ describe("engine version", () => {
     renderPanel(withEngine("vllm"));
 
     const row = screen.getByTestId("catalog-engine-version");
-    expect(within(row).getByText("vllm")).toBeDefined();
+    within(row).getByText("vllm");
 
     const select = within(row).getByLabelText(
       "model_catalogs.models.selectEngineVersion",
@@ -373,7 +373,7 @@ describe("CatalogModelSlots for an engine that runs its own workload", () => {
     expect(
       screen.queryByTestId("catalog-model-slot-variant.airgap"),
     ).toBeNull();
-    expect(screen.getByTestId("catalog-engine-version")).toBeDefined();
+    screen.getByTestId("catalog-engine-version");
   });
 
   it("writes what the explorer found into the feature's default", () => {
@@ -397,7 +397,7 @@ describe("CatalogModelSlots for an engine that runs its own workload", () => {
   it("says so when the catalog asks for no image", () => {
     renderPanel({ ...flexDoc, spec: { ...flexDoc.spec, features: [] } });
 
-    expect(screen.getByText("model_catalogs.images.none")).toBeDefined();
+    screen.getByText("model_catalogs.images.none");
     expect(screen.queryByText("model_catalogs.models.none")).toBeNull();
   });
 });

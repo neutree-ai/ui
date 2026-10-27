@@ -53,10 +53,10 @@ describe("EndpointCatalogOrigin", () => {
     );
 
     const block = screen.getByTestId("endpoint-catalog-origin");
-    expect(within(block).getByText("qwen3.6-35b")).toBeDefined();
-    expect(within(block).getByText("fp8")).toBeDefined();
-    expect(within(block).getByText("max-model-len: 32768")).toBeDefined();
-    expect(within(block).getByText("cp")).toBeDefined();
+    within(block).getByText("qwen3.6-35b");
+    within(block).getByText("fp8");
+    within(block).getByText("max-model-len: 32768");
+    within(block).getByText("cp");
   });
 
   it("renders nothing for an endpoint that names no catalog", () => {
@@ -75,7 +75,7 @@ describe("EndpointCatalogOrigin", () => {
     });
 
     const block = screen.getByTestId("endpoint-catalog-origin");
-    expect(within(block).getByText("qwen3.6-35b")).toBeDefined();
+    within(block).getByText("qwen3.6-35b");
     expect(
       within(block).getByText("endpoints.origin.featuresUnreadable"),
     ).toBeDefined();
@@ -116,7 +116,7 @@ describe("EndpointCatalogOriginLink", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "llama-3-8b" })).toBeDefined();
+    screen.getByRole("link", { name: "llama-3-8b" });
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 });

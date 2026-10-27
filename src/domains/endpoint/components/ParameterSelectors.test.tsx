@@ -62,6 +62,6 @@ describe("MaxLengthSelector", () => {
 
   it("renders the humanized value preview", () => {
     render(<MaxLengthSelector value={64 * 1024} onChange={() => {}} />);
-    expect(screen.getByText("64K")).toBeTruthy();
+    screen.getByText("64K");
   });
 });

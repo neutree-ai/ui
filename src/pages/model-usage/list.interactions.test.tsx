@@ -301,8 +301,8 @@ describe("model usage tables", () => {
 
     expect(bodyRows(card)).toHaveLength(10);
     expect(bodyRows(card)[0].textContent).toContain("Key 1");
-    expect(card.getByText(`Total: ${KEY_COUNT} items`)).toBeDefined();
-    expect(card.getByText("Page 1 of 3")).toBeDefined();
+    card.getByText(`Total: ${KEY_COUNT} items`);
+    card.getByText("Page 1 of 3");
   });
 
   it("moves to the next page of keys", () => {
@@ -311,42 +311,42 @@ describe("model usage tables", () => {
     fireEvent.click(card.getByRole("button", { name: "Go to next page" }));
 
     expect(bodyRows(card)[0].textContent).toContain("Key 11");
-    expect(card.getByText("Page 2 of 3")).toBeDefined();
+    card.getByText("Page 2 of 3");
   });
 
   it("shows the per-record table 50 rows at a time", () => {
     const detail = cardFor("Daily detail");
 
     expect(bodyRows(detail)).toHaveLength(50);
-    expect(detail.getByText(`Total: ${rows.length} items`)).toBeDefined();
-    expect(detail.getByText("Page 1 of 2")).toBeDefined();
+    detail.getByText(`Total: ${rows.length} items`);
+    detail.getByText("Page 1 of 2");
   });
 
   it("renders the type badge for internal, external and unknown endpoints", () => {
     const detail = cardFor("Daily detail");
 
     expect(detail.getAllByText("Internal").length).toBeGreaterThan(0);
-    expect(detail.getByText("External")).toBeDefined();
+    detail.getByText("External");
     expect(detail.getAllByText("-").length).toBeGreaterThan(0);
   });
 });
 
 describe("model usage scope", () => {
   it("re-scopes titles to the day and offers the way back", () => {
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+    screen.getByText("Daily tokens by API key");
 
     fireEvent.click(screen.getByRole("button", { name: "day" }));
 
-    expect(screen.getByText("Tokens by API key · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
-    expect(screen.getByText("By model · 2026-09-01")).toBeDefined();
+    screen.getByText("Tokens by API key · single day");
+    screen.getByText("By API key · 2026-09-01");
+    screen.getByText("By model · 2026-09-01");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Back to last 30 days" }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.getByText("By API key")).toBeDefined();
+    screen.getByText("Daily tokens by API key");
+    screen.getByText("By API key");
   });
 
   it("returns to the custom window the reader picked, not a preset", () => {
@@ -357,15 +357,15 @@ describe("model usage scope", () => {
       screen.getByRole("button", { name: "Back to Jul 1 – Jul 10" }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+    screen.getByText("Daily tokens by API key");
     expect(screen.queryByText("Tokens by API key · single day")).toBeNull();
   });
 
   it("narrows the range to the day picked in the chart", () => {
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
-    expect(screen.getByText("Tokens by API key · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
+    screen.getByText("Tokens by API key · single day");
+    screen.getByText("By API key · 2026-09-01");
   });
 
   it("ignores a chart click that carries no category", () => {
@@ -373,7 +373,7 @@ describe("model usage scope", () => {
       screen.getByRole("button", { name: "pick-day-without-label" }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+    screen.getByText("Daily tokens by API key");
     expect(screen.queryByText("Tokens by API key · single day")).toBeNull();
   });
 
@@ -381,14 +381,14 @@ describe("model usage scope", () => {
     openSelect(0);
     pickOption("Key 11");
 
-    expect(screen.getByText("Daily tokens by model")).toBeDefined();
-    expect(screen.getByTestId("bar-chart")).toBeDefined();
+    screen.getByText("Daily tokens by model");
+    screen.getByTestId("bar-chart");
 
     openSelect(0);
     pickOption("model_usage.filters.allApiKeys");
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByText("Daily tokens by API key");
+    screen.getByTestId("line-chart");
   });
 });
 
@@ -401,17 +401,17 @@ describe("model usage chart controls", () => {
   });
 
   it("switches between the line and stacked-bar trend views", () => {
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByTestId("line-chart");
 
     fireEvent.click(
       screen.getByRole("button", { name: "model_usage.chart.bar" }),
     );
-    expect(screen.getByTestId("bar-chart")).toBeDefined();
+    screen.getByTestId("bar-chart");
 
     fireEvent.click(
       screen.getByRole("button", { name: "model_usage.chart.line" }),
     );
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByTestId("line-chart");
   });
 
   it("labels the legend with the series and toggles it", () => {
@@ -423,7 +423,7 @@ describe("model usage chart controls", () => {
     fireEvent.click(legend);
     fireEvent.click(legend);
     fireEvent.click(screen.getByRole("button", { name: "legend-without-key" }));
-    expect(screen.getByRole("button", { name: /Key 1/ })).toBeDefined();
+    screen.getByRole("button", { name: /Key 1/ });
   });
 
   it("formats the axes with dates and compact token units", () => {
@@ -465,8 +465,8 @@ describe("model usage states", () => {
     pickOption("Key 11");
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
-    expect(screen.getByText("Tokens by model · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
+    screen.getByText("Tokens by model · single day");
+    screen.getByText("By API key · 2026-09-01");
   });
 
   it("shows the loader until the first page of usage arrives", () => {
@@ -474,7 +474,7 @@ describe("model usage states", () => {
 
     // The chart shows the loader; the tables below already know they are empty
     // because they read the same slice of data.
-    expect(screen.getByTitle("Loading...")).toBeDefined();
+    screen.getByTitle("Loading...");
   });
 
   it("shows the empty state when the window has no usage", () => {
@@ -487,6 +487,6 @@ describe("model usage states", () => {
   it("surfaces a failed usage request above the tables", () => {
     renderWith({ usageData: [], error: new Error("usage rpc failed") });
 
-    expect(screen.getByText("usage rpc failed")).toBeDefined();
+    screen.getByText("usage rpc failed");
   });
 });

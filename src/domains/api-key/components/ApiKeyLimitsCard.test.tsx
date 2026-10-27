@@ -79,8 +79,8 @@ describe("ApiKeyLimitsCard", () => {
       }),
     );
     expect(onSaved).toHaveBeenCalled();
-    expect(screen.getByDisplayValue("New name")).toBeTruthy();
-    expect(screen.getByDisplayValue("New description")).toBeTruthy();
+    screen.getByDisplayValue("New name");
+    screen.getByDisplayValue("New description");
     expect(openNotification).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success" }),
     );

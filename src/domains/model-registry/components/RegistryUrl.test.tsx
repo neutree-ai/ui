@@ -41,7 +41,7 @@ describe("RegistryUrl", () => {
     renderWithTooltip(<RegistryUrl url="nfs://10.24.8.31/srv/models" />);
 
     expect(screen.queryByRole("link")).toBeNull();
-    expect(screen.getByText("nfs://10.24.8.31/srv/models")).toBeDefined();
+    screen.getByText("nfs://10.24.8.31/srv/models");
   });
 
   it("keeps an address that fits in full", () => {

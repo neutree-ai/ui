@@ -1,7 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+import { useLicense } from "@/foundation/hooks/use-license";
+import { isHidden, selectOption } from "@/foundation/testing/interactions";
+import { renderForm } from "@/foundation/testing/render-form";
+import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
@@ -14,78 +17,45 @@ vi.mock("@/foundation/hooks/use-license", () => ({
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
-  default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
+  default: React.forwardRef(() => <div />),
 }));
 
-import { useLicense } from "@/foundation/hooks/use-license";
-import { useRoleAssignmentForm } from "./use-role-assignment-form";
-
-function CreateForm() {
-  const { form, specFields } = useRoleAssignmentForm({ action: "create" });
-  return (
-    <FormProvider {...form}>
-      <form>{specFields}</form>
-    </FormProvider>
+const renderCreate = () =>
+  renderForm(
+    () => useRoleAssignmentForm({ action: "create" }),
+    (r) => r.specFields,
   );
-}
+const workspaceField = () => screen.getByTestId("field-spec.workspace");
 
-function selectScope(label: string) {
-  const field = screen.getByTestId("field-spec.global");
-  const trigger = field.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error("select trigger not found");
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: label }));
-}
+describe("useRoleAssignmentForm scope", () => {
+  it("shows the workspace field only for a workspace-scoped assignment", async () => {
+    renderCreate();
 
-describe("useRoleAssignmentForm", () => {
-  describe("global/workspace toggle", () => {
-    it("hides workspace field when global is selected", async () => {
-      render(<CreateForm />);
+    selectOption("spec.global", "role_assignments.options.workspace");
+    await waitFor(() => expect(isHidden(workspaceField())).toBe(false));
 
-      selectScope("role_assignments.options.global");
+    selectOption("spec.global", "role_assignments.options.global");
+    await waitFor(() => expect(isHidden(workspaceField())).toBe(true));
+  });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("field-spec.workspace").className).toContain(
-          "hidden",
-        );
-      });
-    });
+  it("clears the workspace when switching to global", async () => {
+    const { result } = renderCreate();
+    selectOption("spec.global", "role_assignments.options.workspace");
+    result.current.form.setValue("spec.workspace", "team-a");
 
-    it("shows workspace field when workspace scope is selected", async () => {
-      render(<CreateForm />);
+    selectOption("spec.global", "role_assignments.options.global");
 
-      selectScope("role_assignments.options.global");
-      selectScope("role_assignments.options.workspace");
+    await waitFor(() =>
+      expect(result.current.form.getValues("spec.workspace")).toBeFalsy(),
+    );
+  });
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("field-spec.workspace").className,
-        ).not.toContain("hidden");
-      });
-    });
+  it("is global without the multi-workspace license", () => {
+    vi.mocked(useLicense).mockReturnValue({
+      supportMultiWorkspace: false,
+    } as ReturnType<typeof useLicense>);
+    renderCreate();
 
-    it("clears workspace value when switching to global", async () => {
-      render(<CreateForm />);
-
-      selectScope("role_assignments.options.workspace");
-      selectScope("role_assignments.options.global");
-
-      await waitFor(() => {
-        expect(screen.getByTestId("field-spec.workspace").className).toContain(
-          "hidden",
-        );
-      });
-    });
-
-    it("defaults to global when multi-workspace is not supported", () => {
-      vi.mocked(useLicense).mockReturnValue({
-        supportMultiWorkspace: false,
-      } as ReturnType<typeof useLicense>);
-      render(<CreateForm />);
-
-      expect(screen.getByTestId("field-spec.workspace").className).toContain(
-        "hidden",
-      );
-    });
+    expect(isHidden(workspaceField())).toBe(true);
   });
 });

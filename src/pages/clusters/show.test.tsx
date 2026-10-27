@@ -158,7 +158,7 @@ describe("ClustersShow", () => {
       query: { data: undefined, isLoading: false },
     });
     render(<ClustersShow />);
-    expect(screen.getByText("clusters.messages.notFound")).toBeTruthy();
+    screen.getByText("clusters.messages.notFound");
   });
 
   it("connects cluster and node resource data to the redesigned sections", () => {

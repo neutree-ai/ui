@@ -109,7 +109,7 @@ it("shows the final destination separately from the request and response models"
     "provider",
     "mapped-model",
   ]) {
-    expect(screen.getByText(value)).toBeTruthy();
+    screen.getByText(value);
   }
   expect(screen.queryByText("ai_traces.routing.reason")).toBeNull();
 });

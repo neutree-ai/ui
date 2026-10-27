@@ -233,8 +233,8 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("what is slow?");
 
-    expect(screen.getByText("what is slow?")).toBeDefined();
-    expect(screen.getByText("The answer arrives in pieces.")).toBeDefined();
+    screen.getByText("what is slow?");
+    screen.getByText("The answer arrives in pieces.");
   });
 
   it("renders every kind of content a turn can carry", async () => {
@@ -252,10 +252,10 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("what is the weather?");
 
-    expect(screen.getByText("weighing the options")).toBeDefined();
-    expect(screen.getByText("Here is the answer.")).toBeDefined();
-    expect(screen.getByText(/get_weather/)).toBeDefined();
-    expect(screen.getByText("the engine stopped responding")).toBeDefined();
+    screen.getByText("weighing the options");
+    screen.getByText("Here is the answer.");
+    screen.getByText(/get_weather/);
+    screen.getByText("the engine stopped responding");
   });
 
   it("renders an image the reader attached to their message", async () => {

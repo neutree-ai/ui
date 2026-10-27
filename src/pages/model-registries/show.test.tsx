@@ -150,7 +150,7 @@ describe("ModelRegistriesShow", () => {
   it("shows the registry address", () => {
     render(<ModelRegistriesShow />);
 
-    expect(screen.getByText("nfs://models")).toBeDefined();
+    screen.getByText("nfs://models");
   });
 
   it("links a hub address out", () => {
@@ -191,12 +191,12 @@ describe("ModelRegistriesShow", () => {
   it("renders loading and not-found states", () => {
     state.isLoading = true;
     const { rerender } = render(<ModelRegistriesShow />);
-    expect(screen.getByTitle("Loading...")).toBeDefined();
+    screen.getByTitle("Loading...");
 
     state.isLoading = false;
     state.record = null;
     rerender(<ModelRegistriesShow />);
-    expect(screen.getByText("pages.error.notFound")).toBeDefined();
+    screen.getByText("pages.error.notFound");
   });
 
   it("opens a selected model in the drawer and clears it on close", () => {

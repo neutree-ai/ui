@@ -37,10 +37,10 @@ describe("ModelInfoBadges", () => {
       />,
     );
 
-    expect(screen.getByText("27B")).toBeTruthy();
-    expect(screen.getByText("BF16")).toBeTruthy();
-    expect(screen.getByText("131K")).toBeTruthy();
-    expect(screen.getByText("Qwen3ForCausalLM")).toBeTruthy();
+    screen.getByText("27B");
+    screen.getByText("BF16");
+    screen.getByText("131K");
+    screen.getByText("Qwen3ForCausalLM");
     expect(document.querySelector(".inline-metadata")).not.toBeNull();
   });
 
@@ -57,7 +57,7 @@ describe("ModelInfoBadges", () => {
       </TooltipProvider>,
     );
 
-    expect(screen.getByText("6B")).toBeTruthy();
+    screen.getByText("6B");
     const triggerValue = screen.getByText(architecture);
     const trigger = triggerValue.closest("div[tabindex='0']");
     if (!trigger)

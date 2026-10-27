@@ -141,6 +141,6 @@ describe("ApiKeysList empty states", () => {
     expect(
       within(row as HTMLElement).getAllByTestId("empty-value"),
     ).toHaveLength(2);
-    expect(within(row as HTMLElement).getByText("Unlimited")).toBeTruthy();
+    within(row as HTMLElement).getByText("Unlimited");
   });
 });

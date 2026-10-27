@@ -142,7 +142,7 @@ describe("paging follows what the registry can do", () => {
 
     renderTable(registry({ visibility: "private" }));
 
-    expect(screen.getByText("table.pagination.totalItems:57")).toBeDefined();
+    screen.getByText("table.pagination.totalItems:57");
     expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
     expect(
       screen.getByTestId("registry-models-next").hasAttribute("disabled"),
@@ -187,7 +187,7 @@ describe("paging follows what the registry can do", () => {
     // was fixed by disabling the button; there is now no Next at all, with a
     // widening control in its place.
     expect(screen.queryByTestId("registry-models-next")).toBeNull();
-    expect(screen.getByTestId("registry-models-show-more")).toBeDefined();
+    screen.getByTestId("registry-models-show-more");
   });
 
   it("widens the window instead of moving it, and never sends an offset", () => {
@@ -212,8 +212,8 @@ describe("paging follows what the registry can do", () => {
 
     renderTable(registry({ visibility: "public" }));
 
-    expect(screen.getByText("table.pagination.totalItems:100")).toBeDefined();
-    expect(screen.getByTestId("registry-models-next")).toBeDefined();
+    screen.getByText("table.pagination.totalItems:100");
+    screen.getByTestId("registry-models-next");
     expect(screen.queryByTestId("registry-models-show-more")).toBeNull();
   });
 
@@ -322,7 +322,7 @@ describe("states", () => {
 
     renderTable(registry({ visibility: "public" }));
 
-    expect(screen.getByTestId("registry-models-loading")).toBeDefined();
+    screen.getByTestId("registry-models-loading");
     expect(
       screen.queryByText("model_registries.models.totalUnknown"),
     ).toBeNull();
@@ -333,7 +333,7 @@ describe("states", () => {
 
     renderTable(registry({ visibility: "private" }));
 
-    expect(screen.getByTestId("registry-models-empty")).toBeDefined();
+    screen.getByTestId("registry-models-empty");
     expect(screen.queryByTestId("registry-models-no-matches")).toBeNull();
   });
 
@@ -346,7 +346,7 @@ describe("states", () => {
     renderTable(registry({ visibility: "public", phase: "Failed" }));
 
     expect(calls[0].enabled).toBe(false);
-    expect(screen.getByTestId("registry-models-unreachable")).toBeDefined();
+    screen.getByTestId("registry-models-unreachable");
     expect(screen.queryByTestId("registry-models-error")).toBeNull();
     expect(
       screen.getByTestId("registry-models-search").hasAttribute("disabled"),
@@ -365,7 +365,7 @@ describe("states", () => {
     );
 
     expect(calls[0].enabled).toBe(false);
-    expect(screen.getByTestId("registry-models-disabled")).toBeDefined();
+    screen.getByTestId("registry-models-disabled");
   });
 
   it("reports a listing failure in the server's own words", () => {

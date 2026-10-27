@@ -57,7 +57,7 @@ describe("ImageRegistriesShow", () => {
     showRecord.current = record("https://index.docker.io/v1/", "/neutree");
     render(<ImageRegistriesShow />);
 
-    expect(screen.getByText("https://index.docker.io/v1/neutree")).toBeTruthy();
+    screen.getByText("https://index.docker.io/v1/neutree");
     expect(screen.queryByText("image_registries.fields.repository")).toBeNull();
   });
 
@@ -65,6 +65,6 @@ describe("ImageRegistriesShow", () => {
     showRecord.current = record("https://registry.example.com", "   ");
     render(<ImageRegistriesShow />);
 
-    expect(screen.getByText("https://registry.example.com")).toBeTruthy();
+    screen.getByText("https://registry.example.com");
   });
 });

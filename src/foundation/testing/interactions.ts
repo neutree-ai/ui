@@ -24,3 +24,16 @@ export function fillField(fieldName: string, value: string | number) {
   fireEvent.change(input, { target: { value: String(value) } });
   fireEvent.blur(input);
 }
+
+/**
+ * Whether an element is hidden from the user. jsdom applies no stylesheet,
+ * so Tailwind's `hidden` class counts alongside the `hidden` attribute.
+ */
+export function isHidden(element: Element) {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    if (node.hasAttribute("hidden") || node.classList.contains("hidden")) {
+      return true;
+    }
+  }
+  return false;
+}

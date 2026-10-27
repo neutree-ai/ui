@@ -62,13 +62,13 @@ describe("FeaturePicker input addons", () => {
     renderPicker();
 
     expect(screen.queryByTestId("addon")).toBeNull();
-    expect(screen.getByLabelText("image")).toBeTruthy();
+    screen.getByLabelText("image");
   });
 
   it("renders one beside the feature's own input, and takes its answer", () => {
     const { onChange } = renderPicker({ inputAddon: explorerAddon() });
 
-    expect(screen.getByLabelText("image")).toBeTruthy();
+    screen.getByLabelText("image");
 
     fireEvent.click(screen.getByTestId("addon"));
 
@@ -81,7 +81,7 @@ describe("FeaturePicker input addons", () => {
     renderPicker({ inputAddon: explorerAddon(false) });
 
     expect(screen.queryByTestId("addon")).toBeNull();
-    expect(screen.getByLabelText("image")).toBeTruthy();
+    screen.getByLabelText("image");
   });
 
   it("keeps the author's suggestions alongside the addon", () => {
@@ -100,9 +100,9 @@ describe("FeaturePicker input addons", () => {
       inputAddon: explorerAddon(),
     });
 
-    expect(screen.getByTestId("addon")).toBeTruthy();
+    screen.getByTestId("addon");
     // SuggestInput renders a combobox trigger rather than a bare text box.
-    expect(screen.getByRole("combobox", { name: "image" })).toBeTruthy();
+    screen.getByRole("combobox", { name: "image" });
   });
 
   it("offers nothing extra on a feature that is not a free input", () => {

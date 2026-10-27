@@ -195,21 +195,21 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.getAllByTestId("runtime-replica")).toHaveLength(2);
     expect(screen.getAllByTestId("runtime-host")).toHaveLength(3);
     expect(screen.getAllByTestId("runtime-gpu-cell")).toHaveLength(8);
-    expect(screen.getByText("Replica 0")).toBeTruthy();
-    expect(screen.getByText("Replica 1")).toBeTruthy();
-    expect(screen.getByText("endpoint-abc-single-node")).toBeTruthy();
-    expect(screen.getByText("endpoint-abc-multi-node")).toBeTruthy();
+    screen.getByText("Replica 0");
+    screen.getByText("Replica 1");
+    screen.getByText("endpoint-abc-single-node");
+    screen.getByText("endpoint-abc-multi-node");
     expect(screen.queryByText(/Instance endpoint-abc/)).toBeNull();
-    expect(screen.getByText("Core 70")).toBeTruthy();
-    expect(screen.getByText("Core 210")).toBeTruthy();
-    expect(screen.getByText("2 cards")).toBeTruthy();
-    expect(screen.getByText("16.0 GiB VRAM")).toBeTruthy();
-    expect(screen.getByText("Across 2 nodes")).toBeTruthy();
+    screen.getByText("Core 70");
+    screen.getByText("Core 210");
+    screen.getByText("2 cards");
+    screen.getByText("16.0 GiB VRAM");
+    screen.getByText("Across 2 nodes");
     expect(screen.queryByText("Created at")).toBeNull();
     expect(screen.queryByText("Restarts")).toBeNull();
-    expect(screen.getByText("gpu-node-01")).toBeTruthy();
-    expect(screen.getByText("gpu-node-02")).toBeTruthy();
-    expect(screen.getByText("gpu-node-03")).toBeTruthy();
+    screen.getByText("gpu-node-01");
+    screen.getByText("gpu-node-02");
+    screen.getByText("gpu-node-03");
 
     expect(
       screen
@@ -399,7 +399,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("deepseek-r1-multinode-0")).toBeTruthy();
+    screen.getByText("deepseek-r1-multinode-0");
     expect(screen.queryByText(/Instance deepseek-r1-multinode-0/)).toBeNull();
   });
 
@@ -438,7 +438,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("Core 50")).toBeTruthy();
+    screen.getByText("Core 50");
   });
 
   it("does not expose actual VRAM usage when runtime status includes it", () => {
@@ -508,7 +508,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByTitle(longName)).toBeTruthy();
+    screen.getByTitle(longName);
     expect(screen.getByTitle(longName).className).toContain("truncate");
   });
 
@@ -650,7 +650,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("2 replicas / 2 allocated cards")).toBeTruthy();
+    screen.getByText("2 replicas / 2 allocated cards");
   });
 
   it("hides the runtime allocation summary when no GPU is allocated", () => {
@@ -685,7 +685,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
 
     const summary = screen.getByTestId("runtime-resource-summary");
-    expect(within(summary).getByText("Tesla-T4")).toBeTruthy();
-    expect(within(summary).getByText("30.0 GiB")).toBeTruthy();
+    within(summary).getByText("Tesla-T4");
+    within(summary).getByText("30.0 GiB");
   });
 });

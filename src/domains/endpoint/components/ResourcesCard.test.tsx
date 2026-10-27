@@ -36,9 +36,9 @@ describe("ResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("endpoints.fields.vgpuCorePercent")).toBeTruthy();
-    expect(screen.getByText("8.0 GiB")).toBeTruthy();
-    expect(screen.getByText("-")).toBeTruthy();
+    screen.getByText("endpoints.fields.vgpuCorePercent");
+    screen.getByText("8.0 GiB");
+    screen.getByText("-");
     expect(screen.queryByText("-%")).toBeNull();
   });
 
@@ -63,8 +63,8 @@ describe("ResourcesCard", () => {
       />,
     );
 
-    expect(screen.getByText("50")).toBeTruthy();
+    screen.getByText("50");
     expect(screen.queryByText("50%")).toBeNull();
-    expect(screen.getByText("8.0 GiB")).toBeTruthy();
+    screen.getByText("8.0 GiB");
   });
 });

@@ -866,7 +866,7 @@ describe("useExternalEndpointForm", () => {
 
     it("does not create an upstream channel until the user adds one", () => {
       renderCreateForm();
-      expect(screen.getByLabelText("common.fields.name")).toBeTruthy();
+      screen.getByLabelText("common.fields.name");
       expect(screen.queryByTestId("field-_upstreamType_0")).toBeNull();
       expect(
         screen.queryByLabelText("external_endpoints.fields.upstreamUrl"),
@@ -876,7 +876,7 @@ describe("useExternalEndpointForm", () => {
         screen.getByText("external_endpoints.actions.addModelService"),
       );
 
-      expect(screen.getByTestId("field-_upstreamType_0")).toBeTruthy();
+      screen.getByTestId("field-_upstreamType_0");
       expect(
         screen.getByLabelText("external_endpoints.fields.upstreamUrl"),
       ).toBeTruthy();
@@ -926,7 +926,7 @@ describe("useExternalEndpointForm", () => {
 
     it("renders timeout field", () => {
       renderCreateForm();
-      expect(screen.getByTestId("timeout-input-mock")).toBeTruthy();
+      screen.getByTestId("timeout-input-mock");
     });
 
     it("adds a new upstream when add button is clicked", async () => {
@@ -1022,10 +1022,10 @@ describe("useExternalEndpointForm", () => {
         target: { value: "endpoint_ref" },
       });
 
-      expect(screen.getByText("endpoint-running")).toBeTruthy();
-      expect(screen.getByText("status.phases.endpoint.Running")).toBeTruthy();
-      expect(screen.getByText("status.phases.endpoint.Deploying")).toBeTruthy();
-      expect(screen.getByText("endpoint-unknown")).toBeTruthy();
+      screen.getByText("endpoint-running");
+      screen.getByText("status.phases.endpoint.Running");
+      screen.getByText("status.phases.endpoint.Deploying");
+      screen.getByText("endpoint-unknown");
       expect(screen.queryByText("endpoint-running (Running)")).toBeNull();
     });
 
@@ -1468,7 +1468,7 @@ describe("routing state regression", () => {
         }}
       />,
     );
-    expect(screen.getByDisplayValue("chat")).toBeTruthy();
+    screen.getByDisplayValue("chat");
     const provider = screen.getByRole("combobox", {
       name: "external_endpoints.fields.provider",
     });
@@ -1551,9 +1551,9 @@ describe("routing state regression", () => {
       name: "buttons.save",
     }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
-    expect(dialog.getByText("endpoint-running")).toBeTruthy();
-    expect(dialog.getByText("status.phases.endpoint.Running")).toBeTruthy();
-    expect(dialog.getByText("status.phases.endpoint.Deploying")).toBeTruthy();
+    dialog.getByText("endpoint-running");
+    dialog.getByText("status.phases.endpoint.Running");
+    dialog.getByText("status.phases.endpoint.Deploying");
     const picker = dialog.getByTestId("form-combobox-mock");
     fireEvent.change(picker, { target: { value: "missing-instance" } });
     expect(save.disabled).toBe(true);
@@ -1585,7 +1585,7 @@ describe("routing state regression", () => {
         }}
       />,
     );
-    expect(screen.getByDisplayValue("chat")).toBeTruthy();
+    screen.getByDisplayValue("chat");
     await submitRoutingForm();
     expect(submitEndpoint.mock.lastCall?.[0].spec.model_routes[0].model).toBe(
       "chat",
@@ -1783,7 +1783,7 @@ describe("draft route strategy changes", () => {
       { target: { value: "7" } },
     );
     switchMode("weighted");
-    expect(screen.getByRole("alertdialog")).toBeTruthy();
+    screen.getByRole("alertdialog");
     fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
     expect(screen.getByLabelText(modeLabel)).toHaveProperty(
       "value",

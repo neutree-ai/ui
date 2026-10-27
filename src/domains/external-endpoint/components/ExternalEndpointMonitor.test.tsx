@@ -69,7 +69,7 @@ describe("ExternalEndpointMonitor", () => {
         wrapper: MemoryRouter,
       },
     );
-    expect(screen.getByText("external_endpoints.monitor.legacy")).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.legacy");
     expect(screen.queryByTestId("grafana-dashboard")).toBeNull();
   });
 
@@ -94,7 +94,7 @@ describe("ExternalEndpointMonitor", () => {
     const loading = render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(screen.getByText("external_endpoints.monitor.loading")).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.loading");
     loading.unmount();
 
     const refetch = vi.fn();

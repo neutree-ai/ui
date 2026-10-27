@@ -140,7 +140,7 @@ describe("EnginesShow", () => {
 
     render(<EnginesShow />);
 
-    expect(screen.getByTitle("Loading...")).toBeTruthy();
+    screen.getByTitle("Loading...");
   });
 
   it("says the engine was not found when the query comes back empty", () => {
@@ -148,7 +148,7 @@ describe("EnginesShow", () => {
 
     render(<EnginesShow />);
 
-    expect(screen.getByText("pages.error.notFound")).toBeTruthy();
+    screen.getByText("pages.error.notFound");
   });
 
   it("names the only version instead of drawing a one-item list", () => {
@@ -264,9 +264,9 @@ describe("EnginesShow", () => {
     expect(
       screen.getByTestId("meta-engines.fields.supportedTasks").textContent,
     ).toBe("2");
-    expect(screen.getByText("text-generation")).toBeTruthy();
-    expect(screen.getByText("text-embedding")).toBeTruthy();
-    expect(screen.getByTestId("created-at")).toBeTruthy();
+    screen.getByText("text-generation");
+    screen.getByText("text-embedding");
+    screen.getByTestId("created-at");
   });
 
   it("renders an engine that declares no versions at all", () => {

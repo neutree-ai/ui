@@ -99,7 +99,7 @@ describe("EngineCard", () => {
     expect(screen.getByTestId("engine-latest-version").textContent).toBe(
       "v0.24.0",
     );
-    expect(screen.getByText("v0.17.1")).toBeTruthy(); // listed in the hover card
+    screen.getByText("v0.17.1"); // listed in the hover card
   });
 
   it("hides the status badge while the engine is in its steady phase", () => {
@@ -111,7 +111,7 @@ describe("EngineCard", () => {
   it("shows the status badge for a non-steady phase", () => {
     renderCard(engine({ versions: ["v0.24.0"], phase: "Pending" }));
 
-    expect(screen.getByText("Pending")).toBeTruthy();
+    screen.getByText("Pending");
   });
 
   it("offers no version entry point for a single-version engine", () => {
@@ -126,7 +126,7 @@ describe("EngineCard", () => {
   it("offers the full version list for a multi-version engine", () => {
     renderCard(engine({ versions: ["v0.17.1", "v0.24.0"], phase: "Created" }));
 
-    expect(screen.getByRole("button", { name: "2 versions" })).toBeTruthy();
+    screen.getByRole("button", { name: "2 versions" });
   });
 
   it("renders an engine that declares no versions, tasks or status", () => {

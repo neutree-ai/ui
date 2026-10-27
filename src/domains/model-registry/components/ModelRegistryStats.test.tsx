@@ -63,7 +63,7 @@ describe("registry counters", () => {
     // different facts, and only one of them is worth acting on.
     render(<ModelRegistryModelCount registry={registry("private")} />);
 
-    expect(screen.getByText("model_registries.stats.collecting")).toBeDefined();
+    screen.getByText("model_registries.stats.collecting");
     expect(screen.queryByText("0")).toBeNull();
   });
 
@@ -73,6 +73,6 @@ describe("registry counters", () => {
     // about the registry rather than a missing field.
     render(<ModelRegistryModelCount registry={registry(undefined)} />);
 
-    expect(screen.getByText("model_registries.stats.collecting")).toBeDefined();
+    screen.getByText("model_registries.stats.collecting");
   });
 });

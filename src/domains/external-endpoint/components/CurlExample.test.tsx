@@ -45,7 +45,7 @@ describe("CurlExample", () => {
     const { container } = renderExample(["gpt-6-astra", "gpt-5.6"]);
     const command = () => container.querySelector("pre")?.textContent ?? "";
     expect(command()).toContain("/v1/chat/completions");
-    expect(screen.getByRole("combobox")).toBeTruthy();
+    screen.getByRole("combobox");
 
     // Radix switches tabs on mousedown, not on click.
     fireEvent.mouseDown(

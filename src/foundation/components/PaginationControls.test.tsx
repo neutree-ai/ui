@@ -37,8 +37,8 @@ describe("PaginationControls", () => {
       />,
     );
 
-    expect(screen.getByText("table.pagination.rowsPerPage")).toBeDefined();
-    expect(screen.getByText("Total: 80 items")).toBeDefined();
+    screen.getByText("table.pagination.rowsPerPage");
+    screen.getByText("Total: 80 items");
     expect(
       screen.getByText('table.pagination.page{"current":1,"total":4}'),
     ).toBeDefined();
@@ -94,6 +94,6 @@ describe("PaginationControls", () => {
     );
 
     expect(screen.queryByText("table.pagination.rowsPerPage")).toBeNull();
-    expect(screen.getByText("Total: 30 items")).toBeDefined();
+    screen.getByText("Total: 30 items");
   });
 });

@@ -124,8 +124,8 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("GPU Device Resources")).toBeTruthy();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
+    screen.getByText("GPU Device Resources");
+    screen.getByText("GPU 1");
     expect(
       screen.getByText("GPU 1").closest("button")?.getAttribute("title"),
     ).toBe("Copy UUID");
@@ -141,8 +141,8 @@ describe("GpuDeviceResourcesView", () => {
       "GPU-11111111-2222-3333-4444-555555555555",
       expect.any(Object),
     );
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
-    expect(screen.getByText("Selected")).toBeTruthy();
+    screen.getByText("Tesla-T4");
+    screen.getByText("Selected");
     expect(screen.queryByText("Healthy")).toBeNull();
     expect(screen.queryByText("Unhealthy")).toBeNull();
     expect(screen.getAllByText("7.5 / 15.0 GiB").length).toBeGreaterThan(0);
@@ -158,7 +158,7 @@ describe("GpuDeviceResourcesView", () => {
       <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
     );
 
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
+    screen.getByText("Tesla-T4");
     expect(screen.queryByText("Selected")).toBeNull();
   });
 
@@ -275,8 +275,8 @@ describe("GpuDeviceResourcesView", () => {
       <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Product" })).toBeTruthy();
-    expect(screen.getByRole("combobox", { name: "Node" })).toBeTruthy();
+    screen.getByRole("combobox", { name: "Product" });
+    screen.getByRole("combobox", { name: "Node" });
   });
 
   it("keeps GPU number stable by UUID sort within each node", () => {
@@ -358,11 +358,11 @@ describe("GpuDeviceResourcesView", () => {
 
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
-    expect(screen.getByText("Node")).toBeTruthy();
-    expect(screen.getByText("node-a")).toBeTruthy();
-    expect(screen.getByText("Product")).toBeTruthy();
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
+    screen.getByText("GPU 1");
+    screen.getByText("Node");
+    screen.getByText("node-a");
+    screen.getByText("Product");
+    screen.getByText("Tesla-T4");
     fireEvent.click(
       screen.getByRole("button", {
         name: "GPU 1 Copy UUID",
@@ -372,7 +372,7 @@ describe("GpuDeviceResourcesView", () => {
       "GPU-11111111-2222-3333-4444-555555555555",
       expect.any(Object),
     );
-    expect(screen.getByText("Usable")).toBeTruthy();
+    screen.getByText("Usable");
     const usageRow = screen.getByTestId("gpu-device-resource-usage-row");
     expect(usageRow.className).toContain("grid-cols-2");
   });
@@ -406,7 +406,7 @@ describe("GpuDeviceResourcesView", () => {
       </TooltipProvider>,
     );
 
-    expect(screen.getByText("Unhealthy")).toBeTruthy();
+    screen.getByText("Unhealthy");
 
     // "0 / 0" would read as an idle card with capacity to spare. There is no
     // reading at all, so both metrics show a dash.
@@ -448,14 +448,14 @@ describe("GpuDeviceResourcesView", () => {
 
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
-    expect(screen.getByText("Healthy")).toBeTruthy();
-    expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
-    expect(screen.getByText("50 / 100")).toBeTruthy();
+    screen.getByText("GPU 1");
+    screen.getByText("Healthy");
+    screen.getByText("7.5 / 15.0 GiB");
+    screen.getByText("50 / 100");
     expect(screen.getAllByText("50%")).toHaveLength(2);
     expect(screen.getAllByText("Remaining")).toHaveLength(2);
-    expect(screen.getByText("7.5 GiB")).toBeTruthy();
-    expect(screen.getByText("50")).toBeTruthy();
+    screen.getByText("7.5 GiB");
+    screen.getByText("50");
     expect(screen.getAllByTestId("progress")).toHaveLength(2);
     // The cell used to hide the product behind a native `title`, so this line
     // read the other way round: the name was asserted *absent* from the grid.
@@ -566,7 +566,7 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("Allocated")).toBeTruthy();
+    screen.getByText("Allocated");
     expect(screen.queryByText("Usable")).toBeNull();
   });
 
@@ -589,9 +589,9 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByTestId("gpu-device-resource-toolbar")).toBeTruthy();
+    screen.getByTestId("gpu-device-resource-toolbar");
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
-    expect(screen.getByText("All Devices")).toBeTruthy();
+    screen.getByText("All Devices");
     expect(screen.queryByText("Summary")).toBeNull();
     expect(screen.queryByText("Nodes")).toBeNull();
     expect(screen.queryByText("Table")).toBeNull();

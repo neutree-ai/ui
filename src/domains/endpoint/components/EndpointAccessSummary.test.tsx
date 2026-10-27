@@ -30,8 +30,8 @@ describe("EndpointAccessSummary", () => {
   it("renders the summary and complete access URLs", () => {
     render(<EndpointAccessSummary serviceUrl="https://endpoint.example.com" />);
 
-    expect(screen.getByText("2 URLs")).toBeTruthy();
-    expect(screen.getByText("https://endpoint.example.com/v1")).toBeTruthy();
+    screen.getByText("2 URLs");
+    screen.getByText("https://endpoint.example.com/v1");
     expect(
       screen.getByText("https://endpoint.example.com/anthropic"),
     ).toBeTruthy();

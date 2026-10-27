@@ -72,7 +72,7 @@ describe("EnginesList", () => {
 
     render(<EnginesList />);
 
-    expect(screen.getByTitle("Loading...")).toBeTruthy();
+    screen.getByTitle("Loading...");
     expect(screen.queryAllByTestId("engine-card")).toHaveLength(0);
   });
 
@@ -91,7 +91,7 @@ describe("EnginesList", () => {
   it("shows the empty state when the workspace has no engines", () => {
     render(<EnginesList />);
 
-    expect(screen.getByText("engines.list.empty")).toBeTruthy();
+    screen.getByText("engines.list.empty");
   });
 
   it("says the engines failed to load instead of calling the workspace empty", () => {
@@ -103,7 +103,7 @@ describe("EnginesList", () => {
 
     render(<EnginesList />);
 
-    expect(screen.getByText("engines.list.loadFailed")).toBeTruthy();
+    screen.getByText("engines.list.loadFailed");
     expect(screen.queryByText("engines.list.empty")).toBeNull();
   });
 

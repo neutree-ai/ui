@@ -221,7 +221,7 @@ describe("ImageRegistryExplorerDialog", () => {
     open();
 
     expect((registrySelect() as HTMLSelectElement).value).toBe("cluster-hub");
-    expect(screen.getByText(/used by this cluster/)).toBeTruthy();
+    screen.getByText(/used by this cluster/);
   });
 
   it("is usable with no cluster picked at all", () => {
@@ -291,7 +291,7 @@ describe("ImageRegistryExplorerDialog", () => {
       expect(useImageRepositories).toHaveBeenLastCalledWith(
         expect.objectContaining({ enabled: true }),
       );
-      expect(screen.getByRole("option", { name: "mineru" })).toBeTruthy();
+      screen.getByRole("option", { name: "mineru" });
     });
 
     it("namespace-required: gives the namespace its own level", async () => {

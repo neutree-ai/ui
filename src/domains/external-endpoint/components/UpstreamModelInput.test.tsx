@@ -162,7 +162,7 @@ describe("upstream model selection", () => {
     expect(
       screen.queryByRole("option", { name: "stale-first-model" }),
     ).toBeNull();
-    expect(screen.getByRole("option", { name: "second-model" })).toBeTruthy();
+    screen.getByRole("option", { name: "second-model" });
   });
 
   it("clears a channel warning when its connection settings change or a retry succeeds", async () => {
