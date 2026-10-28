@@ -1,6 +1,7 @@
-import { useShow, useTranslation } from "@refinedev/core";
+import { useList, useShow, useTranslation } from "@refinedev/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
+import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
@@ -16,6 +17,7 @@ import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label"
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import type { Cluster } from "@/domains/cluster/types";
+import { zcacheStatus } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -25,16 +27,35 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
+import {
+  GpuObservationCard,
+  ObservationStatus,
+} from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { Table } from "@/foundation/components/Table";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+import {
+  gpuAllocations,
+  nodeL1CacheByNode,
+} from "@/foundation/lib/accelerator-observations";
+import {
+  parseTflops,
+  productPeakTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
+import {
+  getClusterSplitDashboardProps,
+  getZCacheDashboardProps,
+} from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
@@ -43,6 +64,25 @@ export const ClustersShow = () => {
     query: { data, isLoading },
   } = useShow<Cluster>({ queryOptions: { refetchInterval: 10000 } });
   const record = data?.data;
+  const observations = useAcceleratorObservations(
+    "clusters",
+    record?.metadata.workspace,
+    record?.metadata.name,
+  );
+  const { data: clusterEndpoints } = useList<Endpoint>({
+    resource: "endpoints",
+    meta: { workspace: record?.metadata.workspace, workspaced: true },
+    filters: [
+      {
+        field: "spec->cluster",
+        operator: "eq",
+        value: JSON.stringify(record?.metadata.name),
+      },
+    ],
+    pagination: { mode: "off" },
+    queryOptions: { enabled: !!record?.metadata.name, refetchInterval: 15000 },
+  });
+  const allocations = gpuAllocations(clusterEndpoints?.data ?? []);
 
   const { translate } = useTranslation();
   const { t } = useI18nTranslation();
@@ -50,7 +90,18 @@ export const ClustersShow = () => {
 
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
 
-  const { selectedPanel, showMonitorTab } = useClusterMonitorPanels();
+  const cacheStatus = zcacheStatus(record);
+  const l1ByNode = nodeL1CacheByNode(cacheStatus?.nodes, observations.samples);
+  const {
+    selectedPanel,
+    setSelectedPanel,
+    panels,
+    showSelector,
+    showMonitorTab,
+  } = useClusterMonitorPanels(
+    record?.spec.cache?.provider === "zcache" ||
+      record?.status?.cache?.provider === "zcache",
+  );
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -59,6 +110,24 @@ export const ClustersShow = () => {
   if (!record) {
     return <div>{t("clusters.messages.notFound")}</div>;
   }
+
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? selectedPanel === "cache"
+        ? getZCacheDashboardProps(grafanaUrl, {
+            workspace: record.metadata.workspace ?? "default",
+            clusterName: record.metadata.name,
+            nodes:
+              cacheStatus?.observed_at && !cacheStatus.observation_error
+                ? cacheStatus.nodes
+                : undefined,
+          })
+        : getClusterSplitDashboardProps(
+            grafanaUrl,
+            "overview",
+            record.metadata.name,
+          )
+      : null;
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
   const acceleratorVirtualizationEnabled =
@@ -195,14 +264,19 @@ export const ClustersShow = () => {
               </ShowPage.Section>
             )}
             {record.spec.type === "kubernetes" && (
-              <ClusterCacheSection cluster={record} />
+              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
             )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
                 <ClusterResourceSummary
                   resourceInfo={record.status.resource_info}
                   t={t}
-                />
+                >
+                  <ClusterFlops
+                    cluster={record}
+                    samples={observations.samples}
+                  />
+                </ClusterResourceSummary>
               </ShowPage.Section>
             )}
             {record.status?.resource_info?.node_resources &&
@@ -214,9 +288,14 @@ export const ClustersShow = () => {
                     <ResourceUsageLegend
                       items={[
                         {
-                          label: t("clusters.fields.vramUsed"),
+                          label: t("observations.actualMemory"),
                           markerClassName:
                             "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
+                        },
+                        {
+                          label: t("observations.allocated"),
+                          markerClassName:
+                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
                         },
                         {
                           label: t("clusters.fields.coreUsed"),
@@ -227,8 +306,32 @@ export const ClustersShow = () => {
                     />
                   }
                 >
+                  <ObservationStatus status={observations.status} />
                   <NodeResourcesTable
+                    renderGpuMemory={(row) => (
+                      <GpuObservationCard
+                        device={{
+                          node: row.nodeName,
+                          uuid: row.uuid,
+                          index: row.gpuNumber,
+                          product: row.product,
+                          peakFP16TFLOPS: productPeakTflops(
+                            record.status?.resource_info,
+                            row.product,
+                          ),
+                          totalMiB: row.memory.total,
+                          allocatedMiB: row.memory.used,
+                          healthy: row.healthy,
+                        }}
+                        tflopsOverrides={parseTflops(
+                          record.metadata.annotations?.[TFLOPS_ANNOTATION],
+                        )}
+                        samples={observations.samples}
+                        allocations={allocations}
+                      />
+                    )}
                     nodeResources={record.status.resource_info.node_resources}
+                    l1CacheByNode={l1ByNode}
                     acceleratorTypes={Object.keys(
                       record.status.resource_info.allocatable
                         ?.accelerator_groups || {},
@@ -408,15 +511,33 @@ export const ClustersShow = () => {
             >
               {grafanaUrl ? (
                 <div className="flex flex-col gap-4 h-full">
-                  {selectedPanel && (
+                  <div className="flex items-center justify-between gap-4 pb-2">
+                    {showSelector && (
+                      <SegmentedControl
+                        ariaLabel={t("common.tabs.monitor")}
+                        items={panels.map((panel) => ({
+                          value: panel,
+                          label: t(
+                            panel === "cache"
+                              ? "clusters.monitor.cache"
+                              : "clusters.monitor.overview",
+                          ),
+                        }))}
+                        value={selectedPanel}
+                        onValueChange={setSelectedPanel}
+                      />
+                    )}
+                    {monitorDashboardProps && (
+                      <div className="ml-auto shrink-0">
+                        <GrafanaDashboardLink {...monitorDashboardProps} />
+                      </div>
+                    )}
+                  </div>
+                  {monitorDashboardProps && (
                     <GrafanaDashboard
-                      {...getClusterSplitDashboardProps(
-                        grafanaUrl,
-                        selectedPanel,
-                        record.metadata.name,
-                      )}
+                      {...monitorDashboardProps}
                       className="flex-1"
-                      hideVariables
+                      hideVariables={selectedPanel !== "cache"}
                     />
                   )}
                 </div>

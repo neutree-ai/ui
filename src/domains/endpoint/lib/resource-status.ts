@@ -26,6 +26,9 @@ export type EndpointReplicaResourceRow = {
   coreUnits: number;
   physicalMemoryMiB: number | null;
   actualMemoryMiB: number | null;
+  modelWeightsMiB: number | null;
+  kvCacheCapacityMiB: number | null;
+  vdeviceIndex?: string | null;
 };
 
 export type EndpointReplicaNodeResourceGroup = {
@@ -84,12 +87,15 @@ const toReplicaResourceRow = (
     replicaId: replica.replica_id ?? "",
     nodeId: device.node_id || replica.node_id || "",
     uuid: device.uuid,
+    vdeviceIndex: device.vdevice_index,
     order: getDeviceOrder(device.order),
     product: device.product,
     memoryMiB: device.memory_mib,
     coreUnits: device.core_units,
     physicalMemoryMiB,
     actualMemoryMiB,
+    modelWeightsMiB: replica.model_weights_mib ?? null,
+    kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
   };
 };
 

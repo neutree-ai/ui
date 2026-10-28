@@ -17,6 +17,7 @@ export type AcceleratorProductResources = {
 };
 
 export type AcceleratorProductMetadata = {
+  peak_fp16_tflops?: number | null;
   memory_total_mib?: number | null;
 };
 
@@ -126,6 +127,7 @@ export type ClusterResourceInfo = ResourceStatus & {
 };
 
 export type DeviceAllocation = {
+  vdevice_index?: string | null;
   uuid: string;
   order?: number | null;
   product: string;
@@ -145,6 +147,9 @@ export type ReplicaDeviceAllocation = {
   instance_id: string;
   replica_id?: string | null;
   node_id?: string | null;
+  container_id?: string | null;
+  model_weights_mib?: number | null;
+  kv_cache_capacity_mib?: number | null;
   devices?: DeviceAllocation[] | null;
 };
 

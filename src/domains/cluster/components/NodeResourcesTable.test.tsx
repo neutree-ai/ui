@@ -189,4 +189,31 @@ describe("NodeResourcesTable", () => {
     // Nothing is left to pad: the wrapped rows are the topology now.
     expect(screen.queryByTestId("gpu-device-grid-empty-cell")).toBeNull();
   });
+
+  it("renders unified node L1 KV-Cache usage when l1CacheByNode is provided", () => {
+    render(
+      <NodeResourcesTable
+        nodeResources={{
+          "node-a": {
+            allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
+            available: { cpu: 12, memory: 48, accelerator_groups: null },
+            devices: [],
+          },
+        }}
+        l1CacheByNode={{
+          "node-a": {
+            usedGiB: 12.5,
+            capacityGiB: 32.0,
+          },
+        }}
+        acceleratorTypes={[]}
+        t={t}
+      />,
+    );
+
+    const l1Bar = screen.getByTestId("node-l1-cache-bar");
+    expect(l1Bar.textContent).toContain("observations.l1KvCache");
+    expect(l1Bar.textContent).toContain("12.5 / 32.0 GiB");
+    expect(l1Bar.textContent).toContain("39%");
+  });
 });

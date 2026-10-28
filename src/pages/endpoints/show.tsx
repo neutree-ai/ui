@@ -8,13 +8,14 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
-import type { Cluster } from "@/domains/cluster/types";
+import { type Cluster, zcacheStatus } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKVCacheSummary";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
+import { EndpointPerformanceCard } from "@/domains/endpoint/components/EndpointPerformanceCard";
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
 } from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
@@ -33,14 +34,29 @@ import {
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
+import {
+  GpuObservationCard,
+  ObservationStatus,
+} from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import {
+  gpuAllocations,
+  nodeL1CacheByNode,
+} from "@/foundation/lib/accelerator-observations";
+import {
+  parseTflops,
+  productPeakTflops,
+  TFLOPS_ANNOTATION,
+} from "@/foundation/lib/accelerator-tflops";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 
@@ -141,8 +157,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { grafanaUrl, systemInfo } = useSystemApi();
   const {
     query: { data, isLoading },
-  } = useShow<Endpoint>();
+  } = useShow<Endpoint>({ queryOptions: { refetchInterval: 15000 } });
   const record = data?.data;
+  const observations = useAcceleratorObservations(
+    "endpoints",
+    record?.metadata.workspace,
+    record?.metadata.name,
+  );
+  const allocations = gpuAllocations(record ? [record] : []);
+  const gpuSamples =
+    record?.status?.phase === "Paused" ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -167,9 +191,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     ],
     queryOptions: {
       enabled: Boolean(record?.spec.cluster),
+      refetchInterval: 30_000,
     },
   });
 
+  const cacheStatus = zcacheStatus(clusterData?.data?.[0]);
   const clusterType = clusterData?.data?.[0]?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
@@ -193,6 +219,21 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   if (!record) {
     return <div>{t("pages.error.notFound")}</div>;
   }
+
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? getEndpointSplitDashboardProps(grafanaUrl, selectedPanel, {
+          clusterName: record.spec.cluster,
+          endpointName: record.metadata.name,
+          workspace: record.metadata.workspace ?? "default",
+          cacheNodes:
+            record.spec.kv_cache?.provider === "zcache" &&
+            cacheStatus?.current?.enabled &&
+            !cacheStatus.observation_error
+              ? cacheStatus.nodes?.filter((node) => node.runtime === "Ready")
+              : undefined,
+        })
+      : null;
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
@@ -336,6 +377,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 cluster={clusterData?.data?.[0]}
               />
             )}
+            <EndpointPerformanceCard
+              workspace={record.metadata.workspace}
+              name={record.metadata.name}
+              paused={record.status?.phase === "Paused"}
+            />
             <div className="space-y-3">
               <ShowPage.Section
                 title={t("endpoints.sections.runtimeAllocation")}
@@ -346,7 +392,55 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 }
               >
                 <div className="space-y-6">
+                  <ObservationStatus
+                    status={
+                      record.status?.phase === "Paused"
+                        ? "no_data"
+                        : observations.status
+                    }
+                  />
                   <EndpointRuntimeResourcesCard
+                    renderMemory={(device, deviceIndex) => (
+                      <GpuObservationCard
+                        device={{
+                          node: device.nodeId,
+                          uuid: device.uuid,
+                          index: device.order ?? deviceIndex + 1,
+                          product: device.product,
+                          peakFP16TFLOPS: productPeakTflops(
+                            clusterData?.data?.[0]?.status?.resource_info,
+                            device.product,
+                          ),
+                          totalMiB: device.physicalMemoryMiB,
+                          allocatedMiB: device.memoryMiB,
+                        }}
+                        tflopsOverrides={parseTflops(
+                          clusterData?.data?.[0]?.metadata.annotations?.[
+                            TFLOPS_ANNOTATION
+                          ],
+                        )}
+                        samples={gpuSamples}
+                        allocations={allocations}
+                        replica={{
+                          endpoint: record.metadata.name,
+                          workspace: record.metadata.workspace ?? "default",
+                          model: record.spec.model?.name ?? "",
+                          node: device.nodeId,
+                          uuid: device.uuid,
+                          replica: device.replicaId,
+                          instance: device.instanceId,
+                          vdevice: device.vdeviceIndex ?? undefined,
+                          memoryMiB: device.memoryMiB,
+                          modelWeightsMiB: device.modelWeightsMiB,
+                          kvCacheCapacityMiB: device.kvCacheCapacityMiB,
+                        }}
+                      />
+                    )}
+                    l1CacheByNode={
+                      record.spec.kv_cache?.provider === "zcache"
+                        ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
+                        : undefined
+                    }
                     resources={record.status?.resources}
                     requestedResources={record.spec.resources}
                     clusterResourceInfo={
@@ -379,8 +473,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           >
             {grafanaUrl ? (
               <div className="flex flex-col gap-4 h-full">
-                {showSelector && (
-                  <div className="flex justify-start pb-2">
+                <div className="flex items-center justify-between gap-4 pb-2">
+                  {showSelector && (
                     <SegmentedControl
                       ariaLabel={t("common.tabs.monitor")}
                       className="shrink-0"
@@ -410,21 +504,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       onValueChange={setSelectedPanel}
                       value={selectedPanel || undefined}
                     />
-                  </div>
-                )}
+                  )}
+                  {monitorDashboardProps && (
+                    <div className="ml-auto shrink-0">
+                      <GrafanaDashboardLink {...monitorDashboardProps} />
+                    </div>
+                  )}
+                </div>
 
-                {selectedPanel ? (
+                {monitorDashboardProps ? (
                   <GrafanaDashboard
-                    {...getEndpointSplitDashboardProps(
-                      grafanaUrl,
-                      selectedPanel,
-                      {
-                        clusterName: record.spec.cluster,
-                        endpointName: record.metadata.name,
-                      },
-                    )}
+                    {...monitorDashboardProps}
                     className="flex-1"
-                    hideVariables
+                    hideVariables={selectedPanel !== "cache"}
                   />
                 ) : null}
               </div>
