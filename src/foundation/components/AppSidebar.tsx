@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import {
   buildMenuItemPaths,
@@ -38,7 +39,20 @@ type AppSidebarMenuItemProps = {
   state: "collapsed" | "expanded";
 };
 
-function AppSidebarMenuItem({ item, state }: AppSidebarMenuItemProps) {
+// A resource whose meta names a requiredPermission is listed only for users
+// holding it (and not while that is still being checked, to avoid a flash).
+function AppSidebarMenuItem(props: AppSidebarMenuItemProps) {
+  const requiredPermission = props.item.meta?.requiredPermission as
+    | string
+    | undefined;
+  const { allowed } = useHasPermission(requiredPermission);
+  if (!allowed) {
+    return null;
+  }
+  return <AppSidebarMenuLink {...props} />;
+}
+
+function AppSidebarMenuLink({ item, state }: AppSidebarMenuItemProps) {
   const resourceParams = useResourceParams();
   const { current: currentWorkspace } = useWorkspace();
   const { pathname } = useLocation();
