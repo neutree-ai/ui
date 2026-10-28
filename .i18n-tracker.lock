@@ -459,10 +459,11 @@
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/foundation/components/GrafanaDashboardLink.tsx": "8759bc1412fb0d563189892ce8269b31",
   "src/foundation/lib/accelerator-observations.ts": "a3ae15857550ba53348e3c821ef5a337",
-  "src/foundation/lib/accelerator-tflops.ts": "0e2a8eaf98c6c0cb2839a7d4be8c2dbb",
+  "src/foundation/lib/accelerator-tflops.ts": "dee2df38e757ac9f915e132d49c98b50",
   "src/foundation/hooks/use-accelerator-observations.ts": "ce032daa0e2e1ce5adae80193f0edc42",
-  "src/foundation/components/GpuObservationCard.tsx": "da504af1023665511294128737ae336d",
+  "src/foundation/components/GpuObservationCard.tsx": "86d4eb0bcbd2449ef30502da78e5fd58",
   "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c",
   "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "8bd159b754c5c548bb9e2b3c30122165",
-  "src/domains/cluster/components/ClusterFlops.tsx": "0020850b1e1272edc2e34d9691c5b908"
+  "src/domains/cluster/components/ClusterFlops.tsx": "0020850b1e1272edc2e34d9691c5b908",
+  "src/foundation/lib/accelerator-extra-info.ts": "a2cf08b37459b028d29f34e7f8e835fb"
 }
