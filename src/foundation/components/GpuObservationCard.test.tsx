@@ -249,3 +249,63 @@ describe("GPU observation card", () => {
     expect(Number.parseFloat(kvSegments[1].style.width)).toBeCloseTo(50, 3);
   });
 });
+
+it("merges generic hardware extensions for the current device in a stable order", () => {
+  const info = (
+    metric: string,
+    node: string,
+    uuid: string,
+    driver: string,
+  ): AcceleratorSample => ({
+    metric,
+    labels: { node, accelerator_uuid: uuid, driver_version: driver },
+    value: 1,
+    observed_at: 1,
+  });
+  const data = [
+    info(
+      "neutree_node_accelerator_example_info",
+      "node",
+      "gpu",
+      "extension-driver",
+    ),
+    info(
+      "neutree_node_accelerator_hardware_info",
+      "node",
+      "gpu",
+      "generic-driver",
+    ),
+    info(
+      "neutree_node_accelerator_example_info",
+      "other-node",
+      "gpu",
+      "wrong-node",
+    ),
+    info(
+      "neutree_node_accelerator_example_info",
+      "node",
+      "other-gpu",
+      "wrong-gpu",
+    ),
+    info("not_hardware_info", "node", "gpu", "wrong-metric"),
+  ];
+  const card = (samples: AcceleratorSample[]) => (
+    <MemoryRouter>
+      <TooltipProvider>
+        <GpuObservationCard
+          device={device}
+          samples={samples}
+          allocations={[]}
+        />
+      </TooltipProvider>
+    </MemoryRouter>
+  );
+  const { rerender } = render(card(data));
+  fireEvent.click(screen.getByRole("button", { name: "observations.details" }));
+  expect(screen.getByText("extension-driver")).toBeTruthy();
+  expect(screen.queryByText("wrong-node")).toBeNull();
+  expect(screen.queryByText("wrong-gpu")).toBeNull();
+  expect(screen.queryByText("wrong-metric")).toBeNull();
+  rerender(card([...data].reverse()));
+  expect(screen.getByText("extension-driver")).toBeTruthy();
+});
