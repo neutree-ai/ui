@@ -49,6 +49,7 @@ import {
 } from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
+  productPeakTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
 import {
@@ -314,6 +315,10 @@ export const ClustersShow = () => {
                           uuid: row.uuid,
                           index: row.gpuNumber,
                           product: row.product,
+                          peakFP16TFLOPS: productPeakTflops(
+                            record.status?.resource_info,
+                            row.product,
+                          ),
                           totalMiB: row.memory.total,
                           allocatedMiB: row.memory.used,
                           healthy: row.healthy,

@@ -17,6 +17,7 @@ export type AcceleratorProductResources = {
 };
 
 export type AcceleratorProductMetadata = {
+  peak_fp16_tflops?: number | null;
   memory_total_mib?: number | null;
 };
 

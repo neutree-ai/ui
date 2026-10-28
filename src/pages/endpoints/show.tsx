@@ -54,6 +54,7 @@ import {
 } from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
+  productPeakTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
@@ -406,6 +407,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                           uuid: device.uuid,
                           index: device.order ?? deviceIndex + 1,
                           product: device.product,
+                          peakFP16TFLOPS: productPeakTflops(
+                            clusterData?.data?.[0]?.status?.resource_info,
+                            device.product,
+                          ),
                           totalMiB: device.physicalMemoryMiB,
                           allocatedMiB: device.memoryMiB,
                         }}
