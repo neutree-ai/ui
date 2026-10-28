@@ -2,12 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: { days?: number }) => `${key}:${opts?.days}`,
-  }),
-}));
-
 import {
   type DateRange,
   DateRangePicker,

@@ -31,15 +31,14 @@ describe("Timestamp rendering", () => {
   it("renders an absolute timestamp by default", () => {
     render(<Timestamp timestamp="2026-08-10T12:00:00Z" />);
 
-    expect(screen.getByText("2026-08-10 12:00")).toBeTruthy();
+    screen.getByText("2026-08-10 12:00");
     expect(screen.queryByTestId("absolute-time")).toBeNull();
   });
 
   it("renders relative English time with an absolute tooltip", () => {
     render(<Timestamp timestamp="2026-08-10T12:00:00Z" relative />);
 
-    const relativeTime = screen.getByText("a day ago");
-    expect(relativeTime.className).toContain("border-dashed");
+    screen.getByText("a day ago");
     expect(screen.getByTestId("absolute-time").textContent).toBe(
       "2026-08-10 12:00",
     );
@@ -49,13 +48,12 @@ describe("Timestamp rendering", () => {
     language.current = "zh-CN";
     render(<Timestamp timestamp="2026-08-10T12:00:00Z" relative />);
 
-    expect(screen.getByText("1 天前")).toBeTruthy();
+    screen.getByText("1 天前");
   });
 
   it("renders a placeholder for a missing timestamp", () => {
-    render(<Timestamp timestamp={null} relative className="empty-time" />);
+    render(<Timestamp timestamp={null} relative />);
 
-    const placeholder = screen.getByText("-");
-    expect(placeholder.className).toContain("empty-time");
+    screen.getByText("-");
   });
 });

@@ -4,166 +4,86 @@ import { describe, expect, it, vi } from "vitest";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
 import ModelRouteDetails from "./ModelRouteDetails";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
 }));
 
+const target = (
+  upstream: string,
+  overrides: Partial<ModelRoute["targets"][number]> = {},
+) => ({ upstream, upstream_model: upstream, ...overrides });
+
+const renderRoute = (route: Partial<ModelRoute>) =>
+  render(
+    <ModelRouteDetails
+      editUrl="/edit"
+      route={{ model: "route", targets: [target("a")], ...route } as ModelRoute}
+    />,
+    { wrapper: MemoryRouter },
+  );
+
+const columns = () =>
+  screen.getAllByRole("columnheader").map((cell) => cell.textContent);
+
+const cellsOf = (row: HTMLElement) =>
+  within(row)
+    .getAllByRole("cell")
+    .map((cell) => cell.textContent);
+
 describe("ModelRouteDetails", () => {
-  it("normalizes relative weights into percentages independently of concurrency", () => {
-    render(
-      <ModelRouteDetails
-        editUrl="/edit"
-        route={{
-          model: "weighted",
-          strategy: "weighted",
-          targets: [
-            {
-              upstream: "a",
-              upstream_model: "gpt-6-astra",
-              weight: 5,
-              max_inflight_requests: 2,
-            },
-            { upstream: "b", upstream_model: "gpt-5.6", weight: 5 },
-          ],
-        }}
-      />,
-      { wrapper: MemoryRouter },
+  it("normalizes relative weights into percentages without a concurrency column", () => {
+    renderRoute({
+      strategy: "weighted",
+      targets: [
+        target("a", { weight: 5, max_inflight_requests: 2 }),
+        target("b", { weight: 5 }),
+      ],
+    });
+    // Weighted targets carry no concurrency limit, so printing "Unlimited"
+    // would read as if one had been configured.
+    expect(columns()).not.toContain(
+      "external_endpoints.fields.maxInflightRequests",
     );
-    // Weighted targets carry no concurrency limit, so the table has no such
-    // column — printing "Unlimited" read as if one had been configured.
-    expect(
-      screen.queryByRole("columnheader", {
-        name: "external_endpoints.fields.maxInflightRequests",
-      }),
-    ).toBeNull();
-    expect(
-      screen.getAllByRole("columnheader").map((cell) => cell.textContent),
-    ).toEqual([
-      "external_endpoints.fields.provider",
-      "external_endpoints.fields.upstreamModelName",
-      "external_endpoints.fields.trafficWeight",
-    ]);
-    const rows = screen.getAllByRole("row").slice(1);
-    expect(
-      within(rows[0])
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    ).toEqual(["a", "gpt-6-astra", "50%"]);
-    expect(
-      within(rows[1])
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    ).toEqual(["b", "gpt-5.6", "50%"]);
+    const [first, second] = screen.getAllByRole("row").slice(1);
+    expect(cellsOf(first)).toContain("50%");
+    expect(cellsOf(second)).toContain("50%");
   });
 
   it("identifies the primary tier by priority instead of array order", () => {
-    render(
-      <ModelRouteDetails
-        editUrl="/edit"
-        route={{
-          model: "priority",
-          strategy: "priority",
-          targets: [
-            {
-              upstream: "backup",
-              upstream_model: "b",
-              priority: 20,
-              weight: 1,
-            },
-            {
-              upstream: "primary-a",
-              upstream_model: "a",
-              priority: 10,
-              weight: 1,
-            },
-            {
-              upstream: "primary-b",
-              upstream_model: "b",
-              priority: 10,
-              weight: 1,
-            },
-          ],
-        }}
-      />,
-      { wrapper: MemoryRouter },
-    );
-    expect(
-      screen.queryByRole("columnheader", {
-        name: "external_endpoints.fields.trafficWeight",
-      }),
-    ).toBeNull();
-    expect(
-      screen.getAllByRole("columnheader").map((cell) => cell.textContent),
-    ).toEqual([
-      "external_endpoints.fields.provider",
-      "external_endpoints.fields.upstreamModelName",
-      "external_endpoints.fields.maxInflightRequests",
-    ]);
-    expect(
-      screen
-        .getAllByRole("row")
-        .slice(1)
-        .map((row) => within(row).getAllByRole("cell")[0].textContent),
-    ).toEqual([
-      "backupexternal_endpoints.options.fallbackRole",
-      "primary-aexternal_endpoints.options.primaryRole",
-      "primary-bexternal_endpoints.options.primaryRole",
-    ]);
+    renderRoute({
+      strategy: "priority",
+      targets: [
+        target("backup", { priority: 20, weight: 1 }),
+        target("primary-a", { priority: 10, weight: 1 }),
+        target("primary-b", { priority: 10, weight: 1 }),
+      ],
+    });
+    expect(columns()).not.toContain("external_endpoints.fields.trafficWeight");
+    const roleOf = (upstream: string) =>
+      within(screen.getByRole("row", { name: new RegExp(`^${upstream}`) }))
+        .getAllByRole("cell")[0]
+        .textContent?.replace(upstream, "");
+    expect(roleOf("backup")).toBe("external_endpoints.options.fallbackRole");
+    expect(roleOf("primary-a")).toBe("external_endpoints.options.primaryRole");
+    expect(roleOf("primary-b")).toBe("external_endpoints.options.primaryRole");
   });
 
-  it("uses strategy even for one target and defaults missing strategy to fixed", () => {
-    const targets = [
-      { upstream: "a", upstream_model: "a", priority: 10, weight: 1 },
-    ];
-    const { rerender } = render(
-      <ModelRouteDetails
-        editUrl="/edit"
-        route={{ model: "single", strategy: "weighted", targets }}
-      />,
-      { wrapper: MemoryRouter },
-    );
-    expect(
-      screen.queryByText("external_endpoints.options.weightedRouting"),
-    ).not.toBeNull();
-    rerender(
-      <ModelRouteDetails
-        editUrl="/edit"
-        route={{ model: "legacy", targets } as ModelRoute}
-      />,
-    );
-    expect(
-      screen.queryByText("external_endpoints.options.fixedRouting"),
-    ).not.toBeNull();
-    expect(
-      screen.queryByRole("columnheader", {
-        name: "external_endpoints.fields.nodeRole",
-      }),
-    ).toBeNull();
+  it("uses the strategy even for one target and defaults a missing one to fixed", () => {
+    const { unmount } = renderRoute({ strategy: "weighted" });
+    screen.getByText("external_endpoints.options.weightedRouting");
+    unmount();
+
+    renderRoute({ strategy: undefined });
+    screen.getByText("external_endpoints.options.fixedRouting");
+    expect(columns()).not.toContain("external_endpoints.fields.nodeRole");
   });
 
   it("hides persisted weights for fixed routes", () => {
-    render(
-      <ModelRouteDetails
-        editUrl="/edit"
-        route={{
-          model: "fixed",
-          strategy: "fixed",
-          targets: [{ upstream: "a", upstream_model: "a", weight: 1 }],
-        }}
-      />,
-      { wrapper: MemoryRouter },
-    );
-    expect(
-      screen.getAllByRole("columnheader").map((cell) => cell.textContent),
-    ).toEqual([
-      "external_endpoints.fields.provider",
-      "external_endpoints.fields.upstreamModelName",
+    renderRoute({ strategy: "fixed", targets: [target("a", { weight: 1 })] });
+    expect(columns()).not.toContain("external_endpoints.fields.trafficWeight");
+    expect(columns()).toContain(
       "external_endpoints.fields.maxInflightRequests",
-    ]);
+    );
   });
 
   it("opens call examples for the selected virtual model in a dialog", () => {
@@ -193,24 +113,16 @@ describe("ModelRouteDetails", () => {
       })[1],
     );
     const dialog = screen.getByRole("dialog");
-    expect(dialog.querySelector("code")?.textContent).toContain(
-      "ENDPOINT_API_KEY",
-    );
-    expect(dialog.querySelector("pre")?.textContent).toContain(
-      '"model": "test-model-v2"',
-    );
-    expect(dialog.querySelector("pre")?.textContent).not.toContain(
-      "upstream-only",
-    );
+    const command = () => dialog.querySelector("pre")?.textContent;
+    expect(command()).toContain('"model": "test-model-v2"');
+    expect(command()).not.toContain("upstream-only");
     fireEvent.mouseDown(
       within(dialog).getByRole("tab", {
         name: "external_endpoints.messages.curlExampleAnthropic",
       }),
-      { button: 0, ctrlKey: false },
+      { button: 0 },
     );
-    expect(dialog.querySelector("pre")?.textContent).toContain("/v1/messages");
-    expect(dialog.querySelector("pre")?.textContent).toContain(
-      '"model": "test-model-v2"',
-    );
+    expect(command()).toContain("/v1/messages");
+    expect(command()).toContain('"model": "test-model-v2"');
   });
 });

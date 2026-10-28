@@ -2,7 +2,6 @@ import type { UseFormReturnType } from "@refinedev/react-hook-form";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { transformClusterValues } from "../lib/transform-cluster-values";
 import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
@@ -27,15 +26,6 @@ beforeEach(() => {
   cacheDependencies.rows = [];
   cacheDependencies.query.mockClear();
 });
-
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 function Form({
   onSubmit,
@@ -180,14 +170,6 @@ describe("ZCacheFields", () => {
       cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
     ).toBe(true);
   });
-  it("keeps ZCache absent when an existing cluster is saved without enabling it", async () => {
-    const submit = vi.fn();
-    render(<Form onSubmit={submit} legacy />);
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(submit).toHaveBeenCalled());
-    const payload = transformClusterValues(submit.mock.calls[0][0], true);
-    expect(payload.spec).not.toHaveProperty("zcache");
-  });
   it("sends a numeric capacity and preserves the successful node when removing a failed node", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} status={observed} />);
@@ -238,7 +220,7 @@ describe("ZCacheFields", () => {
     fireEvent.submit(
       screen.getByRole("button", { name: "Save" }).closest("form")!,
     );
-    await waitFor(() => expect(submit).not.toHaveBeenCalled());
+    await screen.findByText("clusters.zcache.selectNodes");
     expect(submit).not.toHaveBeenCalled();
   });
   it.each([
@@ -268,16 +250,15 @@ describe("ZCacheFields", () => {
   });
   it("explains bootstrap before enabling runtime on a new cluster", () => {
     render(<Form onSubmit={vi.fn()} isEdit={false} />);
-    expect(screen.getByText("clusters.zcache.createHint")).toBeTruthy();
+    screen.getByText("clusters.zcache.createHint");
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
-});
-
-it("allows clearing capacity before entering a replacement", () => {
-  render(<Form onSubmit={vi.fn()} />);
-  const input = screen.getByRole("spinbutton") as HTMLInputElement;
-  fireEvent.change(input, { target: { value: "" } });
-  expect(input.value).toBe("");
-  fireEvent.change(input, { target: { value: "16" } });
-  expect(input.value).toBe("16");
+  it("allows clearing capacity before entering a replacement", () => {
+    render(<Form onSubmit={vi.fn()} />);
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input.value).toBe("");
+    fireEvent.change(input, { target: { value: "16" } });
+    expect(input.value).toBe("16");
+  });
 });

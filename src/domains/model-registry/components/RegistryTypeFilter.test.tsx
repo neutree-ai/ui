@@ -2,6 +2,7 @@ import type { CrudFilter, LogicalFilter } from "@refinedev/core";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
+import { openMenu } from "@/foundation/testing/interactions";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => MESSAGES[key] ?? key }),
@@ -24,12 +25,7 @@ const MESSAGES: Record<string, string> = {
  */
 const TYPE_FIELD = "spec->>type";
 
-const open = () =>
-  fireEvent.pointerDown(screen.getByTestId("registry-type-filter"), {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
-  });
+const open = () => openMenu(screen.getByTestId("registry-type-filter"));
 
 // Scoped to the menu: the trigger shows the selected option's own label, so
 // matching on text alone finds two nodes as soon as the two agree.

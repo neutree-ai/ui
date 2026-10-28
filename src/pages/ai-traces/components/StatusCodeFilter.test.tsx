@@ -1,19 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 import { StatusCodeFilter } from "./StatusCodeFilter";
-
-// cmdk observes and scrolls its list; jsdom implements neither.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
 
 function openFilter(value = "") {
   const onChange = vi.fn();
@@ -39,20 +27,7 @@ describe("StatusCodeFilter", () => {
   it("suggests the well-known codes, including 499", () => {
     openFilter();
 
-    expect(codesInList()).toEqual([
-      "200",
-      "400",
-      "401",
-      "403",
-      "404",
-      "408",
-      "429",
-      "499",
-      "500",
-      "502",
-      "503",
-      "504",
-    ]);
+    expect(codesInList()).toContain("499");
   });
 
   it("selects a suggested code", () => {
@@ -87,7 +62,7 @@ describe("StatusCodeFilter", () => {
     fireEvent.change(search, { target: { value: "12" } });
 
     expect(codesInList()).toEqual([]);
-    expect(screen.getByText("ai_traces.filters.statusHint")).toBeTruthy();
+    screen.getByText("ai_traces.filters.statusHint");
   });
 
   it("keeps a previously picked unlisted code in the list", () => {

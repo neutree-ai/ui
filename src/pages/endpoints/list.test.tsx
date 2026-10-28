@@ -3,20 +3,6 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EndpointsList } from "@/pages/endpoints/list";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ?? key,
-  }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ?? key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
@@ -124,8 +110,10 @@ describe("EndpointsList model column", () => {
 
     render(<EndpointsList />);
 
-    expect(modelCell().getByText("-")).toBeTruthy();
-    expect(modelCell().queryByText("self-hosted")).toBeNull();
+    modelCell().getByText("-");
+    expect(
+      modelCell().queryByText("modelSource.values.self-hosted"),
+    ).toBeNull();
   });
 
   it("keeps the model and its source label together", () => {
@@ -139,7 +127,7 @@ describe("EndpointsList model column", () => {
 
     render(<EndpointsList />);
 
-    expect(modelCell().getByText("Qwen/Qwen3-8B:3.0")).toBeTruthy();
-    expect(modelCell().getByText("self-hosted")).toBeTruthy();
+    modelCell().getByText("Qwen/Qwen3-8B:3.0");
+    modelCell().getByText("modelSource.values.self-hosted");
   });
 });

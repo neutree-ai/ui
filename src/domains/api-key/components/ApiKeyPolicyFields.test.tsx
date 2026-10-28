@@ -2,23 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
-// cmdk (used by the comboboxes) observes its list on mount; jsdom has no
-// ResizeObserver, so stub it before rendering.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = () => {};
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // The picker is exercised by its own tests; here it only has to not need a
 // workspace listing.
 vi.mock("@/domains/api-key/components/ModelMultiSelect", () => ({
@@ -81,19 +64,15 @@ function Harness({ models = [] as PolicyModelRow[] }) {
 
 const overallAmount = () =>
   screen.getByLabelText("api_keys.limits.tokenLimit") as HTMLInputElement;
-// `t` is stubbed to return the bare key, so every row's limit input shares one
-// accessible name; index into them rather than naming a model.
 const modelLimits = () =>
   screen.getAllByLabelText(
-    "api_keys.limits.perModel.limitLabel",
+    /^api_keys\.limits\.perModel\.limitLabel/,
   ) as HTMLInputElement[];
 
 describe("ApiKeyPolicyFields", () => {
   it("offers only the overall quota while the allowlist is empty", () => {
     render(<Harness />);
-    expect(
-      screen.getByText("api_keys.limits.perModel.emptyAllowlist"),
-    ).toBeTruthy();
+    screen.getByText("api_keys.limits.perModel.emptyAllowlist");
     expect(overallAmount().disabled).toBe(false);
   });
 
@@ -105,9 +84,7 @@ describe("ApiKeyPolicyFields", () => {
     await waitFor(() => {
       expect(overallAmount().disabled).toBe(true);
     });
-    expect(
-      screen.getByText("api_keys.limits.perModel.overallSuspended"),
-    ).toBeTruthy();
+    screen.getByText("api_keys.limits.perModel.overallSuspended");
 
     fireEvent.change(modelLimits()[0], { target: { value: "" } });
     await waitFor(() => {
@@ -126,22 +103,20 @@ describe("ApiKeyPolicyFields", () => {
     );
     // No limit anywhere yet: a migrated any-source entry alongside a pinned one
     // is legal and must not be flagged.
-    expect(screen.queryByText("api_keys.limits.perModel.overlap")).toBeNull();
+    expect(
+      screen.queryByText(/^api_keys\.limits\.perModel\.overlap:/),
+    ).toBeNull();
 
     fireEvent.change(modelLimits()[0], { target: { value: "2" } });
     await waitFor(() => {
       expect(
-        screen.getAllByText("api_keys.limits.perModel.overlap").length,
+        screen.getAllByText(/^api_keys\.limits\.perModel\.overlap:/).length,
       ).toBe(2);
     });
 
     // And the form refuses to submit rather than letting the backend reject it.
     fireEvent.click(screen.getByText("submit"));
-    await waitFor(() => {
-      expect(
-        screen.getByText("api_keys.limits.perModel.overlapError"),
-      ).toBeTruthy();
-    });
+    await screen.findByText("api_keys.limits.perModel.overlapError");
   });
 });
 
@@ -163,8 +138,6 @@ describe("model source on the allowlist rows", () => {
       />,
     );
 
-    expect(
-      screen.getByText("modelSource.values.third-party-public"),
-    ).toBeTruthy();
+    screen.getByText("modelSource.values.third-party-public");
   });
 });

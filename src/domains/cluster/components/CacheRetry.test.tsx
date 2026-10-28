@@ -9,9 +9,6 @@ vi.mock("@refinedev/core", () => ({
   useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
   useInvalidate: () => vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 const cluster = {
   metadata: {
     name: "test",

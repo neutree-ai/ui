@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 import type { Metadata } from "@/foundation/types/basic-types";
 import EndpointEngine from "./EndpointEngine";
 
@@ -21,17 +21,17 @@ describe("EndpointEngine", () => {
       />,
     );
 
-    expect(screen.getByText("vllm:v0.24.0")).toBeTruthy();
+    screen.getByText("vllm:v0.24.0");
   });
 
   // A catalog saved with a broken or engine-less spec used to throw here and,
-  // with no error boundary above it, blank the whole list page (NEU-611).
+  // with no error boundary above it, blank the whole list page.
   it.each([
     ["a missing engine", {}],
     ["an engine without a name", { engine: { version: "v1" } }],
   ])("renders a placeholder for %s", (_label, spec) => {
     render(<EndpointEngine spec={spec as never} metadata={metadata} />);
 
-    expect(screen.getByText("-")).toBeTruthy();
+    screen.getByText("-");
   });
 });

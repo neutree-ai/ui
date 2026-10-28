@@ -12,16 +12,6 @@ vi.mock("@refinedev/core", () => ({
   useNotification: () => ({ open: openNotification }),
 }));
 
-vi.mock("@refinedev/react-hook-form", async () => {
-  const form =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return { useForm: form.useForm };
-});
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/domains/api-key/components/ApiKeyPolicyFields", () => ({
   ApiKeyPolicyFields: () => <div>Policy fields</div>,
 }));
@@ -89,8 +79,8 @@ describe("ApiKeyLimitsCard", () => {
       }),
     );
     expect(onSaved).toHaveBeenCalled();
-    expect(screen.getByDisplayValue("New name")).toBeTruthy();
-    expect(screen.getByDisplayValue("New description")).toBeTruthy();
+    screen.getByDisplayValue("New name");
+    screen.getByDisplayValue("New description");
     expect(openNotification).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success" }),
     );
@@ -142,9 +132,7 @@ describe("ApiKeyLimitsCard", () => {
     await waitFor(() => expect(cancel.disabled).toBe(false));
 
     fireEvent.click(cancel);
-    await waitFor(() =>
-      expect(screen.getByDisplayValue("Old name")).toBeTruthy(),
-    );
+    await screen.findByDisplayValue("Old name");
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

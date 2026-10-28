@@ -2,13 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Radix Checkbox measures itself; jsdom has no ResizeObserver.
-globalThis.ResizeObserver = class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 const mockLogin = vi.fn();
 
 vi.mock("@refinedev/core", () => ({
@@ -20,13 +13,6 @@ vi.mock("@refinedev/core", () => ({
   useRouterContext: () => ({}),
   useRouterType: () => "new",
   useParsed: vi.fn(() => ({ params: {} })),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, opts?: { name?: string }) =>
-      opts?.name ? `${key}:${opts.name}` : key,
-  }),
 }));
 
 vi.mock("./ThemedTitle", () => ({ ThemedTitle: () => null }));

@@ -1,18 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   ModelRegistryModelCount,
   ModelRegistryStorage,
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
 
 const registry = (
   visibility: ModelRegistryVisibility | undefined,
@@ -43,12 +36,8 @@ describe("registry counters", () => {
   it("shows explicit not-applicable copy for a registry the control plane does not measure", () => {
     render(<ModelRegistryStorage registry={registry("public")} />);
 
-    expect(
-      screen.getByTitle("model_registries.stats.notApplicableHint"),
-    ).toBeDefined();
-    expect(
-      screen.getByText("model_registries.models.values.notApplicable"),
-    ).toBeDefined();
+    screen.getByTitle("model_registries.stats.notApplicableHint");
+    screen.getByText("model_registries.models.values.notApplicable");
     expect(screen.queryByText("-")).toBeNull();
     expect(screen.queryByTestId("registry-storage")).toBeNull();
   });
@@ -70,7 +59,7 @@ describe("registry counters", () => {
     // different facts, and only one of them is worth acting on.
     render(<ModelRegistryModelCount registry={registry("private")} />);
 
-    expect(screen.getByText("model_registries.stats.collecting")).toBeDefined();
+    screen.getByText("model_registries.stats.collecting");
     expect(screen.queryByText("0")).toBeNull();
   });
 
@@ -80,6 +69,6 @@ describe("registry counters", () => {
     // about the registry rather than a missing field.
     render(<ModelRegistryModelCount registry={registry(undefined)} />);
 
-    expect(screen.getByText("model_registries.stats.collecting")).toBeDefined();
+    screen.getByText("model_registries.stats.collecting");
   });
 });

@@ -18,7 +18,7 @@ describe("SegmentedControl", () => {
       />,
     );
 
-    expect(screen.getByRole("group", { name: "Monitor panel" })).toBeTruthy();
+    screen.getByRole("group", { name: "Monitor panel" });
     expect(screen.queryByRole("combobox")).toBeNull();
     expect(
       screen

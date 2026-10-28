@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { RegistryModelError } from "@/foundation/lib/api/registry-models";
 import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";

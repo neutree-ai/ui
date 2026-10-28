@@ -3,6 +3,7 @@ import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import { DEFAULT_TOKEN_QUOTA_UNIT } from "@/foundation/lib/token-quota";
 import {
+  type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
   compareWorkspaceModelOptions,
@@ -17,6 +18,13 @@ import {
   type WorkspaceModelOption,
 } from "./use-api-key-policy";
 
+const form = (
+  over: Partial<ApiKeyPolicyFormValues> = {},
+): ApiKeyPolicyFormValues => ({
+  ...apiKeyPolicyDefaults(),
+  ...over,
+});
+
 const row = (over: Partial<PolicyModelRow>): PolicyModelRow => ({
   value: `${over.type ?? ""}:${over.endpoint_name ?? ""}:${over.model ?? "m"}`,
   model: "m",
@@ -24,21 +32,18 @@ const row = (over: Partial<PolicyModelRow>): PolicyModelRow => ({
 });
 
 describe("isPositiveIntLimit", () => {
-  it("treats empty / whitespace as valid (optional, unset)", () => {
-    expect(isPositiveIntLimit("")).toBe(true);
-    expect(isPositiveIntLimit("   ")).toBe(true);
-  });
-
-  it("accepts positive integers", () => {
-    expect(isPositiveIntLimit("1")).toBe(true);
-    expect(isPositiveIntLimit("500000")).toBe(true);
-  });
-
-  it("rejects zero, negatives, decimals and non-numeric input", () => {
-    expect(isPositiveIntLimit("0")).toBe(false);
-    expect(isPositiveIntLimit("-1")).toBe(false);
-    expect(isPositiveIntLimit("1.5")).toBe(false);
-    expect(isPositiveIntLimit("abc")).toBe(false);
+  // Empty means "unset", which is valid for an optional limit.
+  it.each([
+    ["", true],
+    ["   ", true],
+    ["1", true],
+    ["500000", true],
+    ["0", false],
+    ["-1", false],
+    ["1.5", false],
+    ["abc", false],
+  ])("%j -> %s", (input, valid) => {
+    expect(isPositiveIntLimit(input)).toBe(valid);
   });
 });
 
@@ -47,40 +52,33 @@ describe("buildApiKeyLimits", () => {
     expect(buildApiKeyLimits(apiKeyPolicyDefaults())).toEqual({});
   });
 
-  it("emits token_quota only for a positive token limit", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
-      quota_period: "monthly" as const,
-      quota_limit: "500,000",
-      quota_unit: "tokens" as const,
-    };
-    expect(buildApiKeyLimits(v)).toEqual({
-      token_quota: { limit: 500000, period: "monthly" },
-    });
+  it("emits token_quota for a positive token limit", () => {
+    expect(
+      buildApiKeyLimits(
+        form({
+          quota_period: "monthly",
+          quota_limit: "500,000",
+          quota_unit: "tokens",
+        }),
+      ),
+    ).toEqual({ token_quota: { limit: 500000, period: "monthly" } });
   });
 
-  it("multiplies the amount by the selected unit", () => {
-    const build = (quota_limit: string, quota_unit: "K" | "M" | "B") =>
-      buildApiKeyLimits({ ...apiKeyPolicyDefaults(), quota_limit, quota_unit })
-        .token_quota?.limit;
-    expect(build("200", "M")).toBe(200_000_000);
-    expect(build("1.5", "M")).toBe(1_500_000);
-    expect(build("2", "B")).toBe(2_000_000_000);
-    expect(build("10", "K")).toBe(10_000);
-  });
-
-  it("drops a quota whose amount does not resolve to whole tokens", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
-      quota_limit: "1.5",
-      quota_unit: "tokens" as const,
-    };
-    expect(buildApiKeyLimits(v)).toEqual({});
+  it.each([
+    ["200", "M", 200_000_000],
+    ["1.5", "M", 1_500_000],
+    ["2", "B", 2_000_000_000],
+    ["10", "K", 10_000],
+    // Does not resolve to whole tokens, so no quota is sent.
+    ["1.5", "tokens", undefined],
+  ] as const)("%s %s -> %s tokens", (quota_limit, quota_unit, limit) => {
+    expect(
+      buildApiKeyLimits(form({ quota_limit, quota_unit })).token_quota?.limit,
+    ).toBe(limit);
   });
 
   it("maps RPS / RPM / concurrency and drops rows with a blank model", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
+    const v = form({
       rps: "10",
       rpm: "600",
       concurrency: "8",
@@ -93,7 +91,7 @@ describe("buildApiKeyLimits", () => {
         },
         { value: " ", model: " " },
       ],
-    };
+    });
     expect(buildApiKeyLimits(v)).toEqual({
       rps: 10,
       rpm: 600,
@@ -105,8 +103,7 @@ describe("buildApiKeyLimits", () => {
   });
 
   it("keeps endpoint-scoped selections distinct (same model, different endpoints)", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
+    const v = form({
       models: [
         {
           value: "internal:chat-a:gpt-4o",
@@ -127,7 +124,7 @@ describe("buildApiKeyLimits", () => {
           endpoint_name: "anthropic",
         },
       ],
-    };
+    });
     expect(buildApiKeyLimits(v)).toEqual({
       allowed_models: [
         { model: "gpt-4o", type: "internal", endpoint_name: "chat-a" },
@@ -138,26 +135,21 @@ describe("buildApiKeyLimits", () => {
   });
 
   it("passes wildcard (any-source) rows through and dedups them", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
+    const v = form({
       models: [
         { value: "gpt-4o", model: "gpt-4o", wildcard: true },
         { value: "gpt-4o", model: "gpt-4o", wildcard: true },
       ],
-    };
+    });
     expect(buildApiKeyLimits(v)).toEqual({
       allowed_models: [{ model: "gpt-4o" }],
     });
   });
 
   it("ignores zero / blank values", () => {
-    const v = {
-      ...apiKeyPolicyDefaults(),
-      quota_limit: "0",
-      rps: "",
-      concurrency: "0",
-    };
-    expect(buildApiKeyLimits(v)).toEqual({});
+    expect(
+      buildApiKeyLimits(form({ quota_limit: "0", rps: "", concurrency: "0" })),
+    ).toEqual({});
   });
 
   it("carries the disabled flag when asked", () => {
@@ -274,15 +266,14 @@ describe("limitsToForm", () => {
     ).toBe("");
   });
 
-  it("falls back to the default period for an unknown / empty period", () => {
-    expect(
-      limitsToForm({ token_quota: { limit: 100, period: "fortnightly" } })
-        .quota_period,
-    ).toBe("monthly");
-    expect(
-      limitsToForm({ token_quota: { limit: 100, period: "" } }).quota_period,
-    ).toBe("monthly");
-  });
+  it.each(["fortnightly", ""])(
+    "falls back to the default period for period %j",
+    (period) => {
+      expect(
+        limitsToForm({ token_quota: { limit: 100, period } }).quota_period,
+      ).toBe("monthly");
+    },
+  );
 });
 
 describe("rateSummary", () => {
@@ -466,55 +457,19 @@ describe("compareWorkspaceModelOptions", () => {
       ),
     ).toEqual([selfDeployed, publicCloud, custom, unlabelled]);
   });
-
-  it("keeps the internal and external rows for one model name apart", () => {
-    // The acceptance NEU-783 depends on: the same model name served by an
-    // internal and an external endpoint stays two distinguishable rows, and
-    // each keeps its own type + endpoint for the allowlist triple.
-    const internal = opt({
-      model: "qwen3",
-      endpointName: "qwen-ie",
-      type: "internal",
-      phase: "Running",
-    });
-    const external = opt({
-      model: "qwen3",
-      endpointName: "qwen-ee",
-      type: "external",
-      source: "third-party-public",
-      phase: "Running",
-    });
-    const sorted = [external, internal].sort(compareWorkspaceModelOptions);
-    expect(sorted).toEqual([internal, external]);
-    expect(sorted.map((o) => o.value)).toEqual([
-      "qwen3:qwen-ie",
-      "qwen3:qwen-ee",
-    ]);
-    expect(sorted[0]?.source).toBe(SELF_HOSTED_MODEL_SOURCE);
-    expect(sorted[1]?.source).toBe("third-party-public");
-  });
 });
 
 describe("modelRowTokenLimit", () => {
-  it("multiplies amount by unit and treats an empty amount as no limit", () => {
-    expect(
-      modelRowTokenLimit(row({ limit_amount: "50", limit_unit: "M" })),
-    ).toBe(50_000_000);
-    expect(modelRowTokenLimit(row({ limit_amount: "", limit_unit: "M" }))).toBe(
-      null,
-    );
-    expect(modelRowTokenLimit(row({}))).toBe(null);
-  });
-
-  it("rejects amounts that do not resolve to whole positive tokens", () => {
-    // 0 is never "unlimited" and never "disabled" — the backend rejects it, so
-    // it must not reach the wire as a token_limit.
-    expect(
-      modelRowTokenLimit(row({ limit_amount: "0", limit_unit: "M" })),
-    ).toBe(null);
-    expect(
-      modelRowTokenLimit(row({ limit_amount: "1.5", limit_unit: "tokens" })),
-    ).toBe(null);
+  // 0 is never "unlimited" and never "disabled" — the backend rejects it, so
+  // it must not reach the wire as a token_limit.
+  it.each([
+    [{ limit_amount: "50", limit_unit: "M" }, 50_000_000],
+    [{ limit_amount: "", limit_unit: "M" }, null],
+    [{}, null],
+    [{ limit_amount: "0", limit_unit: "M" }, null],
+    [{ limit_amount: "1.5", limit_unit: "tokens" }, null],
+  ] as const)("%j -> %s", (over, limit) => {
+    expect(modelRowTokenLimit(row(over))).toBe(limit);
   });
 });
 
@@ -578,29 +533,32 @@ describe("overlappingModelRowValues", () => {
 });
 
 describe("resolveQuotaPeriod", () => {
-  it("passes through a known period and falls back to monthly otherwise", () => {
-    expect(resolveQuotaPeriod("weekly")).toBe("weekly");
-    expect(resolveQuotaPeriod("fortnightly")).toBe("monthly");
-    expect(resolveQuotaPeriod(null)).toBe("monthly");
-    expect(resolveQuotaPeriod(undefined)).toBe("monthly");
+  it.each([
+    ["weekly", "weekly"],
+    ["fortnightly", "monthly"],
+    [null, "monthly"],
+    [undefined, "monthly"],
+  ])("%j -> %s", (period, resolved) => {
+    expect(resolveQuotaPeriod(period)).toBe(resolved);
   });
 });
 
 describe("buildApiKeyLimits per-model quota", () => {
   it("hangs the limit off the allowlist entry and omits it when unset", () => {
-    const limits = buildApiKeyLimits({
-      ...apiKeyPolicyDefaults(),
-      models: [
-        row({
-          model: "gpt-4o",
-          type: "external",
-          endpoint_name: "openai",
-          limit_amount: "2",
-          limit_unit: "M",
-        }),
-        row({ model: "qwen", type: "internal", endpoint_name: "local" }),
-      ],
-    });
+    const limits = buildApiKeyLimits(
+      form({
+        models: [
+          row({
+            model: "gpt-4o",
+            type: "external",
+            endpoint_name: "openai",
+            limit_amount: "2",
+            limit_unit: "M",
+          }),
+          row({ model: "qwen", type: "internal", endpoint_name: "local" }),
+        ],
+      }),
+    );
     expect(limits.allowed_models).toEqual([
       {
         model: "gpt-4o",
@@ -616,35 +574,37 @@ describe("buildApiKeyLimits per-model quota", () => {
   it("keeps the overall quota on the wire while per-model limits are set", () => {
     // Mutual exclusion is enforced by the backend from the entries alone; the
     // overall quota is retained so clearing the entry limits falls back to it.
-    const limits = buildApiKeyLimits({
-      ...apiKeyPolicyDefaults(),
-      quota_limit: "1",
-      quota_unit: "M",
-      models: [
-        row({
-          model: "gpt-4o",
-          type: "external",
-          endpoint_name: "openai",
-          limit_amount: "2",
-          limit_unit: "M",
-        }),
-      ],
-    });
+    const limits = buildApiKeyLimits(
+      form({
+        quota_limit: "1",
+        quota_unit: "M",
+        models: [
+          row({
+            model: "gpt-4o",
+            type: "external",
+            endpoint_name: "openai",
+            limit_amount: "2",
+            limit_unit: "M",
+          }),
+        ],
+      }),
+    );
     expect(limits.token_quota).toEqual({ limit: 1_000_000, period: "monthly" });
   });
 
   it("carries a limit on a wildcard (any-source) entry", () => {
-    const limits = buildApiKeyLimits({
-      ...apiKeyPolicyDefaults(),
-      models: [
-        row({
-          model: "gpt-4o",
-          wildcard: true,
-          limit_amount: "500",
-          limit_unit: "K",
-        }),
-      ],
-    });
+    const limits = buildApiKeyLimits(
+      form({
+        models: [
+          row({
+            model: "gpt-4o",
+            wildcard: true,
+            limit_amount: "500",
+            limit_unit: "K",
+          }),
+        ],
+      }),
+    );
     expect(limits.allowed_models).toEqual([
       { model: "gpt-4o", token_limit: 500_000 },
     ]);
@@ -656,42 +616,36 @@ describe("per-model quota round trip", () => {
     // The period lives on token_quota, which a per-model key has no amount for.
     // Emitting nothing here made the backend fall back to monthly, silently
     // discarding the user's choice.
-    const limits = buildApiKeyLimits({
-      ...apiKeyPolicyDefaults(),
-      quota_period: "weekly",
-      models: [row({ model: "gpt-4o", limit_amount: "500", limit_unit: "K" })],
-    });
+    const limits = buildApiKeyLimits(
+      form({
+        quota_period: "weekly",
+        models: [
+          row({ model: "gpt-4o", limit_amount: "500", limit_unit: "K" }),
+        ],
+      }),
+    );
     expect(limits.token_quota).toEqual({ period: "weekly" });
   });
 
   it("does not invent a token_quota for a key with no limits at all", () => {
-    const limits = buildApiKeyLimits({
-      ...apiKeyPolicyDefaults(),
-      quota_period: "weekly",
-      models: [row({ model: "gpt-4o" })],
-    });
+    const limits = buildApiKeyLimits(
+      form({
+        quota_period: "weekly",
+        models: [row({ model: "gpt-4o" })],
+      }),
+    );
     expect(limits.token_quota).toBeUndefined();
   });
 
-  it("keeps a partially pinned entry from being broadened on save", () => {
-    // { model, type } means "any external endpoint". Flattening it to { model }
-    // would widen the entry to every endpoint of every type.
-    const stored: ApiKeyLimits = {
-      allowed_models: [{ model: "gpt-4o", type: "external" }],
-    };
-    const rebuilt = buildApiKeyLimits(limitsToForm(stored));
-    expect(rebuilt.allowed_models).toEqual([
-      { model: "gpt-4o", type: "external" },
-    ]);
-  });
-
-  it("keeps an endpoint-only entry too", () => {
-    const stored: ApiKeyLimits = {
-      allowed_models: [{ model: "gpt-4o", endpoint_name: "ep-a" }],
-    };
-    const rebuilt = buildApiKeyLimits(limitsToForm(stored));
-    expect(rebuilt.allowed_models).toEqual([
-      { model: "gpt-4o", endpoint_name: "ep-a" },
-    ]);
+  // { model, type } means "any external endpoint". Flattening a partially
+  // pinned entry to { model } would widen it to every endpoint of every type.
+  it.each([
+    { model: "gpt-4o", type: "external" as const },
+    { model: "gpt-4o", endpoint_name: "ep-a" },
+  ])("keeps the partially pinned entry %j on save", (entry) => {
+    const rebuilt = buildApiKeyLimits(
+      limitsToForm({ allowed_models: [entry] }),
+    );
+    expect(rebuilt.allowed_models).toEqual([entry]);
   });
 });

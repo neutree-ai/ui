@@ -167,9 +167,13 @@ export function typeBranchLabel(branch: string, row: ValueSchemaRow): string {
   return branch === "array" && row.itemType ? `array<${row.itemType}>` : branch;
 }
 
+/** A row's union branches; a schema without a type reads as `unknown`. */
+export function typeBranches(row: ValueSchemaRow): string[] {
+  return row.types.length > 0 ? row.types : ["unknown"];
+}
+
 function typeBranchLabels(row: ValueSchemaRow): string[] {
-  const branches = row.types.length > 0 ? row.types : ["unknown"];
-  return branches.map((branch) => typeBranchLabel(branch, row));
+  return typeBranches(row).map((branch) => typeBranchLabel(branch, row));
 }
 
 /** Every type label a filter can offer, alphabetical so the list is stable. */

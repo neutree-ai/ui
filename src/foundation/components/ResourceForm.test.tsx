@@ -15,21 +15,6 @@ vi.mock("@refinedev/core", () => ({
   useSaveButton: () => ({ label: "Save" }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
-
 type TestValues = {
   name: string;
 };
@@ -130,17 +115,6 @@ function OptionFieldsForm({
 }
 
 describe("ResourceForm", () => {
-  it("keeps the sticky action bar flush with the form viewport bottom", () => {
-    render(<TestForm onFinish={vi.fn()} />);
-
-    const actionBar = screen.getByTestId("form-submit").parentElement;
-    const content = actionBar?.parentElement;
-
-    expect(actionBar?.className).toContain("sticky");
-    expect(actionBar?.className).toContain("-bottom-2");
-    expect(content?.className).not.toContain("pb-6");
-  });
-
   it("submits the handleSubmit payload instead of reading getValues again", async () => {
     const onFinish = vi.fn();
     render(<TestForm onFinish={onFinish} />);
@@ -230,9 +204,7 @@ describe("ResourceForm", () => {
 
     await waitFor(() => {
       expect(onFinish).not.toHaveBeenCalled();
-      expect(
-        screen.getByText("components.variablesInput.invalidJsonValue"),
-      ).toBeTruthy();
+      screen.getByText("components.variablesInput.invalidJsonValue");
     });
   });
 

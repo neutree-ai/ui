@@ -16,17 +16,6 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "default" }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ?? key,
-  }),
-}));
-
 vi.mock("@/components/ui/tabs", () => ({
   Tabs: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   TabsContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -218,14 +207,14 @@ describe("ExternalEndpointsShow", () => {
     const loading = render(<ExternalEndpointsShow />, {
       wrapper: MemoryRouter,
     });
-    expect(screen.getByTestId("loader")).toBeTruthy();
+    screen.getByTestId("loader");
     loading.unmount();
 
     useShowMock.mockReturnValue({
       query: { data: undefined, isLoading: false },
     });
     render(<ExternalEndpointsShow />, { wrapper: MemoryRouter });
-    expect(screen.getByText("pages.error.notFound")).toBeTruthy();
+    screen.getByText("pages.error.notFound");
   });
 
   it("puts the timeout and the service URLs in the header, not a configuration block", () => {
@@ -233,11 +222,9 @@ describe("ExternalEndpointsShow", () => {
       phase: "Running",
       service_url: "https://gateway.example.com",
     });
-    expect(screen.getByText("model-lb")).toBeTruthy();
-    expect(screen.getByTestId("status-badge")).toBeTruthy();
-    expect(
-      screen.getByText("external_endpoints.fields.timeout: 30s"),
-    ).toBeTruthy();
+    screen.getByText("model-lb");
+    screen.getByTestId("status-badge");
+    screen.getByText("external_endpoints.fields.timeout: 30s");
     expect(screen.getByTestId("access-summary").textContent).toBe(
       "https://gateway.example.com",
     );
@@ -258,16 +245,10 @@ describe("ExternalEndpointsShow", () => {
       phase: "Running",
       service_url: "https://gateway.example.com",
     });
-    expect(
-      screen.getByText("external_endpoints.sections.modelServices"),
-    ).toBeTruthy();
-    expect(screen.getByText("primary")).toBeTruthy();
-    expect(
-      screen.getByText("external_endpoints.options.upstreamTypeExternal"),
-    ).toBeTruthy();
-    expect(
-      screen.getByText("external_endpoints.actions.viewModelMappings"),
-    ).toBeTruthy();
+    screen.getByText("external_endpoints.sections.modelServices");
+    screen.getByText("primary");
+    screen.getByText("external_endpoints.options.upstreamTypeExternal");
+    screen.getByText("external_endpoints.actions.viewModelMappings");
     const table = screen.getByRole("table");
     expect(table.textContent).toContain("gpt-6");
     expect(table.textContent).toContain("gpt-6-astra");
@@ -278,8 +259,8 @@ describe("ExternalEndpointsShow", () => {
       { phase: "Running", service_url: "https://gateway.example.com" },
       "/?tab=monitor",
     );
-    expect(screen.getByTestId("monitor")).toBeTruthy();
-    expect(screen.getByTestId("monitor-link")).toBeTruthy();
+    screen.getByTestId("monitor");
+    screen.getByTestId("monitor-link");
   });
 
   it.each([undefined, null])(
@@ -302,11 +283,9 @@ describe("ExternalEndpointsShow", () => {
       const cards = screen.getAllByTestId("route-details");
       expect(cards).toHaveLength(2);
       expect(cards[0].textContent).toContain("model-008");
-      expect(
-        within(cards[0]).getByText("modelSource.unspecified"),
-      ).toBeTruthy();
+      within(cards[0]).getByText("modelSource.unspecified");
       expect(cards[1].textContent).toContain("model-010");
-      expect(within(cards[1]).getByText("third-party-public")).toBeTruthy();
+      within(cards[1]).getByText("modelSource.values.third-party-public");
       expect(cards[0].getAttribute("data-monitoring")).toBe("false");
     },
   );
@@ -317,9 +296,9 @@ describe("ExternalEndpointsShow", () => {
       model_routes: null,
       upstreams: [{ endpoint_ref: "qwen", model_mapping: { chat: "qwen" } }],
     });
-    expect(
-      within(screen.getByTestId("route-details")).getByText("self-hosted"),
-    ).toBeTruthy();
+    within(screen.getByTestId("route-details")).getByText(
+      "modelSource.values.self-hosted",
+    );
   });
 
   it("does not restore explicitly empty routes from legacy mappings", () => {

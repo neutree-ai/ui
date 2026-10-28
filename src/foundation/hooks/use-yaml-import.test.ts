@@ -4,10 +4,6 @@ import type { YamlResource } from "@/foundation/lib/yaml-transform";
 
 // --- Module mocks ---
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const mockParseYamlDocuments = vi.fn<(content: string) => YamlResource[]>();
 const mockIsValidYamlResource = vi.fn<(doc: unknown) => boolean>();
 const mockKindToResourceType = vi.fn<(kind: string) => string>();

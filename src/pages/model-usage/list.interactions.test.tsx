@@ -6,51 +6,15 @@ import {
   within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
+import { openMenu } from "@/foundation/testing/interactions";
 import { ModelUsageList } from "@/pages/model-usage/list";
 
 // Page-level wiring for the usage page: paging, the day scope, and the filter
 // and chart controls. The chart library is stubbed with the smallest possible
 // fakes that still call back into the handlers the page passes it, so the
 // assertions are about our behaviour rather than about recharts.
-const translations: Record<string, string> = {
-  "model_usage.byApiKey": "By API key",
-  "model_usage.byApiKeyOnDay": "By API key · {{date}}",
-  "model_usage.byModel": "By model",
-  "model_usage.byModelOnDay": "By model · {{date}}",
-  "model_usage.daily.titleByKey": "Daily tokens by API key",
-  "model_usage.daily.titleByModel": "Daily tokens by model",
-  "model_usage.daily.titleDayByKey": "Tokens by API key · single day",
-  "model_usage.daily.titleDayByModel": "Tokens by model · single day",
-  "model_usage.daily.backToPreset": "Back to last {{days}} days",
-  "model_usage.daily.backToRange": "Back to {{range}}",
-  "model_usage.daily.clickHint": "Click a day to scope the page to that day",
-  "model_usage.detail.title": "Daily detail",
-  "model_usage.detail.external": "External",
-  "model_usage.detail.internal": "Internal",
-  "table.pagination.totalItems": "Total: {{total}} items",
-  "table.pagination.page": "Page {{current}} of {{total}}",
-  "table.pagination.goToNextPage": "Go to next page",
-};
-
-const translate = (key: string, options?: Record<string, unknown>) => {
-  const template = translations[key] ?? key;
-  if (!options) return template;
-  return Object.entries(options).reduce(
-    (acc, [name, value]) => acc.replace(`{{${name}}}`, String(value)),
-    template,
-  );
-};
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
-
 vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: { workspace: "design-lab" } }),
 }));
@@ -234,13 +198,15 @@ const rows: ApiUsageRecord[] = [
   // The shape a historical or hand-made key can have: no display name, no
   // description, no model and no endpoint name, so the page has to fall back
   // in every one of those places.
-  usageRow("2026-09-02", 3, {
+  usageRow("2026-09-02", KEY_COUNT + 1, {
+    api_key_id: "key-legacy",
+    api_key_name: "legacy-key",
     api_key_display_name: null,
     api_key_description: undefined,
     endpoint_name: "",
     model_name: null,
-    usage: 9_999_997,
-    prompt_tokens: 9_999_997,
+    usage: 1,
+    prompt_tokens: 1,
     completion_tokens: 0,
   }),
 ];
@@ -259,12 +225,8 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: () => ({ ...hookState, refetch }),
 }));
 
-const cardFor = (title: string) => {
-  const heading = screen.getByText(title);
-  const card = heading.closest("div.flex.h-full");
-  if (!card) throw new Error(`no card for ${title}`);
-  return within(card as HTMLElement);
-};
+const cardFor = (title: string) =>
+  within(screen.getByRole("region", { name: title }));
 
 const bodyRows = (scope: ReturnType<typeof within>) =>
   scope
@@ -273,13 +235,8 @@ const bodyRows = (scope: ReturnType<typeof within>) =>
       (row: HTMLElement) => within(row).queryAllByRole("cell").length > 0,
     );
 
-// Radix needs a pointer-style open before its items exist in the DOM.
 const openSelect = (index: number) =>
-  fireEvent.pointerDown(screen.getAllByRole("combobox")[index], {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
-  });
+  openMenu(screen.getAllByRole("combobox")[index]);
 
 const pickOption = (label: string) => {
   const option = screen
@@ -289,15 +246,6 @@ const pickOption = (label: string) => {
   fireEvent.click(option);
 };
 
-// jsdom has no pointer capture or scrollIntoView; Radix Select calls both while
-// opening, and without them the option list never mounts.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  Element.prototype.setPointerCapture = () => {};
-  Element.prototype.releasePointerCapture = () => {};
-  Element.prototype.scrollIntoView = () => {};
-});
-
 beforeEach(() => {
   refetch.mockClear();
   hookState = { usageData: rows, isLoading: false, error: null };
@@ -306,56 +254,60 @@ beforeEach(() => {
 
 describe("model usage tables", () => {
   it("pages a long key list instead of rendering every row", () => {
-    const card = cardFor("By API key");
+    const card = cardFor("model_usage.byApiKey");
 
     expect(bodyRows(card)).toHaveLength(10);
     expect(bodyRows(card)[0].textContent).toContain("Key 1");
-    expect(card.getByText(`Total: ${KEY_COUNT} items`)).toBeDefined();
-    expect(card.getByText("Page 1 of 3")).toBeDefined();
+    card.getByText(`table.pagination.totalItems:${KEY_COUNT + 1}`);
+    card.getByText("table.pagination.page:1,4");
   });
 
   it("moves to the next page of keys", () => {
-    const card = cardFor("By API key");
+    const card = cardFor("model_usage.byApiKey");
 
-    fireEvent.click(card.getByRole("button", { name: "Go to next page" }));
+    fireEvent.click(
+      card.getByRole("button", { name: "table.pagination.goToNextPage" }),
+    );
 
     expect(bodyRows(card)[0].textContent).toContain("Key 11");
-    expect(card.getByText("Page 2 of 3")).toBeDefined();
+    card.getByText("table.pagination.page:2,4");
   });
 
   it("shows the per-record table 50 rows at a time", () => {
-    const detail = cardFor("Daily detail");
+    const detail = cardFor("model_usage.detail.title");
 
     expect(bodyRows(detail)).toHaveLength(50);
-    expect(detail.getByText(`Total: ${rows.length} items`)).toBeDefined();
-    expect(detail.getByText("Page 1 of 2")).toBeDefined();
+    detail.getByText(`table.pagination.totalItems:${rows.length}`);
+    detail.getByText("table.pagination.page:1,2");
   });
 
   it("renders the type badge for internal, external and unknown endpoints", () => {
-    const detail = cardFor("Daily detail");
+    const detail = cardFor("model_usage.detail.title");
 
-    expect(detail.getAllByText("Internal").length).toBeGreaterThan(0);
-    expect(detail.getByText("External")).toBeDefined();
+    expect(
+      detail.getAllByText("model_usage.detail.internal").length,
+    ).toBeGreaterThan(0);
+    detail.getByText("model_usage.detail.external");
     expect(detail.getAllByText("-").length).toBeGreaterThan(0);
   });
 });
 
 describe("model usage scope", () => {
   it("re-scopes titles to the day and offers the way back", () => {
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+    screen.getByText("model_usage.daily.titleByKey");
 
     fireEvent.click(screen.getByRole("button", { name: "day" }));
 
-    expect(screen.getByText("Tokens by API key · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
-    expect(screen.getByText("By model · 2026-09-01")).toBeDefined();
+    screen.getByText("model_usage.daily.titleDayByKey");
+    screen.getByText("model_usage.byApiKeyOnDay:2026-09-01");
+    screen.getByText("model_usage.byModelOnDay:2026-09-01");
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Back to last 30 days" }),
+      screen.getByRole("button", { name: "model_usage.daily.backToPreset:30" }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.getByText("By API key")).toBeDefined();
+    screen.getByText("model_usage.daily.titleByKey");
+    screen.getByText("model_usage.byApiKey");
   });
 
   it("returns to the custom window the reader picked, not a preset", () => {
@@ -363,18 +315,20 @@ describe("model usage scope", () => {
     fireEvent.click(screen.getByRole("button", { name: "day" }));
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Back to Jul 1 – Jul 10" }),
+      screen.getByRole("button", {
+        name: "model_usage.daily.backToRange:Jul 1 – Jul 10",
+      }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.queryByText("Tokens by API key · single day")).toBeNull();
+    screen.getByText("model_usage.daily.titleByKey");
+    expect(screen.queryByText("model_usage.daily.titleDayByKey")).toBeNull();
   });
 
   it("narrows the range to the day picked in the chart", () => {
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
-    expect(screen.getByText("Tokens by API key · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
+    screen.getByText("model_usage.daily.titleDayByKey");
+    screen.getByText("model_usage.byApiKeyOnDay:2026-09-01");
   });
 
   it("ignores a chart click that carries no category", () => {
@@ -382,22 +336,33 @@ describe("model usage scope", () => {
       screen.getByRole("button", { name: "pick-day-without-label" }),
     );
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.queryByText("Tokens by API key · single day")).toBeNull();
+    screen.getByText("model_usage.daily.titleByKey");
+    expect(screen.queryByText("model_usage.daily.titleDayByKey")).toBeNull();
+  });
+
+  it("shows only the chosen key's name in the closed filter, not its description", () => {
+    const trigger = screen.getAllByRole("combobox")[0];
+    expect(trigger.textContent).toBe("model_usage.filters.allApiKeys");
+
+    openSelect(0);
+    pickOption("Key 12");
+
+    expect(trigger.textContent).toContain("Key 12");
+    expect(trigger.textContent).not.toContain("12th busiest key");
   });
 
   it("scopes to a single key's models when one is picked, and back again", () => {
     openSelect(0);
     pickOption("Key 11");
 
-    expect(screen.getByText("Daily tokens by model")).toBeDefined();
-    expect(screen.getByTestId("bar-chart")).toBeDefined();
+    screen.getByText("model_usage.daily.titleByModel");
+    screen.getByTestId("bar-chart");
 
     openSelect(0);
     pickOption("model_usage.filters.allApiKeys");
 
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByText("model_usage.daily.titleByKey");
+    screen.getByTestId("line-chart");
   });
 });
 
@@ -410,17 +375,17 @@ describe("model usage chart controls", () => {
   });
 
   it("switches between the line and stacked-bar trend views", () => {
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByTestId("line-chart");
 
     fireEvent.click(
       screen.getByRole("button", { name: "model_usage.chart.bar" }),
     );
-    expect(screen.getByTestId("bar-chart")).toBeDefined();
+    screen.getByTestId("bar-chart");
 
     fireEvent.click(
       screen.getByRole("button", { name: "model_usage.chart.line" }),
     );
-    expect(screen.getByTestId("line-chart")).toBeDefined();
+    screen.getByTestId("line-chart");
   });
 
   it("labels the legend with the series and toggles it", () => {
@@ -432,7 +397,7 @@ describe("model usage chart controls", () => {
     fireEvent.click(legend);
     fireEvent.click(legend);
     fireEvent.click(screen.getByRole("button", { name: "legend-without-key" }));
-    expect(screen.getByRole("button", { name: /Key 1/ })).toBeDefined();
+    screen.getByRole("button", { name: /Key 1/ });
   });
 
   it("formats the axes with dates and compact token units", () => {
@@ -445,19 +410,19 @@ describe("model usage chart controls", () => {
       target: { value: "deepseek" },
     });
 
-    expect(cardFor("By model").getByText("deepseek-v3")).toBeDefined();
+    cardFor("model_usage.byModel").getByText("deepseek-v3");
   });
 
   it("filters by endpoint type", () => {
     openSelect(1);
-    pickOption("External");
+    pickOption("model_usage.detail.external");
 
-    const detail = cardFor("Daily detail");
+    const detail = cardFor("model_usage.detail.title");
     // One record survives the filter, so the detail table is a single row and
     // small enough that it renders no pager at all.
     const remaining = bodyRows(detail);
     expect(remaining).toHaveLength(1);
-    expect(remaining[0].textContent).toContain("External");
+    expect(remaining[0].textContent).toContain("model_usage.detail.external");
     expect(remaining[0].textContent).toContain("openai-proxy");
   });
 });
@@ -474,8 +439,8 @@ describe("model usage states", () => {
     pickOption("Key 11");
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
-    expect(screen.getByText("Tokens by model · single day")).toBeDefined();
-    expect(screen.getByText("By API key · 2026-09-01")).toBeDefined();
+    screen.getByText("model_usage.daily.titleDayByModel");
+    screen.getByText("model_usage.byApiKeyOnDay:2026-09-01");
   });
 
   it("shows the loader until the first page of usage arrives", () => {
@@ -483,7 +448,7 @@ describe("model usage states", () => {
 
     // The chart shows the loader; the tables below already know they are empty
     // because they read the same slice of data.
-    expect(screen.getByTitle("Loading...")).toBeDefined();
+    screen.getByTitle("Loading...");
   });
 
   it("shows the empty state when the window has no usage", () => {
@@ -496,6 +461,6 @@ describe("model usage states", () => {
   it("surfaces a failed usage request above the tables", () => {
     renderWith({ usageData: [], error: new Error("usage rpc failed") });
 
-    expect(screen.getByText("usage rpc failed")).toBeDefined();
+    screen.getByText("usage rpc failed");
   });
 });

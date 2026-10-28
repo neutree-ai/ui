@@ -1,10 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import PermissionsTree from "./PermissionsTree";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 describe("PermissionsTree", () => {
   it("hides static node permissions while rendering supported permissions", () => {
@@ -18,7 +14,7 @@ describe("PermissionsTree", () => {
       />,
     );
 
-    expect(screen.getByText("workspaces.title")).toBeTruthy();
+    screen.getByText("workspaces.title");
     expect(screen.queryByText("static_node_clusters.title")).toBeNull();
     expect(screen.queryByText("static_nodes.title")).toBeNull();
   });

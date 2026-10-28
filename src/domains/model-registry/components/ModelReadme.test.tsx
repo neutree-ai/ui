@@ -20,13 +20,6 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
-
 const modelRef = {
   workspace: "default",
   registry: "public-hugging-face",
@@ -55,16 +48,6 @@ beforeEach(() => {
 });
 
 describe("ModelReadme — a card is untrusted content", () => {
-  it("can place the markdown in a nested framed document surface", () => {
-    returns({ content: "# Card" });
-
-    render(<ModelReadme modelRef={modelRef} framed={false} contentFramed />);
-
-    expect(
-      screen.getByTestId("readme-content").parentElement?.className,
-    ).toContain("shadow-none");
-  });
-
   it("drops the tags that would run or embed something", () => {
     // Half of the XSS acceptance for this feature, asserted rather than argued.
     // The card's HTML *is* rendered, so what carries the safety is the
@@ -260,27 +243,14 @@ describe("ModelReadme — a card is written in GitHub's dialect", () => {
 });
 
 describe("ModelReadme — what the server said", () => {
-  it("renders nothing at all when the registry serves no cards", () => {
-    // Not an empty section headed "Model card": that reads as the card being
-    // missing rather than the feature being absent for this kind of registry.
+  // Not an empty "Model card" section: that would read as the card being
+  // missing rather than the feature being absent for this kind of registry.
+  it.each([
+    { status: 400, reason: "not_supported" },
+    { status: 404, reason: "not_found" },
+  ] as const)("renders nothing on $status $reason", ({ status, reason }) => {
     returns({
-      error: new RegistryModelError(400, {
-        reason: "not_supported",
-        message: "operation not supported by this model registry",
-      }),
-    });
-
-    const { container } = render(<ModelReadme modelRef={modelRef} />);
-
-    expect(container.textContent).toBe("");
-  });
-
-  it("renders nothing when the model simply has no card", () => {
-    returns({
-      error: new RegistryModelError(404, {
-        reason: "not_found",
-        message: "Model x:v1 has no README",
-      }),
+      error: new RegistryModelError(status, { reason, message: "x" }),
     });
 
     const { container } = render(<ModelReadme modelRef={modelRef} />);
@@ -308,7 +278,7 @@ describe("ModelReadme — what the server said", () => {
 
     render(<ModelReadme modelRef={modelRef} />);
 
-    expect(screen.getByTestId("readme-truncated")).toBeDefined();
+    screen.getByTestId("readme-truncated");
   });
 
   it("hides the front matter every hub card starts with", () => {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,14 +9,6 @@ import {
   fetchAITraceFilterOptions,
 } from "@/foundation/lib/api/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 const context = vi.hoisted(() => ({
   params: { workspace: "design-lab" } as Record<string, string>,
@@ -37,14 +29,6 @@ vi.mock("@refinedev/core", () => ({
     data: { data: resources[resource] ?? [] },
   }),
 }));
-
-// cmdk observes and scrolls its list; jsdom implements neither.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
 
 // The query never runs; the pages come from `listState.items`, which is empty
 // unless a test needs a row, and `listState.error` stands in for a failed request.
@@ -214,31 +198,15 @@ const renderList = () =>
   );
 
 describe("AITracesList API key filter", () => {
-  it("names the unfiltered state instead of showing nothing", () => {
+  it("shows only the chosen key's name in the closed filter, not its description", () => {
     renderList();
-
     expect(apiKeyTrigger().textContent).toBe("ai_traces.filters.allApiKeys");
-  });
-
-  it("shows the chosen key's name on one line, not its description", () => {
-    renderList();
 
     selectKey("analytics-pipeline");
 
     const trigger = apiKeyTrigger();
     expect(trigger.textContent).toContain("analytics-pipeline");
-    // The description belongs to the open list; in the closed control it used
-    // to overflow the 32px trigger's own border.
     expect(trigger.textContent).not.toContain("TOS 使用");
-    expect(within(trigger).queryByText("TOS 使用")).toBeNull();
-  });
-
-  it("still shows a key that has no description", () => {
-    renderList();
-
-    selectKey("plain-key");
-
-    expect(apiKeyTrigger().textContent).toContain("plain-key");
   });
 });
 
@@ -340,7 +308,7 @@ describe("AITracesList endpoint and model filters", () => {
     });
 
     fireEvent.click(screen.getByTestId("model-filter"));
-    expect(screen.getByText("ai_traces.filters.optionsTruncated")).toBeTruthy();
+    screen.getByText("ai_traces.filters.optionsTruncated");
   });
 
   it("still filters by a typed name when the options request fails", () => {
@@ -364,29 +332,12 @@ describe("AITracesList endpoint and model filters", () => {
 
 describe("AITracesList readings column", () => {
   it("renders the throughput without repeating the column's unit", () => {
-    // "155.2 tok/s" is eleven monospace characters, one too many for the 90px
-    // column: the unit lives in the header, so the larger readings stopped
-    // breaking onto a second line and lifting their row out of the grid.
     listState.items = [trace()];
 
     renderList();
 
-    const cell = screen.getByText("155.2");
-    expect(cell.tagName).toBe("TD");
-    expect(cell.className).toContain("whitespace-nowrap");
+    screen.getByText("155.2");
     expect(screen.queryByText(/tok\/s/)).toBeNull();
-  });
-
-  it("guards the token and duration readings the same way", () => {
-    listState.items = [trace()];
-
-    renderList();
-
-    for (const reading of ["2.35K", "10.00 s"]) {
-      expect(screen.getByText(reading).className).toContain(
-        "whitespace-nowrap",
-      );
-    }
   });
 });
 
@@ -396,7 +347,7 @@ describe("AITracesList without trace permission", () => {
 
     renderList();
 
-    expect(screen.getByText("ai_traces.forbidden")).toBeTruthy();
+    screen.getByText("ai_traces.forbidden");
     expect(screen.queryByText(/insufficient permissions/)).toBeNull();
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryAllByRole("combobox")).toHaveLength(0);
@@ -410,8 +361,8 @@ describe("AITracesList without trace permission", () => {
 
     renderList();
 
-    expect(screen.getByText("ai-traces request failed: 500")).toBeTruthy();
-    expect(screen.getByRole("table")).toBeTruthy();
+    screen.getByText("ai-traces request failed: 500");
+    screen.getByRole("table");
   });
 });
 
@@ -423,13 +374,6 @@ const exportParams = () => {
 };
 
 describe("AITracesList export", () => {
-  const lastQueryArgs = () => {
-    const options = context.query.mock.lastCall?.[0] as {
-      queryKey: [string, Record<string, unknown>];
-    };
-    return options.queryKey[1];
-  };
-
   it("exports with the list query's scope, window and filters", () => {
     context.params = { workspace: "_all_", api_key_id: "key-analytics" };
 

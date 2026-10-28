@@ -27,14 +27,18 @@ describe("VariantTable", () => {
       />,
     );
 
-    expect(screen.getByTestId("variant-selector-table")).toBeTruthy();
     expect(
-      (screen.getByLabelText("Select throughput profile") as HTMLInputElement)
-        .checked,
+      (
+        screen.getByLabelText(
+          "model_catalogs.recipe.selectProfile:throughput",
+        ) as HTMLInputElement
+      ).checked,
     ).toBe(true);
-    expect(screen.getByText("1 GPU · 16 CPU · 64 GiB")).toBeTruthy();
+    screen.getByText("1 GPU · 16 CPU · 64 GiB");
 
-    fireEvent.click(screen.getByLabelText("Select default profile"));
+    fireEvent.click(
+      screen.getByLabelText("model_catalogs.recipe.selectProfile:default"),
+    );
 
     expect(onSelect).toHaveBeenCalledWith("default");
   });

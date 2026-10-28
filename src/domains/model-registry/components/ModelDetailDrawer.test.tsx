@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ModelDetailDrawer } from "@/domains/model-registry/components/ModelDetailDrawer";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
+import { openMenu } from "@/foundation/testing/interactions";
 
 const go = vi.fn();
 
@@ -12,9 +13,7 @@ vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
   useRegistryModelVersion: vi.fn(),
 }));
 vi.mock("@/domains/model-registry/components/ModelReadme", () => ({
-  ModelReadme: ({ contentFramed }: { contentFramed?: boolean }) => (
-    <div data-testid="model-readme" data-framed={String(contentFramed)} />
-  ),
+  ModelReadme: () => <div data-testid="model-readme" />,
 }));
 vi.mock("@/domains/model-registry/components/ModelEditDialog", () => ({
   ModelEditDialog: ({ open }: { open: boolean }) =>
@@ -50,7 +49,10 @@ const registry = {
   visibility: "private",
 } as ModelRegistry;
 
-const renderDrawer = (value: ModelRegistry = registry) =>
+const renderDrawer = (
+  value: ModelRegistry = registry,
+  onOpenChange = vi.fn(),
+) =>
   render(
     <TooltipProvider>
       <ModelDetailDrawer
@@ -58,7 +60,7 @@ const renderDrawer = (value: ModelRegistry = registry) =>
         registry={value}
         selection={{ model: "org/model", version: "requested-revision" }}
         open
-        onOpenChange={vi.fn()}
+        onOpenChange={onOpenChange}
       />
     </TooltipProvider>,
   );
@@ -81,15 +83,13 @@ beforeEach(() => {
 });
 
 describe("ModelDetailDrawer", () => {
-  it("uses the registry as context and frames the model document", () => {
+  it("shows the registry as context and the resolved version's summary", () => {
     renderDrawer();
 
-    expect(screen.getByText("team-models")).toBeDefined();
-    expect(screen.getByRole("heading", { name: "org/model" })).toBeDefined();
-    expect(screen.getByText("resolved-revision")).toBeDefined();
-    expect(screen.getByText("54.8 GB")).toBeDefined();
-    expect(screen.queryByText("common.sections.basicInformation")).toBeNull();
-    expect(screen.getByTestId("model-readme").dataset.framed).toBe("true");
+    screen.getByText("team-models");
+    screen.getByRole("heading", { name: "org/model" });
+    screen.getByText("resolved-revision");
+    screen.getByText("54.8 GB");
   });
 
   it("opens endpoint creation with the exact registry model reference", () => {
@@ -120,28 +120,24 @@ describe("ModelDetailDrawer", () => {
   it("keeps writable management actions in the overflow menu", async () => {
     renderDrawer();
 
-    fireEvent.pointerDown(screen.getByTestId("model-actions-trigger"), {
-      button: 0,
-      ctrlKey: false,
-    });
+    openMenu(screen.getByTestId("model-actions-trigger"));
     fireEvent.click(
       await screen.findByText("model_registries.models.actions.edit"),
     );
 
-    expect(screen.getByTestId("model-edit-dialog")).toBeDefined();
+    screen.getByTestId("model-edit-dialog");
   });
 
-  it("opens delete from the writable management menu", async () => {
-    renderDrawer();
+  it("closes the drawer once the model is deleted from its menu", async () => {
+    const onOpenChange = vi.fn();
+    renderDrawer(registry, onOpenChange);
 
-    fireEvent.pointerDown(screen.getByTestId("model-actions-trigger"), {
-      button: 0,
-      ctrlKey: false,
-    });
+    openMenu(screen.getByTestId("model-actions-trigger"));
     fireEvent.click(await screen.findByText("buttons.delete"));
 
-    expect(screen.getByTestId("model-delete-dialog")).toBeDefined();
     fireEvent.click(screen.getByTestId("model-delete-dialog"));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("shows a loading state while the model is being fetched", () => {
@@ -155,7 +151,7 @@ describe("ModelDetailDrawer", () => {
     const { container } = renderDrawer();
 
     expect(container.querySelector("[data-testid='model-deploy']")).toBeNull();
-    expect(screen.getByTitle("Loading...")).toBeDefined();
+    screen.getByTitle("Loading...");
   });
 
   it("shows an error and retries the model request", () => {
@@ -191,7 +187,7 @@ describe("ModelDetailDrawer", () => {
 
     renderDrawer({ ...registry, visibility: undefined });
 
-    expect(screen.getByText("-")).toBeDefined();
+    screen.getByText("-");
     expect(
       screen.getByText("model_registries.fields.visibility").parentElement
         ?.textContent,

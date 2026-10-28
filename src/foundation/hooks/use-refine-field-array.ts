@@ -20,7 +20,7 @@ import {
  * Population happens only once, on the first query data arrival. Later
  * query updates (window-focus refetch, background invalidation) must not
  * call `replace()` again: it would silently overwrite unsaved user edits
- * with the server state (NEU-500).
+ * with the server state.
  */
 export function useRefineFieldArray<
   TFieldValues extends FieldValues = FieldValues,

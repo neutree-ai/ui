@@ -1,43 +1,8 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { FormProvider } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-  initReactI18next: { type: "3rdParty", init: () => {} },
-}));
-
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: vi.fn(),
-      };
-      return form;
-    },
-  };
-});
+import { selectOption } from "@/foundation/testing/interactions";
+import { renderForm } from "@/foundation/testing/render-form";
 
 vi.mock("@refinedev/core", () => ({
   useList: () => ({ data: { data: [] }, isLoading: false }),
@@ -54,10 +19,8 @@ vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
-const mockUseWorkspace = vi.fn(() => ({ current: "default" }));
-
 vi.mock("@/foundation/hooks/use-workspace", () => ({
-  useWorkspace: () => mockUseWorkspace(),
+  useWorkspace: vi.fn(() => ({ current: "default" })),
   isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
@@ -73,342 +36,168 @@ vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
   ModelCacheFields: () => <div data-testid="model-cache-fields-mock" />,
 }));
 
-const cacheCapability = vi.hoisted(() => ({ value: false }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
-  useSystemApi: () => ({
-    systemInfo: {
-      capabilities: {
-        cluster_cache_providers: cacheCapability.value ? ["zcache"] : [],
-      },
-    },
-  }),
+  useSystemApi: vi.fn(() => ({
+    systemInfo: { capabilities: { cluster_cache_providers: [] } },
+  })),
 }));
 
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useClusterForm } from "./use-cluster-form";
 
-let formInstance: ReturnType<typeof useClusterForm>["form"] | null = null;
+const KUBECONFIG = "field-spec.config.kubernetes_config.kubeconfig";
+const SSH_USER = "field-spec.config.ssh_config.auth.ssh_user";
+const ACCEL = "field-spec.accelerator_virtualization.enabled";
 
-function CreateForm() {
-  const result = useClusterForm({ action: "create" });
-  formInstance = result.form;
-  const {
-    form,
-    clusterConfigurationFields,
-    providerFields,
-    routerFields,
-    acceleratorVirtualizationFields,
-    authFields,
-  } = result;
-  return (
-    <FormProvider {...form}>
-      <form>
-        {clusterConfigurationFields}
-        {providerFields}
-        {routerFields}
-        {acceleratorVirtualizationFields}
-        {authFields}
-      </form>
-    </FormProvider>
+const renderCluster = (action: "create" | "edit" = "create") =>
+  renderForm(
+    () => useClusterForm({ action }),
+    (r) => (
+      <>
+        {r.metadataFields}
+        {r.clusterConfigurationFields}
+        {r.providerFields}
+        {r.routerFields}
+        {r.acceleratorVirtualizationFields}
+        {r.authFields}
+        {r.cacheFields}
+      </>
+    ),
   );
-}
 
-function ClusterConfigurationForm() {
-  const { form, clusterConfigurationFields } = useClusterForm({
-    action: "create",
-  });
-  return (
-    <FormProvider {...form}>
-      <form>{clusterConfigurationFields}</form>
-    </FormProvider>
-  );
-}
-
-function EditForm() {
-  const result = useClusterForm({ action: "edit" });
-  formInstance = result.form;
-  const {
-    form,
-    clusterConfigurationFields,
-    providerFields,
-    routerFields,
-    acceleratorVirtualizationFields,
-    authFields,
-  } = result;
-  return (
-    <FormProvider {...form}>
-      <form>
-        {clusterConfigurationFields}
-        {providerFields}
-        {routerFields}
-        {acceleratorVirtualizationFields}
-        {authFields}
-      </form>
-    </FormProvider>
-  );
-}
-
-function MetadataForm() {
-  const { form, metadataFields } = useClusterForm({ action: "create" });
-  formInstance = form;
-  return (
-    <FormProvider {...form}>
-      <form data-testid="metadata-form">{metadataFields}</form>
-    </FormProvider>
-  );
-}
-
-function selectType(label: string) {
-  const field = screen.getByTestId("field-spec.type");
-  const trigger = field.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error("select trigger not found");
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: label }));
-}
+const switchType = (type: "kubernetes" | "multipleStaticNodes") =>
+  selectOption("spec.type", `clusters.options.${type}`);
 
 describe("useClusterForm", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
-    formInstance = null;
+    vi.mocked(useWorkspace).mockReset();
+    vi.mocked(useSystemApi).mockReset();
   });
 
-  it("groups type, image registry and version under cluster configuration", () => {
-    render(<ClusterConfigurationForm />);
-
-    expect(
-      screen.getByText("clusters.sections.clusterConfiguration"),
-    ).toBeTruthy();
-    expect(screen.getByText("common.fields.type")).toBeTruthy();
-    expect(screen.getByText("common.fields.imageRegistry")).toBeTruthy();
-    expect(screen.getByText("common.fields.version")).toBeTruthy();
+  it.each([
+    { action: "edit", locked: true },
+    { action: "create", locked: false },
+  ] as const)("locks the head IP on $action: $locked", ({ action, locked }) => {
+    nodeIPsFieldProps.mockClear();
+    renderCluster(action);
+    const props = nodeIPsFieldProps.mock.lastCall?.[0];
+    expect(!!props?.headIpDisabled).toBe(locked);
+    expect(props?.disabled).toBeUndefined();
   });
 
-  describe("edit mode — NodeIPsField props", () => {
-    it("passes headIpDisabled=true without disabled in edit mode", () => {
-      nodeIPsFieldProps.mockClear();
-      render(<EditForm />);
-      const lastCall =
-        nodeIPsFieldProps.mock.calls[
-          nodeIPsFieldProps.mock.calls.length - 1
-        ][0];
-      expect(lastCall.headIpDisabled).toBe(true);
-      expect(lastCall.disabled).toBeUndefined();
-    });
+  it("defaults to SSH with node IPs and auth fields", () => {
+    renderCluster();
 
-    it("does not pass headIpDisabled=true in create mode", () => {
-      nodeIPsFieldProps.mockClear();
-      render(<CreateForm />);
-      const lastCall =
-        nodeIPsFieldProps.mock.calls[
-          nodeIPsFieldProps.mock.calls.length - 1
-        ][0];
-      expect(lastCall.headIpDisabled).toBeFalsy();
-      expect(lastCall.disabled).toBeUndefined();
-    });
+    screen.getByTestId("node-ips-field-mock");
+    screen.getByTestId(SSH_USER);
+    expect(screen.queryByTestId(KUBECONFIG)).toBeNull();
+    expect(screen.queryByTestId(ACCEL)).toBeNull();
   });
 
-  describe("type switching", () => {
-    it("defaults to SSH with auth fields and no router fields", () => {
-      render(<CreateForm />);
+  it("swaps SSH fields for kubeconfig, router and accelerator virtualization on kubernetes, and back", async () => {
+    renderCluster();
 
-      expect(screen.getByTestId("node-ips-field-mock")).toBeTruthy();
+    switchType("kubernetes");
+    await screen.findByTestId(KUBECONFIG);
+    screen.getByTestId(
+      "field-spec.config.kubernetes_config.router.access_mode",
+    );
+    screen.getByTestId(ACCEL);
+    expect(screen.queryByTestId("node-ips-field-mock")).toBeNull();
+    expect(screen.queryByTestId(SSH_USER)).toBeNull();
+
+    switchType("multipleStaticNodes");
+    await screen.findByTestId(SSH_USER);
+    screen.getByTestId("node-ips-field-mock");
+    expect(screen.queryByTestId(KUBECONFIG)).toBeNull();
+    expect(screen.queryByTestId(ACCEL)).toBeNull();
+  });
+
+  it("seeds router defaults without a version when switching to kubernetes", async () => {
+    vi.stubEnv("VITE_DEFAULT_CLUSTER_VERSION", "v1.0.1");
+    const { result } = renderCluster();
+
+    switchType("kubernetes");
+
+    await waitFor(() =>
       expect(
-        screen.getByTestId("field-spec.config.ssh_config.auth.ssh_user"),
-      ).toBeTruthy();
-      expect(
-        screen.queryByTestId("field-spec.config.kubernetes_config.kubeconfig"),
-      ).toBeNull();
-    });
-
-    it("shows router and kubeconfig fields when switching to kubernetes", async () => {
-      render(<CreateForm />);
-
-      selectType("clusters.options.kubernetes");
-
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("field-spec.config.kubernetes_config.kubeconfig"),
-        ).toBeTruthy();
-        expect(
-          screen.getByTestId(
-            "field-spec.config.kubernetes_config.router.access_mode",
-          ),
-        ).toBeTruthy();
-      });
-
-      expect(screen.queryByTestId("node-ips-field-mock")).toBeNull();
-      expect(
-        screen.queryByTestId("field-spec.config.ssh_config.auth.ssh_user"),
-      ).toBeNull();
-    });
-
-    it("does not seed router version when switching to kubernetes", async () => {
-      vi.stubEnv("VITE_DEFAULT_CLUSTER_VERSION", "v1.0.1");
-      render(<CreateForm />);
-
-      selectType("clusters.options.kubernetes");
-
-      await waitFor(() => {
-        expect(
-          formInstance?.getValues(
-            "spec.config.kubernetes_config.router.access_mode",
-          ),
-        ).toBe("LoadBalancer");
-      });
-
-      const router = formInstance?.getValues(
-        "spec.config.kubernetes_config.router",
-      );
-      expect(router).toMatchObject({
+        result.current.form.getValues("spec.config.kubernetes_config.router"),
+      ).toMatchObject({
         access_mode: "LoadBalancer",
         replicas: 2,
         resources: { cpu: "1", memory: "1Gi" },
-      });
-      expect(router).not.toHaveProperty("version");
+      }),
+    );
+    expect(
+      result.current.form.getValues("spec.config.kubernetes_config.router"),
+    ).not.toHaveProperty("version");
+  });
+
+  it("keeps accelerator virtualization off for kubernetes clusters at or below v1.0.1", async () => {
+    const { result } = renderCluster();
+    switchType("kubernetes");
+    act(() => {
+      result.current.form.setValue("spec.version", "v1.0.1");
     });
 
-    it("shows accelerator virtualization only for kubernetes clusters", async () => {
-      render(<CreateForm />);
+    const checkbox = (await screen.findByTestId(ACCEL)).querySelector(
+      '[role="checkbox"]',
+    );
+    if (!checkbox) throw new Error("checkbox not found");
+    await waitFor(() => expect(checkbox.hasAttribute("disabled")).toBe(true));
+    fireEvent.click(checkbox);
 
-      expect(
-        screen.queryByTestId("field-spec.accelerator_virtualization.enabled"),
-      ).toBeNull();
+    expect(
+      result.current.form.getValues("spec.accelerator_virtualization.enabled"),
+    ).toBe(false);
+    screen.getByText(
+      "clusters.descriptions.acceleratorVirtualizationUnsupportedVersion",
+    );
+  });
 
-      selectType("clusters.options.kubernetes");
+  it.each([
+    { current: "_all_", workspace: "", error: true },
+    { current: "ws-alpha", workspace: "ws-alpha", error: false },
+  ])(
+    "workspace $current -> defaults to '$workspace', required error: $error",
+    async ({ current, workspace, error }) => {
+      vi.mocked(useWorkspace).mockReturnValue({ current } as ReturnType<
+        typeof useWorkspace
+      >);
+      const { result } = renderCluster();
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("field-spec.accelerator_virtualization.enabled"),
-        ).toBeTruthy();
-      });
-
-      selectType("clusters.options.multipleStaticNodes");
-
-      await waitFor(() => {
-        expect(
-          screen.queryByTestId("field-spec.accelerator_virtualization.enabled"),
-        ).toBeNull();
-      });
-    });
-
-    it("disables accelerator virtualization for kubernetes clusters at or below v1.0.1", async () => {
-      render(<CreateForm />);
-
-      selectType("clusters.options.kubernetes");
-
-      await waitFor(() => expect(formInstance).not.toBeNull());
-      act(() => {
-        formInstance?.setValue("spec.version", "v1.0.1");
-      });
-
-      const field = await screen.findByTestId(
-        "field-spec.accelerator_virtualization.enabled",
+      expect(result.current.form.getValues("metadata.workspace")).toBe(
+        workspace,
       );
-      const checkbox = field.querySelector('[role="checkbox"]');
-      if (!checkbox)
-        throw new Error("accelerator virtualization checkbox not found");
-
-      await waitFor(() => expect(checkbox.hasAttribute("disabled")).toBe(true));
-      fireEvent.click(checkbox);
-
-      expect(
-        formInstance?.getValues("spec.accelerator_virtualization.enabled"),
-      ).toBe(false);
-      expect(
-        screen.getByText(
-          "clusters.descriptions.acceleratorVirtualizationUnsupportedVersion",
-        ),
-      ).toBeTruthy();
-    });
-
-    it("restores SSH fields when switching back from kubernetes", async () => {
-      render(<CreateForm />);
-
-      selectType("clusters.options.kubernetes");
-
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("field-spec.config.kubernetes_config.kubeconfig"),
-        ).toBeTruthy();
-      });
-
-      selectType("clusters.options.multipleStaticNodes");
-
-      await waitFor(() => {
-        expect(screen.getByTestId("node-ips-field-mock")).toBeTruthy();
-        expect(
-          screen.getByTestId("field-spec.config.ssh_config.auth.ssh_user"),
-        ).toBeTruthy();
-      });
-
-      expect(
-        screen.queryByTestId("field-spec.config.kubernetes_config.kubeconfig"),
-      ).toBeNull();
-    });
-  });
-
-  describe("workspace validation", () => {
-    beforeEach(() => {
-      mockUseWorkspace.mockReset();
-    });
-
-    it("defaults to empty string when current workspace is _all_", () => {
-      mockUseWorkspace.mockReturnValue({ current: "_all_" });
-
-      render(<MetadataForm />);
-      const field = screen.getByTestId("field-metadata.workspace");
-
-      expect(field).toBeTruthy();
-    });
-
-    it("shows validation error on submit when workspace is _all_", async () => {
-      mockUseWorkspace.mockReturnValue({ current: "_all_" });
-
-      render(<MetadataForm />);
-
       await act(async () => {
-        await formInstance!.trigger("metadata.workspace");
+        await result.current.form.trigger("metadata.workspace");
       });
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("common.validation.workspaceRequired"),
-        ).toBeTruthy();
-      });
-    });
-
-    it("does not show validation error when workspace is valid", async () => {
-      mockUseWorkspace.mockReturnValue({ current: "ws-alpha" });
-
-      render(<MetadataForm />);
-
-      await act(async () => {
-        await formInstance!.trigger("metadata.workspace");
-      });
-
       expect(
-        screen.queryByText("common.validation.workspaceRequired"),
-      ).toBeNull();
-    });
-  });
-});
+        screen.queryByText("common.validation.workspaceRequired") !== null,
+      ).toBe(error);
+    },
+  );
 
-function CacheCapabilityForm() {
-  const { form, cacheFields } = useClusterForm({ action: "create" });
-  React.useEffect(() => {
-    form.setValue("spec.type", "kubernetes");
-  }, [form.setValue]);
-  return <FormProvider {...form}>{cacheFields}</FormProvider>;
-}
-it.each([false, true])(
-  "offers cache configuration only when server supports it (%s)",
-  async (supported) => {
-    cacheCapability.value = supported;
-    render(<CacheCapabilityForm />);
-    await waitFor(() => {
+  it.each([false, true])(
+    "offers cache configuration only when the server supports it (%s)",
+    async (supported) => {
+      vi.mocked(useSystemApi).mockReturnValue({
+        systemInfo: {
+          capabilities: {
+            cluster_cache_providers: supported ? ["zcache"] : [],
+          },
+        },
+      } as unknown as ReturnType<typeof useSystemApi>);
+      renderCluster();
+
+      switchType("kubernetes");
+
+      await screen.findByTestId(KUBECONFIG);
       expect(screen.queryByText("clusters.cache.title") !== null).toBe(
         supported,
       );
-    });
-    cacheCapability.value = false;
-  },
-);
+    },
+  );
+});

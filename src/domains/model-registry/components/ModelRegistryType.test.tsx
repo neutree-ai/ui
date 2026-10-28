@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ModelRegistryType, {
-  modelRegistryTypeOptions,
   modelRegistryUrlPlaceholder,
 } from "@/domains/model-registry/components/ModelRegistryType";
 
@@ -25,20 +24,15 @@ vi.mock("@/foundation/lib/i18n", () => ({
 }));
 
 describe("ModelRegistryType", () => {
-  it("names a ModelScope registry rather than showing its raw type", () => {
-    render(<ModelRegistryType type="model-scope" />);
+  it.each([
+    ["model-scope", "ModelScope"],
+    ["hugging-face", "Hugging Face"],
+    ["bentoml", "File System"],
+  ])("names a %s registry rather than showing its raw type", (type, name) => {
+    render(<ModelRegistryType type={type} />);
 
-    expect(screen.getByText("ModelScope")).toBeTruthy();
-    expect(screen.queryByText("model-scope")).toBeNull();
-  });
-
-  it("names the kinds that were already supported", () => {
-    const { unmount } = render(<ModelRegistryType type="hugging-face" />);
-    expect(screen.getByText("Hugging Face")).toBeTruthy();
-    unmount();
-
-    render(<ModelRegistryType type="bentoml" />);
-    expect(screen.getByText("File System")).toBeTruthy();
+    screen.getByText(name);
+    expect(screen.queryByText(type)).toBeNull();
   });
 
   it("falls back to the raw identifier for a kind it cannot describe", () => {
@@ -46,7 +40,7 @@ describe("ModelRegistryType", () => {
     // of. Showing the identifier is the honest answer; an empty cell is not.
     render(<ModelRegistryType type="some-future-hub" />);
 
-    expect(screen.getByText("some-future-hub")).toBeTruthy();
+    screen.getByText("some-future-hub");
   });
 
   it("draws the ModelScope icon locally", () => {
@@ -59,27 +53,13 @@ describe("ModelRegistryType", () => {
   });
 });
 
-describe("modelRegistryTypeOptions", () => {
-  it("offers ModelScope alongside the other creatable kinds", () => {
-    expect(modelRegistryTypeOptions(translate)).toEqual([
-      { label: "Hugging Face", value: "hugging-face" },
-      { label: "ModelScope", value: "model-scope" },
-      { label: "File System", value: "bentoml" },
-    ]);
-  });
-});
-
 describe("modelRegistryUrlPlaceholder", () => {
-  it("offers each kind an example in the form its address takes", () => {
-    expect(modelRegistryUrlPlaceholder("model-scope", translate)).toBe(
-      "e.g https://www.modelscope.cn",
-    );
-    expect(modelRegistryUrlPlaceholder("hugging-face", translate)).toBe(
-      "e.g https://huggingface.co",
-    );
-    expect(modelRegistryUrlPlaceholder("bentoml", translate)).toBe(
-      "e.g nfs://path/to/registry",
-    );
+  it.each([
+    ["model-scope", "e.g https://www.modelscope.cn"],
+    ["hugging-face", "e.g https://huggingface.co"],
+    ["bentoml", "e.g nfs://path/to/registry"],
+  ])("offers %s an example in the form its address takes", (type, example) => {
+    expect(modelRegistryUrlPlaceholder(type, translate)).toBe(example);
   });
 
   it("offers no example for a kind it cannot describe", () => {

@@ -8,212 +8,107 @@ vi.mock("@refinedev/core", () => ({
 
 import { useTestConnectivity } from "./use-test-connectivity";
 
-describe("useTestConnectivity", () => {
-  it("returns idle state initially", () => {
-    const { result } = renderHook(() => useTestConnectivity());
-    expect(result.current.testingMap).toEqual({});
-    expect(result.current.resultMap).toEqual({});
+type Params = Parameters<ReturnType<typeof useTestConnectivity>["test"]>[1];
+
+const external = (overrides: Partial<Params> = {}) =>
+  ({
+    type: "external",
+    url: "https://api.example.com/v1",
+    credential: "sk-test",
+    ...overrides,
+  }) as Params;
+
+async function runTest(key: number, params: Params) {
+  const hook = renderHook(() => useTestConnectivity());
+  let data!: Awaited<ReturnType<typeof hook.result.current.test>>;
+  await act(async () => {
+    data = await hook.result.current.test(key, params);
   });
+  return { ...hook, data };
+}
 
-  it("sends correct payload for external upstream", async () => {
-    mockMutateAsync.mockResolvedValueOnce({
-      data: {
-        success: true,
-        latency_ms: 150,
-        models: ["gpt-4o", "gpt-4o-mini"],
-      },
-    });
-
-    const { result } = renderHook(() => useTestConnectivity());
-
-    let data: Awaited<ReturnType<typeof result.current.test>>;
-    await act(async () => {
-      data = await result.current.test(0, {
-        type: "external",
-        url: "https://api.openai.com/v1",
-        credential: "sk-test",
-      });
-    });
-
-    expect(mockMutateAsync).toHaveBeenCalledWith({
-      url: "/external_endpoints/test_connectivity",
-      method: "post",
+describe("useTestConnectivity", () => {
+  it.each([
+    {
+      name: "external upstream",
+      params: external(),
       values: {
-        upstream: { url: "https://api.openai.com/v1" },
+        upstream: { url: "https://api.example.com/v1" },
         auth: { type: "bearer", credential: "sk-test" },
       },
-      successNotification: false,
-      errorNotification: false,
-    });
-
-    expect(data!.success).toBe(true);
-    expect(data!.latency_ms).toBe(150);
-    expect(data!.models).toEqual(["gpt-4o", "gpt-4o-mini"]);
-
-    expect(result.current.testingMap[0]).toBe(false);
-    expect(result.current.resultMap[0]).toEqual({
-      success: true,
-      latency_ms: 150,
-      models: ["gpt-4o", "gpt-4o-mini"],
-    });
-  });
-
-  it("sends name, workspace and stored_upstream_url for external upstream when provided", async () => {
-    mockMutateAsync.mockResolvedValueOnce({
-      data: { success: true, latency_ms: 200, models: ["gpt-4o"] },
-    });
-
-    const { result } = renderHook(() => useTestConnectivity());
-
-    await act(async () => {
-      await result.current.test(0, {
-        type: "external",
-        url: "https://api.new-provider.com/v1",
+    },
+    {
+      name: "external upstream of a saved endpoint",
+      params: external({
         credential: "",
         name: "my-ee",
         workspace: "default",
-        stored_upstream_url: "https://api.openai.com/v1",
-      });
-    });
-
-    expect(mockMutateAsync).toHaveBeenCalledWith({
-      url: "/external_endpoints/test_connectivity",
-      method: "post",
+        stored_upstream_url: "https://api.old.com/v1",
+      }),
       values: {
-        upstream: { url: "https://api.new-provider.com/v1" },
+        upstream: { url: "https://api.example.com/v1" },
         auth: { type: "bearer", credential: "" },
         name: "my-ee",
         workspace: "default",
-        stored_upstream_url: "https://api.openai.com/v1",
+        stored_upstream_url: "https://api.old.com/v1",
       },
-      successNotification: false,
-      errorNotification: false,
-    });
-  });
-
-  it("sends correct payload for endpoint_ref", async () => {
-    mockMutateAsync.mockResolvedValueOnce({
-      data: { success: true, latency_ms: 80, models: ["llama-3"] },
-    });
-
-    const { result } = renderHook(() => useTestConnectivity());
-
-    let data: Awaited<ReturnType<typeof result.current.test>>;
-    await act(async () => {
-      data = await result.current.test(1, {
+    },
+    {
+      name: "endpoint reference",
+      params: {
         type: "endpoint_ref",
-        endpoint_ref: "my-internal-endpoint",
+        endpoint_ref: "internal",
         workspace: "default",
-      });
-    });
-
-    expect(mockMutateAsync).toHaveBeenCalledWith({
-      url: "/external_endpoints/test_connectivity",
-      method: "post",
-      values: {
-        endpoint_ref: "my-internal-endpoint",
-        workspace: "default",
-      },
-      successNotification: false,
-      errorNotification: false,
-    });
-
-    expect(data!.success).toBe(true);
-    expect(data!.latency_ms).toBe(80);
-    expect(data!.models).toEqual(["llama-3"]);
+      } as Params,
+      values: { endpoint_ref: "internal", workspace: "default" },
+    },
+  ])("posts the $name payload", async ({ params, values }) => {
+    mockMutateAsync.mockResolvedValueOnce({ data: { success: true } });
+    await runTest(0, params);
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/external_endpoints/test_connectivity",
+        method: "post",
+        values,
+      }),
+    );
   });
 
-  it("returns failure result from API", async () => {
-    mockMutateAsync.mockResolvedValueOnce({
-      data: { success: false, error: "connection refused" },
-    });
-
-    const { result } = renderHook(() => useTestConnectivity());
-
-    let data: Awaited<ReturnType<typeof result.current.test>>;
-    await act(async () => {
-      data = await result.current.test(0, {
-        type: "external",
-        url: "https://bad.com/v1",
-        credential: "sk-test",
-      });
-    });
-
-    expect(data!.success).toBe(false);
-    expect(data!.error).toBe("connection refused");
-    expect(result.current.resultMap[0]?.success).toBe(false);
-  });
-
-  it("catches thrown errors and returns failure result", async () => {
-    mockMutateAsync.mockRejectedValueOnce(new Error("network error"));
-
-    const { result } = renderHook(() => useTestConnectivity());
-
-    let data: Awaited<ReturnType<typeof result.current.test>>;
-    await act(async () => {
-      data = await result.current.test(0, {
-        type: "external",
-        url: "https://api.openai.com/v1",
-        credential: "sk-test",
-      });
-    });
-
-    expect(data!.success).toBe(false);
-    expect(data!.error).toBe("network error");
+  it("returns and stores the API result, then clears the testing flag", async () => {
+    const response = { success: true, latency_ms: 150, models: ["gpt-4o"] };
+    mockMutateAsync.mockResolvedValueOnce({ data: response });
+    const { result, data } = await runTest(0, external());
+    expect(data).toEqual(response);
+    expect(result.current.resultMap[0]).toEqual(response);
     expect(result.current.testingMap[0]).toBe(false);
   });
 
-  it("handles non-Error thrown values", async () => {
-    mockMutateAsync.mockRejectedValueOnce("string error");
+  it.each([
+    { thrown: new Error("network error"), error: "network error" },
+    { thrown: "string error", error: "string error" },
+  ])(
+    "turns a thrown $thrown into a failure result",
+    async ({ thrown, error }) => {
+      mockMutateAsync.mockRejectedValueOnce(thrown);
+      const { result, data } = await runTest(1, external());
+      expect(data).toEqual({ success: false, error });
+      expect(result.current.resultMap[1]).toEqual(data);
+      expect(result.current.testingMap[1]).toBe(false);
+    },
+  );
 
-    const { result } = renderHook(() => useTestConnectivity());
-
-    let data: Awaited<ReturnType<typeof result.current.test>>;
-    await act(async () => {
-      data = await result.current.test(1, {
-        type: "endpoint_ref",
-        endpoint_ref: "bad-endpoint",
-        workspace: "default",
-      });
-    });
-
-    expect(data!.success).toBe(false);
-    expect(data!.error).toBe("string error");
-  });
-
-  it("isolates state between different upstream indices", async () => {
+  it("keeps each upstream's result separate", async () => {
     mockMutateAsync
-      .mockResolvedValueOnce({
-        data: { success: true, latency_ms: 100, models: ["model-a"] },
-      })
-      .mockResolvedValueOnce({
-        data: { success: false, error: "connection refused" },
-      });
-
+      .mockResolvedValueOnce({ data: { success: true } })
+      .mockResolvedValueOnce({ data: { success: false, error: "refused" } });
     const { result } = renderHook(() => useTestConnectivity());
-
     await act(async () => {
-      await result.current.test(0, {
-        type: "external",
-        url: "https://good.com/v1",
-        credential: "sk-good",
-      });
+      await result.current.test(0, external());
     });
-
     await act(async () => {
-      await result.current.test(1, {
-        type: "external",
-        url: "https://bad.com/v1",
-        credential: "sk-bad",
-      });
+      await result.current.test(1, external());
     });
-
-    // upstream 0 should still show success
     expect(result.current.resultMap[0]?.success).toBe(true);
-    expect(result.current.resultMap[0]?.models).toEqual(["model-a"]);
-
-    // upstream 1 should show failure
-    expect(result.current.resultMap[1]?.success).toBe(false);
-    expect(result.current.resultMap[1]?.error).toBe("connection refused");
+    expect(result.current.resultMap[1]?.error).toBe("refused");
   });
 });

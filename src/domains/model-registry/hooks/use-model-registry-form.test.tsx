@@ -1,26 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
-import { FormProvider } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      const form = rhf.useForm(rhfOpts);
-      (form as Record<string, unknown>).refineCore = {
-        onFinish: vi.fn(),
-      };
-      return form;
-    },
-  };
-});
+import type { ModelRegistry } from "@/domains/model-registry/types";
+import { fillField, selectOption } from "@/foundation/testing/interactions";
+import { refineForm } from "@/foundation/testing/refine-form";
+import { renderForm } from "@/foundation/testing/render-form";
+import { useModelRegistryForm } from "./use-model-registry-form";
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
@@ -31,175 +16,96 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
-import { useModelRegistryForm } from "./use-model-registry-form";
-
-function CreateForm() {
-  const { form, specFields } = useModelRegistryForm({ action: "create" });
-  return (
-    <FormProvider {...form}>
-      <form>{specFields}</form>
-    </FormProvider>
+const renderCreate = () =>
+  renderForm(
+    () => useModelRegistryForm({ action: "create" }),
+    (r) => r.specFields,
   );
-}
 
-function selectType(label: string) {
-  const field = screen.getByTestId("field-spec.type");
-  const trigger = field.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error("select trigger not found");
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: label }));
-}
+const NFS_ERROR = "model_registries.validation.mustUseNfsProtocol";
 
-async function fillUrl(value: string) {
-  const field = screen.getByTestId("field-spec.url");
-  const input = field.querySelector("input");
-  if (!input) throw new Error("url input not found");
-  fireEvent.change(input, { target: { value } });
-  fireEvent.blur(input);
-}
-
-function urlPlaceholder() {
-  const field = screen.getByTestId("field-spec.url");
-  return field.querySelector("input")?.getAttribute("placeholder");
-}
-
-function selectedType() {
-  const field = screen.getByTestId("field-spec.type");
-  return field.querySelector('button[role="combobox"]')?.textContent;
-}
+const urlInput = () =>
+  within(screen.getByTestId("field-spec.url")).getByRole("textbox");
 
 describe("useModelRegistryForm", () => {
-  describe("URL protocol validation", () => {
-    it("shows error for non-NFS URL when bentoml type is selected", async () => {
-      render(<CreateForm />);
+  it("opens on the file system kind with its nfs:// rule already in force", async () => {
+    // The kind a new registry can actually be pushed to; the public hubs are
+    // provisioned rather than made by hand.
+    const { result } = renderCreate();
 
-      // Away and back, so this still proves the rule follows the selection.
-      // The form now opens on this kind, and selecting it directly would pass
-      // even if choosing a type did nothing at all.
-      selectType("model_registries.types.huggingFace");
-      selectType("model_registries.types.fileSystem");
-      await fillUrl("https://example.com");
+    expect(result.current.form.getValues("spec.type")).toBe("bentoml");
+    fillField("spec.url", "https://example.com");
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("model_registries.validation.mustUseNfsProtocol"),
-        ).toBeTruthy();
-      });
-    });
-
-    it("passes validation for NFS URL when bentoml type is selected", async () => {
-      render(<CreateForm />);
-
-      selectType("model_registries.types.fileSystem");
-      await fillUrl("nfs://server/path");
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText("model_registries.validation.mustUseNfsProtocol"),
-        ).toBeNull();
-      });
-    });
-
-    it("does not validate URL protocol for hugging-face type", async () => {
-      render(<CreateForm />);
-
-      // Selected rather than relied on: the form no longer opens on this kind.
-      selectType("model_registries.types.huggingFace");
-      await fillUrl("https://huggingface.co");
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText("model_registries.validation.mustUseNfsProtocol"),
-        ).toBeNull();
-      });
-    });
-
-    it("does not validate URL protocol for model-scope type", async () => {
-      render(<CreateForm />);
-
-      selectType("model_registries.types.modelScope");
-      await fillUrl("https://www.modelscope.cn");
-
-      await waitFor(() => {
-        expect(
-          screen.queryByText("model_registries.validation.mustUseNfsProtocol"),
-        ).toBeNull();
-      });
-    });
+    await screen.findByText(NFS_ERROR);
   });
 
-  describe("registry type", () => {
-    it("offers ModelScope", () => {
-      render(<CreateForm />);
+  it.each([
+    ["model_registries.types.fileSystem", "nfs://server/path"],
+    ["model_registries.types.huggingFace", "https://huggingface.co"],
+    ["model_registries.types.modelScope", "https://www.modelscope.cn"],
+  ])("accepts %s with url %s", async (type, url) => {
+    const { result } = renderCreate();
+    selectOption("spec.type", "model_registries.types.huggingFace");
+    selectOption("spec.type", type);
+    fillField("spec.url", url);
 
-      const field = screen.getByTestId("field-spec.type");
-      const trigger = field.querySelector('button[role="combobox"]');
-      if (!trigger) throw new Error("select trigger not found");
-      fireEvent.click(trigger);
+    expect(await act(() => result.current.form.trigger("spec.url"))).toBe(true);
+    expect(screen.queryByText(NFS_ERROR)).toBeNull();
+  });
 
-      expect(
-        screen.getByRole("option", {
-          name: "model_registries.types.modelScope",
-        }),
-      ).toBeTruthy();
-    });
+  it("re-applies the nfs:// rule when switching back to file system", async () => {
+    renderCreate();
+    selectOption("spec.type", "model_registries.types.huggingFace");
+    selectOption("spec.type", "model_registries.types.fileSystem");
 
-    it("starts on the file system kind", () => {
-      // The kind a new registry can actually be pushed to. The public hubs are
-      // provisioned rather than made by hand, and refuse writes.
-      render(<CreateForm />);
+    fillField("spec.url", "https://example.com");
 
-      expect(selectedType()).toBe("model_registries.types.fileSystem");
-    });
+    await screen.findByText(NFS_ERROR);
+  });
 
-    it("applies the file system URL rule from the first render", async () => {
-      // Follows from the default, and is the half that bites: the rule is in
-      // force before the user has touched the type field at all.
-      render(<CreateForm />);
+  it("shows the example address of the selected kind", async () => {
+    renderCreate();
 
-      await fillUrl("https://example.com");
+    selectOption("spec.type", "model_registries.types.modelScope");
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("model_registries.validation.mustUseNfsProtocol"),
-        ).toBeTruthy();
-      });
-    });
+    await waitFor(() =>
+      expect(urlInput().getAttribute("placeholder")).toBe(
+        "model_registries.placeholders.modelScopeUrl",
+      ),
+    );
+  });
 
-    it("shows the example address of the kind that is selected", async () => {
-      render(<CreateForm />);
+  it("keeps typed credentials when the kind changes", async () => {
+    // Every kind can carry one: a hub token, or a credential for the mount.
+    const { result } = renderCreate();
+    fillField("spec.credentials", "secret");
 
-      expect(urlPlaceholder()).toBe(
-        "model_registries.placeholders.fileSystemUrl",
-      );
+    selectOption("spec.type", "model_registries.types.modelScope");
 
-      selectType("model_registries.types.modelScope");
-      await waitFor(() => {
-        expect(urlPlaceholder()).toBe(
-          "model_registries.placeholders.modelScopeUrl",
-        );
-      });
+    await waitFor(() =>
+      expect(result.current.form.getValues("spec.credentials")).toBe("secret"),
+    );
+    screen.getByTestId("field-spec.credentials");
+  });
 
-      selectType("model_registries.types.huggingFace");
-      await waitFor(() => {
-        expect(urlPlaceholder()).toBe(
-          "model_registries.placeholders.huggingFaceUrl",
-        );
-      });
-    });
+  it("drops untouched empty credentials from an edit submit", async () => {
+    const { result } = renderForm(
+      () => useModelRegistryForm({ action: "edit" }),
+      (r) => r.specFields,
+    );
 
-    it("asks for credentials whatever the kind is", async () => {
-      // Every kind can carry one — a hub token, or a credential for the mount —
-      // so the field is not conditional and switching kind never hides a value
-      // already typed.
-      render(<CreateForm />);
+    await act(() =>
+      result.current.form.refineCore.onFinish({
+        spec: {
+          type: "hugging-face",
+          url: "https://huggingface.co",
+          credentials: "",
+        },
+      } as ModelRegistry),
+    );
 
-      expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
-
-      selectType("model_registries.types.modelScope");
-      await waitFor(() => {
-        expect(screen.getByTestId("field-spec.credentials")).toBeTruthy();
-      });
-    });
+    expect(refineForm.onFinish.mock.calls[0][0].spec).not.toHaveProperty(
+      "credentials",
+    );
   });
 });

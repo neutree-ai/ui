@@ -1,14 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// jsdom ships neither of these, and the popover's positioning needs both.
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView ??= () => {};
-
 const mockOnSearchChange = vi.fn();
 const mockUseWorkspaceSearch = vi.fn();
 
@@ -17,18 +9,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspaceSearch: () => mockUseWorkspaceSearch(),
 }));
 
-const SELECT_A_WORKSPACE = "Select a workspace";
-
-const translate = (key: string) =>
-  key === "workspaces.placeholders.selectWorkspace" ? SELECT_A_WORKSPACE : key;
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: translate }),
-}));
+const SELECT_A_WORKSPACE = "workspaces.placeholders.selectWorkspace";
 
 // The real FormControl needs a FormField context; Slot keeps the one behaviour
 // this test depends on — forwarding the popover trigger's props to the button.
@@ -59,8 +40,8 @@ describe("WorkspaceField", () => {
     render(<WorkspaceField />);
     openField();
 
-    expect(screen.getByRole("option", { name: "ws-alpha" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "ws-beta" })).toBeTruthy();
+    screen.getByRole("option", { name: "ws-alpha" });
+    screen.getByRole("option", { name: "ws-beta" });
   });
 
   it("hands what was typed to the search query instead of filtering locally", () => {
@@ -101,6 +82,6 @@ describe("WorkspaceField", () => {
     openField();
 
     // Matched as an option, not just as the trigger's label.
-    expect(screen.getByRole("option", { name: "ws-elsewhere" })).toBeTruthy();
+    screen.getByRole("option", { name: "ws-elsewhere" });
   });
 });

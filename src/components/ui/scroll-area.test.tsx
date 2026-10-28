@@ -28,6 +28,6 @@ describe("ScrollArea", () => {
       </ScrollArea>,
     );
 
-    expect(screen.getByText("content")).toBeDefined();
+    screen.getByText("content");
   });
 });

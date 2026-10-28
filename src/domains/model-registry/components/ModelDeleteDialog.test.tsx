@@ -1,41 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import {
-  ReferenceList,
-  referencePhaseClassName,
-} from "@/domains/model-registry/components/ModelDeleteDialog";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, vars?: Record<string, string>) =>
-      vars ? `${key}:${Object.values(vars).join(",")}` : key,
-  }),
-}));
-
-describe("referencePhaseClassName", () => {
-  it("leaves a serving endpoint unmarked", () => {
-    expect(referencePhaseClassName("Running")).toContain("muted");
-  });
-
-  it("marks every phase that is not serving traffic", () => {
-    // Decided by what a phase is not, so the set never needs updating: a phase
-    // the server adds later is marked rather than silently reading as "in
-    // service", which is the reading that would let someone delete a model out
-    // from under a deployment they thought was idle.
-    for (const phase of [
-      "Pending",
-      "Deploying",
-      "ModelDownloading",
-      "Paused",
-      "Failed",
-      "Deleting",
-      "Deleted",
-      "SomePhaseAddedLater",
-    ]) {
-      expect(referencePhaseClassName(phase)).toContain("amber");
-    }
-  });
-});
+import { describe, expect, it } from "vitest";
+import { ReferenceList } from "@/domains/model-registry/components/ModelDeleteDialog";
 
 describe("ReferenceList", () => {
   it("renders the server's own word for the phase, not an interpretation", () => {

@@ -1,4 +1,11 @@
 import { describe, expect, it } from "vitest";
+import {
+  FULL_T4,
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+  vgpuProduct,
+} from "@/foundation/testing/resource-builders";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
@@ -11,174 +18,61 @@ import {
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
   filterGpuDeviceResourceRows,
-  GPU_GRID_CELL_CLASS,
-  GPU_GRID_CLASS,
-  GPU_GRID_FRAME_CLASS,
-  GPU_GRID_STYLE,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
 
 const nodeResources: Record<string, NodeResourceStatus> = {
   "node-a": {
-    allocatable: {
-      cpu: 16,
-      memory: 64,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-              virtualization: {
-                memory_mib: 15360,
-                core_units: 100,
-              },
-            },
-          },
-        },
-      },
-    },
-    available: {
-      cpu: 12,
-      memory: 48,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-              virtualization: {
-                memory_mib: 7680,
-                core_units: 50,
-              },
-            },
-          },
-        },
-      },
-    },
+    allocatable: makeResourceInfo(16, 64, {
+      "Tesla-T4": vgpuProduct(1, 15360, 100),
+    }),
+    available: makeResourceInfo(12, 48, {
+      "Tesla-T4": vgpuProduct(1, 7680, 50),
+    }),
     devices: [
-      {
-        uuid: "GPU-11111111-2222-3333-4444-555555555555",
-        product: "Tesla-T4",
-        health: true,
-        allocatable: {
-          memory_mib: 15360,
-          core_units: 100,
-        },
-        available: {
-          memory_mib: 7680,
-          core_units: 50,
-        },
-      },
+      makeGpuDevice("GPU-11111111-2222-3333-4444-555555555555", {
+        memory_mib: 7680,
+        core_units: 50,
+      }),
     ],
   },
   "node-b": {
-    allocatable: {
-      cpu: 16,
-      memory: 64,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: { "Tesla-A10": 1 },
-        },
-      },
-    },
-    available: {
-      cpu: 12,
-      memory: 48,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: { "Tesla-A10": 1 },
-        },
-      },
-    },
+    allocatable: makeResourceInfo(16, 64, { "Tesla-A10": 1 }),
+    available: makeResourceInfo(12, 48, { "Tesla-A10": 1 }),
     devices: [
-      {
-        uuid: "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        product: "Tesla-A10",
-        health: false,
-        allocatable: {
-          memory_mib: 24576,
-          core_units: 100,
+      makeGpuDevice(
+        "GPU-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        { memory_mib: 12288, core_units: 75 },
+        {
+          product: "Tesla-A10",
+          health: false,
+          allocatable: { memory_mib: 24576, core_units: 100 },
         },
-        available: {
-          memory_mib: 12288,
-          core_units: 75,
-        },
-      },
+      ),
     ],
   },
 };
 
 describe("gpu device resource helpers", () => {
+  /** One node with a single T4 whose 100 MiB / 100 core pool is all free. */
   const placementNode = (
     uuid: string,
-    options: {
-      availableCpu?: number;
-      availableMemory?: number;
-      availableMemoryMiB?: number;
-      availableCoreUnits?: number;
-      allocatableMemoryMiB?: number;
-      allocatableCoreUnits?: number;
-    } = {},
-  ): NodeResourceStatus => ({
-    allocatable: {
-      cpu: options.availableCpu ?? 8,
-      memory: options.availableMemory ?? 32,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-              virtualization: {
-                memory_mib: options.allocatableMemoryMiB ?? 100,
-                core_units: options.allocatableCoreUnits ?? 100,
-              },
-            },
-          },
-        },
-      },
-    },
-    available: {
-      cpu: options.availableCpu ?? 8,
-      memory: options.availableMemory ?? 32,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-              virtualization: {
-                memory_mib: options.availableMemoryMiB ?? 100,
-                core_units: options.availableCoreUnits ?? 100,
-              },
-            },
-          },
-        },
-      },
-    },
-    devices: [
-      {
-        uuid,
-        product: "Tesla-T4",
-        health: true,
-        allocatable: {
-          memory_mib: options.allocatableMemoryMiB ?? 100,
-          core_units: options.allocatableCoreUnits ?? 100,
-        },
-        available: {
-          memory_mib: options.availableMemoryMiB ?? 100,
-          core_units: options.availableCoreUnits ?? 100,
-        },
-      },
-    ],
-  });
+    {
+      availableCpu = 8,
+      availableMemory = 32,
+    }: { availableCpu?: number; availableMemory?: number } = {},
+  ): NodeResourceStatus => {
+    const pool = () =>
+      makeResourceInfo(availableCpu, availableMemory, {
+        "Tesla-T4": vgpuProduct(1, 100, 100),
+      });
+    const card = { memory_mib: 100, core_units: 100 };
+    return {
+      allocatable: pool(),
+      available: pool(),
+      devices: [makeGpuDevice(uuid, card, { allocatable: { ...card } })],
+    };
+  };
 
   const placementAccelerator = {
     type: "nvidia_gpu",
@@ -190,38 +84,23 @@ describe("gpu device resource helpers", () => {
     availableMemoryMiB: number,
     availableCoreUnits: number,
     totalMemoryMiB = 15360,
-    totalCoreUnits = 100,
-  ) => ({
-    uuid,
-    product: "Tesla-T4",
-    health: true,
-    allocatable: {
-      memory_mib: totalMemoryMiB,
-      core_units: totalCoreUnits,
-    },
-    available: {
-      memory_mib: availableMemoryMiB,
-      core_units: availableCoreUnits,
-    },
-  });
+  ) =>
+    makeGpuDevice(
+      uuid,
+      { memory_mib: availableMemoryMiB, core_units: availableCoreUnits },
+      { allocatable: { memory_mib: totalMemoryMiB, core_units: 100 } },
+    );
 
   const placementNodeWithDevices = (
-    devices: ReturnType<typeof placementDevice>[],
+    devices: NodeResourceStatus["devices"],
     availableCpu = 16,
     availableMemory = 64,
-  ): NodeResourceStatus => ({
-    allocatable: {
-      cpu: 32,
-      memory: 128,
-      accelerator_groups: null,
-    },
-    available: {
-      cpu: availableCpu,
-      memory: availableMemory,
-      accelerator_groups: null,
-    },
-    devices,
-  });
+  ) =>
+    makeNodeResources({
+      allocatable: makeResourceInfo(32, 128),
+      available: makeResourceInfo(availableCpu, availableMemory),
+      devices,
+    });
 
   it("keeps every multi-card replica on one node", () => {
     const result = calculateGpuPlacementCapacity(
@@ -744,13 +623,13 @@ describe("gpu device resource helpers", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
         "node-a": {
-          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-          available: { cpu: 4, memory: 16, accelerator_groups: null },
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(4, 16),
           devices: [],
         },
         "node-b": {
-          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-          available: { cpu: 8, memory: 32, accelerator_groups: null },
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(8, 32),
           devices: [],
         },
       },
@@ -774,8 +653,8 @@ describe("gpu device resource helpers", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
         "node-a": {
-          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-          available: { cpu: 4, memory: 16, accelerator_groups: null },
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(4, 16),
           devices: [],
         },
       },
@@ -796,8 +675,8 @@ describe("gpu device resource helpers", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
         "node-a": {
-          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-          available: { cpu: 4, memory: 16, accelerator_groups: null },
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(4, 16),
           devices: [],
         },
       },
@@ -819,8 +698,8 @@ describe("gpu device resource helpers", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
         "node-a": {
-          allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-          available: { cpu: 4, memory: 16, accelerator_groups: null },
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(4, 16),
           devices: [],
         },
       },
@@ -851,26 +730,12 @@ describe("gpu device resource helpers", () => {
   it("adds current endpoint device allocations back to matching node devices", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
-        "node-a": {
-          allocatable: null,
-          available: null,
+        "node-a": makeNodeResources({
           devices: [
-            {
-              uuid: "GPU-current",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: { memory_mib: 15360, core_units: 100 },
-              available: { memory_mib: 7680, core_units: 50 },
-            },
-            {
-              uuid: "GPU-other",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: { memory_mib: 15360, core_units: 100 },
-              available: { memory_mib: 15360, core_units: 100 },
-            },
+            makeGpuDevice("GPU-current", { memory_mib: 7680, core_units: 50 }),
+            makeGpuDevice("GPU-other"),
           ],
-        },
+        }),
       },
       {
         replicas: [
@@ -906,26 +771,15 @@ describe("gpu device resource helpers", () => {
     expect(
       calculatePhysicalCardUsageForRequest(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-fit",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 0, core_units: 50 },
-              },
-              {
-                uuid: "GPU-too-small",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 15360, core_units: 49 },
-              },
+              makeGpuDevice("GPU-fit", { memory_mib: 0, core_units: 50 }),
+              makeGpuDevice("GPU-too-small", {
+                memory_mib: 15360,
+                core_units: 49,
+              }),
             ],
-          },
+          }),
         },
         {
           allocationMode: "fractional",
@@ -947,26 +801,12 @@ describe("gpu device resource helpers", () => {
     expect(
       calculatePhysicalCardUsageForRequest(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-a",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 9216, core_units: 60 },
-              },
-              {
-                uuid: "GPU-b",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 9216, core_units: 60 },
-              },
+              makeGpuDevice("GPU-a", { memory_mib: 9216, core_units: 60 }),
+              makeGpuDevice("GPU-b", { memory_mib: 9216, core_units: 60 }),
             ],
-          },
+          }),
         },
         {
           allocationMode: "fractional",
@@ -988,19 +828,7 @@ describe("gpu device resource helpers", () => {
     expect(
       calculatePhysicalCardUsageForRequest(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-a",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 15360, core_units: 100 },
-              },
-            ],
-          },
+          "node-a": makeNodeResources({ devices: [makeGpuDevice("GPU-a")] }),
         },
         {
           allocationMode: "fractional",
@@ -1022,26 +850,12 @@ describe("gpu device resource helpers", () => {
     expect(
       calculatePhysicalCardUsageForRequest(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-a",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 8192, core_units: 100 },
-              },
-              {
-                uuid: "GPU-b",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 4096, core_units: 50 },
-              },
+              makeGpuDevice("GPU-a", { memory_mib: 8192, core_units: 100 }),
+              makeGpuDevice("GPU-b", { memory_mib: 4096, core_units: 50 }),
             ],
-          },
+          }),
         },
         {
           allocationMode: "vgpu",
@@ -1064,23 +878,19 @@ describe("gpu device resource helpers", () => {
   it("packs vGPU replicas onto the minimum physical-card set", () => {
     const physicalCardResources = {
       "node-a": {
-        allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
-        available: { cpu: 16, memory: 64, accelerator_groups: null },
+        allocatable: makeResourceInfo(16, 64),
+        available: makeResourceInfo(16, 64),
         devices: [
-          {
-            uuid: "GPU-a",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 49152, core_units: 100 },
-            available: { memory_mib: 49152, core_units: 100 },
-          },
-          {
-            uuid: "GPU-b",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 49152, core_units: 100 },
-            available: { memory_mib: 49152, core_units: 100 },
-          },
+          makeGpuDevice(
+            "GPU-a",
+            { memory_mib: 49152, core_units: 100 },
+            { allocatable: { memory_mib: 49152, core_units: 100 } },
+          ),
+          makeGpuDevice(
+            "GPU-b",
+            { memory_mib: 49152, core_units: 100 },
+            { allocatable: { memory_mib: 49152, core_units: 100 } },
+          ),
         ],
       },
     } satisfies Record<string, NodeResourceStatus>;
@@ -1111,19 +921,11 @@ describe("gpu device resource helpers", () => {
   it("sums matching device resources after endpoint allocation reuse", () => {
     const reusable = addBackEndpointDeviceAllocationsToNodeResources(
       {
-        "node-a": {
-          allocatable: null,
-          available: null,
+        "node-a": makeNodeResources({
           devices: [
-            {
-              uuid: "GPU-current",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: { memory_mib: 15360, core_units: 100 },
-              available: { memory_mib: 7680, core_units: 50 },
-            },
+            makeGpuDevice("GPU-current", { memory_mib: 7680, core_units: 50 }),
           ],
-        },
+        }),
       },
       {
         replicas: [
@@ -1167,44 +969,12 @@ describe("gpu device resource helpers", () => {
               },
             },
           },
-          allocatable: {
-            cpu: 32,
-            memory: 128,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 2,
-                product_groups: null,
-                products: {
-                  "Tesla-T4": {
-                    quantity: 2,
-                    virtualization: {
-                      memory_mib: 30720,
-                      core_units: 200,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          available: {
-            cpu: 24,
-            memory: 96,
-            accelerator_groups: {
-              nvidia_gpu: {
-                quantity: 1,
-                product_groups: null,
-                products: {
-                  "Tesla-T4": {
-                    quantity: 1,
-                    virtualization: {
-                      memory_mib: 15360,
-                      core_units: 150,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          allocatable: makeResourceInfo(32, 128, {
+            "Tesla-T4": vgpuProduct(2, 30720, 200),
+          }),
+          available: makeResourceInfo(24, 96, {
+            "Tesla-T4": vgpuProduct(1, 15360, 150),
+          }),
           node_resources: nodeResources,
         },
         {
@@ -1273,25 +1043,7 @@ describe("gpu device resource helpers", () => {
           },
         },
         node_resources: {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-free",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-              },
-            ],
-          },
+          "node-a": makeNodeResources({ devices: [makeGpuDevice("GPU-free")] }),
         },
       }),
     ).toEqual([
@@ -1325,19 +1077,7 @@ describe("gpu device resource helpers", () => {
   it("uses group availability for a single product when its breakdown is missing", () => {
     expect(
       buildGpuCardResourceRows({
-        allocatable: {
-          cpu: 32,
-          memory: 128,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 2,
-              product_groups: null,
-              products: {
-                "Tesla-T4": { quantity: 2 },
-              },
-            },
-          },
-        },
+        allocatable: makeResourceInfo(32, 128, { "Tesla-T4": { quantity: 2 } }),
         available: {
           cpu: 24,
           memory: 96,
@@ -1417,83 +1157,22 @@ describe("gpu device resource helpers", () => {
   it("uses aggregate available quantity for summary rows when cards are partially allocated", () => {
     expect(
       buildGpuCardResourceRows({
-        allocatable: {
-          cpu: 32,
-          memory: 128,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 2,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 2,
-                  virtualization: {
-                    memory_mib: 30720,
-                    core_units: 200,
-                  },
-                },
-              },
-            },
-          },
-        },
-        available: {
-          cpu: 24,
-          memory: 96,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 1.5,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 1.5,
-                  virtualization: {
-                    memory_mib: 23040,
-                    core_units: 150,
-                  },
-                },
-              },
-            },
-          },
-        },
+        allocatable: makeResourceInfo(32, 128, {
+          "Tesla-T4": vgpuProduct(2, 30720, 200),
+        }),
+        available: makeResourceInfo(24, 96, {
+          "Tesla-T4": vgpuProduct(1.5, 23040, 150),
+        }),
         node_resources: {
           "node-a": {
-            allocatable: {
-              cpu: 16,
-              memory: 64,
-              accelerator_groups: null,
-            },
-            available: {
-              cpu: 12,
-              memory: 48,
-              accelerator_groups: null,
-            },
+            allocatable: makeResourceInfo(16, 64),
+            available: makeResourceInfo(12, 48),
             devices: [
-              {
-                uuid: "GPU-full",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-              },
-              {
-                uuid: "GPU-vgpu-used",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 7680,
-                  core_units: 50,
-                },
-              },
+              makeGpuDevice("GPU-full"),
+              makeGpuDevice("GPU-vgpu-used", {
+                memory_mib: 7680,
+                core_units: 50,
+              }),
             ],
           },
         },
@@ -1509,53 +1188,12 @@ describe("gpu device resource helpers", () => {
   it("falls back to aggregate availability when device details are incomplete", () => {
     expect(
       buildGpuCardResourceRows({
-        allocatable: {
-          cpu: 32,
-          memory: 128,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 1,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 1,
-                },
-              },
-            },
-          },
-        },
-        available: {
-          cpu: 24,
-          memory: 96,
-          accelerator_groups: {
-            nvidia_gpu: {
-              quantity: 1,
-              product_groups: null,
-              products: {
-                "Tesla-T4": {
-                  quantity: 1,
-                },
-              },
-            },
-          },
-        },
+        allocatable: makeResourceInfo(32, 128, { "Tesla-T4": { quantity: 1 } }),
+        available: makeResourceInfo(24, 96, { "Tesla-T4": { quantity: 1 } }),
         node_resources: {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-missing-available",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: null,
-              },
-            ],
-          },
+          "node-a": makeNodeResources({
+            devices: [makeGpuDevice("GPU-missing-available", null)],
+          }),
         },
       })[0].quantity,
     ).toEqual({
@@ -1568,22 +1206,9 @@ describe("gpu device resource helpers", () => {
 
   it("does not treat unknown available device resources as fully used", () => {
     const row = buildGpuDeviceResourceRows({
-      "node-a": {
-        allocatable: null,
-        available: null,
-        devices: [
-          {
-            uuid: "GPU-unknown",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-            available: null,
-          },
-        ],
-      },
+      "node-a": makeNodeResources({
+        devices: [makeGpuDevice("GPU-unknown", null)],
+      }),
     })[0];
 
     expect(row.memory).toEqual({
@@ -1602,59 +1227,15 @@ describe("gpu device resource helpers", () => {
 
   it("excludes unhealthy devices from device-level accelerator pools", () => {
     const rows = buildGpuCardResourceRows({
-      allocatable: {
-        cpu: 32,
-        memory: 128,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 2,
-            product_groups: { "Tesla-T4": 2 },
-          },
-        },
-      },
-      available: {
-        cpu: 24,
-        memory: 96,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 2,
-            product_groups: { "Tesla-T4": 2 },
-          },
-        },
-      },
+      allocatable: makeResourceInfo(32, 128, { "Tesla-T4": 2 }),
+      available: makeResourceInfo(24, 96, { "Tesla-T4": 2 }),
       node_resources: {
-        "node-a": {
-          allocatable: null,
-          available: null,
+        "node-a": makeNodeResources({
           devices: [
-            {
-              uuid: "GPU-healthy",
-              product: "Tesla-T4",
-              health: true,
-              allocatable: {
-                memory_mib: 15360,
-                core_units: 100,
-              },
-              available: {
-                memory_mib: 4096,
-                core_units: 10,
-              },
-            },
-            {
-              uuid: "GPU-unhealthy",
-              product: "Tesla-T4",
-              health: false,
-              allocatable: {
-                memory_mib: 15360,
-                core_units: 100,
-              },
-              available: {
-                memory_mib: 15360,
-                core_units: 100,
-              },
-            },
+            makeGpuDevice("GPU-healthy", { memory_mib: 4096, core_units: 10 }),
+            makeGpuDevice("GPU-unhealthy", FULL_T4, { health: false }),
           ],
-        },
+        }),
       },
     });
 
@@ -1738,7 +1319,7 @@ describe("gpu device resource helpers", () => {
   it("matches bare recipe-style product names against vendor-prefixed cluster products", () => {
     // A recipe/catalog preset uses bare model names ("T4") while the cluster
     // reports decorated products ("Tesla-T4") — the two schemes must line up
-    // instead of filtering every row out (NEU-501).
+    // instead of filtering every row out.
     const rows = buildGpuDeviceResourceRows(nodeResources, {
       type: "nvidia_gpu",
       product: "T4",
@@ -1757,54 +1338,20 @@ describe("gpu device resource helpers", () => {
       buildNodePhysicalGpuResourceRows(
         {
           "node-b": {
-            allocatable: {
-              cpu: 16,
-              memory: 64,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 2,
-                  product_groups: { "Tesla-T4": 1, "Tesla-A10": 1 },
-                },
-              },
-            },
-            available: {
-              cpu: 10,
-              memory: 48,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 1,
-                  product_groups: { "Tesla-T4": 0, "Tesla-A10": 1 },
-                },
-              },
-            },
+            allocatable: makeResourceInfo(16, 64, {
+              "Tesla-T4": 1,
+              "Tesla-A10": 1,
+            }),
+            available: makeResourceInfo(10, 48, {
+              "Tesla-T4": 0,
+              "Tesla-A10": 1,
+            }),
           },
           "node-a": {
-            allocatable: {
-              cpu: 8,
-              memory: 32,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 2,
-                  product_groups: null,
-                  products: {
-                    "Tesla-T4": { quantity: 2 },
-                  },
-                },
-              },
-            },
-            available: {
-              cpu: 6,
-              memory: 24,
-              accelerator_groups: {
-                nvidia_gpu: {
-                  quantity: 1,
-                  product_groups: null,
-                  products: {
-                    "Tesla-T4": { quantity: 1 },
-                  },
-                },
-              },
-            },
+            allocatable: makeResourceInfo(8, 32, {
+              "Tesla-T4": { quantity: 2 },
+            }),
+            available: makeResourceInfo(6, 24, { "Tesla-T4": { quantity: 1 } }),
           },
         },
         {
@@ -1860,42 +1407,15 @@ describe("gpu device resource helpers", () => {
 
   it("orders GPU devices by physical order within each node", () => {
     const rows = buildGpuDeviceResourceRows({
-      "node-a": {
-        allocatable: null,
-        available: null,
+      "node-a": makeNodeResources({
         devices: [
-          {
-            uuid: "GPU-node-a-bbbbbbbb",
-            order: 1,
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
-          {
-            uuid: "GPU-node-a-aaaaaaaa",
-            order: 0,
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
+          makeGpuDevice("GPU-node-a-bbbbbbbb", FULL_T4, { order: 1 }),
+          makeGpuDevice("GPU-node-a-aaaaaaaa", FULL_T4, { order: 0 }),
         ],
-      },
-      "node-b": {
-        allocatable: null,
-        available: null,
-        devices: [
-          {
-            uuid: "GPU-node-b-cccccccc",
-            order: 0,
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
-        ],
-      },
+      }),
+      "node-b": makeNodeResources({
+        devices: [makeGpuDevice("GPU-node-b-cccccccc", FULL_T4, { order: 0 })],
+      }),
     });
 
     expect(
@@ -1925,26 +1445,12 @@ describe("gpu device resource helpers", () => {
 
   it("falls back to UUID order when GPU device order is missing", () => {
     const rows = buildGpuDeviceResourceRows({
-      "node-a": {
-        allocatable: null,
-        available: null,
+      "node-a": makeNodeResources({
         devices: [
-          {
-            uuid: "GPU-node-a-bbbbbbbb",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
-          {
-            uuid: "GPU-node-a-aaaaaaaa",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: { memory_mib: 15360, core_units: 100 },
-            available: { memory_mib: 15360, core_units: 100 },
-          },
+          makeGpuDevice("GPU-node-a-bbbbbbbb"),
+          makeGpuDevice("GPU-node-a-aaaaaaaa"),
         ],
-      },
+      }),
     });
 
     expect(
@@ -1989,38 +1495,19 @@ describe("gpu device resource helpers", () => {
 
   it("clamps out-of-range device resource pools and treats non-finite values as unknown", () => {
     const rows = buildGpuDeviceResourceRows({
-      "node-a": {
-        allocatable: null,
-        available: null,
+      "node-a": makeNodeResources({
         devices: [
-          {
-            uuid: "GPU-over-available",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: 15360,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 20000,
-              core_units: -10,
-            },
-          },
-          {
-            uuid: "GPU-non-finite",
-            product: "Tesla-T4",
-            health: true,
-            allocatable: {
-              memory_mib: Number.NaN,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 1000,
-              core_units: Number.POSITIVE_INFINITY,
-            },
-          },
+          makeGpuDevice("GPU-over-available", {
+            memory_mib: 20000,
+            core_units: -10,
+          }),
+          makeGpuDevice(
+            "GPU-non-finite",
+            { memory_mib: 1000, core_units: Number.POSITIVE_INFINITY },
+            { allocatable: { memory_mib: Number.NaN, core_units: 100 } },
+          ),
         ],
-      },
+      }),
     });
 
     const overAvailableRow = rows.find(
@@ -2074,25 +1561,7 @@ describe("gpu device resource helpers", () => {
     expect(
       calculateVgpuCardCapacity(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-free",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-              },
-            ],
-          },
+          "node-a": makeNodeResources({ devices: [makeGpuDevice("GPU-free")] }),
         },
         {
           selectedAccelerator: {
@@ -2113,51 +1582,19 @@ describe("gpu device resource helpers", () => {
     expect(
       calculateVgpuCardCapacity(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-usable",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 4096,
-                  core_units: 10,
-                },
-              },
-              {
-                uuid: "GPU-memory-full",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 0,
-                  core_units: 100,
-                },
-              },
-              {
-                uuid: "GPU-core-full",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 15360,
-                  core_units: 0,
-                },
-              },
+              makeGpuDevice("GPU-usable", { memory_mib: 4096, core_units: 10 }),
+              makeGpuDevice("GPU-memory-full", {
+                memory_mib: 0,
+                core_units: 100,
+              }),
+              makeGpuDevice("GPU-core-full", {
+                memory_mib: 15360,
+                core_units: 0,
+              }),
             ],
-          },
+          }),
         },
         {
           selectedAccelerator: {
@@ -2178,38 +1615,15 @@ describe("gpu device resource helpers", () => {
     expect(
       calculateVgpuCardCapacity(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-healthy",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 4096,
-                  core_units: 10,
-                },
-              },
-              {
-                uuid: "GPU-unhealthy",
-                product: "Tesla-T4",
-                health: false,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-              },
+              makeGpuDevice("GPU-healthy", {
+                memory_mib: 4096,
+                core_units: 10,
+              }),
+              makeGpuDevice("GPU-unhealthy", FULL_T4, { health: false }),
             ],
-          },
+          }),
         },
         {
           selectedAccelerator: {
@@ -2230,38 +1644,18 @@ describe("gpu device resource helpers", () => {
     expect(
       calculateVgpuCardCapacity(
         {
-          "node-a": {
-            allocatable: null,
-            available: null,
+          "node-a": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-shared-core",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 8192,
-                  core_units: 10,
-                },
-              },
-              {
-                uuid: "GPU-core-full",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: {
-                  memory_mib: 8192,
-                  core_units: 0,
-                },
-              },
+              makeGpuDevice("GPU-shared-core", {
+                memory_mib: 8192,
+                core_units: 10,
+              }),
+              makeGpuDevice("GPU-core-full", {
+                memory_mib: 8192,
+                core_units: 0,
+              }),
             ],
-          },
+          }),
         },
         {
           selectedAccelerator: {
@@ -2280,38 +1674,26 @@ describe("gpu device resource helpers", () => {
 
   it("calculates the largest per-card vGPU memory boundary from usable devices", () => {
     const fragmentedL20Resources = {
-      "node-l20": {
-        allocatable: null,
-        available: null,
+      "node-l20": makeNodeResources({
         devices: [
-          {
-            uuid: "GPU-l20-low-memory",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: {
-              memory_mib: 46068,
-              core_units: 100,
+          makeGpuDevice(
+            "GPU-l20-low-memory",
+            { memory_mib: 1012, core_units: 30 },
+            {
+              product: "NVIDIA-L20",
+              allocatable: { memory_mib: 46068, core_units: 100 },
             },
-            available: {
-              memory_mib: 1012,
-              core_units: 30,
+          ),
+          makeGpuDevice(
+            "GPU-l20-rounded-seven-gib",
+            { memory_mib: 7156, core_units: 15 },
+            {
+              product: "NVIDIA-L20",
+              allocatable: { memory_mib: 46068, core_units: 100 },
             },
-          },
-          {
-            uuid: "GPU-l20-rounded-seven-gib",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: {
-              memory_mib: 46068,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 7156,
-              core_units: 15,
-            },
-          },
+          ),
         ],
-      },
+      }),
     } satisfies Record<string, NodeResourceStatus>;
 
     expect(
@@ -2338,38 +1720,26 @@ describe("gpu device resource helpers", () => {
 
   it("counts vGPU card capacity with displayed GiB memory alignment", () => {
     const fragmentedL20Resources = {
-      "node-l20": {
-        allocatable: null,
-        available: null,
+      "node-l20": makeNodeResources({
         devices: [
-          {
-            uuid: "GPU-l20-low-memory",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: {
-              memory_mib: 46068,
-              core_units: 100,
+          makeGpuDevice(
+            "GPU-l20-low-memory",
+            { memory_mib: 1012, core_units: 40 },
+            {
+              product: "NVIDIA-L20",
+              allocatable: { memory_mib: 46068, core_units: 100 },
             },
-            available: {
-              memory_mib: 1012,
-              core_units: 40,
+          ),
+          makeGpuDevice(
+            "GPU-l20-rounded-seven-gib",
+            { memory_mib: 7156, core_units: 50 },
+            {
+              product: "NVIDIA-L20",
+              allocatable: { memory_mib: 46068, core_units: 100 },
             },
-          },
-          {
-            uuid: "GPU-l20-rounded-seven-gib",
-            product: "NVIDIA-L20",
-            health: true,
-            allocatable: {
-              memory_mib: 46068,
-              core_units: 100,
-            },
-            available: {
-              memory_mib: 7156,
-              core_units: 50,
-            },
-          },
+          ),
         ],
-      },
+      }),
     } satisfies Record<string, NodeResourceStatus>;
 
     expect(
@@ -2402,27 +1772,45 @@ describe("gpu device resource helpers", () => {
   });
 });
 
-describe("gpu grid layout", () => {
-  it("leaves the column count to the browser so rows can wrap", () => {
-    // A fixed count cannot hold both ends of this: eight cards on one node used
-    // to sit in a single row that carried half of them off-screen.
-    expect(GPU_GRID_STYLE).toEqual({
-      gridTemplateColumns: "repeat(auto-fit, minmax(188px, 1fr))",
-    });
+describe("nodes without GPU details", () => {
+  const cpuOnlyNode: NodeResourceStatus = {
+    allocatable: makeResourceInfo(8, 32),
+    available: makeResourceInfo(6, 24),
+  };
+
+  it("counts no GPU capacity on a node that lists no devices", () => {
+    const t4 = { type: "nvidia_gpu", product: "Tesla-T4" };
+
+    expect(
+      sumMatchingDeviceAvailableResources({ "node-c": cpuOnlyNode }, t4),
+    ).toEqual({ coreUnits: 0, memoryMiB: 0 });
+    expect(
+      calculatePhysicalCardUsageForRequest(
+        { "node-c": cpuOnlyNode },
+        {
+          allocationMode: "full",
+          selectedAccelerator: t4,
+          requestedPerReplica: 1,
+          replicaCount: 1,
+        },
+      ),
+    ).toMatchObject({ available: 0, placementCapacity: 0, total: 0 });
   });
 
-  it("rules rows and columns from the cells, not from divide-x", () => {
-    // `divide-x` targets every sibling after the first in DOM order, so on a
-    // wrapped grid it draws a stray left rule on each row's first card and no
-    // horizontal rule at all.
-    expect(GPU_GRID_CLASS).not.toContain("divide-");
-    expect(GPU_GRID_CELL_CLASS).toContain("border-b");
-    expect(GPU_GRID_CELL_CLASS).toContain("border-r");
-  });
-
-  it("hangs the trailing rules under the frame's clip", () => {
-    expect(GPU_GRID_CLASS).toContain("-mr-px");
-    expect(GPU_GRID_CLASS).toContain("-mb-px");
-    expect(GPU_GRID_FRAME_CLASS).toContain("overflow-hidden");
+  it("builds a zero-GPU row for a CPU-only node", () => {
+    expect(
+      buildNodePhysicalGpuResourceRows({
+        "node-c": cpuOnlyNode,
+        "node-d": makeNodeResources(),
+      }),
+    ).toMatchObject([
+      {
+        nodeName: "node-c",
+        cpu: { available: 6, total: 8, used: 2 },
+        memory: { available: 24, total: 32, used: 8 },
+        quantity: { available: 0, total: 0, used: 0 },
+      },
+      { nodeName: "node-d", quantity: { available: 0, total: 0, used: 0 } },
+    ]);
   });
 });

@@ -14,13 +14,6 @@ vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: { workspace: "design-lab" } }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { name?: string }) =>
-      options?.name ? `${key}:${options.name}` : key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
@@ -72,7 +65,7 @@ describe("EnginesList", () => {
 
     render(<EnginesList />);
 
-    expect(screen.getByTitle("Loading...")).toBeTruthy();
+    screen.getByTitle("Loading...");
     expect(screen.queryAllByTestId("engine-card")).toHaveLength(0);
   });
 
@@ -91,7 +84,7 @@ describe("EnginesList", () => {
   it("shows the empty state when the workspace has no engines", () => {
     render(<EnginesList />);
 
-    expect(screen.getByText("engines.list.empty")).toBeTruthy();
+    screen.getByText("engines.list.empty");
   });
 
   it("says the engines failed to load instead of calling the workspace empty", () => {
@@ -103,7 +96,7 @@ describe("EnginesList", () => {
 
     render(<EnginesList />);
 
-    expect(screen.getByText("engines.list.loadFailed")).toBeTruthy();
+    screen.getByText("engines.list.loadFailed");
     expect(screen.queryByText("engines.list.empty")).toBeNull();
   });
 

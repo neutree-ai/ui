@@ -5,10 +5,6 @@ import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 
 const { systemApiMock } = vi.hoisted(() => ({ systemApiMock: vi.fn() }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("next-themes", () => ({
   useTheme: () => ({ resolvedTheme: "light" }),
 }));
@@ -73,7 +69,7 @@ describe("ExternalEndpointMonitor", () => {
         wrapper: MemoryRouter,
       },
     );
-    expect(screen.getByText("external_endpoints.monitor.legacy")).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.legacy");
     expect(screen.queryByTestId("grafana-dashboard")).toBeNull();
   });
 
@@ -98,7 +94,7 @@ describe("ExternalEndpointMonitor", () => {
     const loading = render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(screen.getByText("external_endpoints.monitor.loading")).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.loading");
     loading.unmount();
 
     const refetch = vi.fn();
@@ -108,9 +104,7 @@ describe("ExternalEndpointMonitor", () => {
     render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(
-      screen.getByText("external_endpoints.monitor.configError"),
-    ).toBeTruthy();
+    screen.getByText("external_endpoints.monitor.configError");
     fireEvent.click(
       screen.getByRole("button", { name: "external_endpoints.monitor.retry" }),
     );
@@ -122,9 +116,7 @@ describe("ExternalEndpointMonitor", () => {
     render(<ExternalEndpointMonitor record={endpoint()} />, {
       wrapper: MemoryRouter,
     });
-    expect(
-      screen.getByText("common.messages.grafanaNotConfigured"),
-    ).toBeTruthy();
+    screen.getByText("common.messages.grafanaNotConfigured");
   });
 });
 

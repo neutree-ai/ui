@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { type FieldValues, useForm } from "react-hook-form";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
 import { FormCombobox } from "./FormCombobox";
@@ -12,20 +12,11 @@ const OPTIONS = [
   { label: "Text Embedding", value: "text-embedding" },
 ];
 
-beforeAll(() => {
-  globalThis.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-  HTMLElement.prototype.scrollIntoView = () => {};
-});
-
 // Render through FormFieldGroup so the combobox receives field.value the same
 // way production forms inject it (cloneElement spreads the controller field).
 // Only string props are expressible in JSX — null and BaseRecord values reach
 // the component exclusively through this injection, and the API returns
-// explicit nulls for empty composite-type fields (NEU-520).
+// explicit nulls for empty composite-type fields.
 function Harness({
   fieldValue,
   required = false,
@@ -55,24 +46,14 @@ function Harness({
 const getTrigger = () => screen.getByRole("combobox");
 
 describe("FormCombobox", () => {
-  it("renders the placeholder when the field value is null", () => {
-    render(<Harness fieldValue={null} />);
-    expect(getTrigger().textContent).toContain("Select task");
-  });
-
-  it("renders the placeholder when the field value is undefined", () => {
-    render(<Harness fieldValue={undefined} />);
-    expect(getTrigger().textContent).toContain("Select task");
-  });
-
-  it("renders the matching option label for a string field value", () => {
-    render(<Harness fieldValue="text-embedding" />);
-    expect(getTrigger().textContent).toContain("Text Embedding");
-  });
-
-  it("resolves a BaseRecord field value to its id's option label", () => {
-    render(<Harness fieldValue={{ id: "text-generation" }} />);
-    expect(getTrigger().textContent).toContain("Text Generation");
+  it.each([
+    { fieldValue: null, shown: "Select task" },
+    { fieldValue: undefined, shown: "Select task" },
+    { fieldValue: "text-embedding", shown: "Text Embedding" },
+    { fieldValue: { id: "text-generation" }, shown: "Text Generation" },
+  ])("shows $shown on the trigger for $fieldValue", ({ fieldValue, shown }) => {
+    render(<Harness fieldValue={fieldValue} />);
+    expect(getTrigger().textContent).toContain(shown);
   });
 
   it("renders no option label for an object field value without an id", () => {
@@ -97,48 +78,31 @@ describe("FormCombobox", () => {
 
     fireEvent.click(getTrigger());
 
-    expect(screen.getByText("Text Generation status")).toBeTruthy();
-    expect(screen.queryByTestId("combobox-option-check")).toBeNull();
+    screen.getByText("Text Generation status");
   });
 
-  it("keeps selection checks for the default option renderer", () => {
-    render(<Harness fieldValue="text-generation" />);
-    fireEvent.click(getTrigger());
+  it.each([
+    { renderer: "default", renderOption: undefined },
+    {
+      renderer: "custom",
+      renderOption: (option: { label: string }) => <span>{option.label}</span>,
+    },
+  ])(
+    "marks the stored value as checked with the $renderer renderer",
+    ({ renderOption }) => {
+      render(
+        <Harness fieldValue="text-generation" renderOption={renderOption} />,
+      );
+      fireEvent.click(getTrigger());
 
-    expect(screen.getAllByTestId("combobox-option-check")).toHaveLength(2);
-  });
-
-  // cmdk puts `data-selected` on the keyboard cursor, which starts on the first
-  // row whatever the field holds — so a custom row that drops the check icon
-  // needs its own indicator bound to the value, or the list shows none at all.
-  it("marks the stored value, not the cmdk cursor, in custom option rows", () => {
-    render(
-      <Harness
-        fieldValue="text-embedding"
-        renderOption={(option) => <span>{option.label}</span>}
-      />,
-    );
-
-    fireEvent.click(getTrigger());
-
-    const rows = Array.from(
-      document.querySelectorAll<HTMLElement>('[cmdk-item=""]'),
-    );
-    const cursorRow = rows.find(
-      (row) => row.getAttribute("data-selected") === "true",
-    );
-    const markedRow = rows.find((row) =>
-      row.className.includes("--nt-fill-outstanding-light"),
-    );
-
-    expect(markedRow?.textContent).toBe("Text Embedding");
-    expect(cursorRow?.textContent).not.toBe("Text Embedding");
-  });
+      const checked = screen.getAllByRole("option", { checked: true });
+      expect(checked.map((o) => o.textContent)).toEqual(["Text Generation"]);
+    },
+  );
 });
 
 describe("FormCombobox with allowCustomValue", () => {
-  // i18n is live in this file, so the search box cannot be found by its
-  // translation key; cmdk marks its input with this attribute.
+  // cmdk marks its input with this attribute.
   const searchBox = () =>
     document.querySelector("[cmdk-input]") as HTMLInputElement;
 
@@ -146,7 +110,7 @@ describe("FormCombobox with allowCustomValue", () => {
     render(<Harness fieldValue="" allowCustomValue />);
     fireEvent.click(getTrigger());
     fireEvent.change(searchBox(), { target: { value: "acme-research-lab" } });
-    expect(screen.getByText(/acme-research-lab/)).toBeTruthy();
+    screen.getByText(/acme-research-lab/);
   });
 
   it("does not offer text that already matches an option value", () => {
@@ -209,7 +173,7 @@ describe("FormCombobox clearing", () => {
     const onChange = vi.fn();
     render(<ClearHarness onChange={onChange} />);
     fireEvent.click(getTrigger());
-    fireEvent.click(screen.getByText("Clear selection"));
+    fireEvent.click(screen.getByText("components.ui.combobox.clearSelection"));
     expect(onChange).toHaveBeenCalledWith("");
   });
 

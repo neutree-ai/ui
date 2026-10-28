@@ -73,7 +73,7 @@ export function formatTick(date: string): string {
 // stroke from the design system's neutral guide ramp instead, because
 // `--border` is nearly invisible on the white card and `--muted-foreground` is
 // as loud as the data itself.
-export const trendCursor = (chartType: "line" | "bar") =>
+const trendCursor = (chartType: "line" | "bar") =>
   chartType === "bar"
     ? { fill: "hsl(var(--muted))" }
     : { stroke: "var(--nt-stroke-neutral-trans-3)" };

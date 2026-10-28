@@ -2,6 +2,8 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useIsTruncated } from "./use-is-truncated";
 
+vi.unmock("./use-is-truncated");
+
 const elementWith = ({
   scrollWidth,
   clientWidth,

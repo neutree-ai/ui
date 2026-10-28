@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { MetadataTimestampMeta } from "./MetadataTimestampMeta";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("./ShowPage", () => ({
   ShowPage: {
     Meta: ({ label, children }: { label: ReactNode; children: ReactNode }) => (
@@ -43,7 +39,7 @@ describe("MetadataTimestampMeta", () => {
 
     render(<MetadataTimestampMeta metadata={metadata} />);
 
-    expect(screen.getByText("common.fields.createdAt")).toBeTruthy();
+    screen.getByText("common.fields.createdAt");
     expect(
       screen
         .getByText(metadata.creation_timestamp)

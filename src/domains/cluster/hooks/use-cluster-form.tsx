@@ -39,7 +39,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
     // Refine's useForm re-populates the whole form whenever the edit query
     // data changes. Cluster status is rewritten by the controller every few
     // seconds, so a window-focus refetch mid-edit would silently revert
-    // unsaved changes to the server state (NEU-500). Populate from the
+    // unsaved changes to the server state. Populate from the
     // initial fetch only.
     refineCoreProps: {
       queryOptions: {

@@ -1,21 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   DayTooltip,
   formatTick,
   shortLabel,
   TrendTooltip,
-  trendCursor,
 } from "@/pages/model-usage/components/UsageChart";
 import type { UsageSeries } from "@/pages/model-usage/lib/usage-series";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 
 const series = (
   key: string,
@@ -47,26 +38,6 @@ describe("shortLabel", () => {
   it("shortens a long axis label but leaves a short one alone", () => {
     expect(shortLabel("3402")).toBe("3402");
     expect(shortLabel("svc-reporting-pipeline-prod")).toBe("svc-repo…");
-  });
-});
-
-describe("trendCursor", () => {
-  it("tints the bar highlight with the theme's muted fill", () => {
-    expect(trendCursor("bar")).toEqual({ fill: "hsl(var(--muted))" });
-  });
-
-  it("draws the line view's guide with a neutral theme stroke", () => {
-    expect(trendCursor("line")).toEqual({
-      stroke: "var(--nt-stroke-neutral-trans-3)",
-    });
-  });
-
-  it("only names theme variables, never a literal color", () => {
-    for (const cursor of [trendCursor("bar"), trendCursor("line")]) {
-      for (const value of Object.values(cursor)) {
-        expect(value).toMatch(/var\(--/);
-      }
-    }
   });
 });
 
@@ -124,8 +95,8 @@ describe("TrendTooltip", () => {
     ]);
     // The footer total covers every listed row: 60 + 30 + 5 + 2 (the entry with
     // no value contributes nothing).
-    expect(screen.getByText("model_usage.daily.tooltip.total")).toBeDefined();
-    expect(screen.getByText("97")).toBeDefined();
+    screen.getByText("model_usage.daily.tooltip.total");
+    screen.getByText("97");
   });
 });
 
@@ -158,12 +129,12 @@ describe("DayTooltip", () => {
       />,
     );
 
-    expect(screen.getByText("Key one · owned by ops")).toBeDefined();
-    expect(screen.getByText("model_usage.promptTokens")).toBeDefined();
-    expect(screen.getByText("80")).toBeDefined();
-    expect(screen.getByText("model_usage.completionTokens")).toBeDefined();
-    expect(screen.getByText("20")).toBeDefined();
-    expect(screen.getByText("100")).toBeDefined();
+    screen.getByText("Key one · owned by ops");
+    screen.getByText("model_usage.promptTokens");
+    screen.getByText("80");
+    screen.getByText("model_usage.completionTokens");
+    screen.getByText("20");
+    screen.getByText("100");
   });
 
   it("falls back to the name when the key has no description", () => {

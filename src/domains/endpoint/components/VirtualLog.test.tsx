@@ -22,10 +22,6 @@ vi.mock("react-window", async () => {
   return { FixedSizeList: List };
 });
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("next-themes", () => ({
   useTheme: () => ({ theme: "light" }),
 }));

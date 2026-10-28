@@ -95,13 +95,6 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "design-lab", isLoading: false }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string) =>
-      key === "api_keys.limits.unlimited" ? "Unlimited" : key,
-  }),
-}));
-
 vi.mock("@/domains/api-key/components/ApiKeyRankingOverview", () => ({
   ApiKeyRankingOverview: () => null,
 }));
@@ -136,11 +129,8 @@ describe("ApiKeysList empty states", () => {
   it("uses shared placeholders for missing Workspace and Usage while showing Unlimited limits", () => {
     render(<ApiKeysList />);
 
-    const row = screen.getByText("Empty states key").closest("tr");
-    expect(row).not.toBeNull();
-    expect(
-      within(row as HTMLElement).getAllByTestId("empty-value"),
-    ).toHaveLength(2);
-    expect(within(row as HTMLElement).getByText("Unlimited")).toBeTruthy();
+    const row = within(screen.getByRole("row", { name: /Empty states key/ }));
+    expect(row.getAllByTestId("empty-value")).toHaveLength(2);
+    row.getByText("api_keys.limits.unlimited");
   });
 });

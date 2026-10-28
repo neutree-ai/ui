@@ -1,30 +1,17 @@
 import { type DataProvider, Refine } from "@refinedev/core";
 import {
   act,
-  cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import UpstreamModelInput, {
   UpstreamConnectionWarning,
 } from "./UpstreamModelInput";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-beforeAll(() => {
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-  HTMLElement.prototype.scrollIntoView = () => {};
-});
-afterEach(cleanup);
 const request = { endpoint_ref: "first", workspace: "default" };
 const result = (models: string[]) => ({ data: { success: true, models } });
 const open = () => fireEvent.click(screen.getByRole("combobox"));
@@ -101,19 +88,10 @@ describe("upstream model selection", () => {
       open();
       await waitFor(() => expect(screen.queryByText("loading")).toBeNull());
       expect(screen.getByRole("listbox").textContent).toBe("");
-      if (scenario === "empty") {
-        expect(
-          screen.queryByRole("button", {
-            name: "external_endpoints.messages.upstreamConnectionFailed",
-          }),
-        ).toBeNull();
-      } else {
-        expect(
-          screen.getByRole("button", {
-            name: "external_endpoints.messages.upstreamConnectionFailed",
-          }),
-        ).toBeTruthy();
-      }
+      const warning = screen.queryByRole("button", {
+        name: "external_endpoints.messages.upstreamConnectionFailed",
+      });
+      expect(warning === null).toBe(scenario === "empty");
       fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
       fireEvent.change(
         screen.getByRole("combobox", {
@@ -173,7 +151,7 @@ describe("upstream model selection", () => {
     expect(
       screen.queryByRole("option", { name: "stale-first-model" }),
     ).toBeNull();
-    expect(screen.getByRole("option", { name: "second-model" })).toBeTruthy();
+    screen.getByRole("option", { name: "second-model" });
   });
 
   it("clears a channel warning when its connection settings change or a retry succeeds", async () => {

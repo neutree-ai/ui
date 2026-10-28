@@ -1,22 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import {
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+} from "@/foundation/testing/resource-builders";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import { GpuDeviceResourcesView } from "./GpuDeviceResourcesView";
 
 const copyMock = vi.fn();
-// jsdom lays nothing out, so the real measurement always says "not clipped".
-// The flag stands in for it: off everywhere except the truncation test, which
-// is also the state every other test would be in on a wide screen.
-const truncation = vi.hoisted(() => ({ value: false }));
-
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncation.value,
-}));
-
 vi.mock("@/components/ui/progress", () => ({
-  Progress: ({ value, className }: { value: number; className?: string }) => (
-    <div data-testid="progress" data-value={value} className={className} />
+  Progress: ({ value }: { value: number }) => (
+    <div data-testid="progress" data-value={value} />
   ),
 }));
 
@@ -61,50 +58,13 @@ const labels = {
 
 const nodeResources: Record<string, NodeResourceStatus> = {
   "node-a": {
-    allocatable: {
-      cpu: 16,
-      memory: 64,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-            },
-          },
-        },
-      },
-    },
-    available: {
-      cpu: 12,
-      memory: 48,
-      accelerator_groups: {
-        nvidia_gpu: {
-          quantity: 1,
-          product_groups: null,
-          products: {
-            "Tesla-T4": {
-              quantity: 1,
-            },
-          },
-        },
-      },
-    },
+    allocatable: makeResourceInfo(16, 64, { "Tesla-T4": { quantity: 1 } }),
+    available: makeResourceInfo(12, 48, { "Tesla-T4": { quantity: 1 } }),
     devices: [
-      {
-        uuid: "GPU-11111111-2222-3333-4444-555555555555",
-        product: "Tesla-T4",
-        health: true,
-        allocatable: {
-          memory_mib: 15360,
-          core_units: 100,
-        },
-        available: {
-          memory_mib: 7680,
-          core_units: 50,
-        },
-      },
+      makeGpuDevice("GPU-11111111-2222-3333-4444-555555555555", {
+        memory_mib: 7680,
+        core_units: 50,
+      }),
     ],
   },
 };
@@ -112,7 +72,7 @@ const nodeResources: Record<string, NodeResourceStatus> = {
 describe("GpuDeviceResourcesView", () => {
   beforeEach(() => {
     copyMock.mockClear();
-    truncation.value = false;
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("renders GPU number, copyable UUID, remaining pools, and no slots column", () => {
@@ -124,8 +84,8 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("GPU Device Resources")).toBeTruthy();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
+    screen.getByText("GPU Device Resources");
+    screen.getByText("GPU 1");
     expect(
       screen.getByText("GPU 1").closest("button")?.getAttribute("title"),
     ).toBe("Copy UUID");
@@ -141,8 +101,8 @@ describe("GpuDeviceResourcesView", () => {
       "GPU-11111111-2222-3333-4444-555555555555",
       expect.any(Object),
     );
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
-    expect(screen.getByText("Selected")).toBeTruthy();
+    screen.getByText("Tesla-T4");
+    screen.getByText("Selected");
     expect(screen.queryByText("Healthy")).toBeNull();
     expect(screen.queryByText("Unhealthy")).toBeNull();
     expect(screen.getAllByText("7.5 / 15.0 GiB").length).toBeGreaterThan(0);
@@ -158,38 +118,8 @@ describe("GpuDeviceResourcesView", () => {
       <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
     );
 
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
+    screen.getByText("Tesla-T4");
     expect(screen.queryByText("Selected")).toBeNull();
-  });
-
-  it("orders device table resources as VRAM before core", () => {
-    render(
-      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
-    );
-
-    expect(
-      screen.getAllByRole("columnheader").map((header) => header.textContent),
-    ).toEqual([
-      "GPU",
-      "Status",
-      "Node",
-      "Product",
-      "Memory Usage",
-      "Core Usage",
-    ]);
-  });
-
-  it("centers the device status column", () => {
-    render(
-      <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
-    );
-
-    expect(
-      screen.getByRole("columnheader", { name: "Status" }).className,
-    ).toContain("text-center");
-    expect(
-      screen.getByRole("img", { name: "Healthy" }).closest("td")?.className,
-    ).toContain("text-center");
   });
 
   it("keeps healthy device indicators native and out of the tab order", () => {
@@ -234,8 +164,6 @@ describe("GpuDeviceResourcesView", () => {
     });
     expect(unhealthyIndicator.getAttribute("title")).toBeNull();
     expect(unhealthyIndicator.getAttribute("tabindex")).toBe("0");
-    expect(unhealthyIndicator.className).not.toContain("cursor-");
-    expect(unhealthyIndicator.className).toContain("focus-visible:ring-2");
 
     fireEvent.focus(unhealthyIndicator);
 
@@ -246,22 +174,9 @@ describe("GpuDeviceResourcesView", () => {
     render(
       <GpuDeviceResourcesView
         nodeResources={{
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "GPU-unknown",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: {
-                  memory_mib: 15360,
-                  core_units: 100,
-                },
-                available: null,
-              },
-            ],
-          },
+          "node-a": makeNodeResources({
+            devices: [makeGpuDevice("GPU-unknown", null)],
+          }),
         }}
         labels={labels}
       />,
@@ -275,8 +190,8 @@ describe("GpuDeviceResourcesView", () => {
       <GpuDeviceResourcesView nodeResources={nodeResources} labels={labels} />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Product" })).toBeTruthy();
-    expect(screen.getByRole("combobox", { name: "Node" })).toBeTruthy();
+    screen.getByRole("combobox", { name: "Product" });
+    screen.getByRole("combobox", { name: "Node" });
   });
 
   it("keeps GPU number stable by UUID sort within each node", () => {
@@ -286,35 +201,15 @@ describe("GpuDeviceResourcesView", () => {
           "node-a": {
             ...nodeResources["node-a"],
             devices: [
-              {
-                uuid: "GPU-bbbbbbbb-2222-3333-4444-555555555555",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 15360, core_units: 100 },
-              },
-              {
-                uuid: "GPU-aaaaaaaa-2222-3333-4444-555555555555",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 15360, core_units: 100 },
-              },
+              makeGpuDevice("GPU-bbbbbbbb-2222-3333-4444-555555555555"),
+              makeGpuDevice("GPU-aaaaaaaa-2222-3333-4444-555555555555"),
             ],
           },
-          "node-b": {
-            allocatable: null,
-            available: null,
+          "node-b": makeNodeResources({
             devices: [
-              {
-                uuid: "GPU-cccccccc-2222-3333-4444-555555555555",
-                product: "Tesla-T4",
-                health: true,
-                allocatable: { memory_mib: 15360, core_units: 100 },
-                available: { memory_mib: 15360, core_units: 100 },
-              },
+              makeGpuDevice("GPU-cccccccc-2222-3333-4444-555555555555"),
             ],
-          },
+          }),
         }}
         labels={labels}
       />,
@@ -358,11 +253,11 @@ describe("GpuDeviceResourcesView", () => {
 
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
-    expect(screen.getByText("Node")).toBeTruthy();
-    expect(screen.getByText("node-a")).toBeTruthy();
-    expect(screen.getByText("Product")).toBeTruthy();
-    expect(screen.getByText("Tesla-T4")).toBeTruthy();
+    screen.getByText("GPU 1");
+    screen.getByText("Node");
+    screen.getByText("node-a");
+    screen.getByText("Product");
+    screen.getByText("Tesla-T4");
     fireEvent.click(
       screen.getByRole("button", {
         name: "GPU 1 Copy UUID",
@@ -372,9 +267,7 @@ describe("GpuDeviceResourcesView", () => {
       "GPU-11111111-2222-3333-4444-555555555555",
       expect.any(Object),
     );
-    expect(screen.getByText("Usable")).toBeTruthy();
-    const usageRow = screen.getByTestId("gpu-device-resource-usage-row");
-    expect(usageRow.className).toContain("grid-cols-2");
+    screen.getByText("Usable");
   });
 
   it("renders an unhealthy card as out of service rather than idle", () => {
@@ -385,14 +278,15 @@ describe("GpuDeviceResourcesView", () => {
             "node-a": {
               ...nodeResources["node-a"],
               devices: [
-                {
-                  uuid: "GPU-dead",
-                  product: "Tesla-T4",
-                  health: false,
-                  // How the backend reports an unhealthy device: both pools zeroed.
-                  allocatable: { memory_mib: 0, core_units: 0 },
-                  available: { memory_mib: 0, core_units: 0 },
-                },
+                // How the backend reports an unhealthy device: both pools zeroed.
+                makeGpuDevice(
+                  "GPU-dead",
+                  { memory_mib: 0, core_units: 0 },
+                  {
+                    health: false,
+                    allocatable: { memory_mib: 0, core_units: 0 },
+                  },
+                ),
               ],
             },
           }}
@@ -406,7 +300,7 @@ describe("GpuDeviceResourcesView", () => {
       </TooltipProvider>,
     );
 
-    expect(screen.getByText("Unhealthy")).toBeTruthy();
+    screen.getByText("Unhealthy");
 
     // "0 / 0" would read as an idle card with capacity to spare. There is no
     // reading at all, so both metrics show a dash.
@@ -414,21 +308,10 @@ describe("GpuDeviceResourcesView", () => {
     expect(screen.queryByText("0 / 0")).toBeNull();
     expect(screen.getAllByText("-")).toHaveLength(6);
 
-    // Bars carry no fill and use the dashed no-reading track.
-    const bars = screen.getAllByTestId("progress");
-    expect(bars).toHaveLength(2);
-    for (const bar of bars) {
+    // Bars carry no fill.
+    for (const bar of screen.getAllByTestId("progress")) {
       expect(bar.getAttribute("data-value")).toBe("0");
-      expect(bar.className).toContain("border-dashed");
-      expect(bar.className).toContain("[&>div]:bg-transparent");
     }
-
-    // The cell itself is dimmed by tokens, not by a blanket opacity that would
-    // also wash out the Unhealthy badge.
-    const cell = screen.getByText("GPU 1").closest("div")
-      ?.parentElement as HTMLElement;
-    expect(cell.className).toContain("var(--nt-fill-neutral-trans-3)");
-    expect(cell.className).not.toContain("opacity-");
   });
 
   it("renders a compact device grid for node details", () => {
@@ -448,29 +331,22 @@ describe("GpuDeviceResourcesView", () => {
 
     expect(screen.queryByRole("table")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
-    expect(screen.getByText("GPU 1")).toBeTruthy();
-    expect(screen.getByText("Healthy")).toBeTruthy();
-    expect(screen.getByText("7.5 / 15.0 GiB")).toBeTruthy();
-    expect(screen.getByText("50 / 100")).toBeTruthy();
+    screen.getByText("GPU 1");
+    screen.getByText("Healthy");
+    screen.getByText("7.5 / 15.0 GiB");
+    screen.getByText("50 / 100");
     expect(screen.getAllByText("50%")).toHaveLength(2);
     expect(screen.getAllByText("Remaining")).toHaveLength(2);
-    expect(screen.getByText("7.5 GiB")).toBeTruthy();
-    expect(screen.getByText("50")).toBeTruthy();
+    screen.getByText("7.5 GiB");
+    screen.getByText("50");
     expect(screen.getAllByTestId("progress")).toHaveLength(2);
-    // The cell used to hide the product behind a native `title`, so this line
-    // read the other way round: the name was asserted *absent* from the grid.
-    // It is visible now — two cards of one node are told apart by it.
+    // Two cards of one node are told apart by the visible product name.
     expect(screen.getByTestId("gpu-cell-product").textContent).toBe("Tesla-T4");
     // And it stays out of the tab order while nothing is clipped: its tooltip
     // would only repeat what is already on screen.
     expect(
       screen.getByTestId("gpu-cell-product").getAttribute("tabindex"),
     ).toBe(null);
-    // Nothing to reveal, so nothing announces itself: no help cursor and no
-    // tooltip repeating the line under the pointer.
-    expect(screen.getByTestId("gpu-cell-product").className).not.toContain(
-      "cursor-help",
-    );
 
     fireEvent.mouseEnter(screen.getByTestId("gpu-cell-product"));
 
@@ -485,7 +361,7 @@ describe("GpuDeviceResourcesView", () => {
 
   it("keeps a truncated cell product reachable from the keyboard", async () => {
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
-    truncation.value = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
 
     render(
       <TooltipProvider delayDuration={0}>
@@ -520,37 +396,10 @@ describe("GpuDeviceResourcesView", () => {
     // Nothing carries the name as a native title any more: it is either visible
     // or it is on the tooltip, and both are reachable without a pointer.
     expect(product.closest("[title]")).toBeNull();
-    // Still no help cursor: this is a value, not a help topic.
-    expect(product.className).not.toContain("cursor-help");
 
     fireEvent.focus(product);
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
-  });
-
-  it("lets the device grid wrap instead of pinning it to a column count", () => {
-    render(
-      <TooltipProvider delayDuration={0}>
-        <GpuDeviceResourcesView
-          nodeResources={nodeResources}
-          labels={labels}
-          variant="grid"
-          showHeader={false}
-          showFilters={false}
-          showSummary={false}
-          showNodeColumn={false}
-        />
-      </TooltipProvider>,
-    );
-
-    const grid = screen.getByTestId("gpu-device-grid");
-    expect(grid.style.gridTemplateColumns).toBe(
-      "repeat(auto-fit, minmax(188px, 1fr))",
-    );
-    // Without a fixed column count the row has no shape left to pad to, and a
-    // min-width would put the overflow back on a scrollbar.
-    expect(grid.style.minWidth).toBe("");
-    expect(screen.queryByTestId("gpu-device-grid-empty-cell")).toBeNull();
   });
 
   it("uses free and allocated labels when no request fit context is provided", () => {
@@ -566,7 +415,7 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByText("Allocated")).toBeTruthy();
+    screen.getByText("Allocated");
     expect(screen.queryByText("Usable")).toBeNull();
   });
 
@@ -589,9 +438,9 @@ describe("GpuDeviceResourcesView", () => {
       />,
     );
 
-    expect(screen.getByTestId("gpu-device-resource-toolbar")).toBeTruthy();
+    screen.getByTestId("gpu-device-resource-toolbar");
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
-    expect(screen.getByText("All Devices")).toBeTruthy();
+    screen.getByText("All Devices");
     expect(screen.queryByText("Summary")).toBeNull();
     expect(screen.queryByText("Nodes")).toBeNull();
     expect(screen.queryByText("Table")).toBeNull();

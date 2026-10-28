@@ -2,13 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, params?: Record<string, string>) =>
-      params ? `${key} ${JSON.stringify(params)}` : key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ShowButton", () => ({
   ShowButton: ({
     children,
@@ -53,10 +46,10 @@ describe("EndpointCatalogOrigin", () => {
     );
 
     const block = screen.getByTestId("endpoint-catalog-origin");
-    expect(within(block).getByText("qwen3.6-35b")).toBeDefined();
-    expect(within(block).getByText("fp8")).toBeDefined();
-    expect(within(block).getByText("max-model-len: 32768")).toBeDefined();
-    expect(within(block).getByText("cp")).toBeDefined();
+    within(block).getByText("qwen3.6-35b");
+    within(block).getByText("fp8");
+    within(block).getByText("max-model-len: 32768");
+    within(block).getByText("cp");
   });
 
   it("renders nothing for an endpoint that names no catalog", () => {
@@ -75,10 +68,8 @@ describe("EndpointCatalogOrigin", () => {
     });
 
     const block = screen.getByTestId("endpoint-catalog-origin");
-    expect(within(block).getByText("qwen3.6-35b")).toBeDefined();
-    expect(
-      within(block).getByText("endpoints.origin.featuresUnreadable"),
-    ).toBeDefined();
+    within(block).getByText("qwen3.6-35b");
+    within(block).getByText("endpoints.origin.featuresUnreadable");
   });
 });
 
@@ -100,7 +91,7 @@ describe("EndpointCatalogOriginLink", () => {
       screen.getByRole("link", { name: "qwen3-6-27b" }).getAttribute("href"),
     ).toBe("#/default/model_catalogs/qwen3-6-27b");
     expect(screen.getByRole("tooltip").textContent).toBe(
-      'endpoints.origin.variant {"variant":"bf16"}',
+      "endpoints.origin.variant:bf16",
     );
   });
 
@@ -116,7 +107,7 @@ describe("EndpointCatalogOriginLink", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "llama-3-8b" })).toBeDefined();
+    screen.getByRole("link", { name: "llama-3-8b" });
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 });

@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { VariablesInput } from "./VariablesInput";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const objectSchema = {
   speculative_config: { type: "object", title: "Speculative Config" },
 } as unknown as Schema;
@@ -87,9 +83,7 @@ describe("VariablesInput", () => {
 
     expect(textarea.value).toBe('{"method":');
     expect(onChange).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("updates existing object schema values as structured JSON", () => {
@@ -175,9 +169,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("blocks form submission when an existing object value starts as invalid JSON", () => {
@@ -192,9 +184,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 
   it("blocks form submission while a new object row has invalid JSON", () => {
@@ -210,9 +200,7 @@ describe("VariablesInput", () => {
     fireEvent.click(screen.getByText("Save"));
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("components.variablesInput.invalidJsonValue"),
-    ).toBeTruthy();
+    screen.getByText("components.variablesInput.invalidJsonValue");
   });
 });
 
@@ -312,7 +300,7 @@ describe("VariablesInput value inputs", () => {
       target: { value: "image" },
     });
 
-    expect(screen.getByTestId("image-widget")).toBeTruthy();
+    screen.getByTestId("image-widget");
   });
 
   it("saves a drafted row once the supplied input is left, not mid-word", () => {
@@ -358,6 +346,6 @@ describe("VariablesInput value inputs", () => {
     render(<ValueInputForm onSubmit={vi.fn()} />);
 
     expect(screen.queryByTestId("image-widget")).toBeNull();
-    expect(screen.getByDisplayValue("my-workload:v1")).not.toBeNull();
+    screen.getByDisplayValue("my-workload:v1");
   });
 });

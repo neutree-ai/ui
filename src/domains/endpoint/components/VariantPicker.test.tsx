@@ -2,13 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { VariantPicker } from "./VariantPicker";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string) =>
-      key === "endpoints.recipe.selectVariant" ? "Select a variant" : key,
-  }),
-}));
-
 describe("VariantPicker", () => {
   it("renders variants as a single-line segment control and emits the selected value", () => {
     const onChange = vi.fn();
@@ -30,9 +23,7 @@ describe("VariantPicker", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("group", { name: "Select a variant" }),
-    ).toBeTruthy();
+    screen.getByRole("group", { name: "endpoints.recipe.selectVariant" });
 
     const buttons = screen.getAllByRole("button");
     const defaultButton = buttons[0];

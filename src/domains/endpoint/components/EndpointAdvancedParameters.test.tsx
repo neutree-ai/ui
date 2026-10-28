@@ -1,20 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { EndpointAdvancedParameters } from "./EndpointAdvancedParameters";
 
 const copyMock = vi.fn();
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { count?: number; name?: string }) =>
-      key === "endpoints.messages.parameterCount"
-        ? `${options?.count} parameters`
-        : key === "endpoints.messages.expandParameterValue"
-          ? `${key} ${options?.name}`
-          : key,
-  }),
-}));
 
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({ copy: copyMock, copied: false }),
@@ -45,17 +35,10 @@ vi.mock("@/components/ui/popover", () => ({
   ),
 }));
 
-// jsdom has no layout, so a truncation measurement never reads true; the panel
-// path is exercised by faking the measurement.
-const truncatedMock = vi.fn(() => true);
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncatedMock(),
-}));
-
 describe("EndpointAdvancedParameters", () => {
   beforeEach(() => {
     copyMock.mockClear();
-    truncatedMock.mockReturnValue(true);
+    vi.mocked(useIsTruncated).mockReturnValue(true);
   });
 
   it("does not render when both parameter groups are empty", () => {
@@ -81,13 +64,11 @@ describe("EndpointAdvancedParameters", () => {
       />,
     );
 
-    expect(screen.getByText("endpoints.sections.advancedOptions")).toBeTruthy();
-    expect(screen.getByText("endpoints.fields.engineVariables")).toBeTruthy();
-    expect(
-      screen.getByText("endpoints.sections.environmentVariables"),
-    ).toBeTruthy();
-    expect(screen.getByText("3 parameters")).toBeTruthy();
-    expect(screen.getByText("1 parameters")).toBeTruthy();
+    screen.getByText("endpoints.sections.advancedOptions");
+    screen.getByText("endpoints.fields.engineVariables");
+    screen.getByText("endpoints.sections.environmentVariables");
+    screen.getByText("endpoints.messages.parameterCount:3");
+    screen.getByText("endpoints.messages.parameterCount:1");
     expect(screen.getAllByText("4").length).toBeGreaterThan(0);
     expect(screen.getAllByText("true").length).toBeGreaterThan(0);
     expect(screen.getAllByText('{"eager":false}').length).toBeGreaterThan(0);
@@ -204,7 +185,7 @@ describe("EndpointAdvancedParameters", () => {
   });
 
   it("offers the expand control only while the value is cut off", () => {
-    truncatedMock.mockReturnValue(false);
+    vi.mocked(useIsTruncated).mockReturnValue(false);
     render(
       <EndpointAdvancedParameters
         engineParameters={{ max_model_len: 8192 }}
@@ -224,12 +205,8 @@ describe("EndpointAdvancedParameters", () => {
       />,
     );
 
-    const value = screen.getByText('{"a":1}');
-    expect(value.className).toContain("truncate");
-    expect(
-      screen.getByRole("button", {
-        name: "endpoints.messages.expandParameterValue additional_config",
-      }),
-    ).toBeTruthy();
+    screen.getByRole("button", {
+      name: "endpoints.messages.expandParameterValue:additional_config",
+    });
   });
 });

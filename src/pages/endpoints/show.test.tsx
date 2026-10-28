@@ -20,10 +20,6 @@ vi.mock("@refinedev/core", () => ({
   useShow: useShowMock,
 }));
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/components/ui/tabs", () => ({
   Tabs: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   TabsContent: ({ children, value }: { children: ReactNode; value: string }) =>
@@ -198,8 +194,7 @@ describe("EndpointsShow", () => {
     );
   });
 
-  // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page (NEU-728).
+  // A Flex endpoint deploys with no model, so the API omits spec.model.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {
@@ -210,7 +205,9 @@ describe("EndpointsShow", () => {
       },
     });
 
-    expect(() => render(<EndpointsShow />)).not.toThrow();
+    render(<EndpointsShow />);
+
+    screen.getByRole("heading", { name: "endpoint-a" });
   });
 
   // The identity line drops the badge rather than printing "name, -" before
@@ -227,6 +224,6 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    expect(screen.getByTestId("endpoint-status")).toBeTruthy();
+    screen.getByTestId("endpoint-status");
   });
 });

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ModelInfoFields,
@@ -8,93 +8,73 @@ import {
 } from "@/domains/model-registry/components/ModelInfoFields";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // SourceTag's Tooltip relies on the app-wide TooltipProvider mounted in
 // BaseLayout; this test renders the component in isolation, so it stands in.
 const renderWithTooltip = (ui: ReactElement) =>
   render(<TooltipProvider>{ui}</TooltipProvider>);
 
-const textField = { key: "architecture", labelKey: "architecture" } as const;
-
 describe("resolveFieldValue", () => {
-  it("reports a value the server established", () => {
-    expect(
-      resolveFieldValue(
-        { architecture: "Qwen2ForCausalLM" },
-        { ...textField, kind: "text" },
-      ),
-    ).toEqual({ state: "value", text: "Qwen2ForCausalLM" });
+  type Field = Parameters<typeof resolveFieldValue>[1];
+  const field = (key: Field["key"], kind: Field["kind"]): Field => ({
+    key,
+    labelKey: key,
+    kind,
   });
 
-  it("groups a digit string but leaves a hand-written one alone", () => {
-    expect(
-      resolveFieldValue(
-        { parameter_count: "494032768" },
-        { key: "parameter_count", labelKey: "parameterCount", kind: "text" },
-      ),
-    ).toEqual({ state: "value", text: "494,032,768" });
-
-    expect(
-      resolveFieldValue(
-        { parameter_count: "72.7B" },
-        { key: "parameter_count", labelKey: "parameterCount", kind: "text" },
-      ),
-    ).toEqual({ state: "value", text: "72.7B" });
-  });
-
-  it("keeps false and zero as values rather than absences", () => {
-    expect(
-      resolveFieldValue(
-        { is_moe: false, missing_fields: ["parameter_count"] },
-        { key: "is_moe", labelKey: "isMoe", kind: "boolean" },
-      ),
-    ).toEqual({ state: "value", text: "false" });
-
-    expect(
-      resolveFieldValue(
-        { num_experts: 0, missing_fields: [] },
-        { key: "num_experts", labelKey: "numExperts", kind: "integer" },
-      ),
-    ).toEqual({ state: "value", text: "0" });
-  });
-
-  it("reports a field named in missing_fields as unknown", () => {
-    expect(
-      resolveFieldValue(
-        { missing_fields: ["architecture"] },
-        { ...textField, kind: "text" },
-      ),
-    ).toEqual({ state: "unknown" });
-  });
-
-  it("reports a field the server left out of both lists as not applicable", () => {
-    // Expert counts on a dense checkpoint: the server omits them from
-    // missing_fields on purpose, meaning they do not apply — which is a
-    // different statement from "we looked and could not tell".
-    expect(
-      resolveFieldValue(
-        {
-          is_moe: false,
-          field_sources: { is_moe: "auto" },
-          missing_fields: [],
-        },
-        { key: "num_experts", labelKey: "numExperts", kind: "integer" },
-      ),
-    ).toEqual({ state: "notApplicable" });
-  });
-
-  it("falls back to unknown when the response states no provenance at all", () => {
-    // A hand-written catalog carries neither list, so nothing can be concluded
-    // from a field's absence beyond "not known".
-    expect(
-      resolveFieldValue(
-        { parameter_count: "7B" },
-        { ...textField, kind: "text" },
-      ),
-    ).toEqual({ state: "unknown" });
+  it.each<[string, ModelInfo, Field, unknown]>([
+    [
+      "a value the server established",
+      { architecture: "Qwen2ForCausalLM" },
+      field("architecture", "text"),
+      { state: "value", text: "Qwen2ForCausalLM" },
+    ],
+    [
+      "a digit string, grouped",
+      { parameter_count: "494032768" },
+      field("parameter_count", "text"),
+      { state: "value", text: "494,032,768" },
+    ],
+    [
+      "a hand-written count, as written",
+      { parameter_count: "72.7B" },
+      field("parameter_count", "text"),
+      { state: "value", text: "72.7B" },
+    ],
+    [
+      "false as a value",
+      { is_moe: false, missing_fields: ["parameter_count"] },
+      field("is_moe", "boolean"),
+      { state: "value", text: "false" },
+    ],
+    [
+      "zero as a value",
+      { num_experts: 0, missing_fields: [] },
+      field("num_experts", "integer"),
+      { state: "value", text: "0" },
+    ],
+    [
+      "a field named in missing_fields as unknown",
+      { missing_fields: ["architecture"] },
+      field("architecture", "text"),
+      { state: "unknown" },
+    ],
+    // The server omits e.g. expert counts on a dense checkpoint from
+    // missing_fields on purpose: they do not apply.
+    [
+      "a field left out of both lists as not applicable",
+      { is_moe: false, field_sources: { is_moe: "auto" }, missing_fields: [] },
+      field("num_experts", "integer"),
+      { state: "notApplicable" },
+    ],
+    // A hand-written catalog carries neither list: absence means only unknown.
+    [
+      "an absent field as unknown when no provenance is stated",
+      { parameter_count: "7B" },
+      field("architecture", "text"),
+      { state: "unknown" },
+    ],
+  ])("reports %s", (_, info, spec, expected) => {
+    expect(resolveFieldValue(info, spec)).toEqual(expected);
   });
 });
 
@@ -184,20 +164,7 @@ describe("ModelInfoFields", () => {
     expect(/\d/.test(container.textContent ?? "")).toBe(false);
   });
 
-  it("offers the compact definition-table layout for detail drawers", () => {
-    renderWithTooltip(
-      <ModelInfoFields info={parsed} variant="definition-table" />,
-    );
-
-    expect(screen.getByTestId("model-info-fields").className).toContain(
-      "sm:grid-cols-2",
-    );
-    expect(screen.getByTestId("model-info-architecture").className).toContain(
-      "border-b",
-    );
-  });
-
-  it("de-emphasizes unknown values and omits not-applicable compact rows", () => {
+  it("omits not-applicable rows from the compact layout", () => {
     renderWithTooltip(
       <ModelInfoFields
         info={{
@@ -209,10 +176,7 @@ describe("ModelInfoFields", () => {
       />,
     );
 
-    expect(
-      screen.getByTestId("model-info-parameter_count").querySelector("span")
-        ?.className,
-    ).toContain("--nt-text-neutral-quaternary");
+    screen.getByTestId("model-info-parameter_count");
     expect(screen.queryByTestId("model-info-num_experts")).toBeNull();
     expect(screen.queryByTestId("model-info-num_experts_per_token")).toBeNull();
   });

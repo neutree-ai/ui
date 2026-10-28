@@ -1,36 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: object) =>
-      options ? `${key}${JSON.stringify(options)}` : key,
-  }),
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: object) =>
-      options ? `${key}${JSON.stringify(options)}` : key,
-  }),
-}));
-
-// jsdom has no pointer capture or scrollIntoView; Radix Select calls both while
-// opening, and without them the option list never mounts.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  Element.prototype.setPointerCapture = () => {};
-  Element.prototype.releasePointerCapture = () => {};
-  Element.prototype.scrollIntoView = () => {};
-});
+import { openMenu } from "@/foundation/testing/interactions";
 
 const openSelect = (index: number) =>
-  fireEvent.pointerDown(screen.getAllByRole("combobox")[index], {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
-  });
+  openMenu(screen.getAllByRole("combobox")[index]);
 
 describe("PaginationControls", () => {
   it("offers the rows-per-page control to callers that let the reader change it", () => {
@@ -46,11 +20,9 @@ describe("PaginationControls", () => {
       />,
     );
 
-    expect(screen.getByText("table.pagination.rowsPerPage")).toBeDefined();
-    expect(screen.getByText("Total: 80 items")).toBeDefined();
-    expect(
-      screen.getByText('table.pagination.page{"current":1,"total":4}'),
-    ).toBeDefined();
+    screen.getByText("table.pagination.rowsPerPage");
+    screen.getByText("Total: 80 items");
+    screen.getByText("table.pagination.page:1,4");
 
     openSelect(0);
     const twenty = screen
@@ -103,6 +75,6 @@ describe("PaginationControls", () => {
     );
 
     expect(screen.queryByText("table.pagination.rowsPerPage")).toBeNull();
-    expect(screen.getByText("Total: 30 items")).toBeDefined();
+    screen.getByText("Total: 30 items");
   });
 });

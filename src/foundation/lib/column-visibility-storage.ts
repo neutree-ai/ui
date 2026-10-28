@@ -101,8 +101,8 @@ export class ColumnVisibilityManager {
     }
   }
 
-  cleanup(): void {
-    const all = this.getAllPreferences();
+  /** Drops entries older than MAX_AGE_DAYS or saved under an outdated config. */
+  private pruneStale(all: ColumnVisibilityPreferences): boolean {
     const now = Date.now();
     const maxAge = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
 
@@ -122,7 +122,12 @@ export class ColumnVisibilityManager {
       }
     }
 
-    if (needsSave) {
+    return needsSave;
+  }
+
+  cleanup(): void {
+    const all = this.getAllPreferences();
+    if (this.pruneStale(all)) {
       this.saveAllPreferences(all);
     }
   }
@@ -165,11 +170,8 @@ export class ColumnVisibilityManager {
       lastUpdated: Date.now(),
     };
 
+    this.pruneStale(all);
     this.saveAllPreferences(all);
-
-    if (Math.random() < 0.01) {
-      this.cleanup();
-    }
   }
 
   clear(resourceName: string): void {

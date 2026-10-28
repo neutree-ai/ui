@@ -229,9 +229,11 @@ export const FormCombobox = forwardRef<
                       value={option.label}
                       key={option.value}
                       disabled={option.disabled}
-                      // cmdk's `data-selected` is the keyboard cursor, not the
-                      // stored value — on open it lands on the first row. A
-                      // custom row drops the check icon, so without this the
+                      // cmdk owns `aria-selected` and `data-selected` for the
+                      // keyboard cursor — on open it lands on the first row —
+                      // so the stored value is announced as `aria-checked`.
+                      aria-checked={isSelected}
+                      // A custom row drops the check icon, so without this the
                       // list shows nothing at all for the current value.
                       className={cn(
                         hasCustomOption &&
@@ -265,7 +267,7 @@ export const FormCombobox = forwardRef<
                       )}
                       {hasCustomOption ? null : (
                         <CheckIcon
-                          data-testid="combobox-option-check"
+                          aria-hidden
                           className={cn(
                             "ml-auto h-4 w-4",
                             isSelected ? "opacity-100" : "opacity-0",

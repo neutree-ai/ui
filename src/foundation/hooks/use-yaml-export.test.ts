@@ -9,12 +9,6 @@ import { EXPORTABLE_RESOURCES } from "./use-yaml-export";
 
 // --- Module mocks ---
 
-const stableT = (key: string) => key;
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: stableT }),
-}));
-
 const mockTransformEntityForExport =
   vi.fn<
     (entity: ResourceEntity, options: ExportOptions) => Record<string, unknown>

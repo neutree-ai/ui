@@ -1,15 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
 const refetch = vi.fn();
 
 vi.mock("@refinedev/core", () => ({
   useCustomMutation: () => ({ mutateAsync }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
@@ -30,18 +26,6 @@ vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
 }));
 
 import { ProjectPicker } from "./ProjectPicker";
-
-beforeAll(() => {
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    },
-  );
-  Element.prototype.scrollIntoView = vi.fn();
-});
 
 describe("ProjectPicker", () => {
   beforeEach(() => {

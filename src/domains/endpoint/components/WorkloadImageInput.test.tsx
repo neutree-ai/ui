@@ -1,28 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", async () => {
-  const en = (await import("@/locales/en-US.json")).default as Record<
-    string,
-    unknown
-  >;
-
-  const lookup = (key: string): string | undefined => {
-    const found = key
-      .split(".")
-      .reduce<unknown>(
-        (node, part) => (node as Record<string, unknown> | undefined)?.[part],
-        en,
-      );
-
-    return typeof found === "string" ? found : undefined;
-  };
-
-  return {
-    useTranslation: () => ({ t: (key: string) => lookup(key) ?? key }),
-  };
-});
-
 // The explorer has its own file and its own tests. Here it only has to stay
 // shut until it is asked for, and to hand its answer back.
 vi.mock("./ImageRegistryExplorerDialog", () => ({
@@ -65,7 +43,7 @@ function renderInput(
 }
 
 const openButton = () =>
-  screen.getByRole("button", { name: /Explore image registry/ });
+  screen.getByRole("button", { name: "endpoints.imageExplorer.open" });
 
 describe("WorkloadImageInput", () => {
   it("stays a plain text box and reports what was typed", () => {

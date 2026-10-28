@@ -1,6 +1,6 @@
 import { useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -473,11 +473,18 @@ const UsageTable = ({
     resetKey,
     CARD_PAGE_SIZE,
   );
+  const titleId = useId();
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
-      <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium">
+    <section
+      aria-labelledby={titleId}
+      className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]"
+    >
+      <h2
+        id={titleId}
+        className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium"
+      >
         {title}
-      </div>
+      </h2>
       <Table>
         <TableHeader>
           <TableRow>
@@ -532,7 +539,7 @@ const UsageTable = ({
           onPageChange={setPage}
         />
       ) : null}
-    </div>
+    </section>
   );
 };
 
@@ -552,11 +559,18 @@ const DetailTable = ({
     resetKey,
     DETAIL_PAGE_SIZE,
   );
+  const titleId = useId();
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
-      <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium">
+    <section
+      aria-labelledby={titleId}
+      className="flex h-full flex-col overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]"
+    >
+      <h2
+        id={titleId}
+        className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-2 text-sm font-medium"
+      >
         {t("model_usage.detail.title")}
-      </div>
+      </h2>
       <Table>
         <TableHeader>
           <TableRow>
@@ -639,7 +653,7 @@ const DetailTable = ({
           onPageChange={setPage}
         />
       ) : null}
-    </div>
+    </section>
   );
 };
 

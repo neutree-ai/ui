@@ -4,27 +4,12 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode, Ref } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPlayground from "@/domains/endpoint/components/ChatPlayground";
 import type { Endpoint } from "@/domains/endpoint/types";
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-// The child selectors take their translations from the app's i18n module,
-// which initialises i18next on import.
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-  AVAILABLE_LOCALES: ["en-US"],
-  LOCALE_LABELS: { "en-US": "English" },
-  resolveSupportedLocale: (locale?: string) => locale ?? "en-US",
-  syncDocumentLanguage: () => {},
-  I18nextProvider: ({ children }: { children: ReactNode }) => children,
-  i18n: { language: "en-US", changeLanguage: () => Promise.resolve() },
-}));
 
 const toastError = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: { error: toastError } }));
@@ -237,8 +222,8 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("what is slow?");
 
-    expect(screen.getByText("what is slow?")).toBeDefined();
-    expect(screen.getByText("The answer arrives in pieces.")).toBeDefined();
+    screen.getByText("what is slow?");
+    screen.getByText("The answer arrives in pieces.");
   });
 
   it("renders every kind of content a turn can carry", async () => {
@@ -256,10 +241,10 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("what is the weather?");
 
-    expect(screen.getByText("weighing the options")).toBeDefined();
-    expect(screen.getByText("Here is the answer.")).toBeDefined();
-    expect(screen.getByText(/get_weather/)).toBeDefined();
-    expect(screen.getByText("the engine stopped responding")).toBeDefined();
+    screen.getByText("weighing the options");
+    screen.getByText("Here is the answer.");
+    screen.getByText(/get_weather/);
+    screen.getByText("the engine stopped responding");
   });
 
   it("renders an image the reader attached to their message", async () => {
@@ -311,7 +296,7 @@ describe("ChatPlayground transcript", () => {
     );
     expect(toastError).toHaveBeenCalledTimes(1);
     expect(toastError).toHaveBeenCalledWith(
-      "components.playground.chat.unsupportedImage",
+      expect.stringMatching(/^components\.playground\.chat\.unsupportedImage:/),
     );
   });
 
@@ -329,11 +314,9 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("a message the client wrote oddly");
 
-    // The turn is still there and still counted; the unknown part contributes
-    // no markup rather than taking the transcript down.
-    expect(
-      screen.getByTestId("transcript").querySelectorAll(".mb-4").length,
-    ).toBeGreaterThan(0);
+    // The turn is still there; the unknown part contributes nothing rather
+    // than taking the transcript down.
+    within(screen.getByTestId("transcript")).getByText("user");
   });
 
   it("follows the end of the conversation as the answer streams", async () => {

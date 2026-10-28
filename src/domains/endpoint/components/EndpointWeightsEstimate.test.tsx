@@ -2,10 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/domains/endpoint/components/KVCacheEstimate", () => ({
   KVCacheEstimate: ({
     onEstimate,
@@ -52,8 +48,8 @@ describe("EndpointWeightsEstimate", () => {
     const block = screen.getByTestId("endpoint-declared-weights");
     // The requirement and the check on it are one statement, not a number and
     // a comparison of it stated separately.
-    expect(within(block).getByTestId("vram-check-badge")).toBeDefined();
-    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    within(block).getByTestId("vram-check-badge");
+    screen.getByTestId("kv-cache-estimate");
   });
 
   // A catalog that states no VRAM figure has nothing this section can show —
@@ -68,14 +64,14 @@ describe("EndpointWeightsEstimate", () => {
     );
 
     expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
-    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    screen.getByTestId("kv-cache-estimate");
   });
 
   it("shows only the estimate when there is no catalog", () => {
     render(<EndpointWeightsEstimate declared={null} kvCache={kvCache} />);
 
     expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
-    expect(screen.getByTestId("kv-cache-estimate")).toBeDefined();
+    screen.getByTestId("kv-cache-estimate");
   });
 
   // An engine serving a model baked into its image has no checkpoint to
@@ -83,7 +79,7 @@ describe("EndpointWeightsEstimate", () => {
   it("shows only the declared half when there is nothing to estimate from", () => {
     render(<EndpointWeightsEstimate declared={declared} kvCache={null} />);
 
-    expect(screen.getByTestId("endpoint-declared-weights")).toBeDefined();
+    screen.getByTestId("endpoint-declared-weights");
     expect(screen.queryByTestId("kv-cache-estimate")).toBeNull();
   });
 

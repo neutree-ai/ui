@@ -2,17 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Keep `t` stable across renders; several components list it as an effect dep.
-vi.mock("react-i18next", () => {
-  const t = (key: string) => key;
-  return { useTranslation: () => ({ t }) };
-});
-
-vi.mock("@/foundation/lib/i18n", () => {
-  const t = (key: string) => key;
-  return { useTranslation: () => ({ t }) };
-});
-
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({
     data: {
@@ -76,40 +65,34 @@ describe("TraceDetailDrawer", () => {
       </TooltipProvider>,
     );
 
-    expect(
-      screen.getByRole("button", {
-        name: "ai_traces.detail.viewFormatted",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "ai_traces.detail.viewRaw" }),
-    ).toBeTruthy();
+    screen.getByRole("button", { name: "ai_traces.detail.viewFormatted" });
+    screen.getByRole("button", { name: "ai_traces.detail.viewRaw" });
   });
-});
 
-it("shows the final destination separately from the request and response models", () => {
-  render(
-    <TooltipProvider>
-      <TraceDetailDrawer
-        trace={{
-          ...trace,
-          request_model: "public-model",
-          response_model: "response-model",
-          upstream: "provider",
-          upstream_model: "mapped-model",
-        }}
-        open
-        onOpenChange={vi.fn()}
-      />
-    </TooltipProvider>,
-  );
-  for (const value of [
-    "public-model",
-    "response-model",
-    "provider",
-    "mapped-model",
-  ]) {
-    expect(screen.getByText(value)).toBeTruthy();
-  }
-  expect(screen.queryByText("ai_traces.routing.reason")).toBeNull();
+  it("shows the final destination separately from the request and response models", () => {
+    render(
+      <TooltipProvider>
+        <TraceDetailDrawer
+          trace={{
+            ...trace,
+            request_model: "public-model",
+            response_model: "response-model",
+            upstream: "provider",
+            upstream_model: "mapped-model",
+          }}
+          open
+          onOpenChange={vi.fn()}
+        />
+      </TooltipProvider>,
+    );
+    for (const value of [
+      "public-model",
+      "response-model",
+      "provider",
+      "mapped-model",
+    ]) {
+      screen.getByText(value);
+    }
+    expect(screen.queryByText("ai_traces.routing.reason")).toBeNull();
+  });
 });

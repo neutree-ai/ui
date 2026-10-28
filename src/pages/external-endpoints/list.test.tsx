@@ -2,13 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) =>
-      options?.defaultValue ?? key,
-  }),
-}));
-
 vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
@@ -61,35 +54,31 @@ function renderModelsCell(spec: unknown) {
   return screen.getByTestId("cell-models");
 }
 
+const upstreams = [
+  {
+    name: "primary",
+    upstream: { url: "https://api.example.com" },
+    model_mapping: { "gpt-6-astra": "gpt-6" },
+  },
+];
+
 describe("ExternalEndpointsList", () => {
   it("leaves the chip off a model nobody has labelled", () => {
     // The source is decoration here — the Models cell already names the model,
     // and an "Unspecified" chip on every unlabelled row is noise.
     const cell = renderModelsCell({
-      upstreams: [
-        {
-          name: "primary",
-          upstream: { url: "https://api.example.com" },
-          model_mapping: { "gpt-6-astra": "gpt-6" },
-        },
-      ],
+      upstreams,
     });
-    expect(within(cell).getByText("gpt-6-astra")).toBeTruthy();
+    within(cell).getByText("gpt-6-astra");
     expect(within(cell).queryByText("modelSource.unspecified")).toBeNull();
   });
 
   it("still shows the label an endpoint has actually stored", () => {
     const cell = renderModelsCell({
-      upstreams: [
-        {
-          name: "primary",
-          upstream: { url: "https://api.example.com" },
-          model_mapping: { "gpt-6-astra": "gpt-6" },
-        },
-      ],
+      upstreams,
       model_sources: { "gpt-6-astra": "third-party-public" },
     });
-    expect(within(cell).getByText("third-party-public")).toBeTruthy();
+    within(cell).getByText("modelSource.values.third-party-public");
   });
 
   it("renders a placeholder when the endpoint exposes no models", () => {

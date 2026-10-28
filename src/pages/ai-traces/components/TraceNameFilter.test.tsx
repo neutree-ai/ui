@@ -2,14 +2,6 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { type NameOption, TraceNameFilter } from "./TraceNameFilter";
 
-// cmdk observes and scrolls its list; jsdom implements neither.
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
-
 const NAMES = ["qwen3-chat", "qwen3-embed", "deepseek-ocr"];
 const OPTIONS = NAMES.map((name) => ({ name }));
 
@@ -147,7 +139,7 @@ describe("TraceNameFilter", () => {
   it("shows the notice under the list", () => {
     openFilter("", OPTIONS, "Only some values are listed.");
 
-    expect(screen.getByText("Only some values are listed.")).toBeTruthy();
+    screen.getByText("Only some values are listed.");
   });
 
   it("offers a typed name when there are no suggestions", () => {
