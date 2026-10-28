@@ -187,6 +187,25 @@ describe("ColumnVisibilityManager", () => {
       expect(manager.get("test_resource")).toEqual({ col1: true });
       expect(manager.get("another_resource")).toBeUndefined();
     });
+
+    it("prunes stale configs on every save", () => {
+      const stale = {
+        version: 1,
+        configId: "another_resource_v1",
+        visibility: { col2: false },
+        lastUpdated: Date.now() - 91 * 24 * 60 * 60 * 1000,
+      };
+      storage.setItem(
+        "test_storage",
+        JSON.stringify({ another_resource: stale }),
+      );
+
+      manager.set("test_resource", { col1: true });
+
+      expect(
+        Object.keys(JSON.parse(storage.getItem("test_storage") ?? "")),
+      ).toEqual(["test_resource"]);
+    });
   });
 
   describe("clear", () => {

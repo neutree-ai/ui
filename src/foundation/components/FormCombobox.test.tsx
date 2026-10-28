@@ -79,15 +79,26 @@ describe("FormCombobox", () => {
     fireEvent.click(getTrigger());
 
     screen.getByText("Text Generation status");
-    expect(screen.queryByTestId("combobox-option-check")).toBeNull();
   });
 
-  it("keeps selection checks for the default option renderer", () => {
-    render(<Harness fieldValue="text-generation" />);
-    fireEvent.click(getTrigger());
+  it.each([
+    { renderer: "default", renderOption: undefined },
+    {
+      renderer: "custom",
+      renderOption: (option: { label: string }) => <span>{option.label}</span>,
+    },
+  ])(
+    "marks the stored value as checked with the $renderer renderer",
+    ({ renderOption }) => {
+      render(
+        <Harness fieldValue="text-generation" renderOption={renderOption} />,
+      );
+      fireEvent.click(getTrigger());
 
-    expect(screen.getAllByTestId("combobox-option-check")).toHaveLength(2);
-  });
+      const checked = screen.getAllByRole("option", { checked: true });
+      expect(checked.map((o) => o.textContent)).toEqual(["Text Generation"]);
+    },
+  );
 });
 
 describe("FormCombobox with allowCustomValue", () => {

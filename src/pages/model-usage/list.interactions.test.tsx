@@ -225,12 +225,8 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: () => ({ ...hookState, refetch }),
 }));
 
-// A card has no accessible name of its own; its title sits directly inside it.
-const cardFor = (title: string) => {
-  const card = screen.getByText(title).parentElement;
-  if (!card) throw new Error(`no card for ${title}`);
-  return within(card);
-};
+const cardFor = (title: string) =>
+  within(screen.getByRole("region", { name: title }));
 
 const bodyRows = (scope: ReturnType<typeof within>) =>
   scope

@@ -32,6 +32,7 @@ import {
   formatDefaultValue,
   isValueSchemaFilterActive,
   splitDescriptionJson,
+  typeBranches,
   typeBranchLabel,
   type ValueSchemaRow,
   valueSchemaTypeOptions,
@@ -73,7 +74,7 @@ const MAX_NESTED_INDENT_LEVELS = 3;
 
 /** Type cell: one icon + label per union branch, arrays keep their item type. */
 function TypeCell({ row }: { row: ValueSchemaRow }) {
-  const branches = row.types.length > 0 ? row.types : ["unknown"];
+  const branches = typeBranches(row);
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       {branches.map((branch, index) => (

@@ -226,7 +226,7 @@
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "d00a2ae48de2746f80a7beffca929e04",
   "src/domains/image-registry/lib/transform-image-registry-values.ts": "8c26cafe14bf2883c1146e93f64ff9b4",
   "src/domains/image-registry/hooks/use-image-registry-form.tsx": "44b3a3e22a3c727089c98c29753272f2",
-  "src/domains/cluster/hooks/use-cluster-form.tsx": "0889f60ea35a5d63174e4f2d218c98a6",
+  "src/domains/cluster/hooks/use-cluster-form.tsx": "c386bb709ece9f99a930640a133ac3fc",
   "src/foundation/types/resource-types.ts": "6fecb3bc5fdd96313e1745a5defcfd87",
   "src/foundation/hooks/use-variables-input.ts": "4e7645dd01994e5fd252bc3e2ad7676f",
   "src/foundation/components/VariablesInput.tsx": "3b5e4cf926481133c4ee746787283e65",
