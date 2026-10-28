@@ -488,5 +488,5 @@
   "src/foundation/hooks/use-accelerator-observations.ts": "ce032daa0e2e1ce5adae80193f0edc42",
   "src/foundation/components/GpuObservationCard.tsx": "86d4eb0bcbd2449ef30502da78e5fd58",
   "src/foundation/lib/accelerator-tflops.ts": "dee2df38e757ac9f915e132d49c98b50",
-  "src/foundation/lib/accelerator-extra-info.ts": "a2cf08b37459b028d29f34e7f8e835fb"
+  "src/foundation/lib/accelerator-extra-info.ts": "12b0faea81e1a09749fffe0423c69627"
 }

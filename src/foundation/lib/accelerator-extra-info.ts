@@ -1,4 +1,4 @@
-export type AcceleratorExtraField = {
+type AcceleratorExtraField = {
   key: string;
   label: string;
   values?: Record<string, string>;
