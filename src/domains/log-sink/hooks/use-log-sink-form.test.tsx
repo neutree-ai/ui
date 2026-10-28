@@ -1,4 +1,10 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLogSinkFormValues } from "@/domains/log-sink/testing/builders";
 import { fillField, selectOption } from "@/foundation/testing/interactions";
@@ -76,5 +82,49 @@ describe("useLogSinkForm", () => {
       ),
     );
     await screen.findByTestId("log-sink-test-result");
+  });
+
+  it("create s3: hides VictoriaLogs fields, requires keys, and saves an s3 spec", async () => {
+    const { result, submit } = renderLogSinkForm("create");
+    selectOption("spec.type", "log_sinks.types.s3");
+    expect(screen.queryByTestId("field-spec.victorialogs.url")).toBeNull();
+    fillField("metadata.name", "archive");
+    fillField("spec.s3.region", "us-east-1");
+    fillField("spec.s3.bucket", "traces");
+
+    await act(() => result.current.form.trigger());
+    screen.getByText("log_sinks.validation.accessKeyIdRequired");
+    screen.getByText("log_sinks.validation.secretAccessKeyRequired");
+
+    fillField("spec.s3.auth.access_key_id", "ak");
+    fillField("spec.s3.auth.secret_access_key", "sk");
+    // The hidden VictoriaLogs URL, left empty, does not block an s3 sink.
+    expect(await act(() => result.current.form.trigger())).toBe(true);
+
+    await submit();
+    expect(refineForm.onFinish.mock.calls[0][0].spec).toMatchObject({
+      type: "s3",
+      s3: { bucket: "traces" },
+    });
+  });
+
+  it("edit s3: type locked and blank keys are valid", async () => {
+    const stored = makeLogSinkFormValues((v) => {
+      v.spec.type = "s3";
+      v.spec.s3.region = "us-east-1";
+      v.spec.s3.bucket = "traces";
+    });
+    refineForm.queryData = { ...stored, id: 9 };
+    const { result } = renderLogSinkForm("edit");
+    act(() => result.current.form.reset(stored));
+    expect(
+      (
+        within(screen.getByTestId("field-spec.type")).getByRole(
+          "combobox",
+        ) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+
+    expect(await act(() => result.current.form.trigger())).toBe(true);
   });
 });
