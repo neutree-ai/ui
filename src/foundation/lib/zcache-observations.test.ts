@@ -15,7 +15,7 @@ describe("node L1 cache observations", () => {
     expect(result["gpu-a"]).toEqual({ usedGiB: null, capacityGiB: 8 });
   });
   it("uses the current runtime sample after a restart empties L1", () => {
-    const metric = "lmcache_mp_l1_memory_usage_bytes";
+    const metric = "neutree_cache_l1_memory_used_bytes";
     const samples = [
       {
         metric,

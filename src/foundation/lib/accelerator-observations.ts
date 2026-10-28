@@ -130,7 +130,7 @@ export function nodeL1CacheByNode(
     if (!cacheNode.name || capBytes <= 0) continue;
     const usedSample = nodeReading(
       samples,
-      "lmcache_mp_l1_memory_usage_bytes",
+      "neutree_cache_l1_memory_used_bytes",
       cacheNode.name,
     );
     result[cacheNode.name] = {
