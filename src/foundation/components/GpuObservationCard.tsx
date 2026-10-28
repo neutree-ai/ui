@@ -32,6 +32,7 @@ export type ObservedGpu = {
   totalMiB: number | null;
   allocatedMiB: number | null;
   healthy?: boolean;
+  peakFP16TFLOPS?: number | null;
 };
 type Props = {
   device: ObservedGpu;
@@ -89,7 +90,11 @@ export function GpuObservationCard({
       ? "neutree_endpoint_replica_accelerator_utilization_ratio"
       : "neutree_accelerator_utilization_ratio",
   );
-  const nominalTflops = peakTflops(device.product, tflopsOverrides);
+  const nominalTflops = peakTflops(
+    device.product,
+    tflopsOverrides,
+    device.peakFP16TFLOPS,
+  );
   const physical = get("neutree_accelerator_memory_total_bytes");
   const total = physical ? physical.value / 1024 ** 2 : device.totalMiB;
   const actual = used ? used.value / 1024 ** 2 : null;

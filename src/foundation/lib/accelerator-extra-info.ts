@@ -4,4 +4,3 @@ type AcceleratorExtraField = {
   values?: Record<string, string>;
 };
 export const extraHardwareFields: AcceleratorExtraField[] = [];
-export const extraPeakTflops: Record<string, number> = {};

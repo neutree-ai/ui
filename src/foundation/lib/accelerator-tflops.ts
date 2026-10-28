@@ -1,24 +1,8 @@
 import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
-import { extraPeakTflops } from "./accelerator-extra-info";
 import type { AcceleratorSample } from "./accelerator-observations";
 import { reading } from "./accelerator-observations";
 export const TFLOPS_ANNOTATION = "neutree.ai/accelerator-tflops";
-// Defaults are FP16 peak estimates, not measured arithmetic throughput.
-const defaults: Record<string, number> = {
-  T4: 65,
-  L4: 121,
-  A10: 125,
-  L20: 119.5,
-  L40S: 362,
-  A100: 312,
-  A800: 312,
-  H100: 989,
-  H800: 989,
-  H20: 148,
-  "4090": 165,
-  ...extraPeakTflops,
-};
 export function parseTflops(raw?: string): Record<string, number> {
   try {
     const value = JSON.parse(raw || "{}");
@@ -35,13 +19,28 @@ export function parseTflops(raw?: string): Record<string, number> {
 export function peakTflops(
   product: string,
   overrides: Record<string, number> = {},
+  specification?: number | null,
 ): number | null {
   if (Object.hasOwn(overrides, product)) return overrides[product];
-  const name = product.toUpperCase();
-  const key = Object.keys(defaults)
-    .sort((a, b) => b.length - a.length)
-    .find((k) => name.includes(k));
-  return key ? defaults[key] : null;
+  return specification != null &&
+    Number.isFinite(specification) &&
+    specification > 0
+    ? specification
+    : null;
+}
+
+export function productPeakTflops(
+  info: ClusterResourceInfo | null | undefined,
+  product: string,
+): number | null {
+  let peak: number | null = null;
+  for (const metadata of Object.values(info?.accelerator_metadata ?? {})) {
+    const value = metadata.products?.[product]?.peak_fp16_tflops;
+    if (value == null || !Number.isFinite(value) || value <= 0) continue;
+    if (peak != null && peak !== value) return null;
+    peak = value;
+  }
+  return peak;
 }
 export function formatFlops(value: number | null): string {
   return value == null
@@ -60,6 +59,7 @@ export function observedDevices(
         uuid: d.uuid,
         index: d.order ?? i + 1,
         product: d.product,
+        peakFP16TFLOPS: productPeakTflops(info, d.product),
         healthy: d.health,
         totalMiB: d.allocatable?.memory_mib ?? null,
         allocatedMiB:
@@ -78,7 +78,7 @@ export function flopsTotals(
   let total: number | null = healthy.length ? null : 0,
     used: number | null = healthy.length ? null : 0;
   for (const device of healthy) {
-    const peak = peakTflops(device.product, overrides);
+    const peak = peakTflops(device.product, overrides, device.peakFP16TFLOPS);
     if (peak == null) continue;
     total = (total ?? 0) + peak;
     const ratio = reading(

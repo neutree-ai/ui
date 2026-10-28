@@ -20,6 +20,7 @@ import {
   observedDevices,
   parseTflops,
   peakTflops,
+  productPeakTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -68,14 +69,16 @@ export function ClusterFlops({
       );
       let value: number | null = null;
       for (const s of distinct.values()) {
-        const product =
-          s.labels.product ||
-          devices.find(
-            (d) =>
-              d.node === s.labels.node && d.uuid === s.labels.accelerator_uuid,
-          )?.product ||
-          "";
-        const peak = peakTflops(product, overrides);
+        const device = devices.find(
+          (d) =>
+            d.node === s.labels.node && d.uuid === s.labels.accelerator_uuid,
+        );
+        const product = device?.product || s.labels.product || "";
+        const peak = peakTflops(
+          product,
+          overrides,
+          productPeakTflops(cluster.status?.resource_info, product),
+        );
         if (
           peak != null &&
           Number.isFinite(s.value) &&
@@ -295,7 +298,12 @@ export function ClusterFlops({
                   type="number"
                   min="0.01"
                   step="any"
-                  placeholder={peakTflops(product)?.toString() ?? "—"}
+                  placeholder={
+                    productPeakTflops(
+                      cluster.status?.resource_info,
+                      product,
+                    )?.toString() ?? "—"
+                  }
                   value={draft[product] ?? ""}
                   onChange={(e) =>
                     setDraft({ ...draft, [product]: e.target.value })

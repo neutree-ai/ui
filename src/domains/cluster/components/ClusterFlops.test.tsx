@@ -32,6 +32,9 @@ const cluster = {
   spec: { type: "kubernetes" },
   status: {
     resource_info: {
+      accelerator_metadata: {
+        nvidia_gpu: { products: { "Tesla-T4": { peak_fp16_tflops: 65 } } },
+      },
       node_resources: {
         n: { devices: [{ uuid: "g", product: "Tesla-T4", health: true }] },
       },
