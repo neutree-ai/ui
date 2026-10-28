@@ -465,5 +465,5 @@
   "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c",
   "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "8bd159b754c5c548bb9e2b3c30122165",
   "src/domains/cluster/components/ClusterFlops.tsx": "0020850b1e1272edc2e34d9691c5b908",
-  "src/foundation/lib/accelerator-extra-info.ts": "a2cf08b37459b028d29f34e7f8e835fb"
+  "src/foundation/lib/accelerator-extra-info.ts": "12b0faea81e1a09749fffe0423c69627"
 }
