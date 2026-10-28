@@ -459,7 +459,7 @@
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/foundation/components/GrafanaDashboardLink.tsx": "8759bc1412fb0d563189892ce8269b31",
   "src/foundation/lib/accelerator-observations.ts": "a3ae15857550ba53348e3c821ef5a337",
-  "src/foundation/lib/accelerator-tflops.ts": "ca2788265efe710b985d96c486da03e0",
+  "src/foundation/lib/accelerator-tflops.ts": "dee2df38e757ac9f915e132d49c98b50",
   "src/foundation/hooks/use-accelerator-observations.ts": "ce032daa0e2e1ce5adae80193f0edc42",
   "src/foundation/components/GpuObservationCard.tsx": "adab59fffed97ffc72af651365230357",
   "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c",
