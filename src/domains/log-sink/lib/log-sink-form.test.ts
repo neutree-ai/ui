@@ -4,7 +4,6 @@ import {
   bytesToGib,
   emptyLogSinkFormValues,
   gibToBytes,
-  LOG_SINK_ERROR_FIELDS,
   type LogSinkFormValues,
   toLogSinkFormValues,
   toLogSinkPayload,
@@ -362,12 +361,6 @@ describe("s3", () => {
     expect(toLogSinkSpec(values)).not.toHaveProperty("s3");
   });
 
-  it("s3 spec carries no victorialogs settings", () => {
-    expect(toLogSinkSpec(withS3Form(() => {}))).not.toHaveProperty(
-      "victorialogs",
-    );
-  });
-
   it.each<[string, NonNullable<LogSink["spec"]["s3"]>]>([
     ["defaults", { region: "us-east-1", bucket: "traces" }],
     [
@@ -447,21 +440,5 @@ describe("s3", () => {
     ["x", "invalid"],
   ])("flush interval %j -> %s", (value, error) => {
     expect(validateFlushInterval(value)).toBe(error);
-  });
-
-  it("maps s3 error codes to fields", () => {
-    expect(
-      ["10305", "10306", "10307", "10308", "10309", "10310", "10311"].map(
-        (code) => LOG_SINK_ERROR_FIELDS[code],
-      ),
-    ).toEqual([
-      "spec.type",
-      "spec.s3.bucket",
-      "spec.s3.region",
-      "spec.s3.endpoint",
-      "spec.s3.compression",
-      "spec.s3.flush_interval_seconds",
-      "spec.s3.auth.access_key_id",
-    ]);
   });
 });

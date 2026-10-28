@@ -1,4 +1,10 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyLogSinkFormValues } from "@/domains/log-sink/lib/log-sink-form";
 import { fillField, selectOption } from "@/foundation/testing/interactions";
@@ -92,5 +98,52 @@ describe("useLogSinkForm", () => {
     });
     expect(tested).toEqual({ id: 7, spec: saved.spec });
     await screen.findByTestId("log-sink-test-result");
+  });
+
+  it("create s3: only s3 fields count, keys are required, Save and Test agree", async () => {
+    const { result, submit } = renderLogSinkForm("create");
+    selectOption("spec.type", "log_sinks.types.s3");
+    expect(screen.queryByTestId("field-spec.victorialogs.url")).toBeNull();
+    fillField("metadata.name", "archive");
+    fillField("spec.s3.region", "us-east-1");
+    fillField("spec.s3.bucket", "traces");
+
+    await act(() => result.current.form.trigger());
+    screen.getByText("log_sinks.validation.accessKeyIdRequired");
+    screen.getByText("log_sinks.validation.secretAccessKeyRequired");
+
+    fillField("spec.s3.auth.access_key_id", "ak");
+    fillField("spec.s3.auth.secret_access_key", "sk");
+    // The hidden VictoriaLogs URL, left empty, does not block an s3 sink.
+    expect(await act(() => result.current.form.trigger())).toBe(true);
+
+    const { saved, tested } = await submitAndTest(submit);
+    expect(saved.spec).toMatchObject({ type: "s3", s3: { bucket: "traces" } });
+    expect(saved.spec).not.toHaveProperty("victorialogs");
+    expect(tested).toEqual({ spec: saved.spec });
+  });
+
+  it("edit s3: type locked, blank keys are valid and stay out of both", async () => {
+    const stored = emptyLogSinkFormValues();
+    stored.metadata.name = "archive";
+    stored.spec.type = "s3";
+    stored.spec.s3.region = "us-east-1";
+    stored.spec.s3.bucket = "traces";
+    refineForm.queryData = { ...stored, id: 9 };
+    const { result, submit } = renderLogSinkForm("edit");
+    act(() => result.current.form.reset(stored));
+    expect(
+      (
+        within(screen.getByTestId("field-spec.type")).getByRole(
+          "combobox",
+        ) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+
+    expect(await act(() => result.current.form.trigger())).toBe(true);
+
+    const { saved, tested } = await submitAndTest(submit);
+    expect(saved.spec.s3).not.toHaveProperty("auth");
+    expect(tested).toEqual({ id: 9, spec: saved.spec });
   });
 });
