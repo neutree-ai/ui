@@ -451,7 +451,7 @@
   "src/domains/cluster/lib/zcache-presentation.ts": "52e676e791d5c8dc4edb0c88b59accef",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "3338c722398967ee5c4d51c2b6d43309",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "b2ea6ae48c5a558327ac0cbfd7d81476",
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "4763b3116cf515f91c9a8b75f89651be",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/pages/auth/SsoCallbackPage.tsx": "936c5937d9c257e1a0c2e56259d907a3",
   "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
