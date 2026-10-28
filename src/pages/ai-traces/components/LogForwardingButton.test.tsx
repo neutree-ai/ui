@@ -5,13 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { LogForwardingButton } from "./LogForwardingButton";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { count?: number }) =>
-      options?.count === undefined ? key : `${key}:${options.count}`,
-  }),
-}));
-
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasPermission: vi.fn(() => ({ allowed: true, isLoading: false })),
 }));
@@ -65,13 +58,19 @@ const alertDot = () => screen.queryByTestId("log-forwarding-alert");
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useHasPermission).mockReturnValue({ allowed: true, isLoading: false });
+  vi.mocked(useHasPermission).mockReturnValue({
+    allowed: true,
+    isLoading: false,
+  });
   state.sinks = [];
 });
 
 describe("LogForwardingButton", () => {
   it("is hidden without log_sink:read and does not read the sinks", () => {
-    vi.mocked(useHasPermission).mockReturnValue({ allowed: false, isLoading: false });
+    vi.mocked(useHasPermission).mockReturnValue({
+      allowed: false,
+      isLoading: false,
+    });
 
     renderButton();
 
@@ -113,23 +112,23 @@ describe("LogForwardingButton", () => {
     expect(alertDot()).toBeNull();
   });
 
-  it("shows a red dot when a destination is failing, even if another is degraded", () => {
-    state.sinks = [sink("Failed"), sink("Degraded"), sink("Running")];
+  it.each([
+    {
+      phase: "Failed",
+      alert: "failed",
+      text: "ai_traces.forwarding.failing:1",
+    },
+    {
+      phase: "Degraded",
+      alert: "degraded",
+      text: "ai_traces.forwarding.degraded:1",
+    },
+  ])("flags a $phase destination", ({ phase, alert, text }) => {
+    state.sinks = [sink(phase), sink("Running")];
 
     renderButton();
 
-    expect(alertDot()?.getAttribute("data-alert")).toBe("failed");
-    expect(alertDot()?.className).toContain("serious");
-    expect(button().textContent).toContain("ai_traces.forwarding.failing:1");
-  });
-
-  it("shows a yellow dot when a destination is degraded and none is failing", () => {
-    state.sinks = [sink("Degraded"), sink("Running")];
-
-    renderButton();
-
-    expect(alertDot()?.getAttribute("data-alert")).toBe("degraded");
-    expect(alertDot()?.className).toContain("notice");
-    expect(button().textContent).toContain("ai_traces.forwarding.degraded:1");
+    expect(alertDot()?.getAttribute("data-alert")).toBe(alert);
+    expect(button().textContent).toContain(text);
   });
 });

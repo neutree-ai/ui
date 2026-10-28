@@ -12,10 +12,6 @@ vi.mock("@refinedev/core", () => ({
   useUpdate: () => ({ mutateAsync: mocks.mutateAsync, isLoading: false }),
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));

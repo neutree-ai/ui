@@ -415,7 +415,7 @@ describe("AITracesList log forwarding entry", () => {
   it("sits in the header next to export", () => {
     renderList();
 
-    expect(screen.getByText("forwarding")).toBeTruthy();
+    screen.getByText("forwarding");
   });
 
   it("is not offered without trace permission", () => {
