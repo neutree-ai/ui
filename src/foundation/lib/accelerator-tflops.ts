@@ -1,5 +1,6 @@
 import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
+import { extraPeakTflops } from "./accelerator-extra-info";
 import type { AcceleratorSample } from "./accelerator-observations";
 import { reading } from "./accelerator-observations";
 export const TFLOPS_ANNOTATION = "neutree.ai/accelerator-tflops";
@@ -16,9 +17,7 @@ const defaults: Record<string, number> = {
   H800: 989,
   H20: 148,
   "4090": 165,
-  "910B": 320,
-  "310P": 70,
-  K100_AI: 196,
+  ...extraPeakTflops,
 };
 export function parseTflops(raw?: string): Record<string, number> {
   try {

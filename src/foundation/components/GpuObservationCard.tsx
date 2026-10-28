@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
   allocationColor,
@@ -96,13 +97,20 @@ export function GpuObservationCard({
   const power = get("neutree_accelerator_power_usage_watts");
   const hardware = Object.assign(
     {},
-    ...[
-      "neutree_node_accelerator_hardware_info",
-      "neutree_node_accelerator_nvidia_info",
-      "neutree_node_accelerator_npu_info",
-      "neutree_node_accelerator_hcu_info",
-      "neutree_node_accelerator_iluvatar_info",
-    ].map((name) => get(name)?.labels ?? {}),
+    get("neutree_node_accelerator_hardware_info")?.labels ?? {},
+    ...Array.from(
+      new Set(
+        samples
+          .filter(
+            (sample) =>
+              /^neutree_node_accelerator_.+_info$/.test(sample.metric) &&
+              sample.metric !== "neutree_node_accelerator_hardware_info",
+          )
+          .map((sample) => sample.metric),
+      ),
+    )
+      .sort()
+      .map((name) => get(name)?.labels ?? {}),
   ) as Record<string, string>;
   const assigned = allocations.filter(
     (a) => a.node === device.node && a.uuid === device.uuid,
@@ -174,7 +182,9 @@ export function GpuObservationCard({
           "nvswitch",
         ]
       : []),
-    ...(get("neutree_node_accelerator_npu_info") ? ["hccs_capable"] : []),
+    ...extraHardwareFields
+      .filter((field) => hardware[field.key] != null)
+      .map((field) => field.key),
     "driver_version",
     "pcie_bus_id",
     "pcie_generation",
@@ -183,19 +193,14 @@ export function GpuObservationCard({
   ];
   const hardwareLabel = (key: string) => {
     const value = hardware[key];
-    if (["nvlink", "nvswitch", "hccs_capable"].includes(key)) {
+    const extraField = extraHardwareFields.find((field) => field.key === key);
+    if (extraField?.values)
+      return extraField.values[value] ? t(extraField.values[value]) : "—";
+    if (["nvlink", "nvswitch"].includes(key)) {
       return value === "1"
-        ? t(
-            key === "hccs_capable"
-              ? "observations.supported"
-              : "observations.present",
-          )
+        ? t("observations.present")
         : value === "0"
-          ? t(
-              key === "hccs_capable"
-                ? "observations.unsupported"
-                : "observations.absent",
-            )
+          ? t("observations.absent")
           : "—";
     }
     return label(value);
@@ -474,7 +479,10 @@ export function GpuObservationCard({
                 {hardwareFields.map((key) => (
                   <div key={key}>
                     <dt className="text-xs text-muted-foreground">
-                      {t(`observations.hardwareFields.${key}`)}
+                      {t(
+                        extraHardwareFields.find((field) => field.key === key)
+                          ?.label ?? `observations.hardwareFields.${key}`,
+                      )}
                     </dt>
                     <dd className="break-all">{hardwareLabel(key)}</dd>
                   </div>

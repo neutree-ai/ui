@@ -2507,8 +2507,7 @@
 			"pcie_width": "PCIe width",
 			"numa_node": "NUMA node",
 			"nvlink": "NVLink",
-			"nvswitch": "NVSwitch",
-			"hccs_capable": "HCCS capability"
+			"nvswitch": "NVSwitch"
 		},
 		"details": "Device details",
 		"present": "Present",
