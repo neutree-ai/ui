@@ -20,7 +20,7 @@ function Editor({
   supportedCluster = true,
   invalid,
   engineVersion = "v0.32.0-zcache-enabled",
-  runtimeVersion,
+  runtimeVersion = "v0.5.6-post.1",
   configuredVersion,
 }: {
   cache: unknown;
@@ -249,12 +249,12 @@ vi.mock("@/foundation/hooks/use-cache-versions", () => ({
 }));
 
 it.each([
-  [undefined, undefined, "v0.24.0", true],
-  [undefined, "v0.5.0", "v0.24.0", false],
+  ["", undefined, "v0.24.0", true],
+  ["", "v0.5.0", "v0.24.0", true],
   ["v0.5.6-post.1", "v0.5.0", "v0.24.0", true],
   ["v0.5.6-post.1", "v0.5.0", "v0.32.0-zcache-enabled", false],
 ])(
-  "uses target then configured then default version (%s, %s, %s)",
+  "uses only the persisted target version (%s, %s, %s)",
   (runtimeVersion, configuredVersion, engineVersion, disabled) => {
     render(
       <Editor

@@ -29,10 +29,7 @@ export function EndpointKVCacheFields({
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const task = form.watch("spec.model.task");
-  const runtimeVersion =
-    endpointZCacheOptions(cluster)?.version ??
-    cluster?.status?.cache?.details?.configured_runtime_version ??
-    versions.data?.data.find((v) => v.is_default)?.version;
+  const runtimeVersion = endpointZCacheOptions(cluster)?.version;
   const compatible = !!versions.data?.data
     .find((v) => v.version === runtimeVersion)
     ?.engine_versions.includes(engine?.version);
