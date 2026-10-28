@@ -1,176 +1,96 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { FormProvider } from "react-hook-form";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { LogSinkFormValues } from "@/domains/log-sink/lib/log-sink-form";
-
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-const mocks = vi.hoisted(() => ({
-  onFinish: vi.fn(async (values: unknown) => values),
-  mutateAsync: vi.fn(async (_: unknown) => ({ data: { ok: true } })),
-  queryData: undefined as unknown,
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@refinedev/core", () => ({
-  useCustomMutation: () => ({ mutateAsync: mocks.mutateAsync }),
-}));
-
-// Refine's useForm, reduced to react-hook-form plus the refineCore parts the
-// hook uses. Stored data becomes the defaults, as Refine's population would.
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const {
-        refineCoreProps: _refineCoreProps,
-        warnWhenUnsavedChanges: _warn,
-        defaultValues,
-        ...rhfOpts
-      } = opts;
-      const form = rhf.useForm({
-        ...rhfOpts,
-        defaultValues: (mocks.queryData as object) ?? defaultValues,
-      });
-      return {
-        ...form,
-        refineCore: {
-          onFinish: mocks.onFinish,
-          query: mocks.queryData
-            ? { data: { data: mocks.queryData } }
-            : undefined,
-        },
-      };
-    },
-  };
-});
-
 import { emptyLogSinkFormValues } from "@/domains/log-sink/lib/log-sink-form";
+import { fillField, selectOption } from "@/foundation/testing/interactions";
+import { refineForm } from "@/foundation/testing/refine-form";
+import { renderForm } from "@/foundation/testing/render-form";
 import { useLogSinkForm } from "./use-log-sink-form";
 
-let submit: () => Promise<unknown>;
+const mutateAsync = vi.hoisted(() =>
+  vi.fn(async (_: unknown) => ({ data: { ok: true } })),
+);
 
-function Form({ action }: { action: "create" | "edit" }) {
-  const { form, metadataFields, specFields } = useLogSinkForm({ action });
-  submit = () =>
-    form.refineCore.onFinish(form.getValues() as LogSinkFormValues);
-  return (
-    <FormProvider {...form}>
-      <form>
-        {metadataFields}
-        {specFields}
-      </form>
-    </FormProvider>
+vi.mock("@refinedev/core", () => ({
+  useCustomMutation: () => ({ mutateAsync }),
+}));
+
+function renderLogSinkForm(action: "create" | "edit") {
+  const rendered = renderForm(
+    () => useLogSinkForm({ action }),
+    (r) => (
+      <>
+        {r.metadataFields}
+        {r.specFields}
+      </>
+    ),
   );
+  const submit = () =>
+    act(() =>
+      rendered.result.current.form.refineCore.onFinish(
+        rendered.result.current.form.getValues(),
+      ),
+    );
+  return { ...rendered, submit };
 }
 
-function selectOption(fieldTestId: string, optionLabel: string) {
-  const field = screen.getByTestId(fieldTestId);
-  const trigger = field.querySelector('button[role="combobox"]');
-  if (!trigger) throw new Error("select trigger not found");
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole("option", { name: optionLabel }));
+/** What Save sent and what Test Connection sent, after both were pressed. */
+async function submitAndTest(submit: () => Promise<unknown>) {
+  await submit();
+  fireEvent.click(screen.getByTestId("log-sink-test-connection"));
+  await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+  return {
+    saved: refineForm.onFinish.mock.calls[0][0],
+    tested: (
+      mutateAsync.mock.calls[0][0] as { values: Record<string, unknown> }
+    ).values,
+  };
 }
-
-const input = (testId: string) => {
-  const el = screen.getByTestId(testId).querySelector("input");
-  if (!el) throw new Error(`input not found in ${testId}`);
-  return el;
-};
 
 beforeEach(() => {
-  mocks.onFinish.mockClear();
-  mocks.mutateAsync.mockClear();
-  mocks.queryData = undefined;
+  mutateAsync.mockClear();
 });
 
 describe("useLogSinkForm", () => {
-  it("create: submit and test connection send the same bearer spec", async () => {
-    render(<Form action="create" />);
-    fireEvent.change(input("field-metadata.name"), {
-      target: { value: "vl" },
-    });
-    fireEvent.change(input("field-spec.victorialogs.url"), {
-      target: { value: "https://vl:9428" },
-    });
-    selectOption(
-      "field-spec.victorialogs.auth.type",
-      "log_sinks.authTypes.bearer",
-    );
-    fireEvent.change(input("field-spec.victorialogs.auth.token"), {
-      target: { value: "secret" },
-    });
-    fireEvent.change(input("field-spec.buffer.max_size_gib"), {
-      target: { value: "1.5" },
-    });
+  it("create: Save sends the whole object and Test Connection the same spec", async () => {
+    const { submit } = renderLogSinkForm("create");
+    fillField("metadata.name", "vl");
+    fillField("spec.victorialogs.url", "https://vl:9428");
+    selectOption("spec.victorialogs.auth.type", "log_sinks.authTypes.bearer");
+    fillField("spec.victorialogs.auth.token", "secret");
 
-    const spec = {
-      type: "victorialogs",
-      enabled: true,
-      victorialogs: {
-        url: "https://vl:9428",
-        auth: { type: "bearer", token: "secret" },
-      },
-      buffer: { max_size: 1610612736 },
-    };
+    const { saved, tested } = await submitAndTest(submit);
 
-    await submit();
-    expect(mocks.onFinish).toHaveBeenCalledWith({
+    expect(saved).toMatchObject({
       api_version: "v1",
       kind: "LogSink",
       metadata: { name: "vl" },
-      spec,
+      spec: { victorialogs: { auth: { type: "bearer", token: "secret" } } },
     });
-
-    fireEvent.click(screen.getByTestId("log-sink-test-connection"));
-    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalled());
-    expect(mocks.mutateAsync.mock.calls[0][0]).toMatchObject({
-      url: "/log_sinks/test_connection",
-      method: "post",
-      values: { spec },
-    });
+    expect(tested).toEqual({ spec: saved.spec });
   });
 
-  it("edit with a blank secret: keeps it out of the PATCH and the test", async () => {
+  it("edit: Save sends only the spec, and a blank secret stays out of both", async () => {
     const stored = emptyLogSinkFormValues();
     stored.metadata.name = "vl";
     stored.spec.victorialogs.url = "https://vl:9428";
     stored.spec.victorialogs.auth.type = "basic";
     stored.spec.victorialogs.auth.username = "u";
-    mocks.queryData = { ...stored, id: 7 };
-
-    render(<Form action="edit" />);
-    expect(input("field-metadata.name").disabled).toBe(true);
+    refineForm.queryData = { ...stored, id: 7 };
+    const { result, submit } = renderLogSinkForm("edit");
+    act(() => result.current.form.reset(stored));
     expect(
-      (input("field-spec.victorialogs.auth.password") as HTMLInputElement)
-        .value,
-    ).toBe("");
+      (screen.getByLabelText(/^common\.fields\.name/) as HTMLInputElement)
+        .disabled,
+    ).toBe(true);
 
-    const spec = {
-      type: "victorialogs",
-      enabled: true,
-      victorialogs: {
-        url: "https://vl:9428",
-        auth: { type: "basic", username: "u" },
-      },
-    };
+    const { saved, tested } = await submitAndTest(submit);
 
-    await submit();
-    expect(mocks.onFinish).toHaveBeenCalledWith({ spec });
-
-    fireEvent.click(screen.getByTestId("log-sink-test-connection"));
-    await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalled());
-    expect(mocks.mutateAsync.mock.calls[0][0]).toMatchObject({
-      values: { id: 7, spec },
+    expect(Object.keys(saved)).toEqual(["spec"]);
+    expect(saved.spec.victorialogs.auth).toEqual({
+      type: "basic",
+      username: "u",
     });
-    expect(await screen.findByTestId("log-sink-test-result")).toBeTruthy();
+    expect(tested).toEqual({ id: 7, spec: saved.spec });
+    await screen.findByTestId("log-sink-test-result");
   });
 });

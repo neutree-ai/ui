@@ -1,10 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 
 const deleteButton = () =>
@@ -13,8 +9,8 @@ const deleteButton = () =>
 describe("DeleteConfirmDialog", () => {
   it("keeps the default dialog unchanged", () => {
     render(<DeleteConfirmDialog open onConfirm={() => {}} />);
-    expect(screen.getByText("dialogs.delete.description")).toBeTruthy();
-    expect(screen.getByText("dialogs.delete.forceDelete.label")).toBeTruthy();
+    screen.getByText("dialogs.delete.description");
+    screen.getByText("dialogs.delete.forceDelete.label");
     expect(screen.queryByTestId("delete-confirm-name")).toBeNull();
     expect(deleteButton().hasAttribute("disabled")).toBe(false);
   });
@@ -30,7 +26,7 @@ describe("DeleteConfirmDialog", () => {
         onConfirm={onConfirm}
       />,
     );
-    expect(screen.getByText("impact")).toBeTruthy();
+    screen.getByText("impact");
     expect(screen.queryByText("dialogs.delete.forceDelete.label")).toBeNull();
     expect(deleteButton().hasAttribute("disabled")).toBe(true);
 

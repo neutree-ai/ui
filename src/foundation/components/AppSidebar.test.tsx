@@ -61,6 +61,7 @@ const settingsMenu = vi.hoisted(() => ({
 vi.mock("@refinedev/core", () => ({
   useMenu: () => ({ menuItems: [settingsMenu] }),
   useResourceParams: () => ({ id: undefined }),
+  useResource: () => ({ resources: [] }),
 }));
 
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";

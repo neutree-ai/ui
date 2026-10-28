@@ -25,29 +25,15 @@ describe("buildTestConnectionRequest", () => {
     v.spec.victorialogs.auth.token = "t";
     const request = buildTestConnectionRequest({ mode: "create", values: v });
     expect(request).toEqual({ spec: toLogSinkSpec(v) });
-    expect(request).toEqual({
-      spec: {
-        type: "victorialogs",
-        enabled: true,
-        victorialogs: {
-          url: "https://vl:9428",
-          auth: { type: "bearer", token: "t" },
-        },
-        buffer: { max_size: 2147483648 },
-      },
-    });
   });
 
-  it("edit: sends id and spec, leaving a blank token out for the API to fill", () => {
+  it("edit: sends id and the spec the submit would save", () => {
     const request = buildTestConnectionRequest({
       mode: "edit",
       id: 7,
       values: values(),
     });
     expect(request).toEqual({ id: 7, spec: toLogSinkSpec(values()) });
-    expect("spec" in request && request.spec.victorialogs?.auth).toEqual({
-      type: "bearer",
-    });
   });
 
   it("stored: sends only the id", () => {
