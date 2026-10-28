@@ -1,10 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasPermission: vi.fn(),
 }));
@@ -26,7 +22,7 @@ describe("PermissionGate", () => {
       isLoading: false,
     });
     gate();
-    expect(screen.getByText("secret page")).toBeTruthy();
+    screen.getByText("secret page");
   });
 
   it("shows the no-permission state otherwise", () => {

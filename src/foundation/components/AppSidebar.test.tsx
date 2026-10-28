@@ -89,15 +89,15 @@ describe("AppSidebar permission gating", () => {
   it("lists a gated resource for a user holding its permission", () => {
     permissionState({ "identity_source:read": true });
     renderSidebar();
-    expect(screen.getByText("Identity Sources")).toBeTruthy();
-    expect(screen.getByText("Customize Appearance")).toBeTruthy();
+    screen.getByText("Identity Sources");
+    screen.getByText("Customize Appearance");
   });
 
   it("hides a gated resource from a user without its permission", () => {
     permissionState({ "identity_source:read": false });
     renderSidebar();
     expect(screen.queryByText("Identity Sources")).toBeNull();
-    expect(screen.getByText("Customize Appearance")).toBeTruthy();
+    screen.getByText("Customize Appearance");
   });
 
   it("does not flash a gated resource while the check is pending", () => {

@@ -6,7 +6,7 @@ import { translateApiError } from "@/foundation/lib/api-error-code";
  * identity source write. 10260 belongs to user profiles (external email is
  * read-only) and is not mapped here.
  */
-export const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
+const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10250": "identity_sources.errors.invalidName",
   "10251": "identity_sources.errors.immutable",
   "10252": "identity_sources.errors.noWorkspace",

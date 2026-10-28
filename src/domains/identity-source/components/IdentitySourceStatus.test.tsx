@@ -2,13 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: unknown) =>
-      typeof fallback === "string" ? `${key}` : key,
-  }),
-}));
-
 vi.mock("@/foundation/components/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
@@ -43,20 +36,13 @@ describe("IdentitySourceStatus", () => {
     const badge = screen.getByTestId("identity-source-status");
     expect(badge.textContent).toBe("identity_sources.phases.Failed");
     fireEvent.focus(badge);
-    expect(
-      (await screen.findAllByText("LDAP bind failed: invalid credentials"))
-        .length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(/identity_sources\.status\.lastTestFailed/).length,
-    ).toBeGreaterThan(0);
+    await screen.findAllByText("LDAP bind failed: invalid credentials");
+    screen.getAllByText(/^identity_sources\.status\.lastTestFailed/);
   });
 
   it("says when a source has not been tested yet", async () => {
     renderStatus({ phase: "Pending" });
     fireEvent.focus(screen.getByTestId("identity-source-status"));
-    expect(
-      (await screen.findAllByText("identity_sources.status.notTested")).length,
-    ).toBeGreaterThan(0);
+    await screen.findAllByText("identity_sources.status.notTested");
   });
 });
