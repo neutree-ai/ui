@@ -1,4 +1,4 @@
-import { useMenu, useResourceParams } from "@refinedev/core";
+import { useMenu, useResource, useResourceParams } from "@refinedev/core";
 import {
   Sidebar,
   SidebarContent,
@@ -54,12 +54,18 @@ function AppSidebarMenuItem(props: AppSidebarMenuItemProps) {
 
 function AppSidebarMenuLink({ item, state }: AppSidebarMenuItemProps) {
   const resourceParams = useResourceParams();
+  const { resources } = useResource();
   const { current: currentWorkspace } = useWorkspace();
   const { pathname } = useLocation();
   const currentPathname = String(pathname);
 
+  // useMenu drops hidden resources, so find the ones opened from this item's
+  // page among all resources.
+  const children = resources.filter(
+    (resource) => resource.meta?.parent === item.name,
+  );
   const paths = buildMenuItemPaths(
-    item,
+    { ...item, children },
     currentWorkspace,
     resourceParams.id as string,
   );

@@ -15,6 +15,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { cn } from "@/foundation/lib/utils";
 import { Link } from "./Link";
 
@@ -29,8 +30,11 @@ export const AppBreadcrumbs: FC<BreadcrumbProps> = ({
   record,
   showCurrent = true,
 }) => {
+  const { current: workspace } = useWorkspace();
+  // A global page under a workspaced parent (Log Forwarding under Access Log)
+  // has no workspace in its URL; link the parent to the current one.
   const { breadcrumbs } = useBreadcrumb({
-    meta,
+    meta: { workspace, ...meta },
   });
 
   const { hasDashboard } = useRefineContext();

@@ -45,6 +45,7 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { LogForwardingButton } from "./components/LogForwardingButton";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";
 import { TraceExportButton } from "./components/TraceExportButton";
@@ -216,6 +217,7 @@ export const AITracesList = () => {
       breadcrumb={false}
       extra={
         <div className="flex items-center gap-2">
+          <LogForwardingButton />
           <TraceExportButton params={filterArgs} />
           <Button
             variant="outline"

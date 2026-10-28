@@ -1,5 +1,5 @@
 import { useResource, useUserFriendlyName } from "@refinedev/core";
-import type { FC } from "react";
+import { type FC, isValidElement } from "react";
 import { CreateButton } from "@/foundation/components/CreateButton";
 import { PageHeader } from "@/foundation/components/PageHeader";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -19,6 +19,7 @@ type ListProps = {
 export const ListPage: FC<ListProps> = ({
   title,
   resource: resourceFromProps,
+  breadcrumb,
   createButtonProps,
   className,
   canCreate = true,
@@ -43,7 +44,7 @@ export const ListPage: FC<ListProps> = ({
             )}`,
           )
         }
-        breadcrumb={null}
+        breadcrumb={isValidElement(breadcrumb) ? breadcrumb : null}
         extra={
           extra ?? (
             <div className="inline-flex flex-row gap-4">

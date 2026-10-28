@@ -32,6 +32,7 @@ import {
   Layers,
   LayoutDashboard,
   LayoutTemplate,
+  ScrollText,
   Server,
   Settings,
   ShieldCheck,
@@ -256,6 +257,21 @@ const RolesCreate = lazy(() =>
   import("./pages/roles/create").then((m) => ({ default: m.RolesCreate })),
 );
 
+const LogSinksList = lazy(() =>
+  import("./pages/log-sinks/list").then((m) => ({ default: m.LogSinksList })),
+);
+const LogSinksShow = lazy(() =>
+  import("./pages/log-sinks/show").then((m) => ({ default: m.LogSinksShow })),
+);
+const LogSinksEdit = lazy(() =>
+  import("./pages/log-sinks/edit").then((m) => ({ default: m.LogSinksEdit })),
+);
+const LogSinksCreate = lazy(() =>
+  import("./pages/log-sinks/create").then((m) => ({
+    default: m.LogSinksCreate,
+  })),
+);
+
 const UsersList = lazy(() =>
   import("./pages/users/list").then((m) => ({ default: m.UsersList })),
 );
@@ -285,7 +301,7 @@ const WorkspacesCreate = lazy(() =>
   })),
 );
 
-const resources: ResourceProps[] = [
+export const resources: ResourceProps[] = [
   {
     name: "dashboard",
     list: "/dashboard",
@@ -409,6 +425,20 @@ const resources: ResourceProps[] = [
     },
   },
   {
+    // Opened from the Access Log page, not the menu. Global, so no workspace.
+    name: "log_sinks",
+    list: "/log-forwarding",
+    create: "/log-forwarding/create",
+    edit: "/log-forwarding/edit/:id",
+    show: "/log-forwarding/show/:id",
+    meta: {
+      icon: <ScrollText />,
+      idColumnName: "metadata->name",
+      parent: "ai_traces",
+      hide: true,
+    },
+  },
+  {
     name: "access_control",
   },
   {
@@ -459,6 +489,7 @@ const resources: ResourceProps[] = [
       parent: "access_control",
     },
   },
+
   {
     name: "api_keys",
     list: "/:workspace/api-keys",
@@ -674,6 +705,12 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                   <Route path="show/:id" element={<RoleAssignmentsShow />} />
                   <Route path="edit/:id" element={<RoleAssignmentsEdit />} />
                   <Route path="create" element={<RoleAssignmentsCreate />} />
+                </Route>
+                <Route path="/log-forwarding">
+                  <Route index element={<LogSinksList />} />
+                  <Route path="show/:id" element={<LogSinksShow />} />
+                  <Route path="edit/:id" element={<LogSinksEdit />} />
+                  <Route path="create" element={<LogSinksCreate />} />
                 </Route>
                 <Route path="/:workspace/api-keys">
                   <Route index element={<ApiKeysList />} />
