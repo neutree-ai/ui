@@ -27,7 +27,9 @@ vi.mock("@/foundation/providers/auth-provider", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
 vi.mock("./VirtualLog", () => ({
-  VirtualLog: ({ log }: { log: string }) => <pre>{log}</pre>,
+  VirtualLog: ({ log }: { log: string }) => (
+    <pre data-testid="virtual-log">{log}</pre>
+  ),
 }));
 vi.mock("@/domains/endpoint/hooks/use-streaming-logs", () => ({
   useStreamingLogs: () => ({
@@ -116,6 +118,19 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe("LogViewer loading", () => {
+  it("shows the loading message instead of the log list until the logs arrive", () => {
+    const { rerender } = render(<LogViewer source="" isLoading />);
+
+    screen.getByText("endpoints.logs.loading");
+    expect(screen.queryByTestId("virtual-log")).toBeNull();
+
+    rerender(<LogViewer source="line 1" />);
+
+    screen.getByTestId("virtual-log");
+  });
 });
 
 describe("LogViewer downloads", () => {

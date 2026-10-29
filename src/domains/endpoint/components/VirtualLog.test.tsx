@@ -14,6 +14,15 @@ vi.mock("react-window", async () => {
   const React = await import("react");
   class List extends React.Component<{ onScroll?: (p: unknown) => void }> {
     scrollToItem = h.scrollToItem;
+    componentDidMount() {
+      // react-window reports its offset from its own mount, before VirtualLog
+      // has positioned the list.
+      this.props.onScroll?.({
+        scrollDirection: "forward",
+        scrollOffset: 0,
+        scrollUpdateWasRequested: false,
+      });
+    }
     render() {
       h.onScroll.current = this.props.onScroll ?? null;
       return null;
@@ -44,7 +53,7 @@ describe("VirtualLog tail-following", () => {
     h.scrollToItem.mockClear();
   });
 
-  it("auto-scrolls to the latest line on initial render", () => {
+  it("auto-scrolls to the latest line on first load, ignoring the list's own mount report", () => {
     render(<VirtualLog log={makeLog(3)} />);
     expect(h.scrollToItem).toHaveBeenCalledWith(2, "end");
   });
