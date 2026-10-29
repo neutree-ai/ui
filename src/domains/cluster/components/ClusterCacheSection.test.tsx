@@ -333,3 +333,25 @@ it("omits node counts when disabled with no nodes", () => {
   render(<ClusterCacheSection cluster={cluster} />);
   expect(screen.queryByText("clusters.zcache.readyCount")).toBeNull();
 });
+
+it("shows disabled when cache has never been configured or observed", () => {
+  render(<ClusterCacheSection cluster={{ spec: {}, status: {} } as Cluster} />);
+  expect(screen.getByText("clusters.zcache.disabled")).toBeTruthy();
+  expect(screen.queryByText("clusters.zcache.reconciling")).toBeNull();
+  expect(screen.queryByText("clusters.zcache.lastObservation")).toBeNull();
+});
+
+it("shows pending enablement when the first cache observation is missing", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] },
+      },
+    },
+    status: {},
+  } as unknown as Cluster;
+  render(<ClusterCacheSection cluster={cluster} />);
+  expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
+  expect(screen.getByText("clusters.zcache.waiting")).toBeTruthy();
+});
