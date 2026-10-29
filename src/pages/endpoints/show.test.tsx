@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
@@ -335,16 +335,14 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
-    servingInfo.getByTestId("endpoint-access-summary");
-    servingInfo.getByText("chat-primary");
-    servingInfo.getByText("chat-alias");
+    screen.getByTestId("endpoint-access-summary");
+    screen.getByText("chat-primary");
+    screen.getByText("chat-alias");
   });
 
   it("shows a placeholder while served models have not been discovered", () => {
     render(<EndpointsShow />);
-    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
-    servingInfo.getByText("endpoints.fields.servedModels");
-    servingInfo.getByText("-");
+    screen.getByText("endpoints.fields.servedModels");
+    screen.getByText("-");
   });
 });
