@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -261,16 +261,14 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
-    expect(servingInfo.getByTestId("endpoint-access-summary")).toBeTruthy();
-    expect(servingInfo.getByText("chat-primary")).toBeTruthy();
-    expect(servingInfo.getByText("chat-alias")).toBeTruthy();
+    expect(screen.getByTestId("endpoint-access-summary")).toBeTruthy();
+    expect(screen.getByText("chat-primary")).toBeTruthy();
+    expect(screen.getByText("chat-alias")).toBeTruthy();
   });
 
   it("shows a placeholder while served models have not been discovered", () => {
     render(<EndpointsShow />);
-    const servingInfo = within(screen.getByTestId("endpoint-serving-info"));
-    expect(servingInfo.getByText("endpoints.fields.servedModels")).toBeTruthy();
-    expect(servingInfo.getByText("-")).toBeTruthy();
+    expect(screen.getByText("endpoints.fields.servedModels")).toBeTruthy();
+    expect(screen.getByText("-")).toBeTruthy();
   });
 });

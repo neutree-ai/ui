@@ -264,33 +264,28 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     {record.spec.cluster}
                   </ShowButton>
                 </ShowPage.Meta>
-                <span
-                  className="inline-flex flex-col items-start gap-1"
-                  data-testid="endpoint-serving-info"
-                >
-                  {url && (
-                    <EndpointAccessSummary
-                      serviceUrl={url}
-                      className="shrink-0"
-                    />
+                {url && (
+                  <EndpointAccessSummary
+                    serviceUrl={url}
+                    className="shrink-0"
+                  />
+                )}
+                <ShowPage.Meta label={t("endpoints.fields.servedModels")}>
+                  {record.status?.served_models?.length ? (
+                    <span className="inline-flex flex-wrap gap-1">
+                      {record.status.served_models.map((model) => (
+                        <code
+                          key={model}
+                          className="break-all font-mono text-xs"
+                        >
+                          {model}
+                        </code>
+                      ))}
+                    </span>
+                  ) : (
+                    "-"
                   )}
-                  <ShowPage.Meta label={t("endpoints.fields.servedModels")}>
-                    {record.status?.served_models?.length ? (
-                      <span className="inline-flex flex-wrap gap-1">
-                        {record.status.served_models.map((model) => (
-                          <code
-                            key={model}
-                            className="break-all font-mono text-xs"
-                          >
-                            {model}
-                          </code>
-                        ))}
-                      </span>
-                    ) : (
-                      "-"
-                    )}
-                  </ShowPage.Meta>
-                </span>
+                </ShowPage.Meta>
                 <ShowPage.Meta label={t("endpoints.fields.replicas")}>
                   {replicaCount}
                 </ShowPage.Meta>
