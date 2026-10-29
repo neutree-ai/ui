@@ -68,10 +68,11 @@ function ZCacheDetails({
   const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const matches = sameCacheConfig(desired, status?.current);
+  const basePhase = summary?.phase ?? "Disabled";
   const phase =
-    (summary?.phase === "Ready" || summary?.phase === "Disabled") && !matches
+    (basePhase === "Ready" || basePhase === "Disabled") && !matches
       ? "Reconciling"
-      : summary?.phase;
+      : basePhase;
   const stale = availability?.status === "Unknown" || !status?.observed_at;
   const busy = activeCacheChange(status);
   const request = busy?.request;
