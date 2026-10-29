@@ -174,7 +174,6 @@ export type ZCacheStatus = {
   observed_at?: string;
   observation_error?: string;
   current?: ZCacheSpec;
-  configured_runtime_version?: string;
   runtime_endpoint?: { address: string; port: number };
   nodes?: {
     name: string;
