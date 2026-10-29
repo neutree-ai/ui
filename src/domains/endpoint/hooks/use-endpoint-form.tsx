@@ -102,7 +102,7 @@ import type {
   RecipeFeature,
   RecipeInputSpec,
 } from "@/foundation/recipe/types";
-import { matchesAcceleratorName } from "@/foundation/recipe/vram";
+import { formatGb, matchesAcceleratorName } from "@/foundation/recipe/vram";
 
 // Reads the query string off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").
@@ -2542,7 +2542,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               {t(
                                 "endpoints.recipe.requiredVram",
                                 "Requires ≥ {{gb}} GB VRAM.",
-                                { gb: requiredVramGb },
+                                { gb: formatGb(requiredVramGb) },
                               )}
                             </span>
                           )}
