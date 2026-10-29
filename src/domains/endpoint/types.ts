@@ -84,7 +84,6 @@ export type EndpointClusterRef = {
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {
-    cache?: { details?: { configured_runtime_version?: string } } | null;
     ready_nodes?: number;
     desired_nodes?: number;
     resource_info?: ClusterResourceInfo | null;

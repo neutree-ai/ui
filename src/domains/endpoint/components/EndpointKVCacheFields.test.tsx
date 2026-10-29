@@ -51,7 +51,6 @@ function Editor({
               status: {
                 cache: {
                   details: {
-                    configured_runtime_version: configuredVersion,
                     ready_runtime_version: "v0.5.0",
                   },
                 },
