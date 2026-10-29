@@ -18,6 +18,14 @@ import { VirtualLog } from "./VirtualLog";
 
 interface LogViewerProps {
   source: string; // Complete log content
+  /**
+   * Whether the log content is still being fetched or streamed. While loading,
+   * the log list is not mounted: showing a placeholder line through the
+   * virtualized list leaves it parked at a stale scroll offset, which the
+   * browser's late scroll event later reports as a user scroll and stops the
+   * list from following the tail when the real logs arrive.
+   */
+  isLoading?: boolean;
   downloadUrl?: string;
   downloadErrorMessage?: string;
   height?: number | string;
@@ -41,6 +49,7 @@ interface LogViewerProps {
  */
 export const LogViewer: FC<LogViewerProps> = ({
   source,
+  isLoading = false,
   downloadUrl,
   downloadErrorMessage,
   height = "100%",
@@ -312,14 +321,20 @@ export const LogViewer: FC<LogViewerProps> = ({
     >
       {Toolbar}
 
-      <VirtualLog
-        log={source}
-        search={search}
-        reverse={reverse}
-        startTime={startTime || undefined}
-        endTime={endTime || undefined}
-        fontSize={fontSize}
-      />
+      {isLoading ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+          <p className="text-muted-foreground">{t("endpoints.logs.loading")}</p>
+        </div>
+      ) : (
+        <VirtualLog
+          log={source}
+          search={search}
+          reverse={reverse}
+          startTime={startTime || undefined}
+          endTime={endTime || undefined}
+          fontSize={fontSize}
+        />
+      )}
     </div>
   );
 };
