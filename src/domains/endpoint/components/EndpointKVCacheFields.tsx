@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
+import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { EndpointClusterRef } from "../types";
 
@@ -20,15 +21,24 @@ export function EndpointKVCacheFields({
 }) {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
+  const versions = useCacheVersions(
+    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+      true,
+  );
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const task = form.watch("spec.model.task");
+  const runtimeVersion = endpointZCacheOptions(cluster)?.version;
+  const compatible = !!versions.data?.data
+    .find((v) => v.version === runtimeVersion)
+    ?.engine_versions.includes(engine?.version);
   const supported =
     cluster?.spec.type === "kubernetes" &&
     endpointZCacheOptions(cluster)?.enabled &&
     engine?.engine === "vllm" &&
-    (!task || task === "text-generation");
+    (!task || task === "text-generation") &&
+    compatible;
   form.register("spec.kv_cache", {
     validate: (value) =>
       value?.provider !== "zcache" ||
@@ -87,7 +97,11 @@ export function EndpointKVCacheFields({
       </div>
       {enabled && !supported && (
         <p role="alert" className="px-4 pt-3 text-sm text-destructive">
-          {t("endpoints.kvCacheSettings.requirements")}
+          {t(
+            compatible
+              ? "endpoints.kvCacheSettings.requirements"
+              : "clusters.cacheUpgrade.incompatible",
+          )}
         </p>
       )}
       {enabled && (

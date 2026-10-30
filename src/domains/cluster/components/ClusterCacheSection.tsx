@@ -1,5 +1,5 @@
 import { useCan } from "@refinedev/core";
-import { History, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -21,6 +21,7 @@ import type { Cluster } from "../types";
 import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
 import { ZCacheEditor } from "./ZCacheEditor";
+import { ZCacheUpgrade } from "./ZCacheUpgrade";
 
 export function ClusterCacheSection({
   cluster,
@@ -67,10 +68,11 @@ function ZCacheDetails({
   const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const matches = sameCacheConfig(desired, status?.current);
+  const basePhase = summary?.phase ?? "Disabled";
   const phase =
-    (summary?.phase === "Ready" || summary?.phase === "Disabled") && !matches
+    (basePhase === "Ready" || basePhase === "Disabled") && !matches
       ? "Reconciling"
-      : summary?.phase;
+      : basePhase;
   const stale = availability?.status === "Unknown" || !status?.observed_at;
   const busy = activeCacheChange(status);
   const request = busy?.request;
@@ -102,10 +104,6 @@ function ZCacheDetails({
           {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
             <CacheRetry cluster={cluster} />
           )}
-          <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
-            <History className="mr-2 h-4 w-4" />
-            {t("clusters.zcache.operations")}
-          </Button>
           <Button
             size="sm"
             disabled={access?.can !== true}
@@ -118,6 +116,7 @@ function ZCacheDetails({
       }
     >
       <div className="space-y-4">
+        <ZCacheUpgrade cluster={cluster} />
         {phase === "Unavailable" && (
           <p
             role="alert"
@@ -281,12 +280,6 @@ function ZCacheDetails({
                 ? "clusters.zcache.noRuntimeNodes"
                 : "clusters.zcache.disabledHint",
             )}
-          </p>
-        )}
-        {status?.configured_runtime_version && (
-          <p className="border-t pt-3 text-sm text-muted-foreground">
-            {t("clusters.zcache.configuredVersion")}:{" "}
-            {status.configured_runtime_version}
           </p>
         )}
       </div>
