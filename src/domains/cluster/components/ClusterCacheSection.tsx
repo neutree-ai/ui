@@ -1,5 +1,5 @@
 import { useCan } from "@refinedev/core";
-import { History, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -104,10 +104,6 @@ function ZCacheDetails({
           {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
             <CacheRetry cluster={cluster} />
           )}
-          <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
-            <History className="mr-2 h-4 w-4" />
-            {t("clusters.zcache.operations")}
-          </Button>
           <Button
             size="sm"
             disabled={access?.can !== true}
