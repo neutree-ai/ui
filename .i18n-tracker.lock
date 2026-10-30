@@ -451,7 +451,7 @@
   "src/domains/cluster/components/ZCacheFields.tsx": "e82ba54dd29d02aa33eec3cc6a11416c",
   "src/domains/cluster/hooks/use-cache-capacity-confirmation.tsx": "3bfba59ff6c2ff7a5906144145982c0d",
   "src/domains/cluster/components/ZCacheActivity.tsx": "052bc26838c3a7e4a0f0faa7d4c64e28",
-  "src/domains/cluster/components/ClusterCacheSection.tsx": "757aec82542e6301e8f9b28c85c944aa",
+  "src/domains/cluster/components/ClusterCacheSection.tsx": "c36c05e63fbb17a6bc5ca36e4ab87122",
   "src/domains/cluster/lib/zcache-presentation.ts": "52e676e791d5c8dc4edb0c88b59accef",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
   "src/domains/endpoint/lib/zcache.ts": "941fc08ce09923211222f927b72b1a84",

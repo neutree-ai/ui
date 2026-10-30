@@ -116,7 +116,7 @@ describe("ClusterCacheSection", () => {
     expect(screen.queryByText("API 422")).toBeNull();
     expect(screen.queryByText(/old-operation/)).toBeNull();
     fireEvent.click(
-      screen.getByRole("button", { name: "clusters.zcache.operations" }),
+      screen.getByRole("button", { name: "clusters.zcache.viewReason" }),
     );
     expect(screen.getByText("API 422")).toBeTruthy();
     expect(screen.getByText(/clusters.zcache.notAccepted/)).toBeTruthy();
