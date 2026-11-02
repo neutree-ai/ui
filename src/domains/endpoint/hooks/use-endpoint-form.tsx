@@ -14,9 +14,16 @@ import { Input } from "@/components/ui/input";
 import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
+import { EndpointConfigurationSummary } from "@/domains/endpoint/components/EndpointConfigurationSummary";
+import { EndpointDeploymentSummary } from "@/domains/endpoint/components/EndpointDeploymentSummary";
 import { EndpointKVCacheFields } from "@/domains/endpoint/components/EndpointKVCacheFields";
+import {
+  EndpointResolvedModelEditor,
+  type VariantResetNotice,
+} from "@/domains/endpoint/components/EndpointResolvedModelEditor";
 import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
+import { ModelOptionalFields } from "@/domains/endpoint/components/ModelOptionalFields";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
 import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/WorkloadImageFeatureAddon";
@@ -24,7 +31,10 @@ import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageI
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
-import { buildCatalogOriginAnnotations } from "@/domains/endpoint/lib/catalog-origin";
+import {
+  buildCatalogOriginAnnotations,
+  readCatalogOrigin,
+} from "@/domains/endpoint/lib/catalog-origin";
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
@@ -34,10 +44,17 @@ import {
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
+import { endpointStepCompletions } from "@/domains/endpoint/lib/endpoint-wizard";
 import {
   findEngineCacheArgControls,
   readEngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
+import { estimateModelWeightsGb } from "@/domains/endpoint/lib/estimate-weights";
+import type {
+  EndpointReviewCapacityMetric,
+  EndpointReviewContext,
+} from "@/domains/endpoint/lib/review-context";
 import {
   formatVgpuMemoryGiBInputValue,
   getEffectiveVgpuMemoryMiB,
@@ -54,14 +71,19 @@ import type {
   EndpointEngineRef,
   EndpointModelCatalogRef,
   EndpointModelRegistryRef,
+  ModelSpec,
   ResourceSpec,
 } from "@/domains/endpoint/types";
+import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
+import FormCardGrid, {
+  FORM_GRID_GAP_CLASS,
+} from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { NumberInput } from "@/foundation/components/NumberInput";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
@@ -73,6 +95,7 @@ import {
 } from "@/foundation/hooks/use-workspace";
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
+import { nestFieldErrors } from "@/foundation/lib/form-errors";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
   calculateGpuPlacementCapacity,
@@ -91,6 +114,10 @@ import {
 } from "@/foundation/lib/model-registry-visibility";
 import { registryModelLabel } from "@/foundation/lib/registry-model-display";
 import { cn } from "@/foundation/lib/utils";
+import {
+  newestVersion,
+  sortVersionsNewestFirst,
+} from "@/foundation/lib/version-order";
 import {
   composeEndpointSpec,
   defaultFeatureSelections,
@@ -126,6 +153,57 @@ type RegistryModelPreselection = {
   version?: string;
 };
 
+type ModelIdentity = Pick<
+  ModelSpec,
+  "registry" | "name" | "version" | "file" | "task"
+>;
+
+type ModelSourceMode = "catalog" | "manual";
+
+type VariantResetSnapshot = {
+  notice: VariantResetNotice;
+  variant: string;
+  model: ModelIdentity;
+  editing: boolean;
+};
+
+type ModelSourceDraft = {
+  model: ModelIdentity;
+  editing: boolean;
+  customized: boolean;
+};
+
+const MODEL_OVERRIDE_KEYS = [
+  "registry",
+  "name",
+  "version",
+  "file",
+] as const satisfies ReadonlyArray<Exclude<keyof ModelIdentity, "task">>;
+
+const COMPOSED_SPEC_FIELD_KEYS = [
+  "model",
+  "engine",
+  "resources",
+  "variables",
+  "env",
+] as const;
+
+const modelIdentity = (
+  model:
+    | Pick<ModelSpec, "registry" | "name" | "version" | "file" | "task">
+    | null
+    | undefined,
+): ModelIdentity => ({
+  registry: model?.registry ?? "",
+  name: model?.name ?? "",
+  version: model?.version ?? "",
+  file: model?.file ?? "",
+  task: model?.task ?? "",
+});
+
+const countModelChanges = (current: ModelIdentity, derived: ModelIdentity) =>
+  MODEL_OVERRIDE_KEYS.filter((key) => current[key] !== derived[key]).length;
+
 export function readRegistryModelQueryParams(): RegistryModelPreselection | null {
   const params = readHashQueryParams();
   if (!params) return null;
@@ -160,10 +238,20 @@ const userSetValueOptions = {
   shouldValidate: true,
 } as const;
 
+const derivedValueOptions = (hasError: boolean) => ({
+  shouldDirty: true,
+  // A derived change may fill a field that already shows an error, but it must
+  // not surface a new required error merely because the field appeared.
+  shouldValidate: hasError,
+});
+
 const formatOneDecimal = (value: number | null | undefined) => {
   const numberValue = Number(value ?? 0);
   return Number.isFinite(numberValue) ? numberValue.toFixed(1) : "0.0";
 };
+
+const formatCardCount = (value: number) =>
+  Number.isInteger(value) ? String(value) : value.toFixed(1);
 
 const formatInputNumber = (value: number | null | undefined) => {
   if (value == null) return "";
@@ -176,9 +264,22 @@ const getCapacityBadgeClassName = (exceeded: boolean) =>
     ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50"
     : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-50";
 
-export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
+export const useEndpointForm = ({
+  action,
+  layout = "legacy",
+}: {
+  action: "create" | "edit";
+  layout?: "legacy" | "wizard";
+}) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
+  const [preselectCatalogId] = useState(() =>
+    action === "create" ? readModelCatalogQueryParam() : "",
+  );
+  const [preselectRegistryModel] = useState(() =>
+    action === "create" ? readRegistryModelQueryParams() : null,
+  );
+  const startsInManualMode = action === "create" && !preselectCatalogId;
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [modelSearch, setModelSearch] = useState("");
   // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
@@ -186,13 +287,34 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [featureSelections, setFeatureSelections] = useState<
     FeatureSelection[]
   >([]);
+  const [modelSourceMode, setModelSourceMode] = useState<ModelSourceMode>(
+    startsInManualMode ? "manual" : "catalog",
+  );
+  const [resolvedModelEditing, setResolvedModelEditing] =
+    useState(startsInManualMode);
+  const [resolvedModelCustomized, setResolvedModelCustomized] = useState(false);
+  const [variantResetNotice, setVariantResetNotice] =
+    useState<VariantResetNotice | null>(null);
+  const [variantResetSnapshot, setVariantResetSnapshot] =
+    useState<VariantResetSnapshot | null>(null);
+  const [catalogModelDraft, setCatalogModelDraft] =
+    useState<ModelSourceDraft | null>(null);
+  const [manualModelDraft, setManualModelDraft] =
+    useState<ModelSourceDraft | null>(null);
   // Simplified-mode disclosure: when deploying from a Recipe catalog card the
   // model/engine/resources are auto-configured from the chosen variant, so the
   // raw fields and advanced resource controls start collapsed behind this toggle.
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [gpuAllocationModeChoice, setGpuAllocationModeChoice] =
+    useState<GpuAllocationMode | null>(null);
+  const effectiveGpuAllocationModeRef = useRef<GpuAllocationMode>("full");
 
   const form = useForm<Endpoint>({
-    mode: "all",
+    // Required fields stay quiet until they are touched or a global submit is
+    // attempted. Once an error is visible, the same field revalidates on every
+    // change so a correcting edit clears it immediately.
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       api_version: "v1",
       kind: "Endpoint",
@@ -214,10 +336,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             : response.data,
         }),
       },
+      errorNotification: false,
     },
     warnWhenUnsavedChanges: true,
     resolver: (values) => {
-      const errors = validateEndpointValues(
+      const fieldErrors = validateEndpointValues(
         values.spec,
         {
           action,
@@ -227,16 +350,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           availableRegistryNames: modelRegistryNames,
           clusterType,
           hidesModelFields,
+          allocationMode: effectiveGpuAllocationModeRef.current,
         },
         t,
       );
+      if (!values.metadata?.name?.trim()) {
+        fieldErrors["metadata.name"] = {
+          type: "manual",
+          message: t("common.validation.nameRequired"),
+        };
+      }
       if (!isValidWorkspace(values.metadata?.workspace)) {
-        errors["metadata.workspace"] = {
+        fieldErrors["metadata.workspace"] = {
           type: "manual",
           message: t("common.validation.workspaceRequired"),
         };
       }
-      return { values, errors };
+      return { values, errors: nestFieldErrors<Endpoint>(fieldErrors) };
     },
   });
 
@@ -250,6 +380,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const queryEndpoint = form.refineCore.query?.data?.data as
     | Endpoint
     | undefined;
+  const currentCache = form.watch("spec.kv_cache");
+  const cacheChanged =
+    action === "edit" &&
+    !endpointValuesEqual(currentCache, queryEndpoint?.spec?.kv_cache);
   const queryResources = queryEndpoint?.spec?.resources as
     | Record<string, unknown>
     | null
@@ -262,6 +396,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const workspace = form.watch("metadata.workspace");
   const currentModelName = form.watch("spec.model.name");
   const currentRegistry = form.watch("spec.model.registry");
+  const currentModelVersion = form.watch("spec.model.version");
+  const currentModelFile = form.watch("spec.model.file");
+  const currentModelTask = form.watch("spec.model.task");
+  const currentModelValues = useMemo<ModelIdentity>(
+    () => ({
+      registry: currentRegistry ?? "",
+      name: currentModelName ?? "",
+      version: currentModelVersion ?? "",
+      file: currentModelFile ?? "",
+      task: currentModelTask ?? "",
+    }),
+    [
+      currentRegistry,
+      currentModelName,
+      currentModelVersion,
+      currentModelFile,
+      currentModelTask,
+    ],
+  );
   const currentCluster = form.watch("spec.cluster");
   const engineSpec = form.watch("spec.engine");
   // An engine that needs no spec.model has nothing to ask about: the registry,
@@ -428,6 +581,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     t,
     cacheEnabled,
   });
+  const hasClusterCapacityEvidence = Boolean(
+    selectedCluster?.status?.resource_info,
+  );
 
   const clusterType: "ssh" | "kubernetes" | undefined =
     selectedCluster?.spec?.type === "ssh"
@@ -507,9 +663,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
     selectedMemoryTotalMiB,
   );
+  const canUseVgpuAllocation = showVgpuFields && isVgpuMemoryResourceSupported;
+  const inferredGpuAllocationMode: GpuAllocationMode =
+    canUseVgpuAllocation && hasVgpuVirtualizationValues(selectedVirtualization)
+      ? "vgpu"
+      : "full";
   const effectiveGpuAllocationMode: GpuAllocationMode =
-    showVgpuFields && effectiveVgpuMemoryMiB ? "vgpu" : "full";
+    canUseVgpuAllocation && gpuAllocationModeChoice === "vgpu"
+      ? "vgpu"
+      : inferredGpuAllocationMode;
+  effectiveGpuAllocationModeRef.current = effectiveGpuAllocationMode;
   const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
+  const isVgpuCapacityPending =
+    isVgpuAllocationMode && effectiveVgpuMemoryMiB === null;
   let gpuInputStep = gpuStep;
   if (isVgpuAllocationMode || gpuUsage >= 1) {
     gpuInputStep = 1;
@@ -610,6 +776,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       !currentCluster ||
       !selectedAccelerator?.product ||
       gpuUsage <= 0 ||
+      isVgpuCapacityPending ||
       isCurrentEndpointRequestUnchanged
     ) {
       return null;
@@ -636,6 +803,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     isFractionalGpuAllocationMode,
     isCurrentEndpointRequestUnchanged,
     isVgpuAllocationMode,
+    isVgpuCapacityPending,
     normalizedResources?.cpu,
     normalizedResources?.memory,
     replicaCount,
@@ -745,7 +913,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     : 0;
   // Keep physical-card and virtual-allocation counts separate: the first
   // drives card presentation, while the second is the legacy request delta
-  // when topology cannot be simulated (NEU-528).
+  // when topology cannot be simulated.
   const reusableVgpuAllocationCounts = useMemo(() => {
     if (!canReuseCurrentEndpointDeviceAllocations) {
       return { physicalCards: 0, virtualCards: 0 };
@@ -820,7 +988,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Cards are requested across replicas (gpu per replica × replica count),
   // so the displayed request and the capacity check must compare totals:
   // a per-replica value alone stays under capacity while the summed request
-  // would leave one or more replicas unschedulable (NEU-528).
+  // would leave one or more replicas unschedulable.
   const displayedVirtualCards = requestedVirtualCards;
   const displayedVgpuPhysicalCards =
     vgpuPhysicalCardUsage ?? displayedVirtualCards;
@@ -887,10 +1055,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentRequestCoreUnits = isVgpuAllocationMode
     ? requestedVgpuCoreUnits
     : 0;
+  const handleGpuAllocationModeChange = (next: GpuAllocationMode) => {
+    if (next === effectiveGpuAllocationMode) return;
+
+    setGpuAllocationModeChoice(next);
+    if (next === "full") {
+      form.setValue("spec.resources.accelerator.virtualization", undefined, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      form.clearErrors("spec.resources.accelerator.virtualization.memory_mib");
+      form.clearErrors(
+        "spec.resources.accelerator.virtualization.core_percent",
+      );
+    }
+  };
   // Cards are requested across replicas (gpu per replica × replica count);
   // only the additional cards beyond what the edited endpoint already holds
   // must fit the cluster's available capacity, mirroring the full-GPU check
-  // (NEU-528: a per-replica-only comparison lets multi-replica requests
+  // (a per-replica-only comparison lets multi-replica requests
   // through that the scheduler cannot place).
   const additionalVirtualCards = Math.max(
     0,
@@ -911,6 +1094,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const isLegacyVgpuCapacityExceeded = Boolean(
     isVgpuAllocationMode &&
+      !isVgpuCapacityPending &&
       selectedAccelerator?.product &&
       (isVgpuCardCapacityExceeded ||
         ((rawAvailableVgpuMemoryMiB > 0 || reusableVgpuMemoryMiB > 0) &&
@@ -1068,11 +1252,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Any over-allocated resource blocks deploy (returned as `submitBlocked` and
   // handed to ResourceForm); each card renders its own warning message.
   const isResourceCapacityExceeded =
-    isCpuCapacityExceeded ||
-    isMemoryCapacityExceeded ||
-    isFullGpuCapacityExceededWithPlacement ||
-    isVgpuCapacityExceededWithPlacement ||
-    isPlacementCapacityExceeded;
+    hasClusterCapacityEvidence &&
+    (isCpuCapacityExceeded ||
+      isMemoryCapacityExceeded ||
+      isFullGpuCapacityExceededWithPlacement ||
+      isVgpuCapacityExceededWithPlacement ||
+      isPlacementCapacityExceeded);
   useEffect(() => {
     if (
       hasResolvedClusterSelection &&
@@ -1080,8 +1265,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       selectedVirtualization
     ) {
       form.setValue("spec.resources.accelerator.virtualization", undefined, {
-        shouldDirty: true,
-        shouldValidate: true,
+        ...derivedValueOptions(
+          Boolean(
+            form.getFieldState("spec.resources.accelerator.virtualization")
+              .error,
+          ),
+        ),
       });
     }
   }, [
@@ -1128,7 +1317,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form.setValue(
       "spec.resources.accelerator.virtualization",
       Object.keys(next).length > 0 ? next : undefined,
-      { shouldDirty: true, shouldValidate: true },
+      derivedValueOptions(
+        Boolean(
+          form.getFieldState("spec.resources.accelerator.virtualization").error,
+        ),
+      ),
     );
   }, [
     form,
@@ -1171,7 +1364,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         ...(selectedVirtualization ?? {}),
         memory_mib: alignedMemoryMiB,
       },
-      userSetValueOptions,
+      derivedValueOptions(
+        Boolean(
+          form.getFieldState("spec.resources.accelerator.virtualization").error,
+        ),
+      ),
     );
   }, [
     form,
@@ -1182,6 +1379,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   ]);
 
   const setSingleCardMemoryGiB = (rawValue: string) => {
+    // Editing virtual-card memory is an explicit commitment to vGPU mode.
+    // Clearing the field must not silently turn the request back into full
+    // cards.
+    setGpuAllocationModeChoice("vgpu");
     const currentCorePercent = Number(selectedVirtualization?.core_percent);
     const coreOnlyVirtualization =
       Number.isFinite(currentCorePercent) && currentCorePercent > 0
@@ -1259,9 +1460,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Existence lookup for the currently selected model, keyed by the exact
   // model name — deliberately decoupled from the dropdown's `modelSearch`.
   // Validating against the search-coupled list above rejects any model that
-  // isn't in whatever page the user last searched (NEU-503: catalog-template
-  // deploys failed with "Model not found in selected registry" for models
-  // that exist upstream). While this query is loading or failed the resolver
+  // isn't in whatever page the user last searched. Catalog-template deploys
+  // once failed with "Model not found in selected registry" for models
+  // that exist upstream. While this query is loading or failed the resolver
   // skips the containment check instead of blocking submit.
   const modelExistenceQuery = useRegistryModels({
     workspace,
@@ -1322,11 +1523,63 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     void form.trigger("-model-catalog" as Path<Endpoint>);
   }, [action, currentRegistry, currentModelName, modelExistenceKey, form]);
 
-  const { engineNames, engineVersions, engineTasks, engineValueSchema } =
-    useEndpointEngineOptions({
-      enginesData: engines.query.data?.data,
-      engineSpec,
+  const {
+    engineNames,
+    engineVersions,
+    engineTasks,
+    engineTasksForVersion,
+    engineValueSchema,
+    engineVersion,
+  } = useEndpointEngineOptions({
+    enginesData: engines.query.data?.data,
+    engineSpec,
+  });
+  const defaultEngineInitialized = useRef(false);
+
+  useEffect(() => {
+    if (
+      action !== "create" ||
+      defaultEngineInitialized.current ||
+      engineNames.length === 0
+    ) {
+      return;
+    }
+    defaultEngineInitialized.current = true;
+
+    if (form.getValues("spec.engine.engine") || !engineNames.includes("vllm")) {
+      return;
+    }
+
+    const version = newestVersion(engineVersions.vllm ?? []);
+    if (!version) return;
+
+    const tasks = engineTasks.vllm ?? [];
+    const task = tasks.includes("text-generation")
+      ? "text-generation"
+      : (tasks[0] ?? "");
+
+    form.setValue("spec.engine", {
+      engine: "vllm",
+      version: version.version,
     });
+    if (!form.getValues("spec.model.task") && task) {
+      form.setValue("spec.model.task", task);
+    }
+  }, [action, engineNames, engineTasks, engineVersions, form]);
+
+  useEffect(() => {
+    if (!engineSpec.engine || engineTasksForVersion.length === 0) return;
+    const currentTask = form.getValues("spec.model.task");
+    if (engineTasksForVersion.includes(currentTask)) return;
+
+    form.setValue(
+      "spec.model.task",
+      engineTasksForVersion.includes("text-generation")
+        ? "text-generation"
+        : engineTasksForVersion[0],
+      derivedValueOptions(Boolean(form.getFieldState("spec.model.task").error)),
+    );
+  }, [engineSpec.engine, engineTasksForVersion, form]);
 
   // Set each key of obj as a separate form.setValue call, recursing into
   // nested plain objects. This ensures mounted FormField controllers get
@@ -1336,7 +1589,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     (basePath: string, obj: Record<string, unknown>) => {
       for (const [key, value] of Object.entries(obj)) {
         const path = `${basePath}.${key}` as Path<Endpoint>;
-        form.setValue(path, value as PathValue<Endpoint, typeof path>);
+        // Clear an existing error with the applied value, but do not surface
+        // new required errors merely because a catalog supplied the field.
+        form.setValue(path, value as PathValue<Endpoint, typeof path>, {
+          shouldValidate: Boolean(form.getFieldState(path).error),
+        });
         if (
           typeof value === "object" &&
           value !== null &&
@@ -1347,6 +1604,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       }
     },
     [form],
+  );
+
+  const applyModelValues = useCallback(
+    (model: ModelSpec | null | undefined) => {
+      if (!model) return;
+      setLeafValues("spec.model", model as unknown as Record<string, unknown>);
+    },
+    [setLeafValues],
   );
 
   useEffect(() => {
@@ -1466,8 +1731,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       env: composed.env ?? {},
     };
     const merged = buildCatalogMergedSpec(pseudoCatalogSpec);
-    for (const [key, value] of Object.entries(merged)) {
-      setLeafValues(`spec.${key}`, value);
+    for (const key of COMPOSED_SPEC_FIELD_KEYS) {
+      // A model edited through Resolved model is a deliberate user override.
+      // Recomposition may refresh the fields the variant still owns, but it
+      // must not replace the model while the override is active.
+      if (key === "model" && resolvedModelCustomized) continue;
+      const value = merged[key];
+      if (value != null) setLeafValues(`spec.${key}`, value);
     }
   };
 
@@ -1480,15 +1750,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // form showing stale fields until the user happened to touch the variant.
   // biome-ignore lint/correctness/useExhaustiveDependencies: applyComposedToForm is recreated every render and not itself a dependency of what it does — only composeResult's identity should trigger a re-apply.
   useEffect(() => {
-    if (composeResult?.ok) {
+    if (modelSourceMode === "catalog" && composeResult?.ok) {
       applyComposedToForm(composeResult.spec);
     }
-  }, [composeResult]);
+  }, [composeResult, modelSourceMode]);
 
   // Handle model catalog selection with merge logic. Trivial MCs go through
   // the original `applyCatalogSpec` path; Recipe MCs go through the composer,
   // driven by the effect above once selectedVariant/featureSelections land.
   const handleModelCatalogSelect = (catalogId: string) => {
+    setModelSourceMode("catalog");
+    setResolvedModelEditing(false);
+    setResolvedModelCustomized(false);
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
+    setCatalogModelDraft(null);
     setSelectedModelCatalog(catalogId);
 
     if (!catalogId) {
@@ -1529,9 +1805,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Read the id straight off the HashRouter URL (no refine router hook, so this
   // stays inert in unit tests that mount the hook without a router) and apply
   // once, after the catalog list has loaded and contains the id.
-  const [preselectCatalogId] = useState(() =>
-    action === "create" ? readModelCatalogQueryParam() : "",
-  );
   const preselectAppliedRef = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot guarded preselect; intentionally excludes handleModelCatalogSelect
   useEffect(() => {
@@ -1546,9 +1819,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // exact registry/model/revision. Wait until the registry listing confirms
   // that the target exists, then populate the same form fields a manual pick
   // would populate and fetch the checkpoint information once.
-  const [preselectRegistryModel] = useState(() =>
-    action === "create" ? readRegistryModelQueryParams() : null,
-  );
   const registryModelPreselectAppliedRef = useRef(false);
   useEffect(() => {
     if (
@@ -1566,6 +1836,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       form.setValue("spec.model.version", preselectRegistryModel.version);
     }
     form.setValue("spec.model.info", null);
+    setModelSourceMode("manual");
+    setResolvedModelEditing(true);
+    setResolvedModelCustomized(false);
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
     setPickedModelRef({
       workspace,
       registry: preselectRegistryModel.registry,
@@ -1577,6 +1852,34 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // When user changes variant or features, the effect above re-composes and
   // re-applies from the new selection.
   const handleVariantChange = (v: string) => {
+    if (v === selectedVariant) return;
+    const previousVariantModel = modelIdentity(
+      composeResult?.ok ? composeResult.spec.model : null,
+    );
+    if (resolvedModelCustomized) {
+      const resetCount = Math.max(
+        1,
+        countModelChanges(currentModelValues, previousVariantModel),
+      );
+      setVariantResetSnapshot({
+        notice: {
+          variant: v,
+          resetCount,
+        },
+        variant: selectedVariant,
+        model: currentModelValues,
+        editing: resolvedModelEditing,
+      });
+      setVariantResetNotice({
+        variant: v,
+        resetCount,
+      });
+    } else {
+      setVariantResetNotice(null);
+      setVariantResetSnapshot(null);
+    }
+    setResolvedModelCustomized(false);
+    setResolvedModelEditing(false);
     setSelectedVariant(v);
   };
 
@@ -1584,36 +1887,131 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     setFeatureSelections(next);
   };
 
-  const clusterGpuResourcesPanel = currentCluster ? (
-    <EndpointClusterGpuResourcesPanel
-      resourceInfo={schedulingResourceInfo}
-      schedulingNodeResources={reusableNodeResources}
-      currentCluster={currentCluster}
-      selectedAccelerator={selectedAccelerator}
-      virtualizationEnabled={isSelectedClusterVgpuEnabled}
-      request={{
-        allocationMode: isFractionalGpuAllocationMode
-          ? "fractional"
-          : effectiveGpuAllocationMode,
-        gpuPerReplica: gpuUsage,
-        cpuPerReplica: normalizedResources?.cpu,
-        memoryPerReplica: normalizedResources?.memory,
-        requestedFullGpuCards,
-        fullGpuCardCapacity,
-        fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
-        requestedVirtualCards,
-        totalVirtualCardCapacity,
-        requestedVgpuMemoryMiB,
-        availableVgpuMemoryMiB,
-        requestedVgpuCoreUnits,
-        availableVgpuCoreUnits,
-        memoryMiBPerCard: effectiveVgpuMemoryMiB,
-        coreUnitsPerCard: vgpuCoreUnitsPerCard,
-        vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
-      }}
-      t={t}
-    />
-  ) : null;
+  const clusterGpuResourcesPanel =
+    currentCluster || layout === "wizard" ? (
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={schedulingResourceInfo}
+        schedulingNodeResources={reusableNodeResources}
+        currentCluster={currentCluster}
+        selectedAccelerator={selectedAccelerator}
+        virtualizationEnabled={isSelectedClusterVgpuEnabled}
+        inset={layout !== "wizard"}
+        request={{
+          allocationMode: isFractionalGpuAllocationMode
+            ? "fractional"
+            : effectiveGpuAllocationMode,
+          gpuPerReplica: gpuUsage,
+          cpuPerReplica: normalizedResources?.cpu,
+          memoryPerReplica: normalizedResources?.memory,
+          requestedFullGpuCards,
+          fullGpuCardCapacity,
+          fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
+          requestedVirtualCards,
+          totalVirtualCardCapacity,
+          requestedVgpuMemoryMiB,
+          availableVgpuMemoryMiB,
+          requestedVgpuCoreUnits,
+          availableVgpuCoreUnits,
+          memoryMiBPerCard: effectiveVgpuMemoryMiB,
+          coreUnitsPerCard: vgpuCoreUnitsPerCard,
+          vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
+        }}
+        t={t}
+      />
+    ) : null;
+
+  const handleModelSourceModeChange = (next: ModelSourceMode) => {
+    if (next === modelSourceMode) return;
+
+    if (next === "manual") {
+      setCatalogModelDraft({
+        model: currentModelValues,
+        editing: resolvedModelEditing,
+        customized: resolvedModelCustomized,
+      });
+      const draft = manualModelDraft ?? {
+        model: currentModelValues,
+        editing: true,
+        customized: false,
+      };
+      setModelSourceMode("manual");
+      setResolvedModelEditing(draft.editing);
+      setResolvedModelCustomized(draft.customized);
+      applyModelValues(draft.model);
+    } else {
+      setManualModelDraft({
+        model: currentModelValues,
+        editing: resolvedModelEditing,
+        customized: resolvedModelCustomized,
+      });
+      const draft = catalogModelDraft ?? {
+        model: modelIdentity(
+          composeResult?.ok ? composeResult.spec.model : null,
+        ),
+        editing: false,
+        customized: false,
+      };
+      setModelSourceMode("catalog");
+      setResolvedModelEditing(draft.editing);
+      setResolvedModelCustomized(draft.customized);
+      if (selectedCatalog) applyModelValues(draft.model);
+    }
+
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
+  };
+
+  const markResolvedModelCustomized = () => {
+    setResolvedModelCustomized(true);
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
+  };
+
+  const handleResolvedModelRegistryChange = (value: string) => {
+    form.setValue("spec.model.registry", value, userSetValueOptions);
+    form.setValue("spec.model.name", "", userSetValueOptions);
+    form.setValue("spec.model.version", "", userSetValueOptions);
+    form.setValue("spec.model.file", "", userSetValueOptions);
+    form.setValue("spec.model.info", null);
+    setModelSearch("");
+    markResolvedModelCustomized();
+  };
+
+  const handleResolvedModelNameChange = (value: string) => {
+    form.setValue("spec.model.name", value, userSetValueOptions);
+    form.setValue("spec.model.version", "", userSetValueOptions);
+    form.setValue("spec.model.file", "", userSetValueOptions);
+    form.setValue("spec.model.info", null);
+    setPickedModelRef(
+      workspace && currentRegistry && value
+        ? {
+            workspace,
+            registry: currentRegistry,
+            model: value,
+          }
+        : null,
+    );
+    markResolvedModelCustomized();
+  };
+
+  const resetResolvedModel = () => {
+    const composedModel = composeResult?.ok ? composeResult.spec.model : null;
+    setResolvedModelCustomized(false);
+    setResolvedModelEditing(false);
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
+    applyModelValues(composedModel);
+  };
+
+  const undoVariantReset = () => {
+    if (!variantResetSnapshot) return;
+    setSelectedVariant(variantResetSnapshot.variant);
+    setResolvedModelCustomized(true);
+    setResolvedModelEditing(variantResetSnapshot.editing);
+    setVariantResetNotice(null);
+    setVariantResetSnapshot(null);
+    applyModelValues(variantResetSnapshot.model);
+  };
 
   // Simplified mode applies only to creating an endpoint from a Recipe catalog
   // (the "deploy from card" entry). In that flow model/engine/resources are
@@ -1621,12 +2019,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // surface only the essentials (variant, replicas, cluster, accelerator) plus a
   // lightweight resource estimate. `showFull` re-reveals every advanced control.
   const simplified = !isEdit && isRecipeCatalog && Boolean(selectedCatalog);
-  const showFull = !simplified || showAdvanced;
+  const showFull = layout === "wizard" || !simplified || showAdvanced;
 
   // Active variant + its display metadata, used for the estimate summary.
   const activeVariant =
-    selectedCatalog?.spec.variants?.[selectedVariant] ??
-    selectedCatalog?.spec.variants?.default;
+    modelSourceMode === "catalog"
+      ? (selectedCatalog?.spec.variants?.[selectedVariant] ??
+        selectedCatalog?.spec.variants?.default)
+      : null;
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
 
@@ -1648,6 +2048,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // state comes from that same query, which is what separates "still reading"
   // and "the registry refused" from "the checkpoint omits this field".
   const currentModelInfo = form.watch("spec.model.info") ?? null;
+  const estimatedWeightsGb = estimateModelWeightsGb(
+    currentModelInfo ?? activeModelInfo,
+  );
 
   // What this deployment will actually be created with, which is what the KV
   // cache estimate should start from. These are the composed engine args — a
@@ -1696,34 +2099,117 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // non-recipe / un-annotated catalogs.
   const verifiedProducts = useMemo(() => {
     const raw =
-      selectedCatalog?.metadata.annotations?.[
-        "recipe.vllm.ai/hardware-verified"
-      ] ?? "";
+      modelSourceMode === "catalog"
+        ? (selectedCatalog?.metadata.annotations?.[
+            "recipe.vllm.ai/hardware-verified"
+          ] ?? "")
+        : "";
     return new Set(
       raw
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
     );
-  }, [selectedCatalog]);
+  }, [modelSourceMode, selectedCatalog]);
+  const engineAcceleratorTypes = useMemo(
+    () => Object.keys(engineVersion?.images ?? {}),
+    [engineVersion],
+  );
+  form.register("spec.resources.accelerator", {
+    validate: (value) =>
+      !value?.type ||
+      engineAcceleratorTypes.length === 0 ||
+      engineAcceleratorTypes.includes(value.type) ||
+      t("endpoints.messages.engineAcceleratorIncompatible"),
+  });
   // A recipe's validated list orders and labels the accelerators; it never
-  // removes any. NEU-590 already had to walk back hiding the picker, and
+  // removes any. Hiding the picker proved too restrictive, and
   // filtering was the one place the simplified form took capability away
   // rather than folding it — the two modes now offer the same set and differ
   // only in emphasis. Sort is stable, so the cluster's own order survives
   // within each group.
   const displayedAcceleratorOptions = useMemo(() => {
-    const marked = acceleratorOptions.map((option) => ({
-      ...option,
-      verified:
-        verifiedProducts.size > 0 &&
-        matchesAcceleratorName(option.product, verifiedProducts),
-    }));
+    const marked = acceleratorOptions.map((option) => {
+      const total = Math.max(0, Number(option.total || 0));
+      const free = Math.min(total, Math.max(0, Number(option.available || 0)));
+
+      return {
+        ...option,
+        capacityDescription: t("endpoints.options.acceleratorCapacity", {
+          defaultValue: "{{free}} free · {{total}} total",
+          free: formatCardCount(free),
+          total: formatCardCount(total),
+        }),
+        engineCompatible:
+          engineAcceleratorTypes.length === 0 ||
+          engineAcceleratorTypes.includes(option.type),
+        verified:
+          verifiedProducts.size > 0 &&
+          matchesAcceleratorName(option.product, verifiedProducts),
+      };
+    });
 
     return marked.some((option) => option.verified)
       ? [...marked].sort((a, b) => Number(b.verified) - Number(a.verified))
       : marked;
-  }, [acceleratorOptions, verifiedProducts]);
+  }, [acceleratorOptions, engineAcceleratorTypes, t, verifiedProducts]);
+
+  // A catalog may carry reference hardware that does not exist on the cluster
+  // the user then chooses. Reconcile the dependent field as soon as the
+  // cluster's real accelerator inventory arrives: one option can be selected
+  // for the user; multiple options must be an explicit choice.
+  useEffect(() => {
+    if (
+      !currentCluster ||
+      !selectedCluster?.status?.resource_info ||
+      acceleratorOptions.length === 0
+    ) {
+      return;
+    }
+
+    const current = form.getValues("spec.resources.accelerator");
+    const compatibleOptions = acceleratorOptions.filter(
+      (option) =>
+        engineAcceleratorTypes.length === 0 ||
+        engineAcceleratorTypes.includes(option.type),
+    );
+    const currentIsAvailable = Boolean(
+      current?.type &&
+        current.product &&
+        compatibleOptions.some(
+          (option) =>
+            option.type === current.type && option.product === current.product,
+        ),
+    );
+    if (currentIsAvailable) return;
+    if (!current && compatibleOptions.length !== 1) return;
+
+    const option = compatibleOptions.length === 1 ? compatibleOptions[0] : null;
+    const currentVirtualization = current?.virtualization;
+    form.setValue(
+      "spec.resources.accelerator",
+      option
+        ? {
+            type: option.type,
+            product: option.product,
+            ...(isSelectedClusterVgpuEnabled
+              ? { virtualization: currentVirtualization || {} }
+              : {}),
+          }
+        : null,
+      derivedValueOptions(
+        Boolean(form.getFieldState("spec.resources.accelerator").error),
+      ),
+    );
+  }, [
+    acceleratorOptions,
+    engineAcceleratorTypes,
+    currentCluster,
+    form,
+    isSelectedClusterVgpuEnabled,
+    selectedCluster?.status?.resource_info,
+  ]);
+
   // The recipe names validated GPUs and this cluster has none of them. Said
   // out loud next to the picker, because every option below is then untested
   // for this recipe. A GPU-less cluster (or one whose resource info has not
@@ -1783,7 +2269,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         // Create only — an edit is not a new deployment, and rewriting the
         // record would claim the endpoint came from wherever it happens to
         // point today.
-        if (!isEdit && selectedCatalog) {
+        if (!isEdit && selectedCatalog && modelSourceMode === "catalog") {
           const endpoint = transformedValues as Endpoint;
           endpoint.metadata = {
             ...endpoint.metadata,
@@ -1823,8 +2309,630 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     />
   );
 
+  const modelVersionFields =
+    showFull && !hidesModelFields ? (
+      <ModelOptionalFields
+        control={form.control}
+        values={currentModelValues}
+        className="col-span-4"
+      />
+    ) : null;
+
+  const engineFields = showFull ? (
+    <FormCardGrid
+      title={t("endpoints.sections.engineSettings")}
+      variant={sectionVariant}
+    >
+      <FormFieldGroup
+        {...form}
+        name="spec.engine.engine"
+        label={t("common.fields.engine")}
+        required
+      >
+        <FormCombobox
+          placeholder={t("endpoints.placeholders.selectEngine")}
+          disabled={engines.query.isLoading}
+          options={engineNames.map((v) => ({
+            label: v,
+            value: v,
+          }))}
+          onChange={(value) => {
+            const newest = newestVersion(engineVersions[String(value)] ?? []);
+            const tasks = engineTasks[String(value)] ?? [];
+            form.setValue(
+              "spec.engine",
+              {
+                engine: value,
+                version: newest?.version ?? "",
+              },
+              userSetValueOptions,
+            );
+            form.setValue(
+              "spec.model.task",
+              tasks.includes("text-generation")
+                ? "text-generation"
+                : (tasks[0] ?? ""),
+              userSetValueOptions,
+            );
+            form.trigger("spec.engine.engine");
+          }}
+        />
+      </FormFieldGroup>
+      <FormFieldGroup
+        {...form}
+        name="spec.engine.version"
+        label={t("endpoints.fields.engineVersion")}
+        required
+      >
+        <FormCombobox
+          placeholder={t("endpoints.placeholders.selectVersion")}
+          disabled={!form.getValues().spec.engine.engine}
+          options={sortVersionsNewestFirst(
+            engineVersions[form.getValues().spec.engine.engine] || [],
+          ).map(({ version: v }) => ({
+            label: v,
+            value: v,
+          }))}
+        />
+      </FormFieldGroup>
+      {!hidesModelFields && (
+        <FormFieldGroup
+          {...form}
+          name="spec.model.task"
+          label={t("endpoints.fields.taskType")}
+          required
+        >
+          <FormCombobox
+            placeholder={t("endpoints.placeholders.selectTaskType")}
+            disabled={!form.getValues().spec.engine.engine}
+            options={engineTasksForVersion.map((v) => ({
+              label:
+                t(`models.tasks.${v}`) === `models.tasks.${v}`
+                  ? formatTaskName(v)
+                  : t(`models.tasks.${v}`),
+              value: v,
+            }))}
+          />
+        </FormFieldGroup>
+      )}
+    </FormCardGrid>
+  ) : null;
+
+  const weightsFromCatalog =
+    selectedCatalog && modelSourceMode === "catalog" ? activeVariantVram : null;
+  const perReplicaWeights = weightsFromCatalog ?? estimatedWeightsGb;
+  const declaredWeights =
+    perReplicaWeights == null
+      ? null
+      : {
+          perReplicaGb: perReplicaWeights,
+          source:
+            weightsFromCatalog != null
+              ? ("catalog" as const)
+              : ("checkpoint" as const),
+          replicas: replicaCount,
+          // Only accelerator data that came from the selected cluster. The
+          // composed variant also writes its reference accelerator into the form;
+          // checking that is recipe-vs-recipe math with nothing of the
+          // environment in it.
+          accelerator: {
+            product: selectedAcceleratorOption?.product,
+            perGpuGb:
+              selectedMemoryTotalMiB != null
+                ? selectedMemoryTotalMiB / 1024
+                : undefined,
+            gpuCount: form.watch("spec.resources.gpu"),
+          },
+        };
+  // An engine serving a model baked into its own image has no checkpoint to
+  // estimate from.
+  const kvCacheEstimate = hidesModelFields
+    ? null
+    : {
+        read: modelInfoRead,
+        engineArgs: engineCacheArgs,
+        controls: engineCacheArgControls,
+        modelKey: `${currentRegistry ?? ""}:${currentModelName ?? ""}:${
+          form.watch("spec.model.version") ?? ""
+        }`,
+      };
+  const weightEstimateFields = (
+    <EndpointWeightsEstimate
+      declared={declaredWeights}
+      kvCache={kvCacheEstimate}
+      onRequiredGbChange={setKvCacheRequiredGb}
+    />
+  );
+  const wizardEstimateFields = (
+    <EndpointDeploymentSummary
+      values={form.watch() as unknown as Endpoint}
+      declared={declaredWeights}
+      kvCache={kvCacheEstimate}
+    />
+  );
+  const reviewCatalogOrigin = isEdit
+    ? readCatalogOrigin(queryEndpoint?.metadata?.annotations)
+    : selectedCatalog && modelSourceMode === "catalog"
+      ? {
+          catalog: selectedCatalog.metadata.name,
+          ...(isRecipeCatalog
+            ? { variant: selectedVariant || DEFAULT_VARIANT }
+            : {}),
+          features: isRecipeCatalog ? featureSelections : [],
+          featuresUnreadable: false,
+        }
+      : null;
+  const selectedProductResources =
+    selectedAccelerator?.type && selectedAccelerator.product
+      ? schedulingResourceInfo?.allocatable?.accelerator_groups?.[
+          selectedAccelerator.type
+        ]?.products?.[selectedAccelerator.product]
+      : undefined;
+  const selectedVgpuMemoryTotalMiB = Number(
+    selectedProductResources?.virtualization?.memory_mib,
+  );
+  const selectedVgpuCoreTotal = Number(
+    selectedProductResources?.virtualization?.core_units,
+  );
+  const reviewCapacity: EndpointReviewCapacityMetric[] | null =
+    hasClusterCapacityEvidence
+      ? [
+          {
+            key: "cpu",
+            requested: (normalizedResources?.cpu || 0) * replicaCount,
+            available: maxAvailable.cpu.available,
+            total: maxAvailable.cpu.total,
+          },
+          {
+            key: "memory",
+            requested: (normalizedResources?.memory || 0) * replicaCount,
+            available: maxAvailable.memory.available,
+            total: maxAvailable.memory.total,
+          },
+          ...(selectedAccelerator?.type && selectedAccelerator.product
+            ? [
+                {
+                  key: "cards" as const,
+                  requested: isVgpuAllocationMode
+                    ? requestedVirtualCards
+                    : requestedFullGpuCards,
+                  available: isVgpuAllocationMode
+                    ? totalVirtualCardCapacity
+                    : fullGpuCardCapacity,
+                  total: maxFullGpuCards,
+                },
+              ]
+            : []),
+          ...(isVgpuAllocationMode
+            ? [
+                {
+                  key: "vram" as const,
+                  requested: requestedVgpuMemoryMiB / 1024,
+                  available: availableVgpuMemoryMiB / 1024,
+                  total:
+                    Number.isFinite(selectedVgpuMemoryTotalMiB) &&
+                    selectedVgpuMemoryTotalMiB > 0
+                      ? selectedVgpuMemoryTotalMiB / 1024
+                      : null,
+                },
+                {
+                  key: "core" as const,
+                  requested: requestedVgpuCoreUnits,
+                  available: availableVgpuCoreUnits,
+                  total:
+                    Number.isFinite(selectedVgpuCoreTotal) &&
+                    selectedVgpuCoreTotal > 0
+                      ? selectedVgpuCoreTotal
+                      : null,
+                },
+              ]
+            : []),
+        ]
+      : null;
+  const reviewContext: EndpointReviewContext = {
+    catalogOrigin: reviewCatalogOrigin,
+    modelDelivery: selectedModelDelivery,
+    noVerifiedAccelerator: noVerifiedAcceleratorAvailable,
+    requiredVramGb,
+    nodeCount: selectedClusterNodeCount,
+    clusterCapacity: reviewCapacity,
+    clusterCapacityUnavailable: Boolean(
+      currentCluster && !hasClusterCapacityEvidence,
+    ),
+  };
+  const currentDeploymentValues = form.watch() as unknown as Endpoint;
+  const hasDeploymentPreview = Boolean(
+    currentDeploymentValues.spec.model?.name ||
+      currentDeploymentValues.spec.engine?.engine ||
+      currentDeploymentValues.spec.cluster ||
+      currentDeploymentValues.spec.resources,
+  );
+  const configurationSummaryFields =
+    hasDeploymentPreview || (composeResult && !composeResult.ok) ? (
+      layout === "wizard" ? (
+        <EndpointConfigurationSummary
+          values={currentDeploymentValues}
+          reviewContext={reviewContext}
+          composeError={
+            composeResult && !composeResult.ok ? composeResult.error : null
+          }
+          modelRequired={!hidesModelFields}
+        />
+      ) : (
+        <ComposePreview
+          composed={
+            composeResult && !composeResult.ok
+              ? null
+              : {
+                  model: currentDeploymentValues.spec.model,
+                  engine: currentDeploymentValues.spec.engine,
+                  resources: currentDeploymentValues.spec.resources,
+                  engine_args: (currentDeploymentValues.spec.variables
+                    ?.engine_args ?? {}) as Record<string, unknown>,
+                  env: currentDeploymentValues.spec.env ?? {},
+                }
+          }
+          error={
+            composeResult && !composeResult.ok ? composeResult.error : null
+          }
+          collapsible={!showFull}
+        />
+      )
+    ) : null;
+
+  const resolvedModelSourceLabel =
+    modelSourceMode === "manual"
+      ? t("endpoints.resolvedModel.direct")
+      : isRecipeCatalog
+        ? selectedVariant || DEFAULT_VARIANT
+        : t("endpoints.modelSource.catalog");
+  const resolvedModelTitle =
+    modelSourceMode === "manual"
+      ? t("endpoints.resolvedModel.selectedTitle")
+      : t("endpoints.resolvedModel.title");
+  const catalogProfileModelValues = modelIdentity(
+    isRecipeCatalog && composeResult?.ok
+      ? composeResult.spec.model
+      : selectedCatalog?.spec.model,
+  );
+  const resolvedModelOverridden =
+    modelSourceMode === "catalog" &&
+    Boolean(selectedCatalog) &&
+    countModelChanges(currentModelValues, catalogProfileModelValues) > 0;
+  const resolvedModelEditor = (
+    <EndpointResolvedModelEditor
+      direct={modelSourceMode === "manual"}
+      title={resolvedModelTitle}
+      control={form.control}
+      values={currentModelValues}
+      sourceLabel={resolvedModelSourceLabel}
+      editing={resolvedModelEditing}
+      customized={resolvedModelOverridden}
+      registryOptions={modelRegistryOptions}
+      registryLoading={modelRegistries.query.isLoading}
+      modelOptions={modelsData.models.map((model) => ({
+        label: registryModelLabel(model),
+        value: model.name,
+      }))}
+      modelLoading={
+        modelsData.isFetching ? (
+          <CommandLoading className="px-2 py-1.5 text-muted-foreground">
+            {t("endpoints.messages.fetching")}
+          </CommandLoading>
+        ) : null
+      }
+      modelDisabled={!currentRegistry}
+      allowReset={modelSourceMode === "catalog" && Boolean(selectedCatalog)}
+      resetNotice={variantResetNotice}
+      onToggleEditing={() => setResolvedModelEditing((editing) => !editing)}
+      onReset={resetResolvedModel}
+      onUndo={undoVariantReset}
+      onRegistryChange={handleResolvedModelRegistryChange}
+      onModelChange={handleResolvedModelNameChange}
+      onModelSearchChange={setModelSearch}
+      onVersionInput={markResolvedModelCustomized}
+      onFileInput={markResolvedModelCustomized}
+    />
+  );
+
+  const recipeVariantFields =
+    !isEdit && isRecipeCatalog && selectedCatalog ? (
+      <>
+        {(selectedCatalog.metadata.annotations?.[
+          "recipe.vllm.ai/hardware-verified"
+        ] ??
+          "") && (
+          <div className="col-span-4 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground">
+              {t("endpoints.recipe.verifiedOn", "Verified on:")}
+            </span>
+            {Array.from(verifiedProducts).map((hardware) => (
+              <Badge
+                key={hardware}
+                variant="outline"
+                className="border-green-600/40 text-green-700 dark:text-green-400"
+              >
+                ✓ {hardware}
+              </Badge>
+            ))}
+          </div>
+        )}
+        <div className="col-span-4 space-y-2">
+          <div className="text-sm font-medium">
+            {t("endpoints.recipe.variant", "Variant")}
+          </div>
+          <VariantPicker
+            variants={selectedCatalog.spec.variants ?? {}}
+            value={selectedVariant}
+            onChange={handleVariantChange}
+            layout={layout === "wizard" ? "radio" : "compact"}
+          />
+        </div>
+      </>
+    ) : null;
+
+  const recipeFeatureFields =
+    !isEdit && isRecipeCatalog && selectedCatalog ? (
+      <>
+        {promoteCoreFeatures && (
+          <div className="col-span-4">
+            <FeaturePicker
+              features={selectedCatalog.spec.features ?? []}
+              value={featureSelections}
+              onChange={handleFeaturesChange}
+              renderGroups={[coreFeatureGroup]}
+              layout="grid"
+              inputAddon={workloadImageAddon}
+            />
+          </div>
+        )}
+        {selectedCatalog.spec.features &&
+          selectedCatalog.spec.features.length > 0 &&
+          bottomFeatureGroups.length > 0 && (
+            <div className="col-span-4 space-y-2">
+              <div className="text-sm font-medium">
+                {t("endpoints.recipe.features", "Features")}
+              </div>
+              <FeaturePicker
+                features={selectedCatalog.spec.features ?? []}
+                value={featureSelections}
+                onChange={handleFeaturesChange}
+                renderGroups={bottomFeatureGroups}
+                inputAddon={workloadImageAddon}
+              />
+            </div>
+          )}
+      </>
+    ) : null;
+
+  const resolvedModelRuntimeHint =
+    selectedModelDelivery === "at-deploy-time" ? (
+      <Alert
+        className="col-span-4"
+        data-testid="endpoint-runtime-download-hint"
+      >
+        <AlertDescription>
+          {t("endpoints.messages.runtimeDownloadHint")}
+        </AlertDescription>
+      </Alert>
+    ) : selectedModelDelivery === "unknown" ? (
+      <Alert
+        variant="warning"
+        className="col-span-4"
+        data-testid="endpoint-runtime-download-unknown"
+      >
+        <AlertDescription>
+          {t("endpoints.messages.runtimeDownloadUnknown")}
+        </AlertDescription>
+      </Alert>
+    ) : null;
+
+  const wizardProfileFields = (
+    <FormCardGrid
+      title={t("endpoints.sections.modelAndProfile")}
+      variant={sectionVariant}
+    >
+      {!hidesModelFields && (
+        <div className="col-span-4">
+          <div className="mb-2 text-sm font-medium text-[var(--nt-text-neutral-secondary)]">
+            {t("endpoints.modelSource.label")}
+          </div>
+          <SegmentedControl<ModelSourceMode>
+            ariaLabel={t("endpoints.modelSource.label")}
+            value={modelSourceMode}
+            onValueChange={handleModelSourceModeChange}
+            items={[
+              {
+                value: "catalog",
+                label: t("endpoints.modelSource.catalog"),
+              },
+              {
+                value: "manual",
+                label: t("endpoints.modelSource.manual"),
+              },
+            ]}
+          />
+        </div>
+      )}
+      {!isEdit && isRecipeCatalog && selectedCatalog && (
+        <p className="col-span-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+          <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />
+          {t("endpoints.simplified.autoConfigured")}
+        </p>
+      )}
+
+      <div
+        data-testid="model-catalog-row"
+        className={cn(
+          "col-span-4 grid grid-cols-1 sm:grid-cols-4",
+          FORM_GRID_GAP_CLASS,
+        )}
+      >
+        {!hidesModelFields && modelSourceMode === "catalog" && (
+          <FormFieldGroup
+            {...form}
+            name="-model-catalog"
+            label={t("endpoints.fields.modelCatalog")}
+            className="sm:col-span-3"
+          >
+            <FormCombobox
+              placeholder={t("endpoints.placeholders.selectModelCatalog")}
+              disabled={modelCatalogs.query.isLoading}
+              options={(modelCatalogs.query.data?.data || []).map(
+                (catalog) => ({
+                  label: catalog.metadata.name,
+                  value: catalog.id.toString(),
+                }),
+              )}
+              value={selectedModelCatalog}
+              onChange={(value) => handleModelCatalogSelect(value as string)}
+            />
+          </FormFieldGroup>
+        )}
+        <FormFieldGroup
+          {...form}
+          name="spec.replicas.num"
+          label={t("endpoints.fields.replicas")}
+          className="sm:col-span-1"
+          required
+        >
+          <Input type="number" min={1} />
+        </FormFieldGroup>
+      </div>
+
+      {!hidesModelFields &&
+        modelSourceMode === "catalog" &&
+        !selectedCatalog && (
+          <EmptyState variant="inline" className="col-span-4 text-left">
+            <div className="font-medium">
+              {t("endpoints.modelSource.emptyTitle")}
+            </div>
+            <div className="mt-1">
+              {t("endpoints.modelSource.emptyDescription")}
+            </div>
+          </EmptyState>
+        )}
+
+      {modelSourceMode === "catalog" && recipeVariantFields}
+
+      {!hidesModelFields &&
+        (modelSourceMode === "manual" || selectedCatalog) && (
+          <>
+            <div className="col-span-4">{resolvedModelEditor}</div>
+            {resolvedModelRuntimeHint}
+          </>
+        )}
+
+      {modelSourceMode === "catalog" && recipeFeatureFields}
+    </FormCardGrid>
+  );
+
+  const gpuCapacityMessages: string[] = [];
+  if (
+    currentCluster &&
+    hasClusterCapacityEvidence &&
+    selectedAccelerator?.type &&
+    selectedAccelerator.product
+  ) {
+    if (isVgpuAllocationMode && isVgpuCapacityExceededWithPlacement) {
+      gpuCapacityMessages.push(
+        hasNoMatchingAccelerator
+          ? t("endpoints.messages.noMatchingAccelerator", {
+              product: selectedAccelerator.product ?? EMPTY_VALUE,
+            })
+          : t("endpoints.messages.vgpuResourcesInsufficient"),
+      );
+      if (hasVgpuMemoryCapacityExceeded) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.vgpuMemoryResourcesInsufficient"),
+        );
+      }
+      if (hasVgpuCoreCapacityExceeded) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.vgpuCoreResourcesInsufficient"),
+        );
+      }
+      if (hasNoNodeForVgpuReplica) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.noNodeCanScheduleVgpuRequest"),
+        );
+      }
+      if (hasPartialGpuReplicaPlacement) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.partialGpuReplicaPlacement", {
+            available: placementCapacity?.maxGpuPlaceableReplicas ?? 0,
+            requested: replicaCount,
+          }),
+        );
+      }
+    } else if (
+      !isVgpuAllocationMode &&
+      isFullGpuCapacityExceededWithPlacement
+    ) {
+      if (hasNoMatchingAccelerator) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.noMatchingAccelerator", {
+            product: selectedAccelerator.product ?? EMPTY_VALUE,
+          }),
+        );
+      } else if (hasNoNodeForFullGpuReplica) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.noNodeCanScheduleFullGpuRequest", {
+            count: placementCapacity?.requestedCardsPerReplica,
+          }),
+        );
+      } else if (hasNoNodeForFractionalGpuReplica) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.noNodeCanScheduleFractionalGpuRequest"),
+        );
+      } else if (!hasFullGpuAggregateCardCapacityExceeded) {
+        gpuCapacityMessages.push(
+          t(
+            isFractionalGpuAllocationMode
+              ? "endpoints.messages.fractionalGpuResourcesInsufficient"
+              : "endpoints.messages.fullGpuResourcesInsufficient",
+          ),
+        );
+      }
+      if (hasFullGpuAggregateCardCapacityExceeded) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.fullGpuCardCapacityInsufficient", {
+            available: placementCapacity?.satisfyingDeviceCount ?? 0,
+            requested: requestedFullGpuCards,
+          }),
+        );
+      }
+      if (hasPartialGpuReplicaPlacement) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.partialGpuReplicaPlacement", {
+            available: placementCapacity?.maxGpuPlaceableReplicas ?? 0,
+            requested: replicaCount,
+          }),
+        );
+      }
+    }
+    if (hasCombinedNodePlacementCapacityExceeded) {
+      gpuCapacityMessages.push(
+        t("endpoints.messages.noNodeCanScheduleCombinedResourceRequest"),
+      );
+    }
+  }
+  const gpuCapacityMessageList =
+    gpuCapacityMessages.length > 0 ? (
+      <div
+        data-testid="endpoint-gpu-capacity-messages"
+        className="space-y-1 text-xs leading-4 text-destructive"
+      >
+        {gpuCapacityMessages.map((message) => (
+          <p key={message}>{message}</p>
+        ))}
+      </div>
+    ) : null;
+
   return {
     form: formWithTransformedOnFinish,
+    editQuery: form.refineCore.query,
+    currentWorkspace,
     // Block deploy while any requested resource exceeds cluster capacity; the
     // page forwards this straight to <ResourceForm submitBlocked>.
     submitBlocked: isResourceCapacityExceeded,
@@ -1837,6 +2945,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="metadata.name"
           label={t("common.fields.name")}
+          required
         >
           <Input
             placeholder={t("endpoints.placeholders.endpointName")}
@@ -1847,6 +2956,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {...form}
           name="metadata.workspace"
           label={t("common.fields.workspace")}
+          required
         >
           {/*
             Validation is handled in the custom resolver above;
@@ -1856,11 +2966,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </FormFieldGroup>
       </FormCardGrid>
     ),
+    wizardProfileFields,
     // Endpoint configuration order: Model & Replicas -> Engine -> Scheduling target and resources.
     templateFields: (
       <>
         <FormCardGrid
-          title={t("endpoints.sections.modelAndReplicas")}
+          title={t(
+            isEdit
+              ? "endpoints.sections.modelAndProfile"
+              : "endpoints.sections.modelAndReplicas",
+          )}
           variant={sectionVariant}
         >
           {/* Edit mode has no catalog picker — the deployment already happened
@@ -1874,10 +2989,31 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               />
             </div>
           )}
+          {isEdit && (
+            <div
+              className={cn(
+                "col-span-4 grid grid-cols-1 sm:grid-cols-4",
+                FORM_GRID_GAP_CLASS,
+              )}
+            >
+              <FormFieldGroup
+                {...form}
+                name="spec.replicas.num"
+                label={t("endpoints.fields.replicas")}
+                className="sm:col-span-1"
+                required
+              >
+                <Input type="number" min={1} />
+              </FormFieldGroup>
+            </div>
+          )}
           {!isEdit && (
             <div
               data-testid="model-catalog-row"
-              className="col-span-4 grid grid-cols-4 gap-4 xs:grid-cols-1"
+              className={cn(
+                "col-span-4 grid grid-cols-1 sm:grid-cols-4",
+                FORM_GRID_GAP_CLASS,
+              )}
             >
               <FormFieldGroup
                 {...form}
@@ -1890,10 +3026,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   disabled={modelCatalogs.query.isLoading}
                   options={[
                     { label: t("common.options.none"), value: "" },
-                    ...(modelCatalogs.query.data?.data || []).map((e) => ({
-                      label: e.metadata.name,
-                      value: e.id.toString(),
-                    })),
+                    ...(modelCatalogs.query.data?.data || []).map(
+                      (catalog) => ({
+                        label: catalog.metadata.name,
+                        value: catalog.id.toString(),
+                      }),
+                    ),
                   ]}
                   value={selectedModelCatalog}
                   onChange={(value) =>
@@ -1908,6 +3046,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 name="spec.replicas.num"
                 label={t("endpoints.fields.replicas")}
                 className="col-span-2"
+                required
               >
                 <Input type="number" min={1} />
               </FormFieldGroup>
@@ -1922,16 +3061,22 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {...form}
                 name="spec.model.registry"
                 label={t("endpoints.fields.modelRegistry")}
+                className="col-span-2"
+                required
               >
                 <FormCombobox
                   placeholder={t("endpoints.placeholders.selectModelRegistry")}
                   disabled={modelRegistries.query.isLoading}
                   options={modelRegistryOptions}
                   onChange={(value) => {
-                    form.setValue("spec.model.registry", value as string);
+                    form.setValue(
+                      "spec.model.registry",
+                      value as string,
+                      userSetValueOptions,
+                    );
                     // Reset model name and search when registry changes
-                    form.setValue("spec.model.name", "");
-                    form.setValue("spec.model.info", null);
+                    form.setValue("spec.model.name", "", userSetValueOptions);
+                    form.setValue("spec.model.info", null, userSetValueOptions);
                     setModelSearch("");
                   }}
                 />
@@ -1940,11 +3085,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               FormFieldGroup clones the controller's `field` onto its child, so
               a wrapper around the combobox would take the keystrokes typed in
               its search box as changes to the model name. */}
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <FormFieldGroup
                   {...form}
                   name="spec.model.name"
                   label={t("endpoints.fields.modelName")}
+                  required
                 >
                   <AsyncCombobox
                     placeholder={t("endpoints.placeholders.selectModel")}
@@ -1967,7 +3113,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     disabled={!currentRegistry}
                     value={currentModelName}
                     onChange={(value: string) => {
-                      form.setValue("spec.model.name", value);
+                      form.setValue(
+                        "spec.model.name",
+                        value,
+                        userSetValueOptions,
+                      );
 
                       // Empty, so the endpoint serves the bare model name and
                       // resolves the version as it deploys. A version here
@@ -1975,12 +3125,20 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       // (`name:version`), and the registry lists versions in
                       // its own order — the first is not the newest, and for a
                       // model uploaded without one it is a generated id.
-                      form.setValue("spec.model.version", "");
+                      form.setValue(
+                        "spec.model.version",
+                        "",
+                        userSetValueOptions,
+                      );
 
                       // Cleared now and refilled when the detail read answers,
                       // so the previous model's parameters are never shown
                       // under this one's name.
-                      form.setValue("spec.model.info", null);
+                      form.setValue(
+                        "spec.model.info",
+                        null,
+                        userSetValueOptions,
+                      );
                       setPickedModelRef(
                         workspace && currentRegistry && value
                           ? {
@@ -2023,210 +3181,38 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               </div>
             </>
           )}
-          {showFull && !hidesModelFields && (
-            <>
-              <FormFieldGroup
-                {...form}
-                name="spec.model.version"
-                label={t("endpoints.fields.modelVersion")}
-              >
-                <Input />
-              </FormFieldGroup>
-              <FormFieldGroup
-                {...form}
-                name="spec.model.file"
-                label={t("endpoints.fields.modelFile")}
-              >
-                <Input />
-              </FormFieldGroup>
-            </>
-          )}
-          {/* Edit mode has no catalog row, so Replicas renders here instead. */}
-          {isEdit && (
-            <FormFieldGroup
-              {...form}
-              name="spec.replicas.num"
-              label={t("endpoints.fields.replicas")}
-            >
-              <Input type="number" min={1} />
-            </FormFieldGroup>
-          )}
+          {modelVersionFields}
         </FormCardGrid>
 
-        {showFull && (
-          <FormCardGrid
-            title={t("endpoints.sections.engineSettings")}
-            variant={sectionVariant}
-          >
-            <FormFieldGroup
-              {...form}
-              name="spec.engine.engine"
-              label={t("common.fields.engine")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectEngine")}
-                disabled={engines.query.isLoading}
-                options={engineNames.map((v) => ({
-                  label: v,
-                  value: v,
-                }))}
-                onChange={(value) => {
-                  form.setValue("spec.engine", {
-                    engine: value,
-                    version: engineVersions[String(value)][0].version,
-                  });
-                  form.setValue(
-                    "spec.model.task",
-                    engineTasks[String(value)][0],
-                  );
-                  form.trigger("spec.engine.engine");
-                }}
-              />
-            </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="spec.engine.version"
-              label={t("endpoints.fields.engineVersion")}
-            >
-              <FormCombobox
-                placeholder={t("endpoints.placeholders.selectVersion")}
-                disabled={!form.getValues().spec.engine.engine}
-                options={(
-                  engineVersions[form.getValues().spec.engine.engine] || []
-                ).map(({ version: v }) => ({
-                  label: v,
-                  value: v,
-                }))}
-              />
-            </FormFieldGroup>
-            {!hidesModelFields && (
-              <FormFieldGroup
-                {...form}
-                name="spec.model.task"
-                label={t("endpoints.fields.taskType")}
-              >
-                <FormCombobox
-                  placeholder={t("endpoints.placeholders.selectTaskType")}
-                  disabled={!form.getValues().spec.engine.engine}
-                  options={(
-                    engineTasks[form.getValues().spec.engine.engine] || []
-                  ).map((v) => ({
-                    label:
-                      t(`models.tasks.${v}`) === `models.tasks.${v}`
-                        ? formatTaskName(v)
-                        : t(`models.tasks.${v}`),
-                    value: v,
-                  }))}
-                />
-              </FormFieldGroup>
-            )}
-          </FormCardGrid>
-        )}
+        {layout === "legacy" && engineFields}
+      </>
+    ),
+    runtimeFields: (
+      <>
+        {layout === "wizard" && engineFields}
+        <EndpointKVCacheFields
+          form={form}
+          cluster={selectedCluster}
+          acceleratorType={selectedAccelerator?.type}
+          cacheStatusLoading={clusters.query.isFetching}
+          isEdit={isEdit}
+          cacheChanged={cacheChanged}
+          sectioned={layout === "wizard"}
+        />
       </>
     ),
     // Recipe selection section — shown only when the selected MC is a Recipe MC.
     // For trivial MCs this returns `null` so the existing form layout is
     // pixel-identical to before.
     recipeFields:
-      !isEdit && isRecipeCatalog && selectedCatalog ? (
+      layout !== "wizard" && !isEdit && isRecipeCatalog && selectedCatalog ? (
         <FormCardGrid
           title={t("endpoints.recipe.section", "Recipe options")}
           testId="endpoint-recipe-options"
           variant={sectionVariant}
         >
-          {(() => {
-            const verified = (
-              selectedCatalog.metadata.annotations?.[
-                "recipe.vllm.ai/hardware-verified"
-              ] ?? ""
-            )
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            if (verified.length === 0) return null;
-            return (
-              <div className="col-span-4 flex items-center gap-2 flex-wrap text-sm">
-                <span className="text-muted-foreground">
-                  {t("endpoints.recipe.verifiedOn", "Verified on:")}
-                </span>
-                {verified.map((hw) => (
-                  <Badge
-                    key={hw}
-                    variant="outline"
-                    className="border-green-600/40 text-green-700 dark:text-green-400"
-                  >
-                    ✓ {hw}
-                  </Badge>
-                ))}
-              </div>
-            );
-          })()}
-          {/*
-            Variant / features are client-side configurators, not endpoint
-            fields — they drive composeEndpointSpec into the concrete spec.
-            Plain labeled divs (no FormFieldGroup) so nothing registers a
-            spec.variant / spec.feature_selections form field to submit.
-          */}
-          <div className="col-span-4 space-y-2">
-            <div className="text-sm font-medium">
-              {t("endpoints.recipe.variant", "Variant")}
-            </div>
-            <VariantPicker
-              variants={selectedCatalog.spec.variants ?? {}}
-              value={selectedVariant}
-              onChange={handleVariantChange}
-            />
-          </div>
-          {promoteCoreFeatures && (
-            <div className="col-span-4">
-              <FeaturePicker
-                features={selectedCatalog.spec.features ?? []}
-                value={featureSelections}
-                onChange={handleFeaturesChange}
-                renderGroups={[coreFeatureGroup]}
-                layout="grid"
-                inputAddon={workloadImageAddon}
-              />
-            </div>
-          )}
-          {selectedCatalog.spec.features &&
-            selectedCatalog.spec.features.length > 0 &&
-            bottomFeatureGroups.length > 0 && (
-              <div className="col-span-4 space-y-2">
-                <div className="text-sm font-medium">
-                  {t("endpoints.recipe.features", "Features")}
-                </div>
-                <FeaturePicker
-                  features={selectedCatalog.spec.features ?? []}
-                  value={featureSelections}
-                  onChange={handleFeaturesChange}
-                  renderGroups={bottomFeatureGroups}
-                  inputAddon={workloadImageAddon}
-                />
-              </div>
-            )}
-          {composeResult && !composeResult.ok && (
-            // Compose failures must be visible even in simplified mode, where
-            // the full ComposePreview below is hidden — otherwise an invalid
-            // selection (e.g. an out-of-range input) shows no feedback.
-            <div className="col-span-4">
-              <ComposePreview composed={null} error={composeResult.error} />
-            </div>
-          )}
-          {/* Always rendered, folded to one line while the raw fields are.
-          The simplified form hides which engine and arguments the deploy will
-          use, and "what am I about to run" is a fact, not a decision — the
-          same reason the capacity warnings and compose errors already pierce
-          simplified mode. */}
-          {composeResult?.ok && (
-            <div className="col-span-4">
-              <ComposePreview
-                composed={composeResult.spec}
-                error={null}
-                collapsible={!showFull}
-              />
-            </div>
-          )}
+          {recipeVariantFields}
+          {recipeFeatureFields}
         </FormCardGrid>
       ) : null,
     // What the deployment is expected to weigh. Its own section so both ways
@@ -2238,48 +3224,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         title={t("endpoints.sections.weights")}
         variant={sectionVariant}
       >
-        <div className="col-span-4">
-          <EndpointWeightsEstimate
-            declared={
-              selectedCatalog
-                ? {
-                    perReplicaGb: activeVariantVram,
-                    replicas: replicaCount,
-                    // Only accelerator data that came from the selected
-                    // cluster. The composed variant also writes its reference
-                    // accelerator into the form; checking the requirement
-                    // against that is recipe-vs-recipe math with nothing of the
-                    // environment in it (NEU-499), and the badge then states
-                    // the requirement alone.
-                    accelerator: {
-                      product: selectedAcceleratorOption?.product,
-                      perGpuGb:
-                        selectedMemoryTotalMiB != null
-                          ? selectedMemoryTotalMiB / 1024
-                          : undefined,
-                      gpuCount: form.watch("spec.resources.gpu"),
-                    },
-                  }
-                : null
-            }
-            // An engine serving a model baked into its own image has no
-            // checkpoint to estimate from.
-            kvCache={
-              hidesModelFields
-                ? null
-                : {
-                    read: modelInfoRead,
-                    engineArgs: engineCacheArgs,
-                    controls: engineCacheArgControls,
-                    modelKey: `${currentRegistry ?? ""}:${
-                      currentModelName ?? ""
-                    }:${form.watch("spec.model.version") ?? ""}`,
-                  }
-            }
-            onRequiredGbChange={setKvCacheRequiredGb}
-          />
-        </div>
+        <div className="col-span-4">{weightEstimateFields}</div>
       </FormCardGrid>
+    ),
+    wizardEstimateFields,
+    configurationSummaryFields,
+    reviewContext,
+    wizardStepCompletions: endpointStepCompletions(
+      form.watch() as unknown as Endpoint,
+      !hidesModelFields,
     ),
     // Scheduling target and resource selection section - always visible.
     resourceFields: (
@@ -2289,29 +3242,64 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       >
         <div
           data-testid="endpoint-resource-config-grid"
-          className="col-span-4 space-y-4"
+          className={cn(
+            "col-span-4",
+            layout === "wizard" ? "space-y-0" : "space-y-4",
+          )}
         >
           <section
             data-testid="endpoint-scheduling-target-card"
-            className="w-full rounded-md border bg-background px-3 py-2"
+            className={cn(
+              "w-full",
+              layout === "wizard"
+                ? "border-b pb-4"
+                : "rounded-md border bg-background px-3 py-2",
+            )}
           >
-            <div className="grid gap-3 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] xl:items-center">
-              <div className="flex h-9 min-w-0 items-center">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-semibold">
-                    {t("endpoints.sections.schedulingTarget")}
-                  </h3>
-                  <InfoHint
-                    label={t("endpoints.descriptions.clusterSchedulingTarget")}
-                  />
+            <div
+              className={cn(
+                layout === "wizard"
+                  ? "grid gap-3"
+                  : "grid gap-3 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] xl:items-center",
+              )}
+            >
+              {layout !== "wizard" && (
+                <div className="flex h-9 min-w-0 items-center">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="whitespace-nowrap text-base font-semibold leading-6 text-foreground">
+                      {t("endpoints.sections.schedulingTarget")}
+                    </h3>
+                    <InfoHint
+                      label={t(
+                        "endpoints.descriptions.clusterSchedulingTarget",
+                      )}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid min-w-0 grid-cols-1 items-end justify-start gap-3 sm:grid-cols-[minmax(220px,280px)_max-content]">
+              )}
+              <div
+                className={cn(
+                  "grid min-w-0 grid-cols-1 gap-3",
+                  layout === "wizard"
+                    ? "w-full max-w-[520px] sm:grid-cols-[minmax(0,280px)_minmax(108px,auto)] sm:items-start"
+                    : "items-end justify-start sm:grid-cols-[minmax(220px,280px)_max-content]",
+                )}
+              >
                 <FormFieldGroup
                   {...form}
                   name="spec.cluster"
                   label={t("common.fields.cluster")}
+                  labelAccessory={
+                    layout === "wizard" ? (
+                      <InfoHint
+                        label={t(
+                          "endpoints.descriptions.clusterSchedulingTarget",
+                        )}
+                      />
+                    ) : undefined
+                  }
                   className="w-full max-w-[280px]"
+                  required
                 >
                   <FormCombobox
                     disabled={isEdit || clusters.query.isLoading}
@@ -2321,12 +3309,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 </FormFieldGroup>
                 <div
                   data-testid="endpoint-scheduling-target-node-count"
-                  className="flex h-9 min-w-[108px] items-center justify-between gap-2 rounded-md border bg-muted/20 px-3"
+                  className="grid min-w-[108px] gap-2"
                 >
-                  <span className="text-[11px] font-medium leading-4 text-muted-foreground">
+                  <span className="block text-sm font-normal leading-[22px] text-[var(--nt-text-neutral-secondary)]">
                     {t("endpoints.fields.nodeCount")}
                   </span>
-                  <span className="text-sm font-semibold leading-5 text-foreground">
+                  <span className="flex h-8 items-center text-sm font-medium leading-[22px] text-foreground">
                     {selectedClusterNodeCountText}
                   </span>
                 </div>
@@ -2334,35 +3322,54 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             </div>
           </section>
 
-          <EndpointKVCacheFields
-            form={form}
-            cluster={selectedCluster}
-            isEdit={isEdit}
-          />
+          {layout === "legacy" && (
+            <EndpointKVCacheFields
+              form={form}
+              cluster={selectedCluster}
+              isEdit={isEdit}
+              cacheChanged={cacheChanged}
+            />
+          )}
 
           <div
             data-testid="endpoint-resource-layout-grid"
             className={cn(
               "grid gap-3",
-              currentCluster
-                ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
-                : "xl:grid-cols-[minmax(360px,420px)]",
+              layout === "wizard" &&
+                "pt-4 min-[1366px]:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)] min-[1366px]:items-start min-[1366px]:gap-0",
+              layout === "legacy" &&
+                (currentCluster
+                  ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
+                  : "xl:grid-cols-[minmax(360px,420px)]"),
             )}
           >
             <div
               data-testid="endpoint-resource-config-main"
-              className="min-w-0 xl:sticky xl:top-4"
+              className={cn(
+                "min-w-0",
+                layout === "legacy" && "xl:sticky xl:top-4",
+                layout === "wizard" &&
+                  "min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:pr-6",
+              )}
             >
               <section
                 data-testid="endpoint-resource-plan-card"
-                className="grid overflow-hidden rounded-xl border bg-background shadow-sm"
+                className={cn(
+                  "grid",
+                  layout === "wizard"
+                    ? "gap-5"
+                    : "overflow-hidden rounded-xl border bg-background shadow-sm",
+                )}
               >
                 <div
                   data-testid="endpoint-resource-plan-header"
-                  className="flex items-start justify-between gap-3 border-b p-4"
+                  className={cn(
+                    "flex items-start justify-between gap-3",
+                    layout === "wizard" ? "pb-0" : "border-b p-4",
+                  )}
                 >
                   <div className="min-w-0">
-                    <h3 className="text-base font-semibold">
+                    <h3 className="text-base font-semibold leading-6 text-foreground">
                       {t("endpoints.sections.resourcePlan")}
                     </h3>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -2370,77 +3377,89 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     </p>
                   </div>
                 </div>
+                {layout === "wizard" && !currentCluster && (
+                  <EmptyState
+                    variant="inline"
+                    className="text-left"
+                    data-testid="endpoint-resource-plan-empty"
+                  >
+                    {t("endpoints.placeholders.resourcePlanRequiresCluster")}
+                  </EmptyState>
+                )}
                 <div
                   data-testid="endpoint-resource-request-grid"
-                  className="grid grid-cols-1 content-start items-start gap-3 self-start p-4 sm:grid-cols-2"
+                  className={cn(
+                    "grid grid-cols-1 content-start items-start gap-3 self-start sm:grid-cols-2",
+                    layout === "wizard" ? "p-0" : "p-4",
+                    layout === "wizard" && !currentCluster && "hidden",
+                  )}
                 >
                   <div
                     data-testid="endpoint-basic-resource-card"
                     className="contents"
                   >
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.cpu"
-                      label={t("common.fields.cpu")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatInputNumber(normalizedResources?.cpu ?? 0)}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.cpu",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        max={maxAvailable.cpu.available}
-                        step={0.1}
-                        disabled={!currentCluster}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
+                    <div className="col-span-1 space-y-1">
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.cpu"
+                        label={t("common.fields.cpu")}
+                      >
+                        <NumberInput
+                          value={formatInputNumber(
+                            normalizedResources?.cpu ?? 0,
+                          )}
+                          onValueChange={(value) =>
+                            form.setValue(
+                              "spec.resources.cpu",
+                              value,
+                              userSetValueOptions,
+                            )
+                          }
+                          min={0}
+                          max={maxAvailable.cpu.available}
+                          step={0.1}
+                          disabled={!currentCluster}
+                          className="h-9"
+                        />
+                      </FormFieldGroup>
+                      {hasClusterCapacityEvidence && isCpuCapacityExceeded && (
+                        <p className="text-xs leading-4 text-destructive">
+                          {hasNodeCpuPlacementCapacityExceeded
+                            ? t(
+                                "endpoints.messages.noNodeCanScheduleCpuRequest",
+                              )
+                            : t("endpoints.messages.cpuResourcesInsufficient")}
+                        </p>
+                      )}
+                    </div>
 
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.memory"
-                      label={t("endpoints.fields.memoryGb")}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatInputNumber(
-                          normalizedResources?.memory ?? 0,
-                        )}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.memory",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        max={maxAvailable.memory.available}
-                        step={0.5}
-                        disabled={!currentCluster}
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
-
-                    {(isCpuCapacityExceeded || isMemoryCapacityExceeded) && (
-                      <div className="col-span-2 space-y-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
-                        {isCpuCapacityExceeded && (
-                          <div>
-                            {hasNodeCpuPlacementCapacityExceeded
-                              ? t(
-                                  "endpoints.messages.noNodeCanScheduleCpuRequest",
-                                )
-                              : t(
-                                  "endpoints.messages.cpuResourcesInsufficient",
-                                )}
-                          </div>
-                        )}
-                        {isMemoryCapacityExceeded && (
-                          <div>
+                    <div className="col-span-1 space-y-1">
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.memory"
+                        label={t("endpoints.fields.memoryGb")}
+                      >
+                        <NumberInput
+                          value={formatInputNumber(
+                            normalizedResources?.memory ?? 0,
+                          )}
+                          onValueChange={(value) =>
+                            form.setValue(
+                              "spec.resources.memory",
+                              value,
+                              userSetValueOptions,
+                            )
+                          }
+                          min={0}
+                          max={maxAvailable.memory.available}
+                          step={0.5}
+                          disabled={!currentCluster}
+                          className="h-9"
+                        />
+                      </FormFieldGroup>
+                      {hasClusterCapacityEvidence &&
+                        isMemoryCapacityExceeded && (
+                          <p className="text-xs leading-4 text-destructive">
                             {hasNodeMemoryPlacementCapacityExceeded
                               ? t(
                                   "endpoints.messages.noNodeCanScheduleMemoryRequest",
@@ -2448,10 +3467,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               : t(
                                   "endpoints.messages.memoryResourcesInsufficient",
                                 )}
-                          </div>
+                          </p>
                         )}
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   <div
@@ -2467,14 +3485,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         name="spec.resources.accelerator"
                         label={t("endpoints.fields.accelerator")}
                         className="col-span-1 min-w-0 sm:col-span-2"
+                        required
                       >
                         <FormCombobox
                           options={displayedAcceleratorOptions.map((opt) => ({
                             label: opt.label,
                             value: opt.value,
-                            description: opt.verified
-                              ? t("endpoints.recipe.verifiedAccelerator")
-                              : undefined,
+                            disabled: !opt.engineCompatible,
+                            description: [
+                              opt.engineCompatible
+                                ? opt.verified
+                                  ? t("endpoints.recipe.verifiedAccelerator")
+                                  : null
+                                : t(
+                                    "endpoints.messages.engineAcceleratorIncompatible",
+                                  ),
+                              opt.capacityDescription,
+                            ]
+                              .filter(Boolean)
+                              .join(" · "),
                           }))}
                           value={
                             selectedAccelerator?.type &&
@@ -2492,18 +3521,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               const currentVirtualization = form.getValues(
                                 "spec.resources.accelerator.virtualization",
                               );
-                              form.setValue("spec.resources.accelerator", {
-                                type: selectedOption.type,
-                                product: selectedOption.product,
-                                ...(isSelectedClusterVgpuEnabled
-                                  ? {
-                                      virtualization:
-                                        currentVirtualization || {},
-                                    }
-                                  : {}),
-                              } satisfies ResourceSpec["accelerator"]);
+                              form.setValue(
+                                "spec.resources.accelerator",
+                                {
+                                  type: selectedOption.type,
+                                  product: selectedOption.product,
+                                  ...(isSelectedClusterVgpuEnabled
+                                    ? {
+                                        virtualization:
+                                          currentVirtualization || {},
+                                      }
+                                    : {}),
+                                } satisfies ResourceSpec["accelerator"],
+                                userSetValueOptions,
+                              );
                             } else {
-                              form.setValue("spec.resources.accelerator", null);
+                              form.setValue(
+                                "spec.resources.accelerator",
+                                null,
+                                userSetValueOptions,
+                              );
                             }
                           }}
                           placeholder={t(
@@ -2541,49 +3578,78 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       )}
                     </div>
 
-                    <FormFieldGroup
-                      {...form}
-                      name="spec.resources.gpu"
-                      label={t(
-                        isVgpuAllocationMode
-                          ? "endpoints.fields.vgpuCount"
-                          : "endpoints.fields.physicalGpuCount",
-                      )}
-                      className="col-span-1"
-                    >
-                      <NumberInput
-                        value={formatInputNumber(gpuUsage)}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "spec.resources.gpu",
-                            value,
-                            userSetValueOptions,
-                          )
-                        }
-                        min={0}
-                        // Capacity is a cross-field constraint:
-                        // cardsPerReplica × replicas. Keeping it out of the
-                        // input max avoids lowering the ceiling to the current
-                        // value and lets the capacity message own the verdict.
-                        // SSH clusters step by 0.1 below one card and by whole
-                        // cards at or above one, so the spinner never lands on
-                        // a value the precision rule rejects. Kubernetes (and
-                        // vGPU, which is Kubernetes-only) always step by 1.
-                        step={gpuInputStep}
-                        disabled={
-                          !currentCluster ||
-                          !selectedAccelerator?.type ||
-                          !selectedAccelerator?.product
-                        }
-                        className="h-9"
-                      />
-                    </FormFieldGroup>
+                    {canUseVgpuAllocation && (
+                      <div
+                        data-testid="endpoint-gpu-allocation-mode"
+                        className="col-span-1 min-w-0 space-y-2 sm:col-span-2"
+                      >
+                        <div className="text-sm font-medium leading-none text-foreground">
+                          {t("endpoints.fields.allocationMode")}
+                        </div>
+                        <SegmentedControl
+                          ariaLabel={t("endpoints.fields.allocationMode")}
+                          value={effectiveGpuAllocationMode}
+                          onValueChange={handleGpuAllocationModeChange}
+                          items={[
+                            {
+                              value: "full",
+                              label: t("endpoints.fields.fullGpu"),
+                            },
+                            {
+                              value: "vgpu",
+                              label: t("endpoints.fields.vgpu"),
+                            },
+                          ]}
+                        />
+                      </div>
+                    )}
 
-                    {/* vGPU split is a deploy essential on virtualization-
-                        enabled clusters (a partially-used card can make full
-                        card allocation impossible), so simplified recipe mode
-                        must not hide it behind "Show all options". */}
-                    {(showFull || isSelectedClusterVgpuEnabled) && (
+                    <div className="col-span-1 space-y-1">
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.resources.gpu"
+                        label={t(
+                          isVgpuAllocationMode
+                            ? "endpoints.fields.vgpuCount"
+                            : "endpoints.fields.physicalGpuCount",
+                        )}
+                      >
+                        <NumberInput
+                          value={formatInputNumber(gpuUsage)}
+                          onValueChange={(value) =>
+                            form.setValue(
+                              "spec.resources.gpu",
+                              value,
+                              userSetValueOptions,
+                            )
+                           }
+                           min={0}
+                           // Capacity is a cross-field constraint:
+                           // cardsPerReplica × replicas. Keeping it out of the
+                           // input max avoids lowering the ceiling to the
+                           // current value and lets the capacity message own
+                           // the verdict.
+                          // SSH clusters step by 0.1 below one card and by whole
+                          // cards at or above one, so the spinner never lands on
+                          // a value the precision rule rejects. Kubernetes (and
+                          // vGPU, which is Kubernetes-only) always step by 1.
+                          step={gpuInputStep}
+                          disabled={
+                            !currentCluster ||
+                            !selectedAccelerator?.type ||
+                            !selectedAccelerator?.product
+                          }
+                          className="h-9"
+                        />
+                      </FormFieldGroup>
+                      {gpuCapacityMessageList}
+                    </div>
+
+                    {/* Keep the split controls tied to the explicit mode.
+                        Showing them while full-card allocation is selected made
+                        a blank VRAM field look like an alternative value rather
+                        than a different resource request. */}
+                    {isVgpuAllocationMode && (
                       <div
                         data-testid="endpoint-virtual-card-split-group"
                         className="col-span-1 grid gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2 sm:grid-cols-2"
@@ -2601,6 +3667,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           name="spec.resources.accelerator.virtualization.memory_mib"
                           label={t("endpoints.fields.singleCardMemory")}
                           className="col-span-1"
+                          required
                         >
                           <Input
                             type="number"
@@ -2660,226 +3727,137 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     )}
                   </div>
 
-                  {/* Same rule as the split group above: on vGPU clusters the
-                      capacity feedback must stay visible in simplified mode,
-                      or users configure the split blind. */}
-                  {(showFull || isSelectedClusterVgpuEnabled) &&
+                  {/* Capacity feedback stays visible in simplified mode so
+                      users do not choose a card count without seeing whether it
+                      can be placed. */}
+                  {currentCluster &&
                     selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
                       <div
                         data-testid="endpoint-current-request-panel"
-                        className="col-span-1 border-t bg-muted/40 p-3 text-sm sm:col-span-2"
+                        className="col-span-1 text-sm sm:col-span-2"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="font-medium">
                             {t("endpoints.sections.currentRequest")}
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "font-normal",
-                              getCapacityBadgeClassName(
-                                isVgpuAllocationMode
-                                  ? isVgpuCapacityExceededWithPlacement
-                                  : isFullGpuCapacityExceededWithPlacement,
-                              ),
-                            )}
-                          >
-                            {t("endpoints.messages.cardsAvailable", {
-                              count: isVgpuAllocationMode
-                                ? totalVirtualCardCapacity
-                                : fullGpuCardCapacity,
-                            })}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge
+                              variant="outline"
+                              data-testid="endpoint-capacity-status"
+                              className={cn(
+                                "font-normal",
+                                !isVgpuCapacityPending &&
+                                  getCapacityBadgeClassName(
+                                    isVgpuAllocationMode
+                                      ? isVgpuCapacityExceededWithPlacement
+                                      : isFullGpuCapacityExceededWithPlacement,
+                                  ),
+                              )}
+                            >
+                              {isVgpuCapacityPending
+                                ? t("endpoints.messages.vgpuCapacityPending")
+                                : t("endpoints.messages.cardsAvailable", {
+                                    count: isVgpuAllocationMode
+                                      ? totalVirtualCardCapacity
+                                      : fullGpuCardCapacity,
+                                  })}
+                            </Badge>
+                            <InfoHint
+                              label={t("endpoints.messages.cardsAvailableHint")}
+                            />
+                          </div>
                         </div>
                         <div
                           data-testid="endpoint-current-request-grid"
-                          className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2"
+                          className="mt-2 grid grid-cols-2 border-y border-[var(--nt-stroke-neutral-trans-2)] [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-[var(--nt-stroke-neutral-trans-2)]"
                         >
-                          <div className="rounded-lg border bg-background px-3 py-2">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.virtualCardCount")}
-                            </div>
-                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {isVgpuAllocationMode
-                                ? `${formatOneDecimal(
+                          {[
+                            {
+                              key: "cards",
+                              label: t("endpoints.fields.virtualCardCount"),
+                              unit: undefined,
+                              value: isVgpuAllocationMode ? (
+                                isVgpuCapacityPending ? (
+                                  <EmptyValue />
+                                ) : (
+                                  `${formatOneDecimal(
                                     displayedVgpuPhysicalCards,
                                   )} / ${formatOneDecimal(
                                     totalVirtualCardCapacity,
                                   )}`
-                                : `${formatOneDecimal(
-                                    requestedFullGpuCards,
-                                  )} / ${formatOneDecimal(
-                                    fullGpuCardCapacity,
-                                  )}`}
-                            </div>
-                          </div>
-                          <div className="rounded-lg border bg-background px-3 py-2">
-                            <div className="flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
-                              <span>
-                                {t("endpoints.fields.vgpuMemoryCapacity")}
-                              </span>
-                              {isVgpuAllocationMode && (
-                                <span className="text-[11px]">GiB</span>
-                              )}
-                            </div>
-                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {isVgpuAllocationMode ? (
-                                `${formatOneDecimal(
-                                  requestedVgpuMemoryMiB / 1024,
-                                )} / ${formatOneDecimal(
-                                  availableVgpuMemoryMiB / 1024,
-                                )}`
+                                )
                               ) : (
-                                <EmptyValue />
-                              )}
-                            </div>
-                          </div>
-                          <div className="rounded-lg border bg-background px-3 py-2">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.vgpuCoreCapacity")}
-                            </div>
-                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                              {currentRequestCoreUnitsPerCard > 0 ? (
                                 `${formatOneDecimal(
-                                  currentRequestCoreUnits,
-                                )} / ${formatOneDecimal(
-                                  currentRequestAvailableCoreUnits,
-                                )}`
-                              ) : (
-                                <EmptyValue />
-                              )}
+                                  requestedFullGpuCards,
+                                )} / ${formatOneDecimal(fullGpuCardCapacity)}`
+                              ),
+                            },
+                            ...(isVgpuAllocationMode
+                              ? [
+                                  {
+                                    key: "memory",
+                                    label: t(
+                                      "endpoints.fields.vgpuMemoryCapacity",
+                                    ),
+                                    unit: "GiB",
+                                    value: isVgpuCapacityPending ? (
+                                      <EmptyValue />
+                                    ) : (
+                                      `${formatOneDecimal(
+                                        requestedVgpuMemoryMiB / 1024,
+                                      )} / ${formatOneDecimal(
+                                        availableVgpuMemoryMiB / 1024,
+                                      )}`
+                                    ),
+                                  },
+                                  {
+                                    key: "core",
+                                    label: t(
+                                      "endpoints.fields.vgpuCoreCapacity",
+                                    ),
+                                    unit: undefined,
+                                    value:
+                                      !isVgpuCapacityPending &&
+                                      currentRequestCoreUnitsPerCard > 0 ? (
+                                        `${formatOneDecimal(
+                                          currentRequestCoreUnits,
+                                        )} / ${formatOneDecimal(
+                                          currentRequestAvailableCoreUnits,
+                                        )}`
+                                      ) : (
+                                        <EmptyValue />
+                                      ),
+                                  },
+                                ]
+                              : []),
+                            {
+                              key: "scheduling",
+                              label: t("endpoints.fields.scheduling"),
+                              unit: undefined,
+                              value: t("common.fields.cluster"),
+                            },
+                          ].map((metric) => (
+                            <div
+                              key={metric.key}
+                              className="min-w-0 px-3 py-2 even:border-l even:border-[var(--nt-stroke-neutral-trans-2)]"
+                            >
+                              <div className="flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
+                                <span className="min-w-0 break-words">
+                                  {metric.label}
+                                </span>
+                                {metric.unit && (
+                                  <span className="shrink-0 text-[11px]">
+                                    {metric.unit}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
+                                {metric.value}
+                              </div>
                             </div>
-                          </div>
-                          <div className="rounded-lg border bg-background px-3 py-2">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              {t("endpoints.fields.scheduling")}
-                            </div>
-                            <div className="mt-1 font-semibold">
-                              {t("common.fields.cluster")}
-                            </div>
-                          </div>
+                          ))}
                         </div>
-                        {isVgpuAllocationMode
-                          ? isVgpuCapacityExceededWithPlacement && (
-                              <div className="mt-2 space-y-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                                <div>
-                                  {hasNoMatchingAccelerator
-                                    ? t(
-                                        "endpoints.messages.noMatchingAccelerator",
-                                        {
-                                          product:
-                                            selectedAccelerator?.product ??
-                                            EMPTY_VALUE,
-                                        },
-                                      )
-                                    : t(
-                                        "endpoints.messages.vgpuResourcesInsufficient",
-                                      )}
-                                </div>
-                                {hasVgpuMemoryCapacityExceeded && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.vgpuMemoryResourcesInsufficient",
-                                    )}
-                                  </div>
-                                )}
-                                {hasVgpuCoreCapacityExceeded && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.vgpuCoreResourcesInsufficient",
-                                    )}
-                                  </div>
-                                )}
-                                {hasNoNodeForVgpuReplica && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.noNodeCanScheduleVgpuRequest",
-                                    )}
-                                  </div>
-                                )}
-                                {hasPartialGpuReplicaPlacement && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.partialGpuReplicaPlacement",
-                                      {
-                                        available:
-                                          placementCapacity?.maxGpuPlaceableReplicas ??
-                                          0,
-                                        requested: replicaCount,
-                                      },
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          : isFullGpuCapacityExceededWithPlacement && (
-                              <div className="mt-2 space-y-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                                <div>
-                                  {hasNoMatchingAccelerator
-                                    ? t(
-                                        "endpoints.messages.noMatchingAccelerator",
-                                        {
-                                          product:
-                                            selectedAccelerator?.product ??
-                                            EMPTY_VALUE,
-                                        },
-                                      )
-                                    : hasNoNodeForFullGpuReplica
-                                      ? t(
-                                          "endpoints.messages.noNodeCanScheduleFullGpuRequest",
-                                          {
-                                            count:
-                                              placementCapacity?.requestedCardsPerReplica,
-                                          },
-                                        )
-                                      : hasNoNodeForFractionalGpuReplica
-                                        ? t(
-                                            "endpoints.messages.noNodeCanScheduleFractionalGpuRequest",
-                                          )
-                                        : isFractionalGpuAllocationMode
-                                          ? t(
-                                              "endpoints.messages.fractionalGpuResourcesInsufficient",
-                                            )
-                                          : t(
-                                              "endpoints.messages.fullGpuResourcesInsufficient",
-                                            )}
-                                </div>
-                                {hasFullGpuAggregateCardCapacityExceeded && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.fullGpuCardCapacityInsufficient",
-                                      {
-                                        available:
-                                          placementCapacity?.satisfyingDeviceCount ??
-                                          0,
-                                        requested: requestedFullGpuCards,
-                                      },
-                                    )}
-                                  </div>
-                                )}
-                                {hasPartialGpuReplicaPlacement && (
-                                  <div>
-                                    {t(
-                                      "endpoints.messages.partialGpuReplicaPlacement",
-                                      {
-                                        available:
-                                          placementCapacity?.maxGpuPlaceableReplicas ??
-                                          0,
-                                        requested: replicaCount,
-                                      },
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                        {hasCombinedNodePlacementCapacityExceeded && (
-                          <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                            {t(
-                              "endpoints.messages.noNodeCanScheduleCombinedResourceRequest",
-                            )}
-                          </div>
-                        )}
                       </div>
                     )}
                 </div>
@@ -2888,7 +3866,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             {clusterGpuResourcesPanel && (
               <div
                 data-testid="endpoint-resource-context"
-                className="min-w-0 overflow-hidden rounded-xl border bg-background shadow-sm xl:sticky xl:top-4 xl:self-start"
+                className={cn(
+                  "min-w-0",
+                  layout === "legacy" &&
+                    "overflow-hidden rounded-xl border bg-background shadow-sm xl:sticky xl:top-4 xl:self-start",
+                  layout === "wizard" &&
+                    "border-t pt-5 min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:self-start min-[1366px]:border-l min-[1366px]:border-t-0 min-[1366px]:pl-6 min-[1366px]:pt-0",
+                )}
               >
                 {clusterGpuResourcesPanel}
               </div>
@@ -2975,34 +3959,38 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ) : null,
     // Simplified-mode banner + disclosure toggle. Null outside simplified mode so
     // the standard create/edit layouts are unaffected.
-    advancedToggle: simplified ? (
-      <FormCardGrid variant={sectionVariant}>
-        <div className="col-span-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Sparkles className="size-4 text-primary" />
-            {t(
-              "endpoints.simplified.autoConfigured",
-              "Model, engine and resources are auto-configured from the selected variant.",
-            )}
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced
-              ? t("endpoints.simplified.hideAdvanced", "Hide advanced options")
-              : t("endpoints.simplified.showAdvanced", "Show all options")}
-            <ChevronDown
-              className={cn(
-                "ml-1 size-4 transition-transform",
-                showAdvanced && "rotate-180",
+    advancedToggle:
+      layout === "legacy" && simplified ? (
+        <FormCardGrid variant={sectionVariant}>
+          <div className="col-span-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Sparkles className="size-4 text-primary" />
+              {t(
+                "endpoints.simplified.autoConfigured",
+                "Model, engine and resources are auto-configured from the selected variant.",
               )}
-            />
-          </Button>
-        </div>
-      </FormCardGrid>
-    ) : null,
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvanced((v) => !v)}
+            >
+              {showAdvanced
+                ? t(
+                    "endpoints.simplified.hideAdvanced",
+                    "Hide advanced options",
+                  )
+                : t("endpoints.simplified.showAdvanced", "Show all options")}
+              <ChevronDown
+                className={cn(
+                  "ml-1 size-4 transition-transform",
+                  showAdvanced && "rotate-180",
+                )}
+              />
+            </Button>
+          </div>
+        </FormCardGrid>
+      ) : null,
   };
 };

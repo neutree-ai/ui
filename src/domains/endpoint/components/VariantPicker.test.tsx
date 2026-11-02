@@ -35,4 +35,55 @@ describe("VariantPicker", () => {
 
     expect(onChange).toHaveBeenCalledWith("throughput");
   });
+
+  it("renders a native radio group for the wizard variant field", () => {
+    const onChange = vi.fn();
+
+    render(
+      <VariantPicker
+        layout="radio"
+        variants={{
+          bf16: {
+            model: {
+              registry: "model-nfs",
+              name: "qwen3.6-27b",
+              version: "",
+              file: "",
+              task: "text-generation",
+            },
+            vram_minimum_gb: 54,
+          },
+          fp8: {
+            model: {
+              registry: "huggingface",
+              name: "Qwen/Qwen3.6-27B-FP8",
+              version: "",
+              file: "",
+              task: "text-generation",
+            },
+            vram_minimum_gb: 27,
+          },
+        }}
+        onChange={onChange}
+        value="bf16"
+      />,
+    );
+
+    expect(screen.getByText("model-nfs")).toBeTruthy();
+    expect(screen.getByText("huggingface")).toBeTruthy();
+    expect(
+      screen.getByRole("radiogroup", {
+        name: "endpoints.recipe.selectVariant",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole<HTMLInputElement>("radio", { name: "bf16" }).checked,
+    ).toBe(true);
+    expect(
+      screen.getByRole<HTMLInputElement>("radio", { name: "fp8" }).checked,
+    ).toBe(false);
+
+    fireEvent.click(screen.getByRole("radio", { name: "fp8" }));
+    expect(onChange).toHaveBeenCalledWith("fp8");
+  });
 });
