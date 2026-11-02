@@ -205,7 +205,7 @@ describe("EndpointDeploymentWizard", () => {
   it("switches between weights and the endpoint configuration summary", () => {
     render(<Harness />);
 
-    expect(screen.getByText("ESTIMATE_FIELDS")).toBeTruthy();
+    screen.getByText("ESTIMATE_FIELDS");
     expect(screen.queryByText("CONFIGURATION_FIELDS")).toBeNull();
 
     fireEvent.mouseDown(
@@ -215,29 +215,29 @@ describe("EndpointDeploymentWizard", () => {
       { button: 0 },
     );
 
-    expect(screen.getByText("CONFIGURATION_FIELDS")).toBeTruthy();
+    screen.getByText("CONFIGURATION_FIELDS");
     expect(screen.queryByText("ESTIMATE_FIELDS")).toBeNull();
   });
 
   it("moves through the five deployment steps", () => {
     render(<Harness />);
 
-    expect(screen.getByText("MODEL_FIELDS")).toBeTruthy();
-    expect(screen.getByText("ESTIMATE_FIELDS")).toBeTruthy();
+    screen.getByText("MODEL_FIELDS");
+    screen.getByText("ESTIMATE_FIELDS");
 
     fireEvent.click(
       screen.getByRole("button", {
         name: /endpoints.wizard.steps.resources/,
       }),
     );
-    expect(screen.getByText("RESOURCE_FIELDS")).toBeTruthy();
+    screen.getByText("RESOURCE_FIELDS");
 
     fireEvent.click(
       screen.getByRole("button", {
         name: /endpoints.wizard.steps.runtime/,
       }),
     );
-    expect(screen.getByText("RUNTIME_FIELDS")).toBeTruthy();
+    screen.getByText("RUNTIME_FIELDS");
   });
 
   it("shows grouped review values and can return to a step", () => {
@@ -249,7 +249,7 @@ describe("EndpointDeploymentWizard", () => {
       }),
     );
 
-    expect(screen.getByText("endpoints.wizard.review.title")).toBeTruthy();
+    screen.getByText("endpoints.wizard.review.title");
     expect(
       screen.getByTestId("review-endpoint-identity").textContent,
     ).toContain("chat");
@@ -265,15 +265,15 @@ describe("EndpointDeploymentWizard", () => {
     );
     expect(screen.getByTestId("advanced-review").textContent).toBe("true");
     const reviewSurface = within(screen.getByTestId("review-single-surface"));
-    expect(reviewSurface.getByTestId("review-deployment-risks")).toBeTruthy();
-    expect(reviewSurface.getByTestId("deployment-checks")).toBeTruthy();
-    expect(reviewSurface.getByTestId("advanced-review")).toBeTruthy();
+    reviewSurface.getByTestId("review-deployment-risks");
+    reviewSurface.getByTestId("deployment-checks");
+    reviewSurface.getByTestId("advanced-review");
 
     const editButtons = screen.getAllByRole("button", {
       name: "endpoints.wizard.review.edit",
     });
     fireEvent.click(editButtons[0]);
-    expect(screen.getByText("MODEL_FIELDS")).toBeTruthy();
+    screen.getByText("MODEL_FIELDS");
   });
 
   it("keeps deployment risks and requested capacity in review", () => {
@@ -285,7 +285,7 @@ describe("EndpointDeploymentWizard", () => {
       }),
     );
 
-    expect(screen.getByTestId("review-runtime-download")).toBeTruthy();
+    screen.getByTestId("review-runtime-download");
     expect(
       screen.getByTestId("review-unverified-accelerator").textContent,
     ).toContain("endpoints.recipe.requiredVram");
@@ -310,9 +310,7 @@ describe("EndpointDeploymentWizard", () => {
       }),
     );
 
-    expect(
-      screen.getByText(/endpoints\.wizard\.step\.needsAttention/),
-    ).toBeTruthy();
+    screen.getByText(/endpoints\.wizard\.step\.needsAttention/);
     expect(
       screen.queryByLabelText(/endpoints\.wizard\.summary\.issueCount/),
     ).toBeNull();
@@ -357,10 +355,8 @@ describe("EndpointDeploymentWizard", () => {
         name: /endpoints\.wizard\.steps\.confirm/,
       }),
     );
-    expect(screen.getByText("endpoints.wizard.review.editTitle")).toBeTruthy();
-    expect(
-      screen.getByText("endpoints.wizard.review.redeployHint"),
-    ).toBeTruthy();
+    screen.getByText("endpoints.wizard.review.editTitle");
+    screen.getByText("endpoints.wizard.review.redeployHint");
     expect(screen.getByTestId("review-change-list").textContent).toContain(
       "common.fields.cpu",
     );
@@ -377,7 +373,7 @@ describe("EndpointDeploymentWizard", () => {
       }),
     );
 
-    expect(screen.getByText("endpoints.wizard.review.noChanges")).toBeTruthy();
+    screen.getByText("endpoints.wizard.review.noChanges");
     expect(screen.queryByTestId("review-change-list")).toBeNull();
     expect(
       screen.queryByText("endpoints.wizard.review.redeployHint"),
@@ -409,9 +405,7 @@ describe("EndpointDeploymentWizard", () => {
     expect(
       screen.getAllByText(/endpoints.wizard.step.completed/).length,
     ).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/endpoints.wizard.step.needsAttention/),
-    ).toBeTruthy();
+    screen.getByText(/endpoints.wizard.step.needsAttention/);
   });
 
   it("makes review checks reflect actual deployment issues", () => {
@@ -431,9 +425,7 @@ describe("EndpointDeploymentWizard", () => {
     expect(screen.getByTestId("deployment-checks").dataset.state).toBe(
       "issues",
     );
-    expect(
-      screen.getByText("endpoints.wizard.review.checkResourcesAttention"),
-    ).toBeTruthy();
+    screen.getByText("endpoints.wizard.review.checkResourcesAttention");
     expect(screen.getAllByText("Server rejected the deployment").length).toBe(
       1,
     );

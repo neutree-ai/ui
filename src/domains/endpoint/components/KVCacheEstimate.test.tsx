@@ -411,11 +411,9 @@ describe("KVCacheEstimate starting values", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", {
-        name: "endpoints.kvCache.sourceHints.deployment",
-      }),
-    ).toBeTruthy();
+    screen.getByRole("button", {
+      name: "endpoints.kvCache.sourceHints.deployment",
+    });
 
     fireEvent.change(tokenInput(), { target: { value: "4096" } });
 

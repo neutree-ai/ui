@@ -801,7 +801,9 @@ describe("vGPU split inputs", () => {
       if (modeControl) selectGpuAllocationMode("vgpu");
 
       if (supported?.length === 0) {
-        expect(screen.queryByTestId("endpoint-virtual-card-split-group")).toBeNull();
+        expect(
+          screen.queryByTestId("endpoint-virtual-card-split-group"),
+        ).toBeNull();
         await waitFor(() =>
           expect(fieldValue(result, VIRTUALIZATION)).toBeUndefined(),
         );
@@ -1356,9 +1358,7 @@ describe("validation", () => {
 
     expect(
       formError(result, "spec.deployment_options.scheduler.type"),
-    ).toMatchObject(
-      { message: "endpoints.messages.schedulerTypeRequired" },
-    );
+    ).toMatchObject({ message: "endpoints.messages.schedulerTypeRequired" });
   });
 
   it.each([

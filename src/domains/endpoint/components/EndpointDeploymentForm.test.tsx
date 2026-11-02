@@ -221,14 +221,10 @@ describe("EndpointDeploymentForm", () => {
   it("keeps create available while reviewing any step", () => {
     render(<EndpointDeploymentForm action="create" />);
 
-    expect(
-      screen.getByRole("button", { name: "endpoints.wizard.create" }),
-    ).toBeTruthy();
+    screen.getByRole("button", { name: "endpoints.wizard.create" });
     fireEvent.click(screen.getByRole("button", { name: "go to review" }));
     expect(screen.getByTestId("active-step").textContent).toBe("4");
-    expect(
-      screen.getByRole("button", { name: "endpoints.wizard.create" }),
-    ).toBeTruthy();
+    screen.getByRole("button", { name: "endpoints.wizard.create" });
   });
 
   it("keeps edit save actionable without submitting when there are no changes", () => {
@@ -280,11 +276,9 @@ describe("EndpointDeploymentForm", () => {
     expect(screen.getByTestId("active-step").textContent).toBe("0");
     expect(screen.getByTestId("has-changes").textContent).toBe("true");
     expect(screen.getByTestId("modified-steps").textContent).toBe("0,1");
-    expect(
-      screen.getByRole("button", {
-        name: "endpoints.wizard.review.redeployDetails:endpoints.fields.replicas, common.fields.cpu",
-      }),
-    ).toBeTruthy();
+    screen.getByRole("button", {
+      name: "endpoints.wizard.review.redeployDetails:endpoints.fields.replicas, common.fields.cpu",
+    });
     expect(
       screen
         .getByRole("button", { name: "endpoints.wizard.saveAndRedeploy" })

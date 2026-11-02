@@ -120,7 +120,7 @@ describe("EndpointConfigurationSummary", () => {
       "16 GiB",
       "50%",
     ]) {
-      expect(screen.getByText(text)).toBeTruthy();
+      screen.getByText(text);
     }
     expect(screen.getAllByText("2")).toHaveLength(2);
     for (const [key, values] of [
@@ -155,6 +155,6 @@ describe("EndpointConfigurationSummary", () => {
     );
 
     expect(screen.queryByText("endpoints.fields.modelRegistry")).toBeNull();
-    expect(screen.getByText("vllm v0.32.0")).toBeTruthy();
+    screen.getByText("vllm v0.32.0");
   });
 });

@@ -1,9 +1,9 @@
+import type { EngineVersion } from "@/domains/engine/types";
 import {
   compareVersionStrings,
   newestVersion,
   sortVersionsNewestFirst as sortSharedVersionsNewestFirst,
 } from "@/foundation/lib/version-order";
-import type { EngineVersion } from "@/domains/engine/types";
 
 /**
  * Ascending order: negative when `a` is older than `b`, 0 when equal.

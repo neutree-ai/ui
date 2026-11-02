@@ -37,7 +37,7 @@ describe("ComposePreview", () => {
 
     const preview = screen.getByTestId("compose-preview");
     expect(preview.getAttribute("data-state")).toBe("ok");
-    expect(screen.getByText("Engine")).toBeTruthy();
+    screen.getByText("Engine");
     expect(screen.queryByTestId("compose-preview-toggle")).toBeNull();
     expect(
       preview.querySelector('[data-key-value-entry="max_model_len"]')

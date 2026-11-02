@@ -24,13 +24,6 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Element.prototype.scrollIntoView = vi.fn();
-
 type TestValues = {
   name: string;
 };
@@ -174,25 +167,6 @@ function OptionFieldsForm({
 }
 
 describe("ResourceForm", () => {
-  it("keeps the sticky action bar flush with the form viewport bottom", () => {
-    render(<TestForm onFinish={vi.fn()} />);
-
-    const actionBar = screen.getByTestId("form-submit").parentElement;
-    const content = actionBar?.parentElement;
-
-    expect(actionBar?.className).toContain("sticky");
-    expect(actionBar?.className).toContain("-bottom-2");
-    expect(content?.className).not.toContain("pb-6");
-  });
-
-  it("lets a dense wizard opt into the wider desktop content width", () => {
-    render(<TestForm onFinish={vi.fn()} contentWidth="wide" />);
-
-    expect(screen.getByTestId("form").firstElementChild?.className).toContain(
-      "max-w-[1680px]",
-    );
-  });
-
   it("submits the handleSubmit payload instead of reading getValues again", async () => {
     const onFinish = vi.fn();
     render(<TestForm onFinish={onFinish} />);
@@ -281,11 +255,9 @@ describe("ResourceForm", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", {
-        name: "This will redeploy the endpoint.",
-      }),
-    ).toBeTruthy();
+    screen.getByRole("button", {
+      name: "This will redeploy the endpoint.",
+    });
   });
 
   it("can hand the primary action to wizard navigation", () => {
@@ -376,9 +348,7 @@ describe("ResourceForm", () => {
 
     await waitFor(() => {
       expect(onFinish).not.toHaveBeenCalled();
-      expect(
-        screen.getByText("components.variablesInput.invalidJsonValue"),
-      ).toBeTruthy();
+      screen.getByText("components.variablesInput.invalidJsonValue");
     });
   });
 

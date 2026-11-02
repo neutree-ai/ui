@@ -19,7 +19,7 @@ describe("Disclosure", () => {
     expect(screen.queryByText("Expanded content")).toBeNull();
 
     fireEvent.click(trigger);
-    expect(screen.getByText("Expanded content")).toBeTruthy();
+    screen.getByText("Expanded content");
   });
 
   it("keeps independent actions outside the disclosure trigger", () => {
@@ -32,7 +32,7 @@ describe("Disclosure", () => {
       </Disclosure>,
     );
 
-    expect(screen.getByRole("button", { name: "Remove" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Provider" })).toBeTruthy();
+    screen.getByRole("button", { name: "Remove" });
+    screen.getByRole("button", { name: "Provider" });
   });
 });

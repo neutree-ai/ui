@@ -144,7 +144,7 @@ it("enables cache with its provider and default timeout without a selector", asy
   render(<Editor cache={null} save={save} />);
   fireEvent.click(screen.getByRole("switch"));
   expect(screen.queryByRole("combobox")).toBeNull();
-  expect(screen.getByRole("spinbutton")).toBeTruthy();
+  screen.getByRole("spinbutton");
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toEqual({
@@ -164,9 +164,7 @@ it("saves the common timeout option and rejects values outside its range", async
   fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "0" } });
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() =>
-    expect(
-      screen.getByText("endpoints.kvCacheSettings.invalidTimeout"),
-    ).toBeTruthy(),
+    screen.getByText("endpoints.kvCacheSettings.invalidTimeout"),
   );
   expect(save).not.toHaveBeenCalled();
   fireEvent.change(screen.getByRole("spinbutton"), {
@@ -220,7 +218,7 @@ it("clears the redeploy warning when cache returns to its persisted value", () =
   render(<Editor cache={null} save={vi.fn()} />);
 
   fireEvent.click(screen.getByRole("switch"));
-  expect(screen.getByText("endpoints.kvCacheSettings.redeploy")).toBeTruthy();
+  screen.getByText("endpoints.kvCacheSettings.redeploy");
 
   fireEvent.click(screen.getByRole("switch"));
   expect(screen.queryByText("endpoints.kvCacheSettings.redeploy")).toBeNull();
@@ -470,35 +468,25 @@ it("renders wizard cache controls as their own form section", () => {
 
   const section = screen.getByTestId("endpoint-kv-cache-section");
   const header = within(section).getByTestId("endpoint-kv-cache-header");
-  expect(
-    within(header).getByRole("heading", {
-      name: "endpoints.sections.kvCache",
-    }),
-  ).toBeTruthy();
-  expect(
-    within(header).getByRole("button", {
-      name: "endpoints.kvCacheSettings.viewConfig",
-    }),
-  ).toBeTruthy();
-  expect(
-    within(header).getByRole("button", {
-      name: "endpoints.kvCacheSettings.scheduling",
-    }),
-  ).toBeTruthy();
+  within(header).getByRole("heading", {
+    name: "endpoints.sections.kvCache",
+  });
+  within(header).getByRole("button", {
+    name: "endpoints.kvCacheSettings.viewConfig",
+  });
+  within(header).getByRole("button", {
+    name: "endpoints.kvCacheSettings.scheduling",
+  });
   expect(
     within(header).queryByRole("switch", {
       name: "endpoints.kvCacheSettings.enable",
     }),
   ).toBeNull();
   const toggle = within(section).getByTestId("endpoint-kv-cache-toggle");
-  expect(
-    within(toggle).getByText("endpoints.kvCacheSettings.enableLabel"),
-  ).toBeTruthy();
-  expect(
-    within(toggle).getByRole("switch", {
-      name: "endpoints.kvCacheSettings.enable",
-    }),
-  ).toBeTruthy();
+  within(toggle).getByText("endpoints.kvCacheSettings.enableLabel");
+  within(toggle).getByRole("switch", {
+    name: "endpoints.kvCacheSettings.enable",
+  });
   expect(screen.queryByTestId("endpoint-kv-cache")).toBeNull();
 });
 
@@ -511,6 +499,6 @@ it("toggles cache from the wizard form field", () => {
 
   expect(cacheSwitch.getAttribute("aria-checked")).toBe("true");
   const timeout = screen.getByTestId("endpoint-kv-cache-config");
-  expect(within(timeout).getByRole("spinbutton")).toBeTruthy();
+  within(timeout).getByRole("spinbutton");
   expect(toggle.parentElement).toBe(timeout.parentElement);
 });

@@ -69,13 +69,11 @@ describe("VariantPicker", () => {
       />,
     );
 
-    expect(screen.getByText("model-nfs")).toBeTruthy();
-    expect(screen.getByText("huggingface")).toBeTruthy();
-    expect(
-      screen.getByRole("radiogroup", {
-        name: "endpoints.recipe.selectVariant",
-      }),
-    ).toBeTruthy();
+    screen.getByText("model-nfs");
+    screen.getByText("huggingface");
+    screen.getByRole("radiogroup", {
+      name: "endpoints.recipe.selectVariant",
+    });
     expect(
       screen.getByRole<HTMLInputElement>("radio", { name: "bf16" }).checked,
     ).toBe(true);

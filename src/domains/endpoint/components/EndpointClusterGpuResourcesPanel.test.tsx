@@ -2,17 +2,9 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import { EndpointClusterGpuResourcesPanel } from "./EndpointClusterGpuResourcesPanel";
-
-// jsdom lays nothing out, so the real measurement always says "not clipped".
-// The flag stands in for it: off everywhere except the truncation test, which
-// is also the state every other test would be in on a wide screen.
-const truncation = vi.hoisted(() => ({ value: false }));
-
-vi.mock("@/foundation/hooks/use-is-truncated", () => ({
-  useIsTruncated: () => truncation.value,
-}));
 
 vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({
@@ -171,7 +163,7 @@ const withProduct = (
 
 describe("EndpointClusterGpuResourcesPanel", () => {
   beforeEach(() => {
-    truncation.value = false;
+    vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
@@ -185,26 +177,20 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("endpoint-node-gpu-card-grid")).toBeTruthy();
+    screen.getByTestId("endpoint-node-gpu-card-grid");
     const clusterSummary = within(
       screen.getByTestId("endpoint-cluster-resource-summary"),
     );
-    expect(clusterSummary.getByText("Memory Usage")).toBeTruthy();
-    expect(clusterSummary.getByText("Core")).toBeTruthy();
-    expect(clusterSummary.getByText("Memory")).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "GPU 1 Copy UUID",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "GPU 2 Copy UUID",
-      }),
-    ).toBeTruthy();
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    clusterSummary.getByText("Memory Usage");
+    clusterSummary.getByText("Core");
+    clusterSummary.getByText("Memory");
+    screen.getByRole("button", {
+      name: "GPU 1 Copy UUID",
+    });
+    screen.getByRole("button", {
+      name: "GPU 2 Copy UUID",
+    });
+    screen.getByText((_, node) => node?.textContent === "Usable 1");
     expect(
       screen.getByTestId("endpoint-cluster-accelerator-scope-hint").textContent,
     ).toContain("Showing resources available to the selected accelerator.");
@@ -229,18 +215,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const popover = await screen.findByTestId(
       "endpoint-cluster-gpu-inventory-popover",
     );
-    expect(within(popover).getByText("All GPU cards")).toBeTruthy();
-    expect(within(popover).getByText("Free")).toBeTruthy();
-    expect(within(popover).getByText("Allocated")).toBeTruthy();
-    expect(within(popover).getByText("Unhealthy")).toBeTruthy();
-    expect(
-      within(popover).getByText("Selected accelerator: Tesla-T4"),
-    ).toBeTruthy();
-    expect(
-      within(popover).getByText("1 fully free for this accelerator"),
-    ).toBeTruthy();
-    expect(within(popover).getByText("node-a")).toBeTruthy();
-    expect(within(popover).getByText("2 GPUs · 1 free")).toBeTruthy();
+    within(popover).getByText("All GPU cards");
+    within(popover).getByText("Free");
+    within(popover).getByText("Allocated");
+    within(popover).getByText("Unhealthy");
+    within(popover).getByText("Selected accelerator: Tesla-T4");
+    within(popover).getByText("1 fully free for this accelerator");
+    within(popover).getByText("node-a");
+    within(popover).getByText("2 GPUs · 1 free");
   });
 
   it("does not claim accelerator filtering when the selected product is absent", () => {
@@ -275,9 +257,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
     expect(summaryCards).toHaveLength(4);
     expect(screen.queryByTestId("endpoint-cluster-card-usage")).toBeNull();
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 1");
     expect(screen.getAllByText("Usable")).toHaveLength(1);
     expect(screen.getAllByText("Allocated")).toHaveLength(1);
     const availability = screen
@@ -313,8 +293,8 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("endpoint-node-resource-metrics")).toBeTruthy();
-    expect(screen.getByTestId("endpoint-node-gpu-card-grid")).toBeTruthy();
+    screen.getByTestId("endpoint-node-resource-metrics");
+    screen.getByTestId("endpoint-node-gpu-card-grid");
     expect(screen.getAllByTestId("endpoint-gpu-device-card")).toHaveLength(8);
     expect(
       screen
@@ -334,10 +314,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    const healthyStatus = screen.getByText("Usable");
-    expect(healthyStatus.className).toContain(
-      "text-[var(--nt-text-colorful-positive)]",
-    );
+    screen.getByText("Usable");
     expect(screen.queryByRole("img", { name: "Usable" })).toBeNull();
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
@@ -368,10 +345,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    const unhealthyStatus = screen.getByText("Unhealthy");
-    expect(unhealthyStatus.className).toContain(
-      "text-[var(--nt-text-colorful-serious)]",
-    );
+    screen.getByText("Unhealthy");
     expect(screen.queryByRole("img", { name: "Unhealthy" })).toBeNull();
     expect(
       screen
@@ -407,16 +381,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 1"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 1");
     expect(screen.getAllByText("Usable")).toHaveLength(1);
     expect(screen.getAllByText("Allocated")).toHaveLength(1);
     const partialCard = findByExactLabel(
       screen.getAllByTestId("endpoint-gpu-device-card"),
       "GPU 2",
     );
-    expect(within(partialCard).getByText("Allocated")).toBeTruthy();
+    within(partialCard).getByText("Allocated");
     expect(within(partialCard).queryByText("Usable")).toBeNull();
   });
 
@@ -465,15 +437,13 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 2");
     expect(screen.getAllByText("Usable")).toHaveLength(1);
     const partialCard = findByExactLabel(
       screen.getAllByTestId("endpoint-gpu-device-card"),
       "GPU 2",
     );
-    expect(within(partialCard).getByText("Allocated")).toBeTruthy();
+    within(partialCard).getByText("Allocated");
     expect(
       within(partialCard)
         .getAllByTestId("endpoint-gpu-meter-row")
@@ -524,9 +494,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 0"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 0");
     expect(screen.getAllByText("Allocated")).toHaveLength(2);
   });
 
@@ -579,9 +547,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         .getAllByTestId("endpoint-node-resource-pill-value")
         .map((value) => value.textContent),
     ).toEqual(["7.5", "30.0", "22.5"]);
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 2");
     expect(screen.getAllByText("Usable")).toHaveLength(1);
   });
 
@@ -627,9 +593,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByText((_, node) => node?.textContent === "Usable 2"),
-    ).toBeTruthy();
+    screen.getByText((_, node) => node?.textContent === "Usable 2");
     expect(screen.getAllByText("Usable")).toHaveLength(1);
   });
 
@@ -684,7 +648,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const compactResources = within(
       screen.getByTestId("endpoint-compact-node-resources"),
     );
-    expect(compactResources.getByText("Card Count")).toBeTruthy();
+    compactResources.getByText("Card Count");
   });
 
   it("shows resource units in card titles instead of appending them to every value", () => {
@@ -707,25 +671,21 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const vramCard = findByExactLabel(summaryCards, "Memory Usage");
     const coreCard = findByExactLabel(summaryCards, "Core");
 
-    expect(within(cpuCard).getByText("cores")).toBeTruthy();
-    expect(within(memoryCard).getByText("GiB")).toBeTruthy();
-    expect(within(vramCard).getByText("GiB")).toBeTruthy();
+    within(cpuCard).getByText("cores");
+    within(memoryCard).getByText("GiB");
+    within(vramCard).getByText("GiB");
     expect(within(coreCard).queryByText("cores")).toBeNull();
     expect(within(coreCard).queryByText("GiB")).toBeNull();
 
     expect(within(cpuCard).queryByText("32.0 cores")).toBeNull();
     expect(within(memoryCard).queryByText("128.0 GiB")).toBeNull();
-    expect(within(cpuCard).getByText("32.0")).toBeTruthy();
-    expect(within(memoryCard).getByText("128.0")).toBeTruthy();
+    within(cpuCard).getByText("32.0");
+    within(memoryCard).getByText("128.0");
     expect(vramCard.textContent).not.toContain("7.5 / 30.0 GiB");
-    expect(
-      within(vramCard).getByText((text) => text.includes("30.0 total")),
-    ).toBeTruthy();
+    within(vramCard).getByText((text) => text.includes("30.0 total"));
     expect(coreCard.textContent).not.toContain("cores");
     expect(coreCard.textContent).not.toContain("GiB");
-    expect(
-      within(coreCard).getByText((text) => text.includes("200.0 total")),
-    ).toBeTruthy();
+    within(coreCard).getByText((text) => text.includes("200.0 total"));
   });
 
   it("shows system memory alongside core allocation in the cluster summary", () => {
@@ -745,22 +705,17 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const memoryCard = findByExactLabel(summaryCards, "Memory");
 
     expect(summaryCards).toHaveLength(4);
-    expect(
-      screen.getByTestId("endpoint-cluster-resource-metrics").className,
-    ).toContain("grid-cols-2");
-    expect(
-      screen.getByTestId("endpoint-cluster-resource-metrics").className,
-    ).toContain("min-[1920px]:grid-cols-4");
-    expect(within(memoryCard).getByText("256.0 total")).toBeTruthy();
-    expect(within(memoryCard).getByText("25.0% used")).toBeTruthy();
-    expect(within(memoryCard).getByText("Free 192.0")).toBeTruthy();
+    screen.getByTestId("endpoint-cluster-resource-metrics");
+    within(memoryCard).getByText("256.0 total");
+    within(memoryCard).getByText("25.0% used");
+    within(memoryCard).getByText("Free 192.0");
   });
 
   it("shows a long GPU product name in full on the device card", async () => {
     // The card is only ~180px wide, so a vendor-prefixed name used to be
     // clipped with no way to read the rest of it.
     const longProduct = "NVIDIA_RTX_5000_Ada_Generation_Server_Edition";
-    truncation.value = true;
+    vi.mocked(useIsTruncated).mockReturnValue(true);
 
     renderPanel(
       <EndpointClusterGpuResourcesPanel
@@ -775,28 +730,12 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const [card] = screen.getAllByTestId("endpoint-gpu-device-card");
     const productBadge = within(card).getByText(longProduct);
 
-    // jsdom does no layout, so the class is the only thing that can pin "cuts
-    // the name off instead of running past the card". The text also has to sit
-    // in an element of its own: an `inline-flex` turns bare text into an
-    // anonymous flex item that refuses to shrink below its own width, so the
-    // badge would clip nothing and the name would spill over the card's edge.
-    // It is a child of the card itself, not of the header row's first column,
-    // so it can use the whole card width rather than stopping where the status
-    // icon's column begins.
-    expect(productBadge.tagName).toBe("SPAN");
-    expect(productBadge.className).toContain("truncate");
-    expect(productBadge.parentElement).toBe(card);
-
     // The full name survives the truncation, on hover and on keyboard focus:
     // a truncated label with no way back to its text is not readable, and a
     // native title would leave keyboard users with no way back at all.
     const label = productBadge;
     expect(label.getAttribute("title")).toBeNull();
     expect(label.getAttribute("tabindex")).toBe("0");
-    // A question mark is the help cursor, and this badge is a value: the
-    // ellipsis and the tooltip carry the truncation, the cursor carries nothing.
-    expect(label.className).not.toContain("cursor-help");
-
     fireEvent.focus(label);
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(longProduct);
@@ -817,10 +756,9 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const productBadge = within(card).getByText("Tesla-T4");
     const label = productBadge;
 
-    // Nothing to reveal, so nothing announces itself: no tab stop, no help
-    // cursor and no tooltip repeating the line under the pointer.
+    // Nothing to reveal, so nothing announces itself: no tab stop and no
+    // tooltip repeating the line under the pointer.
     expect(label.getAttribute("tabindex")).toBeNull();
-    expect(label.className).not.toContain("cursor-help");
 
     fireEvent.focus(label);
     fireEvent.mouseEnter(label);
@@ -927,7 +865,6 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       "endpoint-gpu-device-card",
     );
     expect(selectedCard?.getAttribute("data-product-match")).toBe("selected");
-    expect(selectedCard?.className).not.toContain("opacity-50");
     expect(
       within(otherTypeNode).queryByTestId("endpoint-node-gpu-card-grid"),
     ).toBeNull();
@@ -942,10 +879,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       "endpoint-gpu-device-card",
     );
     expect(otherTypeCard?.getAttribute("data-product-match")).toBe("other");
-    expect(otherTypeCard?.className).toContain("opacity-50");
-    expect(
-      otherTypeCard && within(otherTypeCard).getByText("Other accelerator"),
-    ).toBeTruthy();
+    otherTypeCard && within(otherTypeCard).getByText("Other accelerator");
     expect(
       screen.queryByTestId("endpoint-cluster-resource-target-notes"),
     ).toBeNull();

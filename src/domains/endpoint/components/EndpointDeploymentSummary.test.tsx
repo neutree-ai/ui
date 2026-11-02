@@ -89,20 +89,23 @@ describe("EndpointDeploymentSummary", () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByText("43.1 GB")).toBeTruthy());
-    expect(screen.getByTestId("deployment-capacity-bar")).toBeTruthy();
-    expect(screen.getByText("endpoints.weights.declared 27 GB")).toBeTruthy();
+    await waitFor(() => screen.getByText("43.1 GB"));
+    screen.getByTestId("deployment-capacity-bar");
+    screen.getByText("endpoints.weights.declared 27 GB");
     expect(screen.queryByText("qwen3-6-27b")).toBeNull();
-    expect(screen.getByTestId("vram-check-badge")).toBeTruthy();
+    screen.getByTestId("vram-check-badge");
 
     fireEvent.click(
       screen.getByRole("button", {
         name: "endpoints.wizard.summary.showEstimateDetails",
       }),
     );
-    expect(screen.getByTestId("kv-details").parentElement?.className).not.toBe(
-      "hidden",
-    );
+    expect(
+      screen
+        .getByTestId("kv-details")
+        .closest("[aria-hidden]")
+        ?.getAttribute("aria-hidden"),
+    ).toBe("false");
   });
 
   it("does not invent a total when the available facts are insufficient", () => {
@@ -117,9 +120,7 @@ describe("EndpointDeploymentSummary", () => {
       />,
     );
 
-    expect(
-      screen.getByText("endpoints.wizard.summary.estimateUnavailable"),
-    ).toBeTruthy();
+    screen.getByText("endpoints.wizard.summary.estimateUnavailable");
     expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
   });
 
@@ -132,10 +133,8 @@ describe("EndpointDeploymentSummary", () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByText("16.1 GB")).toBeTruthy());
-    expect(
-      screen.getByText("endpoints.wizard.summary.partialPerReplica"),
-    ).toBeTruthy();
+    await waitFor(() => screen.getByText("16.1 GB"));
+    screen.getByText("endpoints.wizard.summary.partialPerReplica");
     expect(screen.queryByText(/Weights 0 GB/)).toBeNull();
   });
 
@@ -153,6 +152,6 @@ describe("EndpointDeploymentSummary", () => {
       />,
     );
 
-    expect(screen.getByText("endpoints.weights.estimated 16 GB")).toBeTruthy();
+    screen.getByText("endpoints.weights.estimated 16 GB");
   });
 });

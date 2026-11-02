@@ -38,8 +38,8 @@ describe("ModelOptionalFields", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
 
     fireEvent.click(toggle);
-    expect(screen.getByTestId("field-spec.model.version")).toBeTruthy();
-    expect(screen.getByTestId("field-spec.model.file")).toBeTruthy();
+    screen.getByTestId("field-spec.model.version");
+    screen.getByTestId("field-spec.model.file");
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
 
     fireEvent.click(toggle);
@@ -54,6 +54,6 @@ describe("ModelOptionalFields", () => {
         .getByTestId("model-optional-fields-toggle")
         .getAttribute("aria-expanded"),
     ).toBe("true");
-    expect(screen.getByTestId("field-spec.model.version")).toBeTruthy();
+    screen.getByTestId("field-spec.model.version");
   });
 });
