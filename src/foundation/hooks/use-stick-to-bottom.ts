@@ -14,6 +14,14 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function snapshot(element: HTMLElement) {
+  return {
+    top: element.scrollTop,
+    width: element.clientWidth,
+    height: element.clientHeight,
+  };
+}
+
 /**
  * Keeps a scroll container at its end while content grows, unless the reader
  * has scrolled away from it.
@@ -84,11 +92,7 @@ export function useStickToBottom() {
     const resized =
       element.clientWidth !== previous.width ||
       element.clientHeight !== previous.height;
-    lastScrollRef.current = {
-      top: element.scrollTop,
-      width: element.clientWidth,
-      height: element.clientHeight,
-    };
+    lastScrollRef.current = snapshot(element);
 
     if (programmaticRef.current) {
       // A smooth scroll reports every intermediate position, and those are not
@@ -140,11 +144,7 @@ export function useStickToBottom() {
     const element = scrollRef.current;
     if (!element) return;
 
-    lastScrollRef.current = {
-      top: element.scrollTop,
-      width: element.clientWidth,
-      height: element.clientHeight,
-    };
+    lastScrollRef.current = snapshot(element);
     element.addEventListener("scroll", handleScroll, { passive: true });
     return () => element.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);

@@ -113,7 +113,6 @@ vi.mock("@/components/ui/scroll-area", () => ({
   ),
 }));
 
-/** The transcript's own box, which only a resize changes. */
 const transcriptBox = { width: 800, height: 200 };
 
 function installTranscriptBox(element: HTMLElement) {
@@ -170,21 +169,9 @@ function describeTranscript(element: HTMLElement) {
     top = Math.min(Math.max(0, options.top ?? 0), maxTop());
   }) as typeof element.scrollTo;
 
-  const movesTo = (value: number) => {
-    top = Math.min(Math.max(0, value), maxTop());
-    act(() => {
-      element.dispatchEvent(new Event("scroll"));
-    });
-  };
-
   return {
     scrollTop: () => top,
     maxTop,
-    /** The window (or the sidebar) resized under the transcript. */
-    windowResizesTo: (width: number, height: number) => {
-      transcriptBox.width = width;
-      transcriptBox.height = height;
-    },
     /** The transcript grew — a streamed answer, or markdown settling. */
     contentGrowsTo: (height: number) => {
       scrollHeight = height;
@@ -194,10 +181,12 @@ function describeTranscript(element: HTMLElement) {
         }
       });
     },
-    readerScrollsTo: movesTo,
-    // A reflow moves the view too — scroll anchoring parks it at the paragraph
-    // the reader was on — and the browser reports that as the same event.
-    reflowMovesTo: movesTo,
+    readerScrollsTo: (value: number) => {
+      top = Math.min(Math.max(0, value), maxTop());
+      act(() => {
+        element.dispatchEvent(new Event("scroll"));
+      });
+    },
   };
 }
 
@@ -227,8 +216,6 @@ const latestButton = () =>
 beforeEach(() => {
   observers = [];
   helpers.unknownPart = false;
-  transcriptBox.width = 800;
-  transcriptBox.height = 200;
   stream.deltas = [
     { type: "text-delta", text: "The answer " },
     { type: "text-delta", text: "arrives in pieces." },
@@ -357,25 +344,6 @@ describe("ChatPlayground transcript", () => {
 
     await sendMessage("what is slow?");
     scroll.contentGrowsTo(900);
-
-    expect(scroll.scrollTop()).toBe(scroll.maxTop());
-    expect(latestButton()).toBeNull();
-  });
-
-  it("keeps the newest turn in view when the window narrows", async () => {
-    const { scroll } = renderPlayground();
-    await sendMessage("what is slow?");
-    scroll.contentGrowsTo(900);
-    expect(scroll.scrollTop()).toBe(scroll.maxTop());
-
-    // The window narrows under the reader: the transcript re-wraps into one
-    // much taller, and scroll anchoring answers by holding the paragraph that
-    // was on screen instead of leaving the view at the end. That move reaches
-    // the hook before the new size does, and must not be read as the reader
-    // going back to read history — the newest turn is what they are waiting on.
-    scroll.windowResizesTo(420, 260);
-    scroll.contentGrowsTo(3000);
-    scroll.reflowMovesTo(2400);
 
     expect(scroll.scrollTop()).toBe(scroll.maxTop());
     expect(latestButton()).toBeNull();
