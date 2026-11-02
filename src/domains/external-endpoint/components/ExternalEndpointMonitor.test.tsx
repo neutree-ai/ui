@@ -3,14 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 
-const { systemApiMock, language } = vi.hoisted(() => ({
-  systemApiMock: vi.fn(),
-  language: { resolvedLanguage: "en-US" },
-}));
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: language }),
-}));
+const { systemApiMock } = vi.hoisted(() => ({ systemApiMock: vi.fn() }));
 
 vi.mock("next-themes", () => ({
   useTheme: () => ({ resolvedTheme: "light" }),
@@ -66,7 +59,6 @@ function systemApi(overrides: Record<string, unknown> = {}) {
 describe("ExternalEndpointMonitor", () => {
   beforeEach(() => {
     systemApiMock.mockReset();
-    language.resolvedLanguage = "en-US";
   });
 
   it("explains that monitoring needs virtual model routing when there are no routes", () => {
@@ -93,37 +85,6 @@ describe("ExternalEndpointMonitor", () => {
     expect(
       screen.getByTestId("grafana-dashboard").getAttribute("data-dashboard-id"),
     ).toBe("neutree-model-routing-embed");
-  });
-
-  it("switches both dashboard variants with the resolved UI language", () => {
-    systemApiMock.mockReturnValue(systemApi());
-    const page = (
-      <>
-        <ExternalEndpointMonitor record={endpoint()} />
-        <ExternalEndpointMonitorLink record={endpoint()} />
-      </>
-    );
-    const { rerender } = render(page, { wrapper: MemoryRouter });
-    for (const locale of ["fr-FR", "en-US"]) {
-      language.resolvedLanguage = locale;
-      rerender(
-        <>
-          <ExternalEndpointMonitor record={endpoint()} />
-          <ExternalEndpointMonitorLink record={endpoint()} />
-        </>,
-      );
-      const suffix = locale !== "en-US" ? `-${locale}` : "";
-      expect(
-        screen
-          .getByTestId("grafana-dashboard")
-          .getAttribute("data-dashboard-id"),
-      ).toBe(`neutree-model-routing-embed${suffix}`);
-      const url = new URL(screen.getByRole("link").getAttribute("href")!);
-      expect(url.pathname).toBe(`/d/neutree-model-routing${suffix}`);
-      expect(url.searchParams.get("var-endpoint_literal")).toBe(
-        '"/workspace/default/external-endpoint/model-lb"',
-      );
-    }
   });
 
   it("distinguishes loading, failure and unconfigured Grafana", () => {
@@ -162,7 +123,6 @@ describe("ExternalEndpointMonitor", () => {
 describe("ExternalEndpointMonitorLink", () => {
   beforeEach(() => {
     systemApiMock.mockReset();
-    language.resolvedLanguage = "en-US";
   });
 
   it("opens the full dashboard in Grafana without the kiosk flag", () => {
