@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   flopsTotals,
   formatFlops,
+  observedDevices,
   parseTflops,
   peakTflops,
   productPeakTflops,
-  observedDevices,
 } from "./accelerator-tflops";
 
 describe("FP16 estimates", () => {

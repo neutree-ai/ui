@@ -419,10 +419,16 @@ it("preserves numbering, copy and core quota with observed memory", () => {
       renderMemory={(_device, index) => <span>Observed card {index + 1}</span>}
     />,
   );
-  expect(screen.getByText("GPU 1")).toBeTruthy();
-  expect(screen.getByText("GPU 2")).toBeTruthy();
-  expect(screen.getByText("Observed card 2")).toBeTruthy();
-  expect(screen.getAllByText(/Core.*25/).length).toBeGreaterThan(0);
-  fireEvent.click(screen.getByRole("button", { name: "GPU 2 Copy UUID" }));
+  screen.getByText("clusters.fields.gpuNumber 1");
+  screen.getByText("clusters.fields.gpuNumber 2");
+  screen.getByText("Observed card 2");
+  expect(
+    screen.getAllByText(/clusters.fields.core.*25/).length,
+  ).toBeGreaterThan(0);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "clusters.fields.gpuNumber 2 clusters.actions.copyUuid",
+    }),
+  );
   expect(copyMock).toHaveBeenCalledWith("gpu-b", expect.anything());
 });

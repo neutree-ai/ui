@@ -87,7 +87,7 @@ describe("GPU observation card", () => {
         </TooltipProvider>
       </MemoryRouter>,
     );
-    expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
+    screen.getByText("observations.noMeasurement");
     expect(screen.queryByText("13.0 GiB")).toBeNull();
   });
   const allocWithStats = {
@@ -117,7 +117,7 @@ describe("GPU observation card", () => {
       "observations.modelWeights 2.0 GiB",
     );
     expect(breakdown.textContent).toContain("observations.l0KvCache 8.0 GiB");
-    expect(screen.getByText("observations.noMeasurement")).toBeTruthy();
+    screen.getByText("observations.noMeasurement");
     expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
     expect(screen.queryByTestId("gpu-bar-kv-segment")).toBeNull();
     expect(screen.queryByTestId("gpu-bar-legend")).toBeNull();
@@ -144,7 +144,7 @@ describe("GPU observation card", () => {
     expect(width("gpu-bar-weights-segment")).toBeCloseTo(13.3333, 3);
     expect(width("gpu-bar-kv-segment")).toBeCloseTo(53.3333, 3);
     expect(width("gpu-bar-other-segment")).toBeCloseTo(13.3333, 3);
-    expect(screen.getByTestId("gpu-bar-legend")).toBeTruthy();
+    screen.getByTestId("gpu-bar-legend");
   });
   it("shows a dash instead of the live usage ratio when the L0 pool size is unknown", () => {
     const noCapacity = { ...allocation, modelWeightsMiB: 2048 };
@@ -302,10 +302,10 @@ it("merges generic hardware extensions for the current device in a stable order"
   );
   const { rerender } = render(card(data));
   fireEvent.click(screen.getByRole("button", { name: "observations.details" }));
-  expect(screen.getByText("extension-driver")).toBeTruthy();
+  screen.getByText("extension-driver");
   expect(screen.queryByText("wrong-node")).toBeNull();
   expect(screen.queryByText("wrong-gpu")).toBeNull();
   expect(screen.queryByText("wrong-metric")).toBeNull();
   rerender(card([...data].reverse()));
-  expect(screen.getByText("extension-driver")).toBeTruthy();
+  screen.getByText("extension-driver");
 });

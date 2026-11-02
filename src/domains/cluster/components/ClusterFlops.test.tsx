@@ -108,7 +108,7 @@ describe("compute calibration", () => {
   it("rejects nonpositive calibration and preserves unknown use", async () => {
     mocks.history.mockReturnValue({});
     render(<ClusterFlops cluster={cluster} samples={[]} />);
-    expect(screen.getByText("— / 65.00 TFLOPS")).toBeTruthy();
+    screen.getByText("— / 65.00 TFLOPS");
     fireEvent.click(
       screen.getByRole("button", { name: "observations.calibrate" }),
     );

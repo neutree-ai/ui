@@ -53,7 +53,7 @@ describe("EndpointPerformanceCard", () => {
 
     expect(screen.getByTestId("perf-ttft-value").textContent).toBe("185 ms");
     expect(screen.getByTestId("perf-tpot-value").textContent).toBe("32 ms");
-    expect(screen.getByTestId("perf-latency-cumulative")).toBeTruthy();
+    screen.getByTestId("perf-latency-cumulative");
     expect(screen.getByTestId("perf-tps-value").textContent).toBe(
       "505.8 tok/s",
     );
@@ -65,7 +65,7 @@ describe("EndpointPerformanceCard", () => {
     );
     expect(screen.getByTestId("perf-l0-hit-rate").textContent).toBe("35.0%");
     expect(screen.getByTestId("perf-l1-hit-rate").textContent).toBe("48.0%");
-    expect(screen.getByTestId("perf-cache-cumulative")).toBeTruthy();
+    screen.getByTestId("perf-cache-cumulative");
     expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe(
       "512.0 MiB/s",
     );
