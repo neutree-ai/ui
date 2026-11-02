@@ -827,12 +827,12 @@ describe("vGPU split inputs", () => {
     await waitFor(() => expect(currentRequest()).toContain("4.0 / 2.0"));
     screen.getByText("endpoints.messages.vgpuResourcesInsufficient");
     expect(
-      (
-        screen.getByRole("spinbutton", {
+      screen
+        .getByRole("spinbutton", {
           name: /endpoints.fields.vgpuCount/i,
-        }) as HTMLInputElement
-      ).max,
-    ).toBe("2");
+        })
+        .hasAttribute("max"),
+    ).toBe(false);
   });
 });
 
@@ -862,6 +862,30 @@ describe("capacity checks", () => {
           .length > 0,
     );
   const quarterCard = { memory_mib: 4096, core_percent: 50 };
+
+  it("keeps card count per replica uncapped by aggregate availability", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster({ allFree: true })],
+    });
+    setValues(result, {
+      "spec.cluster": "plain-gpu",
+      "spec.resources": formResources({ gpu: 1 }),
+    });
+
+    const cardInput = screen.getByRole("spinbutton", {
+      name: /endpoints.fields.physicalGpuCount/i,
+    }) as HTMLInputElement;
+    expect(cardInput.hasAttribute("max")).toBe(false);
+
+    setValues(result, { "spec.replicas.num": 3 });
+    await waitFor(() => {
+      expect(cardInput.hasAttribute("max")).toBe(false);
+      expect(currentRequest()).toContain("3.0 / 2.0");
+    });
+    await waitFor(() =>
+      expect(shownMessages()).toContain("fullGpuCardCapacityInsufficient"),
+    );
+  });
 
   it.each([
     {

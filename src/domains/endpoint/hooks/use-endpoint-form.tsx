@@ -707,10 +707,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     maxFullGpuCards > 0
       ? Math.min(availableFullGpuCards + reusableFullGpuCards, maxFullGpuCards)
       : availableFullGpuCards + reusableFullGpuCards;
-  const displayedFullGpuCards = Math.min(
-    requestedFullGpuCards,
-    fullGpuCardCapacity,
-  );
+  const displayedFullGpuCards = requestedFullGpuCards;
   const additionalFullGpuCards = Math.max(
     0,
     requestedFullGpuCards - reusableFullGpuCards,
@@ -1077,11 +1074,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     isFullGpuCapacityExceededWithPlacement ||
     isVgpuCapacityExceededWithPlacement ||
     isPlacementCapacityExceeded;
-  const maxVgpuCardsPerReplica =
-    placementCapacity && placementCapacity.maxCardsPerReplica > 0
-      ? placementCapacity.maxCardsPerReplica
-      : Math.floor(totalVirtualCardCapacity / replicaCount);
-
   useEffect(() => {
     if (
       hasResolvedClusterSelection &&
@@ -2570,11 +2562,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           )
                         }
                         min={0}
-                        max={
-                          isVgpuAllocationMode
-                            ? Math.max(maxVgpuCardsPerReplica, gpuUsage)
-                            : Math.max(maxAvailable.gpu.available, gpuUsage)
-                        }
+                        // Capacity is a cross-field constraint:
+                        // cardsPerReplica × replicas. Keeping it out of the
+                        // input max avoids lowering the ceiling to the current
+                        // value and lets the capacity message own the verdict.
                         // SSH clusters step by 0.1 below one card and by whole
                         // cards at or above one, so the spinner never lands on
                         // a value the precision rule rejects. Kubernetes (and
