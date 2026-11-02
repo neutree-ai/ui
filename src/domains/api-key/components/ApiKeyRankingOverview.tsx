@@ -105,12 +105,10 @@ const RankingPanel = ({
   ];
 
   return (
-    // `min-w-0` is load-bearing. As a flex item this panel's automatic minimum
-    // size is the min-content width of a ranking line, and that line is
-    // `white-space: nowrap` (it is truncated) — so the panel used to grow to the
-    // full unwrapped description and scroll the whole page sideways. The
-    // `min-w-0`/`truncate` further down only shrink the line itself; they cannot
-    // pull the panel's own minimum back down.
+    // `min-w-0` lets the panel shrink below the min-content width of a ranking
+    // line. Without it, the automatic minimum of this flex item is the full
+    // unwrapped (`white-space: nowrap`) description, which widens the page; the
+    // `truncate` on the line itself cannot lower the panel's own minimum.
     <div className="flex min-w-0 flex-1 items-center gap-4 rounded-md border p-4">
       <div className="h-20 w-20 shrink-0">
         {total > 0 ? (
