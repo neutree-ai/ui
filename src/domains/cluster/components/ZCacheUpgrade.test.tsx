@@ -138,9 +138,7 @@ it("does not show the previous success while a new request awaits reconciliation
   expect(
     screen.queryByText("clusters.cacheUpgrade.phases.Succeeded"),
   ).toBeNull();
-  expect(
-    screen.getByText("clusters.cacheUpgrade.phases.UpdatingRuntime"),
-  ).toBeDefined();
+  screen.getByText("clusters.cacheUpgrade.phases.UpdatingRuntime");
   expect(
     screen.getByText("clusters.cacheUpgrade.title").closest("button")?.disabled,
   ).toBe(true);
@@ -172,5 +170,5 @@ it("hides successful details but retains failures with instance links", () => {
   expect(screen.getByRole("link", { name: "ep" }).getAttribute("href")).toBe(
     "#/default/endpoints/show/ep",
   );
-  expect(screen.getByText("image pull failed")).toBeDefined();
+  screen.getByText("image pull failed");
 });
