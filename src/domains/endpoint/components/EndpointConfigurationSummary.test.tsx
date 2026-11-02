@@ -171,6 +171,18 @@ describe("EndpointConfigurationSummary", () => {
           ...reviewContext,
           clusterCapacity: [
             { key: "disk" as never, requested: 1, available: 2, total: 3 },
+            {
+              key: "cpu",
+              requested: 1.5,
+              available: null,
+              total: null,
+            },
+            {
+              key: "memory",
+              requested: 1.5,
+              available: 2.5,
+              total: 4,
+            },
           ],
         }}
       />,
@@ -178,6 +190,9 @@ describe("EndpointConfigurationSummary", () => {
 
     screen.getByText("custom-scheduler");
     screen.getByTestId("configuration-capacity-disk");
+    expect(
+      screen.getByTestId("configuration-capacity-memory").textContent,
+    ).toContain("2.5");
   });
 
   it("renders empty and unavailable deployment details without a catalog", () => {

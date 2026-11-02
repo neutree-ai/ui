@@ -363,6 +363,8 @@ describe("EndpointDeploymentWizard", () => {
   it("shows runtime issues and empty before/after review values", () => {
     render(
       <Harness
+        mode="edit"
+        hasChanges
         errorsByStep={{ 2: ["Runtime error"] }}
         reviewChanges={[
           {
@@ -388,6 +390,32 @@ describe("EndpointDeploymentWizard", () => {
 
     expect(screen.getByTestId("deployment-checks").textContent).toContain(
       "endpoints.wizard.review.checkRuntimeAttention",
+    );
+  });
+
+  it("uses neutral runtime fallbacks when cache metadata is sparse", () => {
+    render(
+      <Harness
+        values={{
+          ...endpoint,
+          spec: {
+            ...endpoint.spec,
+            engine: { engine: "", version: "" },
+            kv_cache: { provider: "zcache", options: {} },
+          },
+        }}
+        context={{ ...reviewContext, noVerifiedAccelerator: false }}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    expect(screen.getByTestId("deployment-checks").textContent).toContain(
+      "endpoints.wizard.review.checkCacheEnabled",
     );
   });
 

@@ -390,6 +390,75 @@ describe("model services", () => {
     });
   });
 
+  it("tests a blank external URL in create mode", async () => {
+    renderEndpointForm({ action: "create" });
+    clickAction("addModelService");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.messages.testConnectivity",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenCalledWith(0, {
+        type: "external",
+        url: "",
+        credential: "",
+      }),
+    );
+  });
+
+  it("tests a blank endpoint reference in create mode", async () => {
+    renderEndpointForm({ action: "create" });
+    clickAction("addModelService");
+    change(
+      within(screen.getByTestId("field-_upstreamType_0")).getByRole("combobox"),
+      "endpoint_ref",
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.messages.testConnectivity",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenCalledWith(0, {
+        type: "endpoint_ref",
+        endpoint_ref: "",
+        workspace: "default",
+      }),
+    );
+  });
+
+  it("includes the saved identity when testing an external URL in edit mode", async () => {
+    renderEndpointForm({
+      spec: {
+        upstreams: [makeUpstream({ name: "primary" })],
+        model_routes: [],
+      },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.messages.testConnectivity",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenCalledWith(
+        0,
+        expect.objectContaining({
+          type: "external",
+          name: expect.any(String),
+          workspace: "default",
+          stored_upstream_url: expect.any(String),
+        }),
+      ),
+    );
+  });
+
   it("queries models and tests connectivity with the remaining channel's saved identity after deletion and edits", async () => {
     const view = renderEndpointForm({
       spec: {
