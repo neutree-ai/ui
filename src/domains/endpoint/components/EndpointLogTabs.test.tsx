@@ -62,13 +62,19 @@ vi.mock("./LogViewer", () => ({
   LogViewer: ({
     source,
     downloadUrl,
+    isLoading,
     onRefresh,
   }: {
     source: string;
     downloadUrl?: string;
+    isLoading?: boolean;
     onRefresh?: () => void;
   }) => (
-    <div data-testid="endpoint-log-viewer" data-download-url={downloadUrl}>
+    <div
+      data-testid="endpoint-log-viewer"
+      data-download-url={downloadUrl}
+      data-loading={String(!!isLoading)}
+    >
       {source}
       <button type="button" onClick={onRefresh}>
         refresh
@@ -417,9 +423,9 @@ describe("Kubernetes log sources", () => {
     const { rerender } = render(
       <EndpointLogTabs endpoint={endpoint} clusterType="kubernetes" />,
     );
-    expect(screen.getByTestId("endpoint-log-viewer").textContent).toContain(
-      "endpoints.logs.loading",
-    );
+    expect(
+      screen.getByTestId("endpoint-log-viewer").getAttribute("data-loading"),
+    ).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "refresh" }));
     expect(logSources.refetch).toHaveBeenCalledOnce();
     expect(refetch).toHaveBeenCalledOnce();

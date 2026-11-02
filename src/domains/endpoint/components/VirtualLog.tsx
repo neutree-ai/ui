@@ -138,6 +138,15 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   const isAtBottomRef = useRef(true);
 
   /**
+   * The list reports its current offset from its own mount callback, which
+   * runs before the effect below has positioned it. That report is not a user
+   * scroll: measuring it against the list height (still 1px until the
+   * container is measured) would clear the follow-the-tail intent before the
+   * first auto-scroll, leaving the view stuck on the first line.
+   */
+  const hasPositionedRef = useRef(false);
+
+  /**
    * Process log lines:
    * 1. Split lines
    * 2. Filter by time window (if provided)
@@ -280,6 +289,8 @@ export const VirtualLog: FC<VirtualLogProps> = ({
   const handleScroll = (props: ListOnScrollProps) => {
     const { scrollDirection, scrollOffset, scrollUpdateWasRequested } = props;
     if (scrollUpdateWasRequested) return; // Skip programmatic scrolls
+    // Ignore the list's own mount-time report; only user scrolls count.
+    if (!hasPositionedRef.current) return;
 
     // Track whether the user is pinned to the bottom so auto-refresh only
     // follows the tail when they haven't scrolled up to read older lines.
@@ -318,8 +329,15 @@ export const VirtualLog: FC<VirtualLogProps> = ({
    * preserve their position across auto-refreshes instead of jumping down.
    */
   useEffect(() => {
-    if (!listRef.current || !processedLines.length) return;
+    if (!processedLines.length) {
+      // The list unmounted (e.g. a time filter hides every line); the next
+      // one reports its own mount offset again, so the latch must be armed.
+      hasPositionedRef.current = false;
+      return;
+    }
+    if (!listRef.current) return;
 
+    hasPositionedRef.current = true;
     if (!reverse && isAtBottomRef.current) {
       // Scroll to bottom for latest logs
       listRef.current.scrollToItem(processedLines.length - 1, "end");
@@ -331,33 +349,36 @@ export const VirtualLog: FC<VirtualLogProps> = ({
     return resolvedTheme === "dark" ? "hljs-dark" : "hljs-light";
   }, [resolvedTheme]);
 
-  if (!processedLines.length) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-        <EmptyState className="w-full">
-          {t("components.logViewer.noLogs")}
-        </EmptyState>
-      </div>
-    );
-  }
-
+  // The measured container must stay mounted even while there are no lines:
+  // the measurement effect runs once on mount, so unmounting the container for
+  // the empty state would leave the list with a 1px height when lines arrive.
   return (
     <div
       ref={containerRef}
       className={cn("min-h-0 flex-1 virtual-log-container", hlThemeClass)}
     >
-      {/* @ts-ignore - react-window type compatibility issue */}
-      <List
-        ref={listRef}
-        height={listHeight}
-        itemCount={processedLines.length}
-        itemSize={lineHeight}
-        width="100%"
-        onScroll={handleScroll}
-        className={cn("font-mono virtual-log-list", hlThemeClass)}
-      >
-        {renderLine}
-      </List>
+      {processedLines.length ? (
+        <>
+          {/* @ts-ignore - react-window type compatibility issue */}
+          <List
+            ref={listRef}
+            height={listHeight}
+            itemCount={processedLines.length}
+            itemSize={lineHeight}
+            width="100%"
+            onScroll={handleScroll}
+            className={cn("font-mono virtual-log-list", hlThemeClass)}
+          >
+            {renderLine}
+          </List>
+        </>
+      ) : (
+        <div className="flex h-full items-center justify-center p-8">
+          <EmptyState className="w-full">
+            {t("components.logViewer.noLogs")}
+          </EmptyState>
+        </div>
+      )}
     </div>
   );
 };

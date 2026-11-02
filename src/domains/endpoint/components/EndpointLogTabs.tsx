@@ -247,17 +247,16 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({
         >
           <LogViewer
             source={
-              isLoadingLogs
-                ? t("endpoints.logs.loading")
-                : logsError
-                  ? t(
-                      previous
-                        ? "endpoints.logs.previousUnavailable"
-                        : "endpoints.logs.loadError",
-                      { error: logsError },
-                    )
-                  : streamedLogs || t("endpoints.logs.noLogsAvailable")
+              logsError
+                ? t(
+                    previous
+                      ? "endpoints.logs.previousUnavailable"
+                      : "endpoints.logs.loadError",
+                    { error: logsError },
+                  )
+                : streamedLogs || t("endpoints.logs.noLogsAvailable")
             }
+            isLoading={isLoadingLogs}
             downloadUrl={activeLogInfo.downloadUrl}
             downloadErrorMessage={
               previous ? t("endpoints.logs.previousUnavailable") : undefined

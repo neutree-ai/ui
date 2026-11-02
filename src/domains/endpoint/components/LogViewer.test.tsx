@@ -118,6 +118,19 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("LogViewer loading", () => {
+  it("shows the loading message instead of the log list until the logs arrive", () => {
+    const { rerender } = render(<LogViewer source="stale line" isLoading />);
+
+    screen.getByText("components.logViewer.loading");
+    expect(screen.queryByText("stale line")).toBeNull();
+
+    rerender(<LogViewer source="line 1" isLoading={false} />);
+
+    screen.getByText("line 1");
+  });
+});
+
 describe("LogViewer downloads", () => {
   it.each(["current", "previous"])(
     "downloads the selected container's %s logs with auth and releases resources",
@@ -164,13 +177,15 @@ describe("LogViewer downloads", () => {
     const response = new Response("old logs");
     vi.spyOn(response, "blob").mockReturnValue(pending.promise);
     mocks.fetch.mockResolvedValueOnce(response);
-    const { rerender } = render(<LogViewer source="old" downloadUrl="/old" />);
+    const { rerender } = render(
+      <LogViewer source="old" isLoading={false} downloadUrl="/old" />,
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "components.logViewer.download" }),
     );
     await settle();
     const signal = mocks.fetch.mock.calls[0][1].signal as AbortSignal;
-    rerender(<LogViewer source="new" downloadUrl="/new" />);
+    rerender(<LogViewer source="new" isLoading={false} downloadUrl="/new" />);
     expect(signal.aborted).toBe(true);
     pending.resolve(new Blob(["old logs"]));
     await settle();
