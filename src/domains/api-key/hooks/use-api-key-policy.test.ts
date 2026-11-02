@@ -666,7 +666,7 @@ describe("useWorkspaceModels", () => {
     useListMock.mockReset();
   });
 
-  it("keeps serving aliases available after their order changes without widening picker options", () => {
+  it("uses only the first served name for an endpoint in the picker and the lookup maps", () => {
     let servedModels = ["a", "b"];
     useListMock.mockImplementation(({ resource }) => ({
       data: {
@@ -696,26 +696,11 @@ describe("useWorkspaceModels", () => {
       sources: useModelSourceByValue("workspace-a"),
     }));
 
-    expect(result.current.models.get("b")?.endpoints).toEqual([
-      {
-        name: "local",
-        type: "internal",
-        source: SELF_HOSTED_MODEL_SOURCE,
-        phase: "Running",
-      },
-    ]);
-    expect(result.current.sources.get("internal:local:b")).toBe(
-      SELF_HOSTED_MODEL_SOURCE,
-    );
-
-    servedModels = ["b", "a"];
-    rerender();
-
     expect(
       result.current.options
         .filter((option) => option.type === "internal")
         .map((option) => option.model),
-    ).toEqual(["b"]);
+    ).toEqual(["a"]);
     expect(result.current.models.get("a")?.endpoints).toEqual([
       {
         name: "local",
@@ -733,8 +718,32 @@ describe("useWorkspaceModels", () => {
     expect(result.current.sources.get("internal:local:a")).toBe(
       SELF_HOSTED_MODEL_SOURCE,
     );
+    expect(result.current.models.get("b")).toBeUndefined();
+
+    servedModels = ["b", "a"];
+    rerender();
+
+    expect(
+      result.current.options
+        .filter((option) => option.type === "internal")
+        .map((option) => option.model),
+    ).toEqual(["b"]);
+    // Only the first name of the endpoint is known, so the previous name keeps
+    // nothing but its external source.
+    expect(result.current.models.get("a")?.endpoints).toEqual([
+      {
+        name: "external",
+        type: "external",
+        source: "third-party-public",
+        phase: "Degraded",
+      },
+    ]);
+    expect(result.current.sources.get("internal:local:a")).toBeUndefined();
     expect(result.current.sources.get("external:external:a")).toBe(
       "third-party-public",
+    );
+    expect(result.current.sources.get("internal:local:b")).toBe(
+      SELF_HOSTED_MODEL_SOURCE,
     );
   });
 
@@ -802,7 +811,7 @@ describe("useWorkspaceModels", () => {
     },
   );
 
-  it("preserves the exact observed model name", () => {
+  it("normalizes the observed model name like any other option", () => {
     useListMock.mockImplementation(({ resource }) => ({
       data: {
         data:
@@ -817,8 +826,8 @@ describe("useWorkspaceModels", () => {
       },
     }));
     const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
-    expect(result.current[0].model).toBe(" model ");
-    expect(result.current[0].value).toBe("internal:local: model ");
+    expect(result.current[0].model).toBe("model");
+    expect(result.current[0].value).toBe("internal:local:model");
     const option = result.current[0];
     const limits = buildApiKeyLimits({
       ...apiKeyPolicyDefaults(),
@@ -832,7 +841,7 @@ describe("useWorkspaceModels", () => {
       ],
     });
     expect(limits.allowed_models).toEqual([
-      { model: " model ", type: "internal", endpoint_name: "local" },
+      { model: "model", type: "internal", endpoint_name: "local" },
     ]);
     expect(buildApiKeyLimits(limitsToForm(limits))).toEqual(limits);
   });
