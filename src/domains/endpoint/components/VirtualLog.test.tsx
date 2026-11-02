@@ -1,10 +1,11 @@
 import { render } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Shared spies/handles between the react-window mock and the test body.
 const h = vi.hoisted(() => ({
   scrollToItem: vi.fn(),
   onScroll: { current: null as null | ((p: unknown) => void) },
+  listProps: { current: null as null | { height?: number } },
 }));
 
 // Mock react-window's FixedSizeList with a minimal class component so we can
@@ -12,7 +13,10 @@ const h = vi.hoisted(() => ({
 // the ref, and (b) drive `onScroll` manually to simulate user scrolling.
 vi.mock("react-window", async () => {
   const React = await import("react");
-  class List extends React.Component<{ onScroll?: (p: unknown) => void }> {
+  class List extends React.Component<{
+    height?: number;
+    onScroll?: (p: unknown) => void;
+  }> {
     scrollToItem = h.scrollToItem;
     componentDidMount() {
       // react-window reports its offset from its own mount, before VirtualLog
@@ -24,6 +28,7 @@ vi.mock("react-window", async () => {
       });
     }
     render() {
+      h.listProps.current = this.props;
       h.onScroll.current = this.props.onScroll ?? null;
       return null;
     }
@@ -53,8 +58,37 @@ describe("VirtualLog tail-following", () => {
     h.scrollToItem.mockClear();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("auto-scrolls to the latest line on first load, ignoring the list's own mount report", () => {
     render(<VirtualLog log={makeLog(3)} />);
+    expect(h.scrollToItem).toHaveBeenCalledWith(2, "end");
+  });
+
+  it("measures the container even when the first render has no lines", () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      height: 400,
+    } as DOMRect);
+
+    const { rerender } = render(<VirtualLog log="" />);
+    rerender(<VirtualLog log={makeLog(3)} />);
+
+    expect(h.listProps.current?.height).toBe(400);
+  });
+
+  it("auto-scrolls to the tail when the list remounts after being empty", () => {
+    const { rerender } = render(<VirtualLog log={makeLog(3)} />);
+
+    // A filter that hides every line unmounts the list...
+    rerender(<VirtualLog log="" />);
+    h.scrollToItem.mockClear();
+
+    // ...and clearing it mounts a fresh list, whose own mount report must not
+    // be read as a user scroll.
+    rerender(<VirtualLog log={makeLog(3)} />);
+
     expect(h.scrollToItem).toHaveBeenCalledWith(2, "end");
   });
 

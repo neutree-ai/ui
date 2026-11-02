@@ -329,7 +329,13 @@ export const VirtualLog: FC<VirtualLogProps> = ({
    * preserve their position across auto-refreshes instead of jumping down.
    */
   useEffect(() => {
-    if (!listRef.current || !processedLines.length) return;
+    if (!processedLines.length) {
+      // The list unmounted (e.g. a time filter hides every line); the next
+      // one reports its own mount offset again, so the latch must be armed.
+      hasPositionedRef.current = false;
+      return;
+    }
+    if (!listRef.current) return;
 
     hasPositionedRef.current = true;
     if (!reverse && isAtBottomRef.current) {
@@ -343,33 +349,36 @@ export const VirtualLog: FC<VirtualLogProps> = ({
     return resolvedTheme === "dark" ? "hljs-dark" : "hljs-light";
   }, [resolvedTheme]);
 
-  if (!processedLines.length) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-        <EmptyState className="w-full">
-          {t("components.logViewer.noLogs")}
-        </EmptyState>
-      </div>
-    );
-  }
-
+  // The measured container must stay mounted even while there are no lines:
+  // the measurement effect runs once on mount, so unmounting the container for
+  // the empty state would leave the list with a 1px height when lines arrive.
   return (
     <div
       ref={containerRef}
       className={cn("min-h-0 flex-1 virtual-log-container", hlThemeClass)}
     >
-      {/* @ts-ignore - react-window type compatibility issue */}
-      <List
-        ref={listRef}
-        height={listHeight}
-        itemCount={processedLines.length}
-        itemSize={lineHeight}
-        width="100%"
-        onScroll={handleScroll}
-        className={cn("font-mono virtual-log-list", hlThemeClass)}
-      >
-        {renderLine}
-      </List>
+      {processedLines.length ? (
+        <>
+          {/* @ts-ignore - react-window type compatibility issue */}
+          <List
+            ref={listRef}
+            height={listHeight}
+            itemCount={processedLines.length}
+            itemSize={lineHeight}
+            width="100%"
+            onScroll={handleScroll}
+            className={cn("font-mono virtual-log-list", hlThemeClass)}
+          >
+            {renderLine}
+          </List>
+        </>
+      ) : (
+        <div className="flex h-full items-center justify-center p-8">
+          <EmptyState className="w-full">
+            {t("components.logViewer.noLogs")}
+          </EmptyState>
+        </div>
+      )}
     </div>
   );
 };

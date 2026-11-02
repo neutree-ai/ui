@@ -27,9 +27,7 @@ vi.mock("@/foundation/providers/auth-provider", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
 vi.mock("./VirtualLog", () => ({
-  VirtualLog: ({ log }: { log: string }) => (
-    <pre data-testid="virtual-log">{log}</pre>
-  ),
+  VirtualLog: ({ log }: { log: string }) => <pre>{log}</pre>,
 }));
 vi.mock("@/domains/endpoint/hooks/use-streaming-logs", () => ({
   useStreamingLogs: () => ({
@@ -122,14 +120,14 @@ afterEach(() => {
 
 describe("LogViewer loading", () => {
   it("shows the loading message instead of the log list until the logs arrive", () => {
-    const { rerender } = render(<LogViewer source="" isLoading />);
+    const { rerender } = render(<LogViewer source="stale line" isLoading />);
 
-    screen.getByText("endpoints.logs.loading");
-    expect(screen.queryByTestId("virtual-log")).toBeNull();
+    screen.getByText("components.logViewer.loading");
+    expect(screen.queryByText("stale line")).toBeNull();
 
-    rerender(<LogViewer source="line 1" />);
+    rerender(<LogViewer source="line 1" isLoading={false} />);
 
-    screen.getByTestId("virtual-log");
+    screen.getByText("line 1");
   });
 });
 
@@ -179,13 +177,15 @@ describe("LogViewer downloads", () => {
     const response = new Response("old logs");
     vi.spyOn(response, "blob").mockReturnValue(pending.promise);
     mocks.fetch.mockResolvedValueOnce(response);
-    const { rerender } = render(<LogViewer source="old" downloadUrl="/old" />);
+    const { rerender } = render(
+      <LogViewer source="old" isLoading={false} downloadUrl="/old" />,
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "components.logViewer.download" }),
     );
     await settle();
     const signal = mocks.fetch.mock.calls[0][1].signal as AbortSignal;
-    rerender(<LogViewer source="new" downloadUrl="/new" />);
+    rerender(<LogViewer source="new" isLoading={false} downloadUrl="/new" />);
     expect(signal.aborted).toBe(true);
     pending.resolve(new Blob(["old logs"]));
     await settle();

@@ -25,7 +25,7 @@ interface LogViewerProps {
    * browser's late scroll event later reports as a user scroll and stops the
    * list from following the tail when the real logs arrive.
    */
-  isLoading?: boolean;
+  isLoading: boolean;
   downloadUrl?: string;
   downloadErrorMessage?: string;
   height?: number | string;
@@ -49,7 +49,7 @@ interface LogViewerProps {
  */
 export const LogViewer: FC<LogViewerProps> = ({
   source,
-  isLoading = false,
+  isLoading,
   downloadUrl,
   downloadErrorMessage,
   height = "100%",
@@ -323,7 +323,9 @@ export const LogViewer: FC<LogViewerProps> = ({
 
       {isLoading ? (
         <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-          <p className="text-muted-foreground">{t("endpoints.logs.loading")}</p>
+          <p className="text-muted-foreground">
+            {t("components.logViewer.loading")}
+          </p>
         </div>
       ) : (
         <VirtualLog
