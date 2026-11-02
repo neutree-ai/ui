@@ -75,6 +75,26 @@ describe("getEndpointSplitDashboardProps", () => {
 });
 
 describe("cache dashboard scope", () => {
+  it.each([undefined, [], [{ name: "worker-a", capacity_bytes: 0 }]])(
+    "routes configured ZCache independently of observed node readiness",
+    (cacheNodes) => {
+      const context = {
+        clusterName: "cluster-a",
+        endpointName: "model",
+        cacheProvider: "zcache",
+        cacheNodes,
+      };
+      expect(
+        getEndpointSplitDashboardProps("http://grafana", "cache", context)
+          .dashboardConfig.dashboardId,
+      ).toBe("neutree-endpoint-zcache-embed");
+      expect(
+        getEndpointSplitDashboardProps("http://grafana", "overview", context)
+          .dashboardConfig.dashboardId,
+      ).toBe("neutree-endpoint-overview-embed");
+    },
+  );
+
   it("passes observed node capacity and escapes node names for the PromQL regex", () => {
     const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
       clusterName: "cluster-a",

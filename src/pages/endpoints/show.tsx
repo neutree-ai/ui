@@ -227,6 +227,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           clusterName: record.spec.cluster,
           endpointName: record.metadata.name,
           workspace: record.metadata.workspace ?? "default",
+          cacheProvider: record.spec.kv_cache?.provider,
           cacheNodes:
             record.spec.kv_cache?.provider === "zcache" &&
             cacheStatus?.current?.enabled &&

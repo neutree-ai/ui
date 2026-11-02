@@ -73,6 +73,7 @@ export const getEndpointSplitDashboardProps = (
     clusterName: string;
     endpointName: string;
     workspace?: string;
+    cacheProvider?: string;
     cacheNodes?: { name: string; capacity_bytes: number }[];
   },
 ): GrafanaDashboardProps => {
@@ -92,7 +93,10 @@ export const getEndpointSplitDashboardProps = (
   return {
     dashboardConfig: {
       ...getBaseDashboardConfig(grafanaUrl),
-      dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
+      dashboardId:
+        dashboardType === "cache" && context.cacheProvider === "zcache"
+          ? "neutree-endpoint-zcache-embed"
+          : ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
       variables: {
         ...getCommonVariables(),
         Cluster: context.clusterName,
