@@ -139,18 +139,14 @@ describe("transformClusterValues", () => {
 it.each(["v0.5.5", undefined])(
   "preserves cache version %s when editing unrelated cluster settings",
   (version) => {
-    const cluster = makeCluster({
-      spec: {
-        type: "kubernetes",
-        config: { kubernetes_config: { router: { replicas: "3" } } },
-        cache: {
-          provider: "zcache",
-          options: {
-            enabled: true,
-            l1_size_gib: 2,
-            target_nodes: ["worker"],
-            ...(version ? { version } : {}),
-          },
+    const cluster = k8sCluster(storedKubeconfig, {
+      cache: {
+        provider: "zcache",
+        options: {
+          enabled: true,
+          l1_size_gib: 2,
+          target_nodes: ["worker"],
+          ...(version ? { version } : {}),
         },
       },
     });
