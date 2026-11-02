@@ -37,14 +37,12 @@ const sameKvState = (
       first.family === second.family
     );
   }
-  if (first.kind === "unavailable" && second.kind === "unavailable") {
-    return (
-      first.reason === second.reason &&
-      JSON.stringify(first.missingFields) ===
-        JSON.stringify(second.missingFields)
-    );
-  }
-  return false;
+  return (
+    first.kind === "unavailable" &&
+    second.kind === "unavailable" &&
+    first.reason === second.reason &&
+    JSON.stringify(first.missingFields) === JSON.stringify(second.missingFields)
+  );
 };
 
 function SummaryRow({
