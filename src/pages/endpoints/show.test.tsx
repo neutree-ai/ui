@@ -1,18 +1,26 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
 import type { Endpoint } from "@/domains/endpoint/types";
 
-const { runtimeCardProps, useListMock, useOneMock, useShowMock } = vi.hoisted(
-  () => ({
-    runtimeCardProps: {
-      current: null as { clusterResourceInfo?: unknown } | null,
-    },
-    useListMock: vi.fn(),
-    useOneMock: vi.fn(),
-    useShowMock: vi.fn(),
-  }),
-);
+const {
+  advancedParametersProps,
+  runtimeCardProps,
+  useListMock,
+  useOneMock,
+  useShowMock,
+} = vi.hoisted(() => ({
+  advancedParametersProps: {
+    current: null as { engineParameters: Record<string, unknown> } | null,
+  },
+  runtimeCardProps: {
+    current: null as { clusterResourceInfo?: unknown } | null,
+  },
+  useListMock: vi.fn(),
+  useOneMock: vi.fn(),
+  useShowMock: vi.fn(),
+}));
 
 vi.mock("@refinedev/core", () => ({
   useList: useListMock,
@@ -69,7 +77,12 @@ vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
   EndpointAccessSummary: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
-  EndpointAdvancedParameters: () => null,
+  EndpointAdvancedParameters: (props: {
+    engineParameters: Record<string, unknown>;
+  }) => {
+    advancedParametersProps.current = props;
+    return null;
+  },
 }));
 vi.mock("@/domains/endpoint/components/EndpointCatalogOrigin", () => ({
   EndpointCatalogOriginLink: () => null,
@@ -161,6 +174,7 @@ const clusterResourceInfo = {
 describe("EndpointsShow", () => {
   beforeEach(() => {
     runtimeCardProps.current = null;
+    advancedParametersProps.current = null;
     useShowMock.mockReset();
     useOneMock.mockReset();
     useListMock.mockReset();
@@ -225,5 +239,68 @@ describe("EndpointsShow", () => {
     });
     render(<EndpointsShow />);
     screen.getByTestId("endpoint-status");
+  });
+  it("displays observed cache config without changing editable or catalog variables", () => {
+    const args = Object.freeze({ max_model_len: 4096 });
+    const config = { kv_connector: "LMCacheMPConnector", kv_role: "kv_both" };
+    const record = {
+      ...endpoint,
+      spec: {
+        ...endpoint.spec,
+        variables: Object.freeze({ engine_args: args }),
+      },
+      status: {
+        phase: "Paused",
+        service_url: null,
+        kv_cache: {
+          provider: "zcache",
+          details: { kv_transfer_config: config },
+        },
+      },
+    };
+    useShowMock.mockReturnValue({
+      query: { data: { data: record }, isLoading: false },
+    });
+    const { rerender } = render(<EndpointsShow />);
+    expect(advancedParametersProps.current?.engineParameters).toEqual({
+      ...args,
+      kv_transfer_config: config,
+    });
+    expect(record.spec.variables.engine_args).toEqual({ max_model_len: 4096 });
+    expect(buildCatalogFromEndpoint(record as Endpoint, "copy")).toMatchObject({
+      spec: { variables: { engine_args: args } },
+    });
+
+    // The next observation removed the argument: never retain the old display value.
+    record.status.kv_cache.details =
+      {} as typeof record.status.kv_cache.details;
+    rerender(<EndpointsShow />);
+    expect(advancedParametersProps.current?.engineParameters).toEqual(args);
+  });
+
+  it("does not add a placeholder for an older backend without cache status", () => {
+    render(<EndpointsShow />);
+    expect(advancedParametersProps.current?.engineParameters).toEqual({});
+  });
+
+  it("does not interpret another provider's details as zcache configuration", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            status: {
+              kv_cache: {
+                provider: "other",
+                details: { kv_transfer_config: { unrelated: true } },
+              },
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
+    render(<EndpointsShow />);
+    expect(advancedParametersProps.current?.engineParameters).toEqual({});
   });
 });
