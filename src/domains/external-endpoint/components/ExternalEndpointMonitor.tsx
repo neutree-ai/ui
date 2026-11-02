@@ -14,6 +14,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * range, so both come from here.
  */
 function useModelRoutingDashboard(record: ExternalEndpoint) {
+  const { i18n } = useTranslation();
   const { resolvedTheme } = useTheme();
   const { grafanaUrl } = useSystemApi();
   const [params] = useSearchParams();
@@ -22,6 +23,7 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
   const props =
     grafanaUrl && record.metadata.workspace
       ? getModelRoutingDashboardProps(grafanaUrl, {
+          language: i18n.resolvedLanguage,
           workspace: record.metadata.workspace,
           endpoint: record.metadata.name,
           ...state,
@@ -31,7 +33,17 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
     ? new URL(buildGrafanaDashboardUrl({ ...props, resolvedTheme }))
     : null;
   link?.searchParams.delete("kiosk");
-  return { props, link };
+  const embeddedProps = props && {
+    ...props,
+    dashboardConfig: {
+      ...props.dashboardConfig,
+      dashboardId: props.dashboardConfig.dashboardId.replace(
+        "neutree-model-routing",
+        "neutree-model-routing-embed",
+      ),
+    },
+  };
+  return { props: embeddedProps, link };
 }
 
 /**
@@ -79,13 +91,7 @@ export default function ExternalEndpointMonitor({
           className="min-h-0 flex-1"
           aria-label={t("external_endpoints.monitor.chartArea")}
         >
-          <GrafanaDashboard
-            {...props}
-            dashboardConfig={{
-              ...props.dashboardConfig,
-              dashboardId: "neutree-model-routing-embed",
-            }}
-          />
+          <GrafanaDashboard {...props} />
         </div>
       ) : (
         <div className="rounded-md border p-8 text-center text-muted-foreground">
