@@ -43,6 +43,15 @@ describe("VariantPicker", () => {
       <VariantPicker
         layout="radio"
         variants={{
+          default: {
+            model: {
+              registry: "default-source",
+              name: "qwen3.6-27b",
+              version: "",
+              file: "",
+              task: "text-generation",
+            },
+          },
           bf16: {
             model: {
               registry: "model-nfs",
@@ -70,7 +79,9 @@ describe("VariantPicker", () => {
     );
 
     screen.getByText("model-nfs");
+    screen.getByText("default-source");
     screen.getByText("huggingface");
+    screen.getByLabelText("endpoints.recipe.defaultVariant");
     screen.getByRole("radiogroup", {
       name: "endpoints.recipe.selectVariant",
     });

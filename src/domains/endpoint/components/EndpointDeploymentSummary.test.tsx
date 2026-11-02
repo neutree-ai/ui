@@ -32,7 +32,7 @@ vi.mock("./KVCacheEstimate", () => ({
             }
           : {
               kind: "unavailable",
-              reason: read.state,
+              reason: read.state === "loading" ? "pending" : read.state,
             },
       );
     }, [onStateChange, read]);
@@ -124,6 +124,35 @@ describe("EndpointDeploymentSummary", () => {
     expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
   });
 
+  it("keeps an unchanged unavailable estimate without exposing a total", () => {
+    const view = render(
+      <EndpointDeploymentSummary
+        values={values}
+        declared={null}
+        kvCache={{
+          ...kvCache,
+          read: { state: "loading" },
+        }}
+      />,
+    );
+
+    screen.getByText("endpoints.wizard.summary.estimateUnavailable");
+
+    view.rerender(
+      <EndpointDeploymentSummary
+        values={values}
+        declared={null}
+        kvCache={{
+          ...kvCache,
+          read: { state: "unreported" },
+        }}
+      />,
+    );
+
+    screen.getByText("endpoints.wizard.summary.estimateUnavailable");
+    expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
+  });
+
   it("does not infer weights when the catalog does not declare them", async () => {
     render(
       <EndpointDeploymentSummary
@@ -184,5 +213,23 @@ describe("EndpointDeploymentSummary", () => {
     );
 
     await waitFor(() => screen.getByText("43.1 GB"));
+  });
+
+  it("reports cache as enabled when the endpoint configures it", () => {
+    render(
+      <EndpointDeploymentSummary
+        values={{
+          ...values,
+          spec: {
+            ...values.spec,
+            kv_cache: { provider: "zcache", options: { timeout_seconds: 5 } },
+          },
+        }}
+        declared={null}
+        kvCache={null}
+      />,
+    );
+
+    screen.getByText("endpoints.wizard.summary.cacheEnabled");
   });
 });

@@ -39,6 +39,15 @@ describe("estimateModelWeightsGb", () => {
     ).toBe(0.25);
   });
 
+  it("supports trillion-parameter checkpoint counts", () => {
+    expect(
+      estimateModelWeightsGb({
+        parameter_count: "1.5T",
+        parameter_dtype: "fp8",
+      }),
+    ).toBe(1500);
+  });
+
   it("does not invent a weight when either fact is missing", () => {
     expect(estimateModelWeightsGb({ parameter_count: "8B" })).toBeNull();
     expect(estimateModelWeightsGb({ parameter_dtype: "bf16" })).toBeNull();

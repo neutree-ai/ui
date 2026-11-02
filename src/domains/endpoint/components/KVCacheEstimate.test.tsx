@@ -1,7 +1,14 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
+import { pickOption } from "@/foundation/testing/interactions";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -51,6 +58,20 @@ const qwen36: ModelInfo = {
   field_sources: { max_position_embeddings: "auto" },
 };
 
+const linearAttention: ModelInfo = {
+  num_hidden_layers: 2,
+  num_key_value_heads: 1,
+  head_dim: 64,
+  linear_conv_kernel_dim: 4,
+  linear_num_key_heads: 2,
+  linear_key_head_dim: 128,
+  linear_num_value_heads: 4,
+  linear_value_head_dim: 128,
+  max_position_embeddings: 4096,
+  parameter_dtype: "bfloat16",
+  layer_types: ["linear_attention", "full_attention"],
+};
+
 describe("KVCacheEstimate", () => {
   it("estimates from the checkpoint's own context length and dtype", () => {
     render(<KVCacheEstimate read={ready(deepseekV3)} />);
@@ -85,9 +106,11 @@ describe("KVCacheEstimate", () => {
   });
 
   it("names the field it is missing instead of estimating without it", () => {
+    const onStateChange = vi.fn();
     render(
       <KVCacheEstimate
         read={ready({ ...deepseekV3, kv_lora_rank: undefined })}
+        onStateChange={onStateChange}
       />,
     );
 
@@ -97,6 +120,46 @@ describe("KVCacheEstimate", () => {
     );
     expect(screen.queryByTestId("kv-cache-tokens")).toBeNull();
     expect(screen.queryByTestId("kv-cache-precision")).toBeNull();
+    expect(onStateChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        kind: "unavailable",
+        reason: "missing-fields",
+        missingFields: ["kv_lora_rank"],
+      }),
+    );
+  });
+
+  it("lays out policy inputs in both compact and stacked forms", () => {
+    const { rerender } = render(
+      <KVCacheEstimate read={ready(linearAttention)} />,
+    );
+
+    screen.getByTestId("kv-cache-policy-inputs");
+
+    rerender(<KVCacheEstimate read={ready(linearAttention)} stackFields />);
+
+    screen.getByTestId("kv-cache-policy-inputs");
+  });
+
+  it("recalculates after choosing a different cache precision", async () => {
+    const onStateChange = vi.fn();
+    render(
+      <KVCacheEstimate
+        read={ready(deepseekV3)}
+        onStateChange={onStateChange}
+      />,
+    );
+
+    pickOption(
+      screen.getByTestId("kv-cache-precision"),
+      "endpoints.kvCache.precisions.fp8",
+    );
+
+    await waitFor(() =>
+      expect(onStateChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ precision: "fp8" }),
+      ),
+    );
   });
 
   it("estimates a mixed sliding/full checkpoint instead of refusing it", () => {

@@ -58,6 +58,14 @@ function Harness(overrides: Partial<EditorProps> = {}) {
 }
 
 describe("EndpointResolvedModelEditor", () => {
+  it("offers to customize a catalog-resolved model", () => {
+    render(<Harness />);
+
+    screen.getByRole("button", {
+      name: /endpoints\.resolvedModel\.customizeModel/,
+    });
+  });
+
   it("renders the editable direct fields and reports optional-field input", () => {
     const onRegistryChange = vi.fn();
     const onVersionInput = vi.fn();

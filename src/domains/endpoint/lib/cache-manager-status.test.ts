@@ -36,6 +36,14 @@ describe("readEndpointCacheManagerStatus", () => {
         cluster({
           cache: {
             phase: "Ready",
+            conditions: [
+              {
+                type: "Ready",
+                status: "True",
+                reason: "Ready",
+                message: "cache runtime is healthy",
+              },
+            ],
             details: {
               current: { l1_size_gib: 12 },
             },
@@ -92,6 +100,27 @@ describe("readEndpointCacheManagerStatus", () => {
     ).toMatchObject({
       kind: "unavailable",
       errorMessage: "runtime health check failed",
+    });
+
+    expect(
+      readEndpointCacheManagerStatus(
+        cluster({
+          cache: {
+            phase: "Ready",
+            conditions: [
+              {
+                type: "Degraded",
+                status: "False",
+                reason: "RuntimeUnhealthy",
+              },
+            ],
+          },
+        }),
+        false,
+      ),
+    ).toMatchObject({
+      kind: "unavailable",
+      errorMessage: "RuntimeUnhealthy",
     });
   });
 

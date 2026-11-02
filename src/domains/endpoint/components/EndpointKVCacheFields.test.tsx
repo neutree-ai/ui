@@ -53,6 +53,8 @@ function Editor({
   cachePhase = "Ready",
   sectioned = false,
   clusterCache = true,
+  cacheError,
+  missingCluster = false,
 }: {
   cache: unknown;
   engineVersion?: string;
@@ -63,6 +65,8 @@ function Editor({
   cachePhase?: string;
   sectioned?: boolean;
   clusterCache?: boolean;
+  cacheError?: string;
+  missingCluster?: boolean;
   save: (value: unknown) => void;
   supportedCluster?: boolean;
   invalid?: (value: unknown) => void;
@@ -87,31 +91,34 @@ function Editor({
           cacheStatusLoading={cacheStatusLoading}
           acceleratorType={acceleratorType}
           cluster={
-            {
-              metadata: { name: "test" },
-              status: {
-                ...(clusterCache && {
-                  cache: {
-                    phase: cachePhase,
-                    details: {
-                      ready_runtime_version: "v0.5.0",
-                      current: { l1_size_gib: 8 },
+            missingCluster
+              ? undefined
+              : ({
+                  metadata: { name: "test" },
+                  status: {
+                    ...(clusterCache && {
+                      cache: {
+                        phase: cachePhase,
+                        error_message: cacheError,
+                        details: {
+                          ready_runtime_version: "v0.5.0",
+                          current: { l1_size_gib: 8 },
+                        },
+                      },
+                    }),
+                  },
+                  spec: {
+                    type: "kubernetes",
+                    cache: {
+                      provider: "zcache",
+                      options: {
+                        enabled: supportedCluster,
+                        target_nodes: ["a"],
+                        version: runtimeVersion,
+                      },
                     },
                   },
-                }),
-              },
-              spec: {
-                type: "kubernetes",
-                cache: {
-                  provider: "zcache",
-                  options: {
-                    enabled: supportedCluster,
-                    target_nodes: ["a"],
-                    version: runtimeVersion,
-                  },
-                },
-              },
-            } as unknown as EndpointClusterRef
+                } as unknown as EndpointClusterRef)
           }
         />
         <button
@@ -329,6 +336,21 @@ it("shows manager health and L1 capacity before the switch", () => {
   expect(status.getAttribute("data-l1-capacity")).toBe("8");
 });
 
+it("shows the manager error returned by the selected cluster", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      cachePhase="Failed"
+      cacheError="cache manager could not reconcile"
+    />,
+  );
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-manager-status").textContent,
+  ).toContain("cache manager could not reconcile");
+});
+
 it("disables cache while the manager is reconciling or unavailable", () => {
   render(<Editor cache={null} save={vi.fn()} cachePhase="Reconciling" />);
 
@@ -521,6 +543,26 @@ it("opens a read-only cache configuration summary", async () => {
   expect(dialog.textContent).toContain("test");
   expect(dialog.textContent).toContain(
     "endpoints.kvCacheSettings.platformManaged",
+  );
+});
+
+it("identifies a missing cluster in the cache configuration", async () => {
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={vi.fn()}
+      missingCluster
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "endpoints.kvCacheSettings.viewConfig",
+    }),
+  );
+
+  expect((await screen.findByRole("dialog")).textContent).toContain(
+    "endpoints.kvCacheSettings.clusterNotSelected",
   );
 });
 

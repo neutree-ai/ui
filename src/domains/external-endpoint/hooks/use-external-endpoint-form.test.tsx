@@ -391,8 +391,11 @@ describe("model services", () => {
   });
 
   it("tests a blank external URL in create mode", async () => {
-    renderEndpointForm({ action: "create" });
+    const { result } = renderEndpointForm({ action: "create" });
     clickAction("addModelService");
+    act(() =>
+      result.current.form.setValue("spec.upstreams.0.upstream.url", null),
+    );
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -410,12 +413,15 @@ describe("model services", () => {
   });
 
   it("tests a blank endpoint reference in create mode", async () => {
-    renderEndpointForm({ action: "create" });
+    const { result } = renderEndpointForm({ action: "create" });
     clickAction("addModelService");
     change(
       within(screen.getByTestId("field-_upstreamType_0")).getByRole("combobox"),
       "endpoint_ref",
     );
+    const getValues = vi
+      .spyOn(result.current.form, "getValues")
+      .mockReturnValue(undefined as never);
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -430,6 +436,7 @@ describe("model services", () => {
         workspace: "default",
       }),
     );
+    getValues.mockRestore();
   });
 
   it("includes the saved identity when testing an external URL in edit mode", async () => {

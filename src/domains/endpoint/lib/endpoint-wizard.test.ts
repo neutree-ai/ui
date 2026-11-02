@@ -253,6 +253,11 @@ describe("endpoint wizard error mapping", () => {
       path: undefined,
       message: "fallback",
     });
+    expect(endpointServerIssue(null, "fallback")).toEqual({
+      step: 4,
+      path: undefined,
+      message: "fallback",
+    });
     expect(
       endpointServerIssue(
         { field: "spec.engine.version", message: "unsupported version" },

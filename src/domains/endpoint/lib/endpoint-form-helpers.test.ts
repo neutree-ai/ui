@@ -509,6 +509,22 @@ describe("validateEndpointValues", () => {
     },
   );
 
+  it("requires a registry when a catalog supplies only a model name", () => {
+    const errors = validate(
+      {},
+      {
+        action: "create",
+        currentModelName: "catalog/model",
+        currentRegistry: "",
+      },
+    );
+
+    expect(errors["spec.model.registry"]).toEqual({
+      type: "manual",
+      message: "common.validation.required",
+    });
+  });
+
   // `null` model names mean the existence lookup has not resolved.
   it.each([
     {

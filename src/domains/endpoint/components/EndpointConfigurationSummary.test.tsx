@@ -254,4 +254,39 @@ describe("EndpointConfigurationSummary", () => {
 
     screen.getByText("endpoints.origin.featuresUnreadable");
   });
+
+  it("explains unreadable catalog features even when known features remain", () => {
+    render(
+      <EndpointConfigurationSummary
+        values={values}
+        reviewContext={{
+          ...reviewContext,
+          catalogOrigin: {
+            ...reviewContext.catalogOrigin!,
+            featuresUnreadable: true,
+          },
+        }}
+      />,
+    );
+
+    screen.getByText("context_window: 32768");
+    screen.getByText("endpoints.origin.featuresUnreadable");
+  });
+
+  it("uses the shared empty value when a catalog variant lists no features", () => {
+    render(
+      <EndpointConfigurationSummary
+        values={values}
+        reviewContext={{
+          ...reviewContext,
+          catalogOrigin: {
+            ...reviewContext.catalogOrigin!,
+            features: [],
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getAllByTestId("empty-value").length).toBeGreaterThan(0);
+  });
 });

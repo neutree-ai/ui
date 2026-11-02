@@ -166,6 +166,19 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     vi.mocked(useIsTruncated).mockReturnValue(false);
   });
 
+  it("asks for a cluster before showing cluster resources", () => {
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={null}
+        currentCluster={null}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    screen.getByText("endpoints.placeholders.clusterResourcesRequiresCluster");
+  });
+
   it("shows node GPU device cards when virtualization is disabled but devices exist", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel

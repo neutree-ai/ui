@@ -335,6 +335,22 @@ describe("endpointReviewChanges", () => {
       },
     ]);
   });
+
+  it("normalizes a cache provider without timeout options", () => {
+    const current = changed({
+      kv_cache: { provider: "zcache", options: null },
+    });
+
+    expect(endpointReviewChanges(current, endpoint)).toEqual([
+      {
+        step: 2,
+        label: "endpoints.sections.kvCache",
+        before: null,
+        after: { provider: "zcache", options: null },
+        format: "cache",
+      },
+    ]);
+  });
 });
 
 describe("formatEndpointReviewValue", () => {

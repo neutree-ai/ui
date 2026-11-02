@@ -1,7 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
-import type { FieldValues } from "react-hook-form";
-import { useForm } from "react-hook-form";
+import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { FormFieldGroup } from "./FormFieldGroup";
@@ -50,6 +55,7 @@ function TestForm({
   cancelHref,
   contentWidth,
   submitHint,
+  showCancel,
 }: {
   onFinish: (values: TestValues) => void | Promise<void>;
   submitBlocked?: boolean;
@@ -63,6 +69,7 @@ function TestForm({
   cancelHref?: string;
   contentWidth?: "default" | "wide";
   submitHint?: string;
+  showCancel?: boolean;
 }) {
   const methods = useForm<TestValues>({
     defaultValues: { name: "initial" },
@@ -80,7 +87,7 @@ function TestForm({
   return (
     <ResourceForm
       {...formProps}
-      hideCancel={!cancelHref}
+      hideCancel={cancelHref ? false : !showCancel}
       submitBlocked={submitBlocked}
       blockedSubmitMode={blockedSubmitMode}
       onBlockedSubmit={onBlockedSubmit}
@@ -166,6 +173,25 @@ function OptionFieldsForm({
   );
 }
 
+function AccessoryField() {
+  const methods = useForm<FieldValues>({
+    defaultValues: { name: "initial" },
+  });
+
+  return (
+    <FormProvider {...methods}>
+      <FormFieldGroup
+        {...methods}
+        name="name"
+        label="Name"
+        labelAccessory={<span>Required for deployment</span>}
+      >
+        <input />
+      </FormFieldGroup>
+    </FormProvider>
+  );
+}
+
 describe("ResourceForm", () => {
   it("submits the handleSubmit payload instead of reading getValues again", async () => {
     const onFinish = vi.fn();
@@ -245,6 +271,12 @@ describe("ResourceForm", () => {
     expect(actionBar?.textContent).toContain("Previous");
     expect(actionBar?.textContent).toContain("Next");
     expect(actionBar?.textContent).toContain("Save");
+  });
+
+  it("renders the standard cancel action when a form has nowhere to return", () => {
+    render(<TestForm onFinish={vi.fn()} showCancel />);
+
+    screen.getByRole("button", { name: "buttons.cancel" });
   });
 
   it("renders an accessible hint beside the primary submit action", () => {
@@ -394,5 +426,15 @@ describe("ResourceForm", () => {
 
     expect(leftToIme).toBe(true);
     expect(onFinish).not.toHaveBeenCalled();
+  });
+});
+
+describe("FormFieldGroup", () => {
+  it("keeps a label accessory attached to the field label", () => {
+    render(<AccessoryField />);
+
+    const field = screen.getByTestId("field-name");
+    within(field).getByText("Name");
+    within(field).getByText("Required for deployment");
   });
 });
