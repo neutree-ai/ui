@@ -5,7 +5,7 @@ import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 
 const { systemApiMock, language } = vi.hoisted(() => ({
   systemApiMock: vi.fn(),
-  language: { resolvedLanguage: "en-US", language: "en-US" },
+  language: { resolvedLanguage: "en-US" },
 }));
 
 vi.mock("@/foundation/lib/i18n", () => ({
@@ -67,7 +67,6 @@ describe("ExternalEndpointMonitor", () => {
   beforeEach(() => {
     systemApiMock.mockReset();
     language.resolvedLanguage = "en-US";
-    language.language = "en-US";
   });
 
   it("explains that monitoring needs virtual model routing when there are no routes", () => {
@@ -105,17 +104,15 @@ describe("ExternalEndpointMonitor", () => {
       </>
     );
     const { rerender } = render(page, { wrapper: MemoryRouter });
-    for (const locale of ["zh-CN", "en-US"]) {
+    for (const locale of ["fr-FR", "en-US"]) {
       language.resolvedLanguage = locale;
-      // A stale Chinese preference in an English-only build must not select Chinese.
-      language.language = "zh-CN";
       rerender(
         <>
           <ExternalEndpointMonitor record={endpoint()} />
           <ExternalEndpointMonitorLink record={endpoint()} />
         </>,
       );
-      const suffix = locale === "zh-CN" ? "-zh-CN" : "";
+      const suffix = locale !== "en-US" ? `-${locale}` : "";
       expect(
         screen
           .getByTestId("grafana-dashboard")
@@ -166,7 +163,6 @@ describe("ExternalEndpointMonitorLink", () => {
   beforeEach(() => {
     systemApiMock.mockReset();
     language.resolvedLanguage = "en-US";
-    language.language = "en-US";
   });
 
   it("opens the full dashboard in Grafana without the kiosk flag", () => {

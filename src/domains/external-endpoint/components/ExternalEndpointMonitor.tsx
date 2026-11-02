@@ -37,7 +37,10 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
     ...props,
     dashboardConfig: {
       ...props.dashboardConfig,
-      dashboardId: `neutree-model-routing-embed${i18n.resolvedLanguage === "zh-CN" ? "-zh-CN" : ""}`,
+      dashboardId: props.dashboardConfig.dashboardId.replace(
+        "neutree-model-routing",
+        "neutree-model-routing-embed",
+      ),
     },
   };
   return { props: embeddedProps, link };

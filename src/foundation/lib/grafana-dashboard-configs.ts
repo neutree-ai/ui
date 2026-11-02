@@ -100,7 +100,7 @@ export const getModelRoutingDashboardProps = (
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: `neutree-model-routing${context.language === "zh-CN" ? "-zh-CN" : ""}`,
+    dashboardId: `neutree-model-routing${context.language && context.language !== "en-US" ? `-${context.language}` : ""}`,
     variables: {
       ...getCommonVariables(),
       // Encode once as PromQL string literals. Grafana 11 formatters differ
