@@ -208,6 +208,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   // Read off the endpoint, never fetched: a record that still reads correctly
   // after its catalog is gone is the point of keeping it here.
   const catalogOrigin = readCatalogOrigin(record.metadata.annotations);
+  const kvTransferConfig =
+    record.status?.kv_cache?.provider === "zcache"
+      ? record.status.kv_cache.details?.kv_transfer_config
+      : undefined;
 
   return (
     <EndpointSaveAsCatalogProvider>
@@ -357,11 +361,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               </ShowPage.Section>
             </div>
             <EndpointAdvancedParameters
-              engineParameters={
-                record.spec.variables?.engine_args as
+              engineParameters={{
+                ...(record.spec.variables?.engine_args as
                   | Record<string, unknown>
-                  | undefined
-              }
+                  | undefined),
+                ...(kvTransferConfig
+                  ? { kv_transfer_config: kvTransferConfig }
+                  : {}),
+              }}
               environmentVariables={record.spec.env}
             />
           </TabsContent>
