@@ -385,6 +385,18 @@ describe("EndpointDeploymentForm", () => {
     expect(screen.getByTestId("active-step").textContent).toBe("4");
   });
 
+  it("maps an explicit server field path onto its wizard step", () => {
+    mocks.serverError = {
+      field: "spec.engine.version",
+      message: "Unsupported engine version",
+    };
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "reject server" }));
+
+    expect(screen.getByTestId("active-step").textContent).toBe("2");
+  });
+
   it("returns to the previous step from the wizard footer", async () => {
     mocks.trigger.mockResolvedValue(true);
     render(<EndpointDeploymentForm action="create" />);
