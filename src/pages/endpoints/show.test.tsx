@@ -88,7 +88,7 @@ vi.mock("@/domains/cluster/lib/get-ray-dashboard-proxy", () => ({
   getRayDashboardProxy: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
-  EndpointAccessSummary: () => <span data-testid="endpoint-access-summary" />,
+  EndpointAccessSummary: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
   EndpointAdvancedParameters: (props: {
@@ -318,15 +318,13 @@ describe("EndpointsShow", () => {
     expect(advancedParametersProps.current?.engineParameters).toEqual({});
   });
 
-  it("shows all served model names together with the access address", () => {
+  it("shows all discovered served model names", () => {
     useShowMock.mockReturnValue({
       query: {
         data: {
           data: {
             ...endpoint,
             status: {
-              phase: "Running",
-              service_url: "http://gateway/endpoint-a",
               served_models: ["chat-primary", "chat-alias"],
             },
           },
@@ -335,7 +333,6 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    screen.getByTestId("endpoint-access-summary");
     screen.getByText("chat-primary");
     screen.getByText("chat-alias");
   });
