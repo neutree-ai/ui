@@ -315,7 +315,7 @@ describe("ClusterCacheSection", () => {
 
 it("shows disabled when cache has never been configured or observed", () => {
   render(<ClusterCacheSection cluster={{ spec: {}, status: {} } as Cluster} />);
-  expect(screen.getByText("clusters.zcache.disabled")).toBeTruthy();
+  screen.getByText("clusters.zcache.disabled");
   expect(screen.queryByText("clusters.zcache.reconciling")).toBeNull();
   expect(screen.queryByText("clusters.zcache.lastObservation")).toBeNull();
 });
@@ -331,6 +331,6 @@ it("shows pending enablement when the first cache observation is missing", () =>
     status: {},
   } as unknown as Cluster;
   render(<ClusterCacheSection cluster={cluster} />);
-  expect(screen.getByText("clusters.zcache.reconciling")).toBeTruthy();
-  expect(screen.getByText("clusters.zcache.waiting")).toBeTruthy();
+  screen.getByText("clusters.zcache.reconciling");
+  screen.getByText("clusters.zcache.waiting");
 });
