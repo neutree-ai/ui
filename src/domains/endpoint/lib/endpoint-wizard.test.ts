@@ -76,6 +76,14 @@ describe("endpoint wizard error mapping", () => {
     expect(firstEndpointErrorStep({})).toBeNull();
   });
 
+  it("uses the model step for an error path the wizard does not recognize", () => {
+    expect(
+      firstEndpointErrorStep({
+        unexpected: { type: "manual", message: "Unexpected error" },
+      }),
+    ).toBe(0);
+  });
+
   it("maps modified fields to their wizard steps", () => {
     expect(
       endpointDirtySteps({
@@ -244,6 +252,16 @@ describe("endpoint wizard error mapping", () => {
       step: 4,
       path: undefined,
       message: "fallback",
+    });
+    expect(
+      endpointServerIssue(
+        { field: "spec.engine.version", message: "unsupported version" },
+        "fallback",
+      ),
+    ).toEqual({
+      step: 2,
+      path: "spec.engine.version",
+      message: "unsupported version",
     });
   });
 });

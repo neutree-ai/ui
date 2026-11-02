@@ -349,3 +349,118 @@ describe("VariablesInput value inputs", () => {
     screen.getByDisplayValue("my-workload:v1");
   });
 });
+
+describe("VariablesInput primitive and draft controls", () => {
+  const primitiveSchema = {
+    enabled: { type: "boolean" },
+    count: { type: "number" },
+    maximum: { type: "integer" },
+    note: { type: "string" },
+  } as unknown as Schema;
+
+  it("edits existing primitive values and preserves an unknown value as text", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{
+          enabled: false,
+          count: 1,
+          maximum: 2,
+          note: "note",
+          unknown: "raw",
+        }}
+        onChange={onChange}
+        schema={primitiveSchema}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox"));
+    const [count, maximum] = screen.getAllByRole("spinbutton");
+    fireEvent.change(count, { target: { value: "1.5" } });
+    fireEvent.change(maximum, { target: { value: "4" } });
+    fireEvent.change(screen.getByDisplayValue("note"), {
+      target: { value: "updated" },
+    });
+    fireEvent.change(screen.getByDisplayValue("raw"), {
+      target: { value: "changed" },
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(5);
+    expect(onChange.mock.calls[0][0].enabled).toBe(true);
+    expect(onChange.mock.calls[1][0].count).toBe(1.5);
+    expect(onChange.mock.calls[2][0].maximum).toBe(4);
+    expect(onChange.mock.calls[3][0].note).toBe("updated");
+    expect(onChange.mock.calls[4][0].unknown).toBe("changed");
+  });
+
+  it("clears a JSON error as soon as the existing value is corrected", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: { method: "mtp" } }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    screen.getByText("components.variablesInput.invalidJsonValue");
+
+    fireEvent.change(textarea, {
+      target: { value: '{"method":"eagle"}' },
+    });
+
+    expect(
+      screen.queryByText("components.variablesInput.invalidJsonValue"),
+    ).toBeNull();
+    expect(onChange).toHaveBeenCalledWith({
+      speculative_config: { method: "eagle" },
+    });
+  });
+
+  it("removes an invalid existing JSON value without its draft or error", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: '{"method":' }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByTestId("remove-variable")[0]);
+
+    expect(onChange).toHaveBeenCalledWith({});
+  });
+
+  it.each(["number", "integer", "string"] as const)(
+    "edits a drafted %s row with the type-specific control",
+    (type) => {
+      const onChange = vi.fn();
+      render(
+        <VariablesInput
+          value={{}}
+          onChange={onChange}
+          schema={{ count: { type } } as unknown as Schema}
+        />,
+      );
+
+      fireEvent.change(screen.getAllByRole("textbox")[0], {
+        target: { value: "count" },
+      });
+      const valueInput =
+        type === "string"
+          ? screen.getAllByRole("textbox")[1]
+          : screen.getByRole("spinbutton");
+      fireEvent.change(valueInput, { target: { value: "3" } });
+      fireEvent.blur(valueInput);
+
+      expect(onChange).toHaveBeenCalledWith({
+        count: type === "string" ? "3" : 3,
+      });
+    },
+  );
+});

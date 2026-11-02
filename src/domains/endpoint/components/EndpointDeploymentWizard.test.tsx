@@ -320,6 +320,28 @@ describe("EndpointDeploymentWizard", () => {
     expect(screen.getByTestId("endpoint-wizard-step-2").textContent).toBe("2");
   });
 
+  it("shows unknown-delivery and unavailable-capacity risks together", () => {
+    render(
+      <Harness
+        context={{
+          ...reviewContext,
+          modelDelivery: "unknown",
+          clusterCapacity: null,
+          clusterCapacityUnavailable: true,
+        }}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    screen.getByTestId("review-runtime-download-unknown");
+    screen.getByTestId("review-capacity-unavailable");
+  });
+
   it("does not carry a controller value into a differently named field", () => {
     render(<ControlledStepHarness />);
 

@@ -33,6 +33,12 @@ const baselineEndpoint = {
 const mocks = vi.hoisted(() => ({
   trigger: vi.fn(),
   submit: vi.fn(),
+  submitBlocked: false,
+  submitErrors: null as Record<string, unknown> | null,
+  serverError: {
+    code: "10232",
+    message: "Server rejected the engine",
+  } as unknown,
   dirtyFields: {} as Record<string, unknown>,
   values: {},
   query: undefined as
@@ -58,12 +64,20 @@ vi.mock("@/domains/endpoint/hooks/use-endpoint-form", () => ({
   useEndpointForm: () => ({
     form: {
       formState: { errors: {}, dirtyFields: mocks.dirtyFields },
-      handleSubmit: () => () => undefined,
+      handleSubmit:
+        (
+          onValid: () => void,
+          onInvalid: (errors: Record<string, unknown>) => void,
+        ) =>
+        () => {
+          if (mocks.submitErrors) onInvalid(mocks.submitErrors);
+          else onValid();
+        },
       setError: vi.fn(),
       trigger: mocks.trigger,
       watch: () => mocks.values,
     },
-    submitBlocked: false,
+    submitBlocked: mocks.submitBlocked,
     editQuery: mocks.query,
     currentWorkspace: "design-lab",
     metadataFields: null,
@@ -111,9 +125,11 @@ vi.mock("./EndpointDeploymentWizard", () => ({
 vi.mock("@/foundation/components/ResourceForm", () => ({
   ResourceForm: ({
     children,
+    footerLeadingActions,
     footerActions,
     hideSubmit,
     onBlockedSubmit,
+    onInvalid,
     onSubmitError,
     submitBlocked,
     submitLabel,
@@ -121,9 +137,11 @@ vi.mock("@/foundation/components/ResourceForm", () => ({
     cancelHref,
   }: {
     children: ReactNode;
+    footerLeadingActions?: ReactNode;
     footerActions?: ReactNode;
     hideSubmit?: boolean;
     onBlockedSubmit?: () => void;
+    onInvalid?: (errors: Record<string, unknown>) => void;
     onSubmitError?: (error: unknown) => void;
     submitBlocked?: boolean;
     submitLabel: string;
@@ -132,6 +150,7 @@ vi.mock("@/foundation/components/ResourceForm", () => ({
   }) => (
     <div>
       {children}
+      {footerLeadingActions}
       {footerActions}
       {cancelHref && (
         <a data-testid="form-cancel" href={cancelHref}>
@@ -139,16 +158,27 @@ vi.mock("@/foundation/components/ResourceForm", () => ({
         </a>
       )}
       {onSubmitError && (
+        <button type="button" onClick={() => onSubmitError(mocks.serverError)}>
+          reject server
+        </button>
+      )}
+      {onInvalid && (
         <button
           type="button"
           onClick={() =>
-            onSubmitError({
-              code: "10232",
-              message: "Server rejected the engine",
+            onInvalid({
+              spec: {
+                engine: {
+                  version: {
+                    type: "required",
+                    message: "Version is required",
+                  },
+                },
+              },
             })
           }
         >
-          reject server
+          invalid form
         </button>
       )}
       {!hideSubmit && (
@@ -173,6 +203,12 @@ describe("EndpointDeploymentForm", () => {
     mocks.query = undefined;
     mocks.dirtyFields = {};
     mocks.values = {};
+    mocks.submitBlocked = false;
+    mocks.submitErrors = null;
+    mocks.serverError = {
+      code: "10232",
+      message: "Server rejected the engine",
+    };
     mocks.submit.mockReset();
     mocks.trigger.mockReset();
   });
@@ -305,6 +341,65 @@ describe("EndpointDeploymentForm", () => {
     expect(screen.getByTestId("active-step").textContent).toBe("2");
   });
 
+  it("moves to review after blocked submission validation succeeds", async () => {
+    mocks.submitBlocked = true;
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.wizard.create" }),
+    );
+
+    await screen.findByText("1", { selector: "output" });
+  });
+
+  it("moves to the first invalid step after blocked submission validation fails", () => {
+    mocks.submitBlocked = true;
+    mocks.submitErrors = {
+      spec: {
+        cluster: { type: "required", message: "Cluster is required" },
+      },
+    };
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.wizard.create" }),
+    );
+
+    expect(screen.getByTestId("active-step").textContent).toBe("1");
+  });
+
+  it("moves to the first invalid step from direct invalid feedback", () => {
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "invalid form" }));
+
+    expect(screen.getByTestId("active-step").textContent).toBe("2");
+  });
+
+  it("shows a page-level server issue when no field path is available", () => {
+    mocks.serverError = { message: "Unknown server failure" };
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "reject server" }));
+
+    expect(screen.getByTestId("active-step").textContent).toBe("4");
+  });
+
+  it("returns to the previous step from the wizard footer", async () => {
+    mocks.trigger.mockResolvedValue(true);
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.wizard.next" }),
+    );
+    await screen.findByText("1", { selector: "output" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.wizard.previous" }),
+    );
+
+    expect(screen.getByTestId("active-step").textContent).toBe("0");
+  });
+
   it("renders a page-level not-found state when an edit read fails", () => {
     mocks.query = {
       error: { statusCode: 404 },
@@ -323,6 +418,14 @@ describe("EndpointDeploymentForm", () => {
         .getByRole("link", { name: "endpoints.loadError.backToList" })
         .getAttribute("href"),
     ).toBe("#/design-lab/endpoints");
+  });
+
+  it("shows the loading state while an edit query is unresolved", () => {
+    mocks.query = { isLoading: true };
+
+    render(<EndpointDeploymentForm action="edit" />);
+
+    expect(screen.queryByTestId("active-step")).toBeNull();
   });
 
   it("distinguishes a generic edit read failure from not found", () => {

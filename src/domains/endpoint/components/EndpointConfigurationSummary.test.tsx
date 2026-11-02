@@ -157,4 +157,26 @@ describe("EndpointConfigurationSummary", () => {
     expect(screen.queryByText("endpoints.fields.modelRegistry")).toBeNull();
     screen.getByText("vllm v0.32.0");
   });
+
+  it("keeps unrecognized scheduler and capacity keys visible", () => {
+    const unknownValues = structuredClone(values);
+    unknownValues.spec.deployment_options = {
+      scheduler: { type: "custom-scheduler" },
+    };
+
+    render(
+      <EndpointConfigurationSummary
+        values={unknownValues}
+        reviewContext={{
+          ...reviewContext,
+          clusterCapacity: [
+            { key: "disk" as never, requested: 1, available: 2, total: 3 },
+          ],
+        }}
+      />,
+    );
+
+    screen.getByText("custom-scheduler");
+    screen.getByTestId("configuration-capacity-disk");
+  });
 });
