@@ -13,7 +13,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * The embedded dashboard and its deep link must agree on variables and time
  * range, so both come from here.
  */
-function useModelRoutingDashboard(record: ExternalEndpoint, embedded = false) {
+function useModelRoutingDashboard(record: ExternalEndpoint) {
   const { i18n } = useTranslation();
   const { resolvedTheme } = useTheme();
   const { grafanaUrl } = useSystemApi();
@@ -24,7 +24,6 @@ function useModelRoutingDashboard(record: ExternalEndpoint, embedded = false) {
     grafanaUrl && record.metadata.workspace
       ? getModelRoutingDashboardProps(grafanaUrl, {
           language: i18n.resolvedLanguage,
-          embedded,
           workspace: record.metadata.workspace,
           endpoint: record.metadata.name,
           ...state,
@@ -34,7 +33,14 @@ function useModelRoutingDashboard(record: ExternalEndpoint, embedded = false) {
     ? new URL(buildGrafanaDashboardUrl({ ...props, resolvedTheme }))
     : null;
   link?.searchParams.delete("kiosk");
-  return { props, link };
+  const embeddedProps = props && {
+    ...props,
+    dashboardConfig: {
+      ...props.dashboardConfig,
+      dashboardId: `neutree-model-routing-embed${i18n.resolvedLanguage === "zh-CN" ? "-zh-CN" : ""}`,
+    },
+  };
+  return { props: embeddedProps, link };
 }
 
 /**
@@ -65,7 +71,7 @@ export default function ExternalEndpointMonitor({
 }) {
   const { t } = useTranslation();
   const { isLoading, error, refetch } = useSystemApi();
-  const { props } = useModelRoutingDashboard(record, true);
+  const { props } = useModelRoutingDashboard(record);
 
   if (!record.spec.model_routes?.length)
     return (
