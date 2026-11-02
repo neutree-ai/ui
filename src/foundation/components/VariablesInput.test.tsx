@@ -368,6 +368,7 @@ describe("VariablesInput primitive and draft controls", () => {
           maximum: 2,
           note: "note",
           unknown: "raw",
+          flag: true,
         }}
         onChange={onChange}
         schema={primitiveSchema}
@@ -431,9 +432,73 @@ describe("VariablesInput primitive and draft controls", () => {
       />,
     );
 
+    const textarea = screen.getByDisplayValue(
+      '{"method":',
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
     fireEvent.click(screen.getAllByTestId("remove-variable")[0]);
 
     expect(onChange).toHaveBeenCalledWith({});
+  });
+
+  it("rejects valid JSON with the wrong shape for an object field", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: { method: "mtp" } }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: "[]" } });
+
+    screen.getByText("components.variablesInput.invalidJsonValue");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("clears the form-level JSON error when the value becomes valid", async () => {
+    render(<VariablesInputForm onSubmit={vi.fn()} />);
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    screen.getByText("components.variablesInput.invalidJsonValue");
+
+    fireEvent.change(textarea, {
+      target: { value: '{"method":"eagle"}' },
+    });
+
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByText("components.variablesInput.invalidJsonValue"),
+      ).toBeNull(),
+    );
+  });
+
+  it("selects a schema key from the draft suggestions and removes the row", async () => {
+    render(
+      <VariablesInput
+        value={{}}
+        onChange={vi.fn()}
+        schema={
+          { alpha: { type: "string", title: "Alpha" } } as unknown as Schema
+        }
+      />,
+    );
+
+    const keyInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
+    fireEvent.focus(keyInput);
+    fireEvent.change(keyInput, { target: { value: "al" } });
+    fireEvent.click(await screen.findByText("Alpha"));
+
+    expect(keyInput.value).toBe("alpha");
+    fireEvent.blur(keyInput);
+    fireEvent.click(screen.getByTestId("remove-variable"));
   });
 
   it.each(["number", "integer", "string"] as const)(

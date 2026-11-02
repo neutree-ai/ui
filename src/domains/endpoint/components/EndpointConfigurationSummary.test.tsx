@@ -179,4 +179,64 @@ describe("EndpointConfigurationSummary", () => {
     screen.getByText("custom-scheduler");
     screen.getByTestId("configuration-capacity-disk");
   });
+
+  it("renders empty and unavailable deployment details without a catalog", () => {
+    render(
+      <EndpointConfigurationSummary
+        values={
+          {
+            metadata: { name: "empty", workspace: "default" },
+            spec: {
+              cluster: "",
+              model: {
+                registry: "",
+                name: "",
+                version: "",
+                file: "",
+                task: "",
+              },
+              engine: { engine: "", version: "" },
+              resources: null,
+              replicas: null,
+              deployment_options: null,
+              kv_cache: null,
+              variables: null,
+              env: null,
+            },
+          } as unknown as Endpoint
+        }
+        reviewContext={{
+          ...reviewContext,
+          catalogOrigin: null,
+          nodeCount: null,
+          clusterCapacity: null,
+          clusterCapacityUnavailable: true,
+        }}
+        composeError="Compose failed"
+      />,
+    );
+
+    screen.getByText("Compose failed");
+    screen.getByText("endpoints.wizard.summary.cacheDisabled");
+    screen.getByText("endpoints.messages.clusterResourcesUnavailable");
+  });
+
+  it("explains unreadable catalog features when no feature list is available", () => {
+    render(
+      <EndpointConfigurationSummary
+        values={values}
+        reviewContext={{
+          ...reviewContext,
+          catalogOrigin: {
+            catalog: "qwen-catalog",
+            variant: "fp8",
+            features: [],
+            featuresUnreadable: true,
+          },
+        }}
+      />,
+    );
+
+    screen.getByText("endpoints.origin.featuresUnreadable");
+  });
 });

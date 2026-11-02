@@ -35,7 +35,7 @@ vi.mock("./KVCacheEstimate", () => ({
               reason: read.state,
             },
       );
-    }, [onStateChange, read.state]);
+    }, [onStateChange, read]);
     return <div data-testid="kv-details">KV details</div>;
   },
 }));
@@ -153,5 +153,36 @@ describe("EndpointDeploymentSummary", () => {
     );
 
     screen.getByText("endpoints.weights.estimated 16 GB");
+  });
+
+  it("keeps the same ready KV estimate when the estimate refreshes", async () => {
+    const view = render(
+      <EndpointDeploymentSummary
+        values={values}
+        declared={{
+          perReplicaGb: 27,
+          source: "catalog",
+          replicas: 1,
+          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
+        }}
+        kvCache={kvCache}
+      />,
+    );
+    await waitFor(() => screen.getByText("43.1 GB"));
+
+    view.rerender(
+      <EndpointDeploymentSummary
+        values={values}
+        declared={{
+          perReplicaGb: 27,
+          source: "catalog",
+          replicas: 1,
+          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
+        }}
+        kvCache={{ ...kvCache, read: { ...kvCache.read } }}
+      />,
+    );
+
+    await waitFor(() => screen.getByText("43.1 GB"));
   });
 });

@@ -362,6 +362,22 @@ describe("model services", () => {
     ).toEqual([""]);
   });
 
+  it("restores an external URL channel when switching back from an endpoint reference", () => {
+    const { result } = renderEndpointForm({ action: "create" });
+    clickAction("addModelService");
+
+    const typeField = () =>
+      within(screen.getByTestId("field-_upstreamType_0")).getByRole("combobox");
+    change(typeField(), "endpoint_ref");
+    change(typeField(), "external");
+
+    expect(result.current.form.getValues("spec.upstreams.0")).toMatchObject({
+      endpoint_ref: undefined,
+      upstream: { url: "" },
+      auth: { type: "bearer", credential: "" },
+    });
+  });
+
   it("queries models and tests connectivity with the remaining channel's saved identity after deletion and edits", async () => {
     const view = renderEndpointForm({
       spec: {

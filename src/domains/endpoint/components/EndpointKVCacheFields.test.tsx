@@ -22,7 +22,15 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
     systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },
   }),
 }));
-afterEach(cleanup);
+const cacheVersionsState = vi.hoisted(() => ({
+  isError: false,
+  isLoading: false,
+}));
+afterEach(() => {
+  cleanup();
+  cacheVersionsState.isError = false;
+  cacheVersionsState.isLoading = false;
+});
 
 function Editor({
   cache,
@@ -36,6 +44,7 @@ function Editor({
   acceleratorType = "nvidia_gpu",
   cachePhase = "Ready",
   sectioned = false,
+  clusterCache = true,
 }: {
   cache: unknown;
   engineVersion?: string;
@@ -45,6 +54,7 @@ function Editor({
   acceleratorType?: string;
   cachePhase?: string;
   sectioned?: boolean;
+  clusterCache?: boolean;
   save: (value: unknown) => void;
   supportedCluster?: boolean;
   invalid?: (value: unknown) => void;
@@ -72,13 +82,15 @@ function Editor({
             {
               metadata: { name: "test" },
               status: {
-                cache: {
-                  phase: cachePhase,
-                  details: {
-                    ready_runtime_version: "v0.5.0",
-                    current: { l1_size_gib: 8 },
+                ...(clusterCache && {
+                  cache: {
+                    phase: cachePhase,
+                    details: {
+                      ready_runtime_version: "v0.5.0",
+                      current: { l1_size_gib: 8 },
+                    },
                   },
-                },
+                }),
               },
               spec: {
                 type: "kubernetes",
@@ -388,6 +400,7 @@ it("blocks cache after switching to an embedding task and allows disabling it", 
 });
 vi.mock("@/foundation/hooks/use-cache-versions", () => ({
   useCacheVersions: () => ({
+    ...cacheVersionsState,
     data: {
       data: [
         {
@@ -401,6 +414,45 @@ vi.mock("@/foundation/hooks/use-cache-versions", () => ({
     },
   }),
 }));
+
+it("reports the cache manager while its status is loading", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      cacheStatusLoading
+      clusterCache={false}
+      sectioned
+    />,
+  );
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.checkingManager");
+  expect(
+    screen.getByTestId("endpoint-kv-cache-manager-status").textContent,
+  ).toContain("endpoints.kvCacheSettings.managerLoading");
+});
+
+it("requires cluster cache status before enabling the endpoint cache", () => {
+  render(<Editor cache={null} save={vi.fn()} clusterCache={false} />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableManager");
+});
+
+it.each([
+  ["isError", "endpoints.kvCacheSettings.unavailableRuntimeCheck"],
+  ["isLoading", "endpoints.kvCacheSettings.checkingRuntime"],
+] as const)("maps cache runtime %s state", (state, message) => {
+  cacheVersionsState[state] = true;
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain(message);
+});
 
 it.each([
   ["", undefined, "v0.24.0", true],
