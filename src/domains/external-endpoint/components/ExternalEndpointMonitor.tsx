@@ -13,7 +13,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * The embedded dashboard and its deep link must agree on variables and time
  * range, so both come from here.
  */
-function useModelRoutingDashboard(record: ExternalEndpoint) {
+function useModelRoutingDashboard(record: ExternalEndpoint, embedded = false) {
+  const { i18n } = useTranslation();
   const { resolvedTheme } = useTheme();
   const { grafanaUrl } = useSystemApi();
   const [params] = useSearchParams();
@@ -22,6 +23,8 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
   const props =
     grafanaUrl && record.metadata.workspace
       ? getModelRoutingDashboardProps(grafanaUrl, {
+          language: i18n.resolvedLanguage,
+          embedded,
           workspace: record.metadata.workspace,
           endpoint: record.metadata.name,
           ...state,
@@ -62,7 +65,7 @@ export default function ExternalEndpointMonitor({
 }) {
   const { t } = useTranslation();
   const { isLoading, error, refetch } = useSystemApi();
-  const { props } = useModelRoutingDashboard(record);
+  const { props } = useModelRoutingDashboard(record, true);
 
   if (!record.spec.model_routes?.length)
     return (
@@ -79,13 +82,7 @@ export default function ExternalEndpointMonitor({
           className="min-h-0 flex-1"
           aria-label={t("external_endpoints.monitor.chartArea")}
         >
-          <GrafanaDashboard
-            {...props}
-            dashboardConfig={{
-              ...props.dashboardConfig,
-              dashboardId: "neutree-model-routing-embed",
-            }}
-          />
+          <GrafanaDashboard {...props} />
         </div>
       ) : (
         <div className="rounded-md border p-8 text-center text-muted-foreground">

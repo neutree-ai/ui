@@ -88,6 +88,8 @@ export const getEndpointSplitDashboardProps = (
 export const getModelRoutingDashboardProps = (
   grafanaUrl: string,
   context: {
+    language?: string;
+    embedded?: boolean;
     workspace: string;
     endpoint: string;
     models: string[];
@@ -99,7 +101,7 @@ export const getModelRoutingDashboardProps = (
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "neutree-model-routing",
+    dashboardId: `neutree-model-routing${context.embedded ? "-embed" : ""}${context.language === "zh-CN" ? "-zh-CN" : ""}`,
     variables: {
       ...getCommonVariables(),
       // Encode once as PromQL string literals. Grafana 11 formatters differ
