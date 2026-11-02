@@ -93,4 +93,74 @@ describe("EndpointPerformanceCard", () => {
     expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe("—");
     expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe("—");
   });
+
+  it("formats larger units and opens each monitoring trend", () => {
+    const onOpenMonitor = vi.fn();
+    useCustomMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        data: {
+          status: "ok",
+          window: "5m",
+          metrics: {
+            ttft_p95_seconds: 1.25,
+            tpot_avg_seconds: 2,
+            l1_read_bytes_per_second: 2 * 1024 ** 3,
+            l1_write_bytes_per_second: 512,
+          },
+        },
+      },
+    });
+
+    render(
+      <EndpointPerformanceCard
+        workspace="default"
+        name="chat-ep"
+        onOpenMonitor={onOpenMonitor}
+      />,
+    );
+
+    expect(screen.getByTestId("perf-ttft-value").textContent).toBe("1.25 s");
+    expect(screen.getByTestId("perf-tpot-value").textContent).toBe("2.00 s");
+    expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe(
+      "2.00 GiB/s",
+    );
+    expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe(
+      "512 B/s",
+    );
+
+    const trendButtons = screen.getAllByRole("button", {
+      name: "endpoints.performance.viewTrend",
+    });
+    fireEvent.click(trendButtons[0]);
+    fireEvent.click(trendButtons[1]);
+    fireEvent.click(trendButtons[2]);
+    expect(onOpenMonitor.mock.calls).toEqual([
+      ["latency"],
+      ["throughput"],
+      ["cache"],
+    ]);
+  });
+
+  it("formats KiB bandwidth", () => {
+    useCustomMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        data: {
+          status: "ok",
+          metrics: {
+            l1_read_bytes_per_second: 1536,
+            l1_write_bytes_per_second: 0,
+          },
+        },
+      },
+    });
+
+    render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
+
+    expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe(
+      "1.5 KiB/s",
+    );
+    expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe("0 B/s");
+  });
 });

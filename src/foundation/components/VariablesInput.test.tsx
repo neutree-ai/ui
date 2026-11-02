@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
+import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 import { VariablesInput } from "./VariablesInput";
 
 const objectSchema = {
@@ -422,7 +423,7 @@ describe("VariablesInput primitive and draft controls", () => {
     });
   });
 
-  it("removes an invalid existing JSON value without its draft or error", () => {
+  it("removes an invalid existing JSON value without its draft or error", async () => {
     const onChange = vi.fn();
     render(
       <VariablesInput
@@ -436,6 +437,11 @@ describe("VariablesInput primitive and draft controls", () => {
       '{"method":',
     ) as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: '{"method":' } });
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByText("components.variablesInput.invalidJsonValue"),
+      ).not.toBeNull(),
+    );
     fireEvent.click(screen.getAllByTestId("remove-variable")[0]);
 
     expect(onChange).toHaveBeenCalledWith({});
@@ -511,6 +517,33 @@ describe("VariablesInput primitive and draft controls", () => {
     expect(keyInput.value).toBe("alpha");
     fireEvent.blur(keyInput);
     fireEvent.click(screen.getByTestId("remove-variable"));
+  });
+
+  it("reports an invalid draft to the resource form before submission", () => {
+    const beforeSubmit = {
+      current: null as (() => boolean | undefined) | null,
+    };
+    render(
+      <ResourceFormSubmitContext.Provider
+        value={{
+          registerBeforeSubmit: vi.fn((handler) => {
+            beforeSubmit.current = handler;
+            return vi.fn();
+          }),
+        }}
+      >
+        <VariablesInputForm defaultArgs={{}} onSubmit={vi.fn()} />
+      </ResourceFormSubmitContext.Provider>,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "speculative_config" },
+    });
+    const textarea = screen.getByDisplayValue("{}") as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    fireEvent.blur(textarea);
+
+    expect(beforeSubmit.current?.()).toBe(false);
   });
 
   it.each(["number", "integer", "string"] as const)(

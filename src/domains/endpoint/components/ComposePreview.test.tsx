@@ -47,4 +47,37 @@ describe("ComposePreview", () => {
       preview.querySelector('[data-key-value-entry="TOKEN"]')?.textContent,
     ).toBe("TOKEN: secret");
   });
+
+  it.each(["card", "plain"] as const)(
+    "renders compose failures on the %s surface",
+    (surface) => {
+      render(
+        <ComposePreview
+          composed={null}
+          error="Missing model"
+          surface={surface}
+        />,
+      );
+
+      expect(
+        screen.getByTestId("compose-preview").getAttribute("data-state"),
+      ).toBe("error");
+      screen.getByText("Missing model");
+    },
+  );
+
+  it("renders nothing before composition has a result", () => {
+    const { container } = render(<ComposePreview composed={null} />);
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders the card surface when the preview is not collapsible", () => {
+    render(<ComposePreview composed={composed} />);
+
+    expect(
+      screen.getByTestId("compose-preview").getAttribute("data-state"),
+    ).toBe("ok");
+    screen.getByText("Engine");
+  });
 });
