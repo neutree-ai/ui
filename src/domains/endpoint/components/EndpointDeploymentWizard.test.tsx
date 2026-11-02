@@ -325,6 +325,114 @@ describe("EndpointDeploymentWizard", () => {
     ).toBe("unvalidated");
   });
 
+  it("shows cache details and fractional capacity in the review", () => {
+    render(
+      <Harness
+        values={{
+          ...endpoint,
+          spec: {
+            ...endpoint.spec,
+            kv_cache: { provider: "zcache", options: { timeout_seconds: 5 } },
+          },
+        }}
+        context={{
+          ...reviewContext,
+          noVerifiedAccelerator: false,
+          requiredVramGb: null,
+          clusterCapacity: [
+            { key: "memory", requested: 1.5, available: 2.5, total: 4 },
+          ],
+        }}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    expect(screen.getByTestId("review-capacity-memory").textContent).toContain(
+      "1.5",
+    );
+    expect(screen.getByTestId("deployment-checks").textContent).toContain(
+      "endpoints.wizard.review.checkCacheEnabled",
+    );
+  });
+
+  it("shows runtime issues and empty before/after review values", () => {
+    render(
+      <Harness
+        errorsByStep={{ 2: ["Runtime error"] }}
+        reviewChanges={[
+          {
+            step: 2,
+            label: "common.fields.engine",
+            before: undefined,
+            after: null,
+          },
+        ]}
+        context={{
+          ...reviewContext,
+          noVerifiedAccelerator: false,
+          requiredVramGb: null,
+        }}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    expect(screen.getByTestId("deployment-checks").textContent).toContain(
+      "endpoints.wizard.review.checkRuntimeAttention",
+    );
+  });
+
+  it("renders advanced review values when only one parameter group exists", () => {
+    const first = render(
+      <Harness
+        values={{
+          ...endpoint,
+          spec: {
+            ...endpoint.spec,
+            variables: null,
+            env: { TOKEN: "secret" },
+          },
+        }}
+        context={{ ...reviewContext, noVerifiedAccelerator: false }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+    expect(screen.getByTestId("advanced-review").textContent).toBe("true");
+    first.unmount();
+
+    render(
+      <Harness
+        values={{
+          ...endpoint,
+          spec: {
+            ...endpoint.spec,
+            variables: { engine_args: { max_model_len: 4 } },
+            env: null,
+          },
+        }}
+        context={{ ...reviewContext, noVerifiedAccelerator: false }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+  });
+
   it("moves through the five deployment steps", () => {
     render(<Harness />);
 
