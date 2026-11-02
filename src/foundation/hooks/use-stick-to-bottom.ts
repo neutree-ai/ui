@@ -14,6 +14,14 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function snapshot(element: HTMLElement) {
+  return {
+    top: element.scrollTop,
+    width: element.clientWidth,
+    height: element.clientHeight,
+  };
+}
+
 /**
  * Keeps a scroll container at its end while content grows, unless the reader
  * has scrolled away from it.
@@ -41,7 +49,15 @@ export function useStickToBottom() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const followingRef = useRef(true);
   const programmaticRef = useRef(false);
-  const lastScrollTopRef = useRef(0);
+  /**
+   * Where the view was, and how big the container was, at the last scroll we
+   * judged.
+   *
+   * The box is as load-bearing as the position: the reader can move the view,
+   * but only the layout can resize the container, so a changed box tells the
+   * two apart (see `handleScroll`).
+   */
+  const lastScrollRef = useRef({ top: 0, width: 0, height: 0 });
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const pin = useCallback((behavior: ScrollToBottomBehavior) => {
@@ -63,7 +79,7 @@ export function useStickToBottom() {
     // Remember where we put it: the reader's next scroll has to be judged
     // against the position we caused, not the one before our jump — their
     // event can arrive before the browser delivers ours.
-    lastScrollTopRef.current = element.scrollTop;
+    lastScrollRef.current.top = element.scrollTop;
   }, []);
 
   const handleScroll = useCallback(() => {
@@ -71,8 +87,12 @@ export function useStickToBottom() {
     if (!element) return;
 
     const atBottom = isScrolledToBottom(element);
-    const movedUp = element.scrollTop < lastScrollTopRef.current - 1;
-    lastScrollTopRef.current = element.scrollTop;
+    const previous = lastScrollRef.current;
+    const movedUp = element.scrollTop < previous.top - 1;
+    const resized =
+      element.clientWidth !== previous.width ||
+      element.clientHeight !== previous.height;
+    lastScrollRef.current = snapshot(element);
 
     if (programmaticRef.current) {
       // A smooth scroll reports every intermediate position, and those are not
@@ -83,10 +103,25 @@ export function useStickToBottom() {
       programmaticRef.current = false;
     }
 
+    // A narrower window re-wraps the transcript and grows it, and the browser
+    // answers with scroll anchoring: it parks the view at the paragraph it was
+    // showing rather than leaving it at the end. That scroll arrives *before*
+    // the ResizeObserver callback that would put the view back, so judging it
+    // the way the reader's own scroll is judged stops the following for good —
+    // the transcript is left in the middle of the conversation, with the
+    // newest turn off screen and nothing coming to fetch it. The container's
+    // box changing with the event is what marks the move as the layout's:
+    // the reader cannot resize the container, and while following they are
+    // already at the end, so there is nowhere further down for them to scroll.
+    if (followingRef.current && !atBottom && resized) {
+      pin("auto");
+      return;
+    }
+
     if (atBottom === followingRef.current) return;
     followingRef.current = atBottom;
     setIsAtBottom(atBottom);
-  }, []);
+  }, [pin]);
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -109,7 +144,7 @@ export function useStickToBottom() {
     const element = scrollRef.current;
     if (!element) return;
 
-    lastScrollTopRef.current = element.scrollTop;
+    lastScrollRef.current = snapshot(element);
     element.addEventListener("scroll", handleScroll, { passive: true });
     return () => element.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
