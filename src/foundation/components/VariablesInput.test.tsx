@@ -460,6 +460,18 @@ describe("VariablesInput primitive and draft controls", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("flags an initially stored array where the schema requires an object", () => {
+    render(
+      <VariablesInput
+        value={{ speculative_config: "[]" }}
+        onChange={vi.fn()}
+        schema={objectSchema}
+      />,
+    );
+
+    screen.getByText("components.variablesInput.invalidJsonValue");
+  });
+
   it("clears the form-level JSON error when the value becomes valid", async () => {
     render(<VariablesInputForm onSubmit={vi.fn()} />);
 
