@@ -350,6 +350,18 @@ describe("model services", () => {
         workspace: "default",
       }),
     );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "external_endpoints.messages.testConnectivity",
+      }),
+    );
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenLastCalledWith(0, {
+        type: "endpoint_ref",
+        endpoint_ref: "endpoint-running",
+        workspace: "default",
+      }),
+    );
     expect(result.current.form.getValues("spec.upstreams.0")).toMatchObject({
       upstream: null,
       auth: null,

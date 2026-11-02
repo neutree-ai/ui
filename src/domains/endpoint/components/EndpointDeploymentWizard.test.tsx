@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
   type Control,
   type FieldValues,
@@ -74,6 +74,10 @@ function Harness({
   serverIssue = null,
   context = reviewContext,
   hasChanges,
+  values = endpoint,
+  validationAttempted = false,
+  estimateFields = <div>ESTIMATE_FIELDS</div>,
+  configurationFields = <div>CONFIGURATION_FIELDS</div>,
   reviewChanges = [
     {
       step: 1,
@@ -90,6 +94,10 @@ function Harness({
   serverIssue?: { step: number; message: string; path?: string } | null;
   context?: EndpointReviewContext;
   hasChanges?: boolean;
+  values?: Endpoint;
+  validationAttempted?: boolean;
+  estimateFields?: ReactNode;
+  configurationFields?: ReactNode;
   reviewChanges?: Array<{
     step: number;
     label: string;
@@ -98,7 +106,7 @@ function Harness({
     format?: "cache";
   }>;
 }) {
-  const form = useForm<Endpoint>({ defaultValues: endpoint });
+  const form = useForm<Endpoint>({ defaultValues: values });
   const [activeStep, setActiveStep] = useState(0);
   return (
     <EndpointDeploymentWizard
@@ -112,8 +120,8 @@ function Harness({
       resourceFields={<div>RESOURCE_FIELDS</div>}
       runtimeFields={<div>RUNTIME_FIELDS</div>}
       advancedFields={<div>ADVANCED_FIELDS</div>}
-      estimateFields={<div>ESTIMATE_FIELDS</div>}
-      configurationFields={<div>CONFIGURATION_FIELDS</div>}
+      estimateFields={estimateFields}
+      configurationFields={configurationFields}
       reviewChanges={reviewChanges}
       hasChanges={hasChanges ?? mode === "edit"}
       reviewContext={context}
@@ -125,6 +133,7 @@ function Harness({
       }}
       serverIssue={serverIssue}
       submitBlocked={submitBlocked}
+      validationAttempted={validationAttempted}
     />
   );
 }
@@ -217,6 +226,103 @@ describe("EndpointDeploymentWizard", () => {
 
     screen.getByText("CONFIGURATION_FIELDS");
     expect(screen.queryByText("ESTIMATE_FIELDS")).toBeNull();
+  });
+
+  it("renders fallback summary content and exceeded capacity", () => {
+    const sparseValues = {
+      ...endpoint,
+      metadata: { name: "", workspace: "" },
+      spec: {
+        ...endpoint.spec,
+        cluster: "",
+        model: null,
+        engine: {},
+        resources: null,
+        replicas: null,
+        kv_cache: null,
+        deployment_options: null,
+        variables: null,
+        env: null,
+      },
+    } as unknown as Endpoint;
+
+    render(
+      <Harness
+        values={sparseValues}
+        validationAttempted
+        estimateFields={null}
+        configurationFields={null}
+        context={{
+          ...reviewContext,
+          modelDelivery: "already-local",
+          noVerifiedAccelerator: true,
+          requiredVramGb: null,
+          catalogOrigin: {
+            catalog: "catalog-a",
+            variant: "",
+            features: [{ name: "tool_choice" }],
+            featuresUnreadable: true,
+          },
+          clusterCapacity: [
+            { key: "cpu", requested: 2, available: null, total: null },
+            { key: "cards", requested: 3, available: 1, total: 2 },
+          ],
+          clusterCapacityUnavailable: false,
+        }}
+        reviewChanges={[
+          {
+            step: 0,
+            label: "common.fields.name",
+            before: null,
+            after: undefined,
+          },
+        ]}
+      />,
+    );
+
+    screen.getAllByText("endpoints.wizard.summary.selectModel");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    screen.getByTestId("review-deployment-risks");
+    screen.getAllByText("endpoints.origin.featuresUnreadable");
+    expect(screen.getByTestId("review-catalog-origin").textContent).toContain(
+      "tool_choice",
+    );
+    expect(
+      screen.getByTestId("review-capacity-cards").getAttribute("data-state"),
+    ).toBe("exceeded");
+    expect(
+      screen.getByTestId("deployment-checks").getAttribute("data-state"),
+    ).toBe("clear");
+  });
+
+  it("omits the deployment risks block when nothing risky is known", () => {
+    render(
+      <Harness
+        context={{
+          ...reviewContext,
+          catalogOrigin: null,
+          modelDelivery: "already-local",
+          noVerifiedAccelerator: false,
+          clusterCapacity: [],
+        }}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /endpoints.wizard.steps.confirm/,
+      }),
+    );
+
+    expect(screen.queryByTestId("review-deployment-risks")).toBeNull();
+    expect(
+      screen.getByTestId("deployment-checks").getAttribute("data-state"),
+    ).toBe("unvalidated");
   });
 
   it("moves through the five deployment steps", () => {

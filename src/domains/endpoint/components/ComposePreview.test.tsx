@@ -80,4 +80,10 @@ describe("ComposePreview", () => {
     ).toBe("ok");
     screen.getByText("Engine");
   });
+
+  it("renders a collapsible summary when requested", () => {
+    render(<ComposePreview composed={composed} collapsible />);
+
+    screen.getByTestId("compose-preview-toggle");
+  });
 });

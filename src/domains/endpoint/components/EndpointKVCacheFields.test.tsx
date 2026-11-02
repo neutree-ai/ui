@@ -17,9 +17,16 @@ vi.mock("react-i18next", () => ({
       options?.phase ? `${key}:${options.phase}` : key,
   }),
 }));
+const systemState = vi.hoisted(() => ({
+  clusterCacheProviders: ["zcache"] as string[],
+}));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
-    systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: systemState.clusterCacheProviders,
+      },
+    },
   }),
 }));
 const cacheVersionsState = vi.hoisted(() => ({
@@ -30,6 +37,7 @@ afterEach(() => {
   cleanup();
   cacheVersionsState.isError = false;
   cacheVersionsState.isLoading = false;
+  systemState.clusterCacheProviders = ["zcache"];
 });
 
 function Editor({
@@ -440,6 +448,21 @@ it("requires cluster cache status before enabling the endpoint cache", () => {
   expect(
     screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
   ).toContain("endpoints.kvCacheSettings.unavailableManager");
+});
+
+it("requires a selected accelerator before enabling cache", () => {
+  render(<Editor cache={null} save={vi.fn()} acceleratorType="" />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableAccelerator");
+});
+
+it("hides disabled cache controls when the backend has no cache provider", () => {
+  systemState.clusterCacheProviders = [];
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  expect(screen.queryByRole("switch")).toBeNull();
 });
 
 it.each([
