@@ -707,7 +707,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     maxFullGpuCards > 0
       ? Math.min(availableFullGpuCards + reusableFullGpuCards, maxFullGpuCards)
       : availableFullGpuCards + reusableFullGpuCards;
-  const displayedFullGpuCards = requestedFullGpuCards;
   const additionalFullGpuCards = Math.max(
     0,
     requestedFullGpuCards - reusableFullGpuCards,
@@ -2709,7 +2708,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                     totalVirtualCardCapacity,
                                   )}`
                                 : `${formatOneDecimal(
-                                    displayedFullGpuCards,
+                                    requestedFullGpuCards,
                                   )} / ${formatOneDecimal(
                                     fullGpuCardCapacity,
                                   )}`}
