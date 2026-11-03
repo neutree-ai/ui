@@ -309,6 +309,7 @@ type ResourceMetricTestIds = {
   usedValue: string;
   totalValue: string;
   freeValue: string;
+  percent: string;
 };
 
 const CLUSTER_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
@@ -317,6 +318,7 @@ const CLUSTER_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
   usedValue: "endpoint-resource-summary-used-value",
   totalValue: "endpoint-resource-summary-total-value",
   freeValue: "endpoint-resource-summary-free-value",
+  percent: "endpoint-resource-summary-percent",
 };
 
 const NODE_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
@@ -325,6 +327,7 @@ const NODE_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
   usedValue: "endpoint-node-resource-pill-used-value",
   totalValue: "endpoint-node-resource-pill-total-value",
   freeValue: "endpoint-node-resource-pill-free-value",
+  percent: "endpoint-node-resource-pill-percent",
 };
 
 function ResourceMetricCard({
@@ -376,6 +379,12 @@ function ResourceMetricCard({
           >
             {usedText}
           </strong>
+          <span
+            data-testid={testIds.percent}
+            className="ml-1.5 font-medium text-muted-foreground"
+          >
+            {formatPercent(percent)}
+          </span>
         </span>
         <span className="shrink-0 tabular-nums" title={readingTitle(freeText)}>
           <strong

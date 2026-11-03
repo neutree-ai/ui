@@ -649,6 +649,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         .textContent,
     ).toBe("7.5");
     expect(
+      within(memoryCard).getByTestId("endpoint-node-resource-pill-percent")
+        .textContent,
+    ).toBe("25.0%");
+    expect(
       within(memoryCard).getByTestId("endpoint-node-resource-pill-total-value")
         .textContent,
     ).toBe("30.0 total");
@@ -832,6 +836,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       within(memoryCard).getByTestId("endpoint-resource-summary-used-value")
         .textContent,
     ).toBe("64.0");
+    expect(
+      within(memoryCard).getByTestId("endpoint-resource-summary-percent")
+        .textContent,
+    ).toBe("25.0%");
     expect(
       within(memoryCard).getByTestId("endpoint-resource-summary-free-value")
         .textContent,
