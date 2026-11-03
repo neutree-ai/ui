@@ -191,8 +191,11 @@ export function buildApiKeyLimits(
   const seen = new Set<string>();
   const allowed: AllowedModel[] = [];
   for (const r of values.models ?? []) {
-    const model = String(r.model ?? "").trim();
-    if (!model) continue;
+    // The model name is an identity, not display text: the engine reports it and
+    // the gateway matches it exactly, so only a blank value is dropped. Trimming
+    // here would rewrite an existing key's authorized name on the next save.
+    const model = String(r.model ?? "");
+    if (!model.trim()) continue;
     // Emit whichever dimensions the row carries. A row the picker produced has
     // both; a stored entry that pins only one (which the backend allows, and a
     // CLI can write) must keep it -- dropping `type` would widen "any external
@@ -482,9 +485,12 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
-      const model = String(endpoint.status?.served_models?.[0] ?? "").trim();
+      // A served name is the identity the engine reports and the gateway matches
+      // exactly, so it is kept verbatim; trimming it would offer a name the
+      // engine does not answer to and rewrite a stored key on the next save.
+      const model = String(endpoint.status?.served_models?.[0] ?? "");
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
-      if (!model || !endpointName) continue;
+      if (!model.trim() || !endpointName) continue;
       options.push({
         value: modelOptionValue("internal", endpointName, model),
         label: model,
@@ -500,17 +506,19 @@ export function useWorkspaceModels(
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
       for (const model of exposedExternalModels(endpoint.spec)) {
-        const trimmed = String(model ?? "").trim();
-        if (!trimmed) continue;
+        // Same rule as the internal names: the exposed name is matched exactly
+        // by the gateway and by the model-source lookup, so it is kept verbatim.
+        const name = String(model ?? "");
+        if (!name.trim()) continue;
         options.push({
-          value: modelOptionValue("external", endpointName, trimmed),
-          label: trimmed,
-          model: trimmed,
+          value: modelOptionValue("external", endpointName, name),
+          label: name,
+          model: name,
           endpointName,
           type: "external",
           // Resolved per model, not once per endpoint: two models of one
           // endpoint can genuinely have different sources.
-          source: resolveExternalModelSource(endpoint.spec, trimmed),
+          source: resolveExternalModelSource(endpoint.spec, name),
           phase: endpoint.status?.phase ?? null,
         });
       }
