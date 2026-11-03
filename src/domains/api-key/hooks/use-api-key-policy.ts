@@ -167,6 +167,14 @@ export const isPositiveIntLimit = (s: string): boolean => {
   return Number.isInteger(n) && n > 0;
 };
 
+// A model name is an identity the engine reports and the gateway matches
+// exactly, so it is returned verbatim, surrounding whitespace included. Only a
+// blank name is not a name.
+function nonBlankModelName(raw: unknown): string | undefined {
+  const name = String(raw ?? "");
+  return name.trim() ? name : undefined;
+}
+
 // Build the limits object from the form. `disabled` is preserved separately (it
 // is toggled via its own action, not this form), so callers pass it through.
 export function buildApiKeyLimits(
@@ -191,11 +199,8 @@ export function buildApiKeyLimits(
   const seen = new Set<string>();
   const allowed: AllowedModel[] = [];
   for (const r of values.models ?? []) {
-    // The model name is an identity, not display text: the engine reports it and
-    // the gateway matches it exactly, so only a blank value is dropped. Trimming
-    // here would rewrite an existing key's authorized name on the next save.
-    const model = String(r.model ?? "");
-    if (!model.trim()) continue;
+    const model = nonBlankModelName(r.model);
+    if (model === undefined) continue;
     // Emit whichever dimensions the row carries. A row the picker produced has
     // both; a stored entry that pins only one (which the backend allows, and a
     // CLI can write) must keep it -- dropping `type` would widen "any external
@@ -485,12 +490,9 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
-      // A served name is the identity the engine reports and the gateway matches
-      // exactly, so it is kept verbatim; trimming it would offer a name the
-      // engine does not answer to and rewrite a stored key on the next save.
-      const model = String(endpoint.status?.served_models?.[0] ?? "");
+      const model = nonBlankModelName(endpoint.status?.served_models?.[0]);
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
-      if (!model.trim() || !endpointName) continue;
+      if (model === undefined || !endpointName) continue;
       options.push({
         value: modelOptionValue("internal", endpointName, model),
         label: model,
@@ -506,10 +508,8 @@ export function useWorkspaceModels(
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
       for (const model of exposedExternalModels(endpoint.spec)) {
-        // Same rule as the internal names: the exposed name is matched exactly
-        // by the gateway and by the model-source lookup, so it is kept verbatim.
-        const name = String(model ?? "");
-        if (!name.trim()) continue;
+        const name = nonBlankModelName(model);
+        if (name === undefined) continue;
         options.push({
           value: modelOptionValue("external", endpointName, name),
           label: name,
