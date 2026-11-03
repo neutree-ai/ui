@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
-import type { AcceleratorSample } from "./accelerator-observations";
+import type {
+  AcceleratorSample,
+  ObservedGpu,
+} from "./accelerator-observations";
 import {
   flopsHistory,
   flopsTotals,

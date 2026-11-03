@@ -1,5 +1,5 @@
 import { useCustom, useDataProvider, useUpdate } from "@refinedev/core";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +28,11 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { Cluster } from "../types";
 
+const SIX_HOURS = 6 * 60 * 60;
+const CHART_WIDTH = 400;
+const CHART_HEIGHT = 80;
+const CHART_PADDING = 8;
+
 export function ClusterFlops({
   cluster,
   samples,
@@ -37,10 +42,10 @@ export function ClusterFlops({
 }) {
   const { t } = useTranslation();
   const gradient = useId();
-  const devices = observedDevices(cluster.status?.resource_info);
-  const overrides = parseTflops(
-    cluster.metadata.annotations?.[TFLOPS_ANNOTATION],
-  );
+  const resourceInfo = cluster.status?.resource_info;
+  const annotation = cluster.metadata.annotations?.[TFLOPS_ANNOTATION];
+  const devices = useMemo(() => observedDevices(resourceInfo), [resourceInfo]);
+  const overrides = useMemo(() => parseTflops(annotation), [annotation]);
   const { total, used } = flopsTotals(devices, samples, overrides);
   const products = [...new Set(devices.map((d) => d.product))].sort();
   const [open, setOpen] = useState(false);
@@ -55,35 +60,49 @@ export function ClusterFlops({
     method: "get",
     queryOptions: { retry: false, staleTime: 300000, refetchInterval: 300000 },
   });
-  const points = flopsHistory(
-    history.error ? [] : (history.data?.data.samples ?? []),
-    devices,
-    overrides,
-    cluster.status?.resource_info,
+  const historySamples = history.error ? undefined : history.data?.data.samples;
+  // Memoized: hovering the chart re-renders on every mouse move.
+  const points = useMemo(
+    () => flopsHistory(historySamples ?? [], devices, overrides, resourceInfo),
+    [historySamples, devices, overrides, resourceInfo],
   );
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...points.map((p) => p.value ?? 0));
-  const start = history.data?.data.start ?? points[0]?.time ?? 0,
-    end = history.data?.data.end ?? points.at(-1)?.time ?? start;
+  const start = history.data?.data.start ?? points[0]?.time ?? 0;
+  const end = history.data?.data.end ?? points.at(-1)?.time ?? start;
   const x = (time: number) =>
-    ((time - start) / Math.max(21600, end - start)) * 400;
-  const y = (value: number) => 72 - (value / max) * 64;
+    ((time - start) / Math.max(SIX_HOURS, end - start)) * CHART_WIDTH;
+  const y = (value: number) =>
+    CHART_HEIGHT -
+    CHART_PADDING -
+    (value / max) * (CHART_HEIGHT - 2 * CHART_PADDING);
   const segments: (typeof points)[] = [];
   for (const point of points) {
     if (point.value == null) continue;
     const last = segments.at(-1);
-    if (!last || point.time - last.at(-1)!.time > 21600) segments.push([point]);
+    if (!last || point.time - last.at(-1)!.time > SIX_HOURS)
+      segments.push([point]);
     else last.push(point);
   }
   const path = (segment: typeof points) =>
     segment
       .map((p, i) => {
         if (i === 0) return `M ${x(p.time)} ${y(p.value!)}`;
-        const prev = segment[i - 1],
-          mid = (x(prev.time) + x(p.time)) / 2;
+        const prev = segment[i - 1];
+        const mid = (x(prev.time) + x(p.time)) / 2;
         return `C ${mid} ${y(prev.value!)} ${mid} ${y(p.value!)} ${x(p.time)} ${y(p.value!)}`;
       })
       .join(" ");
+  const segmentPaths = segments.map(path);
+  const openCalibration = () => {
+    setDraft(
+      Object.fromEntries(
+        products.map((p) => [p, overrides[p]?.toString() ?? ""]),
+      ),
+    );
+    setError("");
+    setOpen(true);
+  };
   const save = async () => {
     setError("");
     if (!isValidTflopsDraft(draft)) {
@@ -125,23 +144,9 @@ export function ClusterFlops({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-medium">{t("observations.flops")}</h3>
-            {
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDraft(
-                    Object.fromEntries(
-                      products.map((p) => [p, overrides[p]?.toString() ?? ""]),
-                    ),
-                  );
-                  setError("");
-                  setOpen(true);
-                }}
-              >
-                {t("observations.calibrate")}
-              </Button>
-            }
+            <Button variant="ghost" size="sm" onClick={openCalibration}>
+              {t("observations.calibrate")}
+            </Button>
           </div>
           <div className="text-xl font-semibold tabular-nums">
             {formatFlops(used)} / {formatFlops(total)}
@@ -162,7 +167,7 @@ export function ClusterFlops({
           {segments.length ? (
             <>
               <svg
-                viewBox="0 0 400 80"
+                viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
                 className="h-20 w-full"
                 role="img"
                 aria-label={t("observations.flopsTrend")}
@@ -200,11 +205,11 @@ export function ClusterFlops({
                 {segments.map((segment, i) => (
                   <g key={i}>
                     <path
-                      d={`${path(segment)} L ${x(segment.at(-1)!.time)} 80 L ${x(segment[0].time)} 80 Z`}
+                      d={`${segmentPaths[i]} L ${x(segment.at(-1)!.time)} ${CHART_HEIGHT} L ${x(segment[0].time)} ${CHART_HEIGHT} Z`}
                       fill={`url(#${gradient})`}
                     />
                     <path
-                      d={path(segment)}
+                      d={segmentPaths[i]}
                       fill="none"
                       stroke="var(--nt-chart-series-1)"
                       strokeWidth="2"

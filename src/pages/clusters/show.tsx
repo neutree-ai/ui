@@ -87,6 +87,9 @@ export const ClustersShow = () => {
 
   const cacheStatus = zcacheStatus(record);
   const l1ByNode = nodeL1CacheByNode(cacheStatus?.nodes, observations.samples);
+  const tflopsOverrides = parseTflops(
+    record?.metadata.annotations?.[TFLOPS_ANNOTATION],
+  );
   const { selectedPanel, showMonitorTab } = useClusterMonitorPanels();
 
   if (isLoading) {
@@ -291,9 +294,7 @@ export const ClustersShow = () => {
                           allocatedMiB: row.memory.used,
                           healthy: row.healthy,
                         }}
-                        tflopsOverrides={parseTflops(
-                          record.metadata.annotations?.[TFLOPS_ANNOTATION],
-                        )}
+                        tflopsOverrides={tflopsOverrides}
                         samples={observations.samples}
                         allocations={allocations}
                       />

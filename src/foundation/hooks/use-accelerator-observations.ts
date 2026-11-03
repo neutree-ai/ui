@@ -18,14 +18,23 @@ export function useAcceleratorObservations(
   const samples = query.error ? [] : (query.data?.data.samples ?? []);
   return {
     samples,
-    status: query.error
-      ? "unavailable"
-      : query.isLoading
-        ? "loading"
-        : query.data?.data.status === "not_configured"
-          ? "not_configured"
-          : samples.length
-            ? "ok"
-            : "no_data",
+    status: observationStatus(
+      Boolean(query.error),
+      query.isLoading,
+      query.data?.data.status,
+      samples.length,
+    ),
   };
+}
+
+function observationStatus(
+  failed: boolean,
+  loading: boolean,
+  reported: AcceleratorSnapshot["status"] | undefined,
+  sampleCount: number,
+) {
+  if (failed) return "unavailable";
+  if (loading) return "loading";
+  if (reported === "not_configured") return "not_configured";
+  return sampleCount ? "ok" : "no_data";
 }

@@ -64,6 +64,16 @@ describe("GPU observation card", () => {
     ).toBe("/default/endpoints/show/instance");
   });
 
+  it("shows a sole allocation's card measurement in the details sheet", () => {
+    render(card());
+    fireEvent.click(
+      screen.getByRole("button", { name: "observations.details" }),
+    );
+    within(screen.getByRole("dialog")).getByText(
+      "observations.actual 13.0 GiB · observations.allocated 15.0 GiB",
+    );
+  });
+
   it("lists the card's hardware details", () => {
     render(
       card({

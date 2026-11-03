@@ -21,22 +21,14 @@ import {
   deviceHardwareInfo,
   type GpuAllocation,
   hasAllocationReading,
+  type ObservedGpu,
   reading,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatMiBAsGiB } from "@/foundation/lib/unit";
 import { MetricBar } from "./MetricBar";
 
-export type ObservedGpu = {
-  node: string;
-  uuid: string;
-  index: number;
-  product: string;
-  totalMiB: number | null;
-  allocatedMiB: number | null;
-  healthy?: boolean;
-  peakFP16TFLOPS?: number | null;
-};
 type Props = {
   device: ObservedGpu;
   samples: AcceleratorSample[];
@@ -45,8 +37,11 @@ type Props = {
   tflopsOverrides?: Record<string, number>;
   detailsTrigger?: ReactNode;
 };
-const gib = (mib: number | null | undefined) =>
-  mib == null ? "—" : `${(mib / 1024).toFixed(1)} GiB`;
+const gib = (mib: number | null | undefined) => formatMiBAsGiB(mib) ?? "—";
+const allocationKey = (a: GpuAllocation, index: number) =>
+  `${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`;
+const endpointHref = (a: GpuAllocation) =>
+  `/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`;
 const ratio = (
   value: number | null | undefined,
   total: number | null | undefined,
@@ -110,8 +105,8 @@ export function GpuObservationCard({
   // Both values come from the engine's startup log. The L0 KV-Cache is the
   // pool vLLM pre-allocates at startup; its live usage ratio only counts
   // in-flight requests, so it is deliberately not used as a fallback here.
-  const weightsText = (a: GpuAllocation) => gib(a.modelWeightsMiB);
-  const l0KvText = (a: GpuAllocation) => gib(a.kvCacheCapacityMiB);
+  const composition = (a: GpuAllocation) =>
+    `${t("observations.modelWeights")} ${gib(a.modelWeightsMiB)} · ${t("observations.l0KvCache")} ${gib(a.kvCacheCapacityMiB)}`;
   const hasComposition = (a?: GpuAllocation) =>
     a?.modelWeightsMiB != null && a.kvCacheCapacityMiB != null;
   const activeAllocation =
@@ -121,8 +116,13 @@ export function GpuObservationCard({
     !replica &&
     (assigned.length === 1 ||
       assigned.some((a) => hasAllocationReading(samples, a)));
-  const assignedUsedMiB = (a: GpuAllocation) =>
-    allocationUsedMiB(samples, a, assigned.length, actual);
+  const usedByAllocation = new Map(
+    assigned.map((a) => [
+      a,
+      allocationUsedMiB(samples, a, assigned.length, actual),
+    ]),
+  );
+  const assignedUsedMiB = (a: GpuAllocation) => usedByAllocation.get(a) ?? null;
   // Segments are only drawn on top of a real measurement, never on their own.
   const firstComposedIndex = multiBar
     ? assigned.findIndex((a) => hasComposition(a) && assignedUsedMiB(a) != null)
@@ -131,7 +131,7 @@ export function GpuObservationCard({
     ? firstComposedIndex >= 0
     : actual != null && hasComposition(activeAllocation);
   const legendColor =
-    multiBar && firstComposedIndex >= 0
+    firstComposedIndex >= 0
       ? allocationColor(
           assigned[firstComposedIndex].endpoint,
           firstComposedIndex,
@@ -195,19 +195,16 @@ export function GpuObservationCard({
               const segmentWidth =
                 a.memoryMiB > 0
                   ? ratio(a.memoryMiB, total)
-                  : assigned.length > 0
-                    ? 100 / assigned.length
-                    : 0;
+                  : 100 / assigned.length;
               const denom = a.memoryMiB || total;
+              const measuredPct = ratio(fallbackMiB, denom);
               const color = allocationColor(a.endpoint, index);
               return (
-                <Tooltip
-                  key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
-                >
+                <Tooltip key={allocationKey(a, index)}>
                   <TooltipTrigger asChild>
                     <Link
                       className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                      to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
+                      to={endpointHref(a)}
                       aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(fallbackMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
                       style={{ width: `${segmentWidth}%` }}
                     >
@@ -220,13 +217,13 @@ export function GpuObservationCard({
                           className="absolute inset-y-0 left-0"
                           style={{
                             backgroundColor: color,
-                            width: `${ratio(fallbackMiB, denom)}%`,
+                            width: `${measuredPct}%`,
                           }}
                         />
                       )}
                       {fallbackMiB != null && hasComposition(a) && (
                         <CompositionSegments
-                          measuredPct={ratio(fallbackMiB, denom)}
+                          measuredPct={measuredPct}
                           weightsPct={ratio(a.modelWeightsMiB, denom)}
                           kvPct={ratio(a.kvCacheCapacityMiB, denom)}
                         />
@@ -244,10 +241,10 @@ export function GpuObservationCard({
                       {t("observations.allocated")} {gib(a.memoryMiB)}
                     </p>
                     <p>
-                      {t("observations.modelWeights")} {weightsText(a)}
+                      {t("observations.modelWeights")} {gib(a.modelWeightsMiB)}
                     </p>
                     <p>
-                      {t("observations.l0KvCache")} {l0KvText(a)}
+                      {t("observations.l0KvCache")} {gib(a.kvCacheCapacityMiB)}
                     </p>
                     {fallbackMiB != null && fallbackMiB > a.memoryMiB && (
                       <p>{t("observations.overAllocation")}</p>
@@ -295,8 +292,7 @@ export function GpuObservationCard({
           className="text-xs text-muted-foreground"
           data-testid="gpu-kv-weights-breakdown"
         >
-          {t("observations.modelWeights")} {weightsText(replica)} ·{" "}
-          {t("observations.l0KvCache")} {l0KvText(replica)}
+          {composition(replica)}
         </div>
       )}
       {!replica && assigned.length > 0 && (
@@ -314,7 +310,7 @@ export function GpuObservationCard({
                 : a.endpoint;
             return (
               <div
-                key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
+                key={allocationKey(a, index)}
                 className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
               >
                 <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
@@ -330,10 +326,7 @@ export function GpuObservationCard({
                   />
                   <span className="break-all">{instanceLabel}</span>
                 </span>{" "}
-                <span>
-                  {t("observations.modelWeights")} {weightsText(a)} ·{" "}
-                  {t("observations.l0KvCache")} {l0KvText(a)}
-                </span>
+                <span>{composition(a)}</span>
               </div>
             );
           })}
@@ -465,21 +458,14 @@ export function GpuObservationCard({
               </h3>
               <div className="space-y-3">
                 {assigned.map((a, index) => {
-                  const measurement = reading(
-                    samples,
-                    "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                    device.node,
-                    device.uuid,
-                    a,
-                  );
                   return (
                     <div
-                      key={`${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`}
+                      key={allocationKey(a, index)}
                       className="rounded-md border p-3 text-sm"
                     >
                       <Link
                         className="font-medium text-primary hover:underline"
-                        to={`/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`}
+                        to={endpointHref(a)}
                       >
                         {a.endpoint}
                       </Link>
@@ -490,15 +476,11 @@ export function GpuObservationCard({
                         {a.replica || a.instance}
                       </p>
                       <p className="mt-2 text-xs">
-                        {t("observations.actual")}{" "}
-                        {gib(
-                          measurement ? measurement.value / 1024 ** 2 : null,
-                        )}{" "}
-                        · {t("observations.allocated")} {gib(a.memoryMiB)}
+                        {t("observations.actual")} {gib(assignedUsedMiB(a))} ·{" "}
+                        {t("observations.allocated")} {gib(a.memoryMiB)}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {t("observations.modelWeights")} {weightsText(a)} ·{" "}
-                        {t("observations.l0KvCache")} {l0KvText(a)}
+                        {composition(a)}
                       </p>
                     </div>
                   );

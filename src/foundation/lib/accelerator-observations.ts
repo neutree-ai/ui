@@ -24,6 +24,17 @@ export type GpuAllocation = {
   kvCacheCapacityMiB?: number | null;
 };
 
+export type ObservedGpu = {
+  node: string;
+  uuid: string;
+  index: number;
+  product: string;
+  totalMiB: number | null;
+  allocatedMiB: number | null;
+  healthy?: boolean;
+  peakFP16TFLOPS?: number | null;
+};
+
 export type NodeL1CacheUsage = {
   usedGiB: number | null;
   capacityGiB: number;
@@ -206,10 +217,11 @@ export function nodeL1CacheByNode(
   return result;
 }
 
-const colors = Array.from(
-  { length: 3 },
-  (_, i) => `var(--nt-chart-series-${[1, 4, 5][i]})`,
-);
+const colors = [
+  "var(--nt-chart-series-1)",
+  "var(--nt-chart-series-4)",
+  "var(--nt-chart-series-5)",
+];
 export function allocationColor(name: string, position = 0): string {
   if (position === 0) return colors[0];
   let hash = 0;

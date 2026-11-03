@@ -1,6 +1,8 @@
-import type { ObservedGpu } from "@/foundation/components/GpuObservationCard";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
-import type { AcceleratorSample } from "./accelerator-observations";
+import type {
+  AcceleratorSample,
+  ObservedGpu,
+} from "./accelerator-observations";
 import { reading } from "./accelerator-observations";
 export const TFLOPS_ANNOTATION = "neutree.ai/accelerator-tflops";
 export function parseTflops(raw?: string): Record<string, number> {
@@ -105,11 +107,24 @@ export function flopsHistory(
   overrides: Record<string, number>,
   info?: ClusterResourceInfo | null,
 ): FlopsPoint[] {
+  const cardKey = (node?: string, uuid?: string) => `${node}/${uuid}`;
+  const productByCard = new Map(
+    devices.map((d) => [cardKey(d.node, d.uuid), d.product]),
+  );
+  const peakByProduct = new Map<string, number | null>();
+  const peakOf = (product: string) => {
+    if (!peakByProduct.has(product))
+      peakByProduct.set(
+        product,
+        peakTflops(product, overrides, productPeakTflops(info, product)),
+      );
+    return peakByProduct.get(product) ?? null;
+  };
   const byTime = new Map<number, Map<string, AcceleratorSample>>();
   for (const sample of samples) {
     const cards = byTime.get(sample.observed_at) ?? new Map();
     cards.set(
-      `${sample.labels.node}/${sample.labels.accelerator_uuid}`,
+      cardKey(sample.labels.node, sample.labels.accelerator_uuid),
       sample,
     );
     byTime.set(sample.observed_at, cards);
@@ -118,17 +133,8 @@ export function flopsHistory(
     .sort(([a], [b]) => a - b)
     .map(([time, cards]) => {
       let value: number | null = null;
-      for (const s of cards.values()) {
-        const device = devices.find(
-          (d) =>
-            d.node === s.labels.node && d.uuid === s.labels.accelerator_uuid,
-        );
-        const product = device?.product || s.labels.product || "";
-        const peak = peakTflops(
-          product,
-          overrides,
-          productPeakTflops(info, product),
-        );
+      for (const [card, s] of cards) {
+        const peak = peakOf(productByCard.get(card) || s.labels.product || "");
         if (
           peak != null &&
           Number.isFinite(s.value) &&

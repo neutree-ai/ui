@@ -10,7 +10,6 @@ const labels: Record<string, string> = {
   "clusters.fields.memoryUsage": "VRAM",
   "clusters.fields.coreUsage": "Core",
   "clusters.options.allocated": "Allocated",
-  "clusters.options.used": "Used",
   "clusters.options.free": "Free",
 };
 

@@ -252,9 +252,7 @@ function ZCacheDetails({
                       </td>
                       <td className="whitespace-nowrap py-3 tabular-nums">
                         {node && node.capacity_bytes > 0
-                          ? usedGiB != null
-                            ? `${formatToDecimal(usedGiB, 1)} / ${node.capacity_bytes / 2 ** 30} GiB`
-                            : `${node.capacity_bytes / 2 ** 30} GiB`
+                          ? `${usedGiB != null ? `${formatToDecimal(usedGiB, 1)} / ` : ""}${node.capacity_bytes / 2 ** 30} GiB`
                           : "—"}
                         {target &&
                           desired &&
