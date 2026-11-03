@@ -1,14 +1,44 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
 import type { EndpointClusterRef } from "../types";
 import { EndpointKVCacheFields } from "./EndpointKVCacheFields";
 
-vi.mock("@/foundation/hooks/use-system-api", () => ({
-  useSystemApi: () => ({
-    systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { phase?: string }) =>
+      options?.phase ? `${key}:${options.phase}` : key,
   }),
 }));
+const systemState = vi.hoisted(() => ({
+  clusterCacheProviders: ["zcache"] as string[],
+}));
+vi.mock("@/foundation/hooks/use-system-api", () => ({
+  useSystemApi: () => ({
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: systemState.clusterCacheProviders,
+      },
+    },
+  }),
+}));
+const cacheVersionsState = vi.hoisted(() => ({
+  isError: false,
+  isLoading: false,
+}));
+afterEach(() => {
+  cleanup();
+  cacheVersionsState.isError = false;
+  cacheVersionsState.isLoading = false;
+  systemState.clusterCacheProviders = ["zcache"];
+});
 
 function Editor({
   cache,
@@ -17,12 +47,25 @@ function Editor({
   invalid,
   engineVersion = "v0.32.0-zcache-enabled",
   runtimeVersion = "v0.5.6-post.1",
-  configuredVersion,
+  cacheStatusLoading = false,
+  acceleratorType = "nvidia_gpu",
+  cachePhase = "Ready",
+  sectioned = false,
+  clusterCache = true,
+  cacheError,
+  missingCluster = false,
 }: {
   cache: unknown;
   engineVersion?: string;
   runtimeVersion?: string;
   configuredVersion?: string;
+  cacheStatusLoading?: boolean;
+  acceleratorType?: string;
+  cachePhase?: string;
+  sectioned?: boolean;
+  clusterCache?: boolean;
+  cacheError?: string;
+  missingCluster?: boolean;
   save: (value: unknown) => void;
   supportedCluster?: boolean;
   invalid?: (value: unknown) => void;
@@ -35,34 +78,46 @@ function Editor({
       },
     },
   });
+  const cacheChanged = !endpointValuesEqual(form.watch("spec.kv_cache"), cache);
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(save, invalid)}>
         <EndpointKVCacheFields
           form={form}
           isEdit
+          cacheChanged={cacheChanged}
+          sectioned={sectioned}
+          cacheStatusLoading={cacheStatusLoading}
+          acceleratorType={acceleratorType}
           cluster={
-            {
-              metadata: { name: "test" },
-              status: {
-                cache: {
-                  details: {
-                    ready_runtime_version: "v0.5.0",
+            missingCluster
+              ? undefined
+              : ({
+                  metadata: { name: "test" },
+                  status: {
+                    ...(clusterCache && {
+                      cache: {
+                        phase: cachePhase,
+                        error_message: cacheError,
+                        details: {
+                          ready_runtime_version: "v0.5.0",
+                          current: { l1_size_gib: 8 },
+                        },
+                      },
+                    }),
                   },
-                },
-              },
-              spec: {
-                type: "kubernetes",
-                cache: {
-                  provider: "zcache",
-                  options: {
-                    enabled: supportedCluster,
-                    target_nodes: ["a"],
-                    version: runtimeVersion,
+                  spec: {
+                    type: "kubernetes",
+                    cache: {
+                      provider: "zcache",
+                      options: {
+                        enabled: supportedCluster,
+                        target_nodes: ["a"],
+                        version: runtimeVersion,
+                      },
+                    },
                   },
-                },
-              },
-            } as unknown as EndpointClusterRef
+                } as unknown as EndpointClusterRef)
           }
         />
         <button
@@ -77,6 +132,9 @@ function Editor({
         >
           change task
         </button>
+        <output data-testid="engine-version">
+          {form.watch("spec.engine.version")}
+        </output>
         <button type="submit">save</button>
       </form>
     </FormProvider>
@@ -131,7 +189,9 @@ it("saves the common timeout option and rejects values outside its range", async
   );
   fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "0" } });
   fireEvent.click(screen.getByText("save"));
-  await screen.findByText("endpoints.kvCacheSettings.invalidTimeout");
+  await vi.waitFor(() =>
+    screen.getByText("endpoints.kvCacheSettings.invalidTimeout"),
+  );
   expect(save).not.toHaveBeenCalled();
   fireEvent.change(screen.getByRole("spinbutton"), {
     target: { value: "1.5" },
@@ -180,6 +240,149 @@ it("blocks ZCache after switching to a non-vLLM engine", async () => {
   expect(save).not.toHaveBeenCalled();
 });
 
+it("clears the redeploy warning when cache returns to its persisted value", () => {
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  fireEvent.click(screen.getByRole("switch"));
+  screen.getByText("endpoints.kvCacheSettings.redeploy");
+
+  fireEvent.click(screen.getByRole("switch"));
+  expect(screen.queryByText("endpoints.kvCacheSettings.redeploy")).toBeNull();
+});
+
+it("explains when the selected cluster does not provide ZCache", () => {
+  render(<Editor cache={null} save={vi.fn()} supportedCluster={false} />);
+
+  expect(screen.getByRole("switch").hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableCluster");
+  expect(screen.queryByTestId("endpoint-kv-cache-manager-status")).toBeNull();
+});
+
+it("explains when the engine or task is incompatible", () => {
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  fireEvent.click(screen.getByText("change engine"));
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableEngine");
+
+  cleanup();
+  render(<Editor cache={null} save={vi.fn()} />);
+  fireEvent.click(screen.getByText("change task"));
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableTask");
+});
+
+it("keeps the selected engine version and explains when it is incompatible", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      engineVersion="v0.24.0"
+      runtimeVersion="v0.5.6-post.1"
+    />,
+  );
+
+  const cacheSwitch = screen.getByRole("switch");
+  expect(cacheSwitch.hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableEngineVersion");
+  expect(screen.getByTestId("engine-version").textContent).toBe("v0.24.0");
+});
+
+it("blocks an already-enabled cache with an incompatible engine version", async () => {
+  const save = vi.fn();
+  const invalid = vi.fn();
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={save}
+      invalid={invalid}
+      engineVersion="v0.24.0"
+      runtimeVersion="v0.5.6-post.1"
+    />,
+  );
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableEngineVersion");
+  fireEvent.click(screen.getByText("save"));
+  await vi.waitFor(() => expect(invalid).toHaveBeenCalled());
+  expect(save).not.toHaveBeenCalled();
+});
+
+it("requires an NVIDIA accelerator before cache can be enabled", () => {
+  render(<Editor cache={null} save={vi.fn()} acceleratorType="amd_gpu" />);
+
+  expect(screen.getByRole("switch").hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableAcceleratorVendor");
+});
+
+it("shows manager health and L1 capacity before the switch", () => {
+  render(<Editor cache={null} save={vi.fn()} sectioned />);
+
+  const status = screen.getByTestId("endpoint-kv-cache-manager-status");
+  expect(status.textContent).toContain(
+    "endpoints.kvCacheSettings.managerReady",
+  );
+  expect(status.textContent).toContain("endpoints.kvCacheSettings.l1Capacity");
+  expect(status.getAttribute("data-l1-capacity")).toBe("8");
+});
+
+it("shows the manager error returned by the selected cluster", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      cachePhase="Failed"
+      cacheError="cache manager could not reconcile"
+    />,
+  );
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-manager-status").textContent,
+  ).toContain("cache manager could not reconcile");
+});
+
+it("disables cache while the manager is reconciling or unavailable", () => {
+  render(<Editor cache={null} save={vi.fn()} cachePhase="Reconciling" />);
+
+  expect(screen.getByRole("switch").hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.managerPending:Reconciling");
+
+  cleanup();
+  render(<Editor cache={null} save={vi.fn()} cachePhase="Failed" />);
+
+  expect(screen.getByRole("switch").hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.managerUnavailable");
+});
+
+it("disables cache when no compatible engine version exists", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      engineVersion="v0.99.0"
+      runtimeVersion="v0.6.0-no-engine"
+    />,
+  );
+
+  expect(screen.getByRole("switch").hasAttribute("disabled")).toBe(true);
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.noCompatibleEngineVersion");
+});
+
 it("allows clearing timeout but requires a valid number before saving", async () => {
   const save = vi.fn();
   const invalid = vi.fn();
@@ -226,6 +429,7 @@ it("blocks cache after switching to an embedding task and allows disabling it", 
 });
 vi.mock("@/foundation/hooks/use-cache-versions", () => ({
   useCacheVersions: () => ({
+    ...cacheVersionsState,
     data: {
       data: [
         {
@@ -234,10 +438,65 @@ vi.mock("@/foundation/hooks/use-cache-versions", () => ({
           is_default: true,
         },
         { version: "v0.5.0", engine_versions: ["v0.24.0"] },
+        { version: "v0.6.0-no-engine", engine_versions: [] },
       ],
     },
   }),
 }));
+
+it("reports the cache manager while its status is loading", () => {
+  render(
+    <Editor
+      cache={null}
+      save={vi.fn()}
+      cacheStatusLoading
+      clusterCache={false}
+      sectioned
+    />,
+  );
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.checkingManager");
+  expect(
+    screen.getByTestId("endpoint-kv-cache-manager-status").textContent,
+  ).toContain("endpoints.kvCacheSettings.managerLoading");
+});
+
+it("requires cluster cache status before enabling the endpoint cache", () => {
+  render(<Editor cache={null} save={vi.fn()} clusterCache={false} />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableManager");
+});
+
+it("requires a selected accelerator before enabling cache", () => {
+  render(<Editor cache={null} save={vi.fn()} acceleratorType="" />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain("endpoints.kvCacheSettings.unavailableAccelerator");
+});
+
+it("hides disabled cache controls when the backend has no cache provider", () => {
+  systemState.clusterCacheProviders = [];
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  expect(screen.queryByRole("switch")).toBeNull();
+});
+
+it.each([
+  ["isError", "endpoints.kvCacheSettings.unavailableRuntimeCheck"],
+  ["isLoading", "endpoints.kvCacheSettings.checkingRuntime"],
+] as const)("maps cache runtime %s state", (state, message) => {
+  cacheVersionsState[state] = true;
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  expect(
+    screen.getByTestId("endpoint-kv-cache-unavailable").textContent,
+  ).toContain(message);
+});
 
 it.each([
   ["", undefined, "v0.24.0", true],
@@ -261,3 +520,101 @@ it.each([
     );
   },
 );
+it("opens a read-only cache configuration summary", async () => {
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={vi.fn()}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "endpoints.kvCacheSettings.viewConfig",
+    }),
+  );
+
+  const dialog = await screen.findByRole("dialog");
+  expect(dialog.textContent).toContain("endpoints.kvCacheSettings.configTitle");
+  expect(dialog.textContent).toContain(
+    "endpoints.kvCacheSettings.providerZCache",
+  );
+  expect(dialog.textContent).toContain("test");
+  expect(dialog.textContent).toContain(
+    "endpoints.kvCacheSettings.platformManaged",
+  );
+});
+
+it("identifies a missing cluster in the cache configuration", async () => {
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: { timeout_seconds: 5 } }}
+      save={vi.fn()}
+      missingCluster
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "endpoints.kvCacheSettings.viewConfig",
+    }),
+  );
+
+  expect((await screen.findByRole("dialog")).textContent).toContain(
+    "endpoints.kvCacheSettings.clusterNotSelected",
+  );
+});
+
+it("states that there is no cache configuration while disabled", async () => {
+  render(<Editor cache={null} save={vi.fn()} />);
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "endpoints.kvCacheSettings.viewConfig",
+    }),
+  );
+
+  expect((await screen.findByRole("dialog")).textContent).toContain(
+    "endpoints.kvCacheSettings.noConfig",
+  );
+});
+
+it("renders wizard cache controls as their own form section", () => {
+  render(<Editor cache={null} save={vi.fn()} sectioned />);
+
+  const section = screen.getByTestId("endpoint-kv-cache-section");
+  const header = within(section).getByTestId("endpoint-kv-cache-header");
+  within(header).getByRole("heading", {
+    name: "endpoints.sections.kvCache",
+  });
+  within(header).getByRole("button", {
+    name: "endpoints.kvCacheSettings.viewConfig",
+  });
+  within(header).getByRole("button", {
+    name: "endpoints.kvCacheSettings.scheduling",
+  });
+  expect(
+    within(header).queryByRole("switch", {
+      name: "endpoints.kvCacheSettings.enable",
+    }),
+  ).toBeNull();
+  const toggle = within(section).getByTestId("endpoint-kv-cache-toggle");
+  within(toggle).getByText("endpoints.kvCacheSettings.enableLabel");
+  within(toggle).getByRole("switch", {
+    name: "endpoints.kvCacheSettings.enable",
+  });
+  expect(screen.queryByTestId("endpoint-kv-cache")).toBeNull();
+});
+
+it("toggles cache from the wizard form field", () => {
+  render(<Editor cache={null} save={vi.fn()} sectioned />);
+
+  const toggle = screen.getByTestId("endpoint-kv-cache-toggle");
+  const cacheSwitch = within(toggle).getByRole("switch");
+  fireEvent.click(cacheSwitch);
+
+  expect(cacheSwitch.getAttribute("aria-checked")).toBe("true");
+  const timeout = screen.getByTestId("endpoint-kv-cache-config");
+  within(timeout).getByRole("spinbutton");
+  expect(toggle.parentElement).toBe(timeout.parentElement);
+});

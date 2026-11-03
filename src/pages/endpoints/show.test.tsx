@@ -10,6 +10,7 @@ const {
   useListMock,
   useOneMock,
   useShowMock,
+  systemApiState,
 } = vi.hoisted(() => ({
   advancedParametersProps: {
     current: null as { engineParameters: Record<string, unknown> } | null,
@@ -20,6 +21,9 @@ const {
   useListMock: vi.fn(),
   useOneMock: vi.fn(),
   useShowMock: vi.fn(),
+  systemApiState: {
+    clusterCacheProviders: [] as string[],
+  },
 }));
 
 vi.mock("@refinedev/core", () => ({
@@ -111,6 +115,9 @@ vi.mock("@/domains/endpoint/components/EndpointModel", () => ({
 vi.mock("@/domains/endpoint/components/EndpointPauseAction", () => ({
   EndpointPauseAction: () => null,
 }));
+vi.mock("@/domains/endpoint/components/EndpointKVCacheSummary", () => ({
+  EndpointKVCacheSummary: () => <div data-testid="endpoint-kv-cache-summary" />,
+}));
 vi.mock("@/domains/endpoint/components/ModelTask", () => ({
   default: () => null,
 }));
@@ -146,7 +153,14 @@ vi.mock("@/foundation/components/ShowButton", () => ({
 }));
 vi.mock("@/foundation/components/Timestamp", () => ({ default: () => null }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
-  useSystemApi: () => ({ grafanaUrl: null }),
+  useSystemApi: () => ({
+    grafanaUrl: null,
+    systemInfo: {
+      capabilities: {
+        cluster_cache_providers: systemApiState.clusterCacheProviders,
+      },
+    },
+  }),
 }));
 vi.mock("@/foundation/lib/grafana-dashboard-configs", () => ({
   getEndpointSplitDashboardProps: () => ({}),
@@ -190,6 +204,7 @@ describe("EndpointsShow", () => {
   beforeEach(() => {
     runtimeCardProps.current = null;
     advancedParametersProps.current = null;
+    systemApiState.clusterCacheProviders = [];
     useShowMock.mockReset();
     useOneMock.mockReset();
     useListMock.mockReset();
@@ -223,6 +238,13 @@ describe("EndpointsShow", () => {
     );
   });
 
+  it("shows cache status when the platform supports ZCache", () => {
+    systemApiState.clusterCacheProviders = ["zcache"];
+
+    render(<EndpointsShow />);
+
+    screen.getByTestId("endpoint-kv-cache-summary");
+  });
   it.each(["Paused", "Deleted"])(
     "hides retained runtime allocations once the endpoint is %s",
     (phase) => {
@@ -250,7 +272,7 @@ describe("EndpointsShow", () => {
   );
 
   // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page (NEU-728).
+  // the task off it used to throw and blank the whole page.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {

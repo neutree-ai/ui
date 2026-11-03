@@ -19,11 +19,11 @@ export function EndpointKVCacheSummary({
   return (
     <section
       aria-label={t("endpoints.kvCacheSettings.enable")}
-      className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-lg border bg-card px-6 py-4 shadow-sm"
+      className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-md border bg-muted/10 px-4 py-3"
     >
       <div className="flex items-center gap-4">
-        <div className="rounded-md bg-muted p-3 text-primary">
-          <Database className="h-5 w-5" />
+        <div className="rounded-md bg-muted p-2 text-muted-foreground">
+          <Database className="h-4 w-4" />
         </div>
         <span className="font-semibold">
           {t("endpoints.kvCacheSettings.enable")}
@@ -35,19 +35,22 @@ export function EndpointKVCacheSummary({
           className="disabled:opacity-100 disabled:cursor-default"
         />
       </div>
+      {!enabled && (
+        <span className="text-sm text-muted-foreground">
+          {t("endpoints.kvCacheSettings.endpointDisabled")}
+        </span>
+      )}
       {enabled && (
-        <>
-          <div className="border-l pl-8">
-            <div className="text-xs font-medium text-muted-foreground">
-              {t("endpoints.kvCacheSettings.timeoutLabel")}
-            </div>
-            <div className="mt-1 text-sm font-semibold">
-              {t("endpoints.kvCacheSettings.timeoutValue", {
-                seconds: endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5,
-              })}
-            </div>
+        <div className="border-l pl-8">
+          <div className="text-xs font-medium text-muted-foreground">
+            {t("endpoints.kvCacheSettings.timeoutLabel")}
           </div>
-        </>
+          <div className="mt-1 text-sm font-semibold">
+            {t("endpoints.kvCacheSettings.timeoutValue", {
+              seconds: endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5,
+            })}
+          </div>
+        </div>
       )}
       {cluster && !configured && (
         <span className="text-sm text-muted-foreground">

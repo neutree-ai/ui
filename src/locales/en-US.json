@@ -76,7 +76,9 @@
 			"to": "To"
 		},
 		"validation": {
-			"workspaceRequired": "Please select a workspace before creating the resource"
+			"workspaceRequired": "Please select a workspace before creating the resource",
+			"nameRequired": "Name is required",
+			"required": "This field is required"
 		},
 		"modelRegistry": {
 			"unreachable": "Not answering — cannot list models",
@@ -463,7 +465,8 @@
 				"nfsServer": "NFS Server",
 				"storage": "Storage",
 				"storageClassName": "Storage Class Name"
-			}
+			},
+			"gpuDetails": "GPU details"
 		},
 		"acceleratorTypes": {
 			"nvidia_gpu": "NVIDIA GPU",
@@ -518,7 +521,8 @@
 			"total": "Total",
 			"allocated": "Allocated",
 			"freeCards": "Free Cards",
-			"usableForRequest": "Usable For Request"
+			"usableForRequest": "Usable",
+			"otherType": "Other accelerator"
 		},
 		"messages": {
 			"notFound": "404 not found",
@@ -668,6 +672,10 @@
 				"Paused": "Paused",
 				"Removed": "Removed"
 			}
+		},
+		"gpuInventory": {
+			"count": "{{count}} GPUs",
+			"count_one": "{{count}} GPU"
 		}
 	},
 	"model_registries": {
@@ -821,7 +829,8 @@
 		},
 		"sections": {
 			"keyConfig": "Key Configuration",
-			"env": "Environment Variables"
+			"env": "Environment Variables",
+			"advanced": "Advanced (all fields)"
 		},
 		"keyConfig": {
 			"contextLength": "Context Length",
@@ -1023,7 +1032,7 @@
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
 			"modelRegistry": "Model Registry",
-			"modelCatalog": "Model Catalog",
+			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
 			"allocatedCard": "allocated card",
@@ -1033,11 +1042,11 @@
 			"cards": "cards",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
-			"physicalGpuCount": "Cards per replica",
+			"physicalGpuCount": "Full cards per replica",
 			"physicalGpu": "Card Count",
 			"perReplica": "Per Replica",
 			"perCard": "per card",
-			"vgpuCount": "Cards per replica",
+			"vgpuCount": "Virtual cards per replica",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -1063,7 +1072,7 @@
 			"singleCardMemory": "VRAM",
 			"requestedVgpuMemory": "Requested VRAM",
 			"effectiveVgpuMemory": "Effective VRAM",
-			"virtualCardCount": "Card Count",
+			"virtualCardCount": "Cards",
 			"vgpuMemoryCapacity": "VRAM",
 			"vgpuCoreCapacity": "Core",
 			"matchingGpuCards": "Matching Cards",
@@ -1080,6 +1089,7 @@
 		},
 		"sections": {
 			"clusterSettings": "Cluster",
+			"clusterCapacity": "Capacity",
 			"modelAndReplicas": "Model & Replicas",
 			"schedulingTargetResources": "Scheduling Target and Resource Selection",
 			"schedulingTarget": "Scheduling Target",
@@ -1101,7 +1111,131 @@
 			"replicaResources": "Replica Resources",
 			"gpuAllocation": "GPU Allocation & Usage",
 			"weights": "Weights & Cache",
-			"monitoringMetrics": "Monitoring Metrics"
+			"monitoringMetrics": "Monitoring Metrics",
+			"kvCache": "KV Cache",
+			"modelAndProfile": "Model & Profile"
+		},
+		"wizard": {
+			"navigation": "Deployment steps",
+			"stepProgress": "Step {{current}} of {{total}}",
+			"previous": "Previous",
+			"next": "Next",
+			"create": "Validate and create",
+			"save": "Save",
+			"steps": {
+				"model": "Model profile",
+				"resources": "Deployment resources",
+				"runtime": "Runtime configuration",
+				"advanced": "Advanced configuration",
+				"confirm": "Review configuration"
+			},
+			"step": {
+				"current": "Current step",
+				"currentConfiguration": "Current configuration",
+				"modified": "Modified",
+				"completed": "Completed",
+				"inProgress": "In progress",
+				"pending": "Not configured yet",
+				"unchanged": "Unchanged",
+				"needsAttention": "{{count}} item needs attention",
+				"needsAttention_other": "{{count}} items need attention"
+			},
+			"model": {
+				"resolution": "Optional model version and file",
+				"versionHint": "Leave blank to let the registry resolve this model's version when the endpoint starts.",
+				"fileHint": "Optional checkpoint file. Leave blank to use the model's default entry point.",
+				"showOptionalFields": "Show version and file",
+				"hideOptionalFields": "Hide version and file"
+			},
+			"summary": {
+				"title": "Deployment summary",
+				"description": "Keeps the deployment estimate and target visible while you move between steps.",
+				"valid": "No field errors",
+				"issueCount": "{{count}} issue",
+				"issueCount_other": "{{count}} issues",
+				"errorCount": "{{count}} field errors",
+				"errorCount_one": "1 field error",
+				"cluster": "Cluster",
+				"model": "Model",
+				"catalog": "Catalog",
+				"replicas": "Replicas",
+				"resources": "Resources",
+				"resourceValue": "{{count}} × {{gpu}} GPU · {{cpu}} CPU / {{memory}} GiB",
+				"cache": "KV cache",
+				"cacheEnabled": "Enabled · ZCache",
+				"cacheDisabled": "Not enabled",
+				"cacheEnabledCheck": "KV cache is enabled for this deployment.",
+				"cacheDisabledCheck": "KV cache is optional and is not enabled.",
+				"perReplica": "Per replica · weights + KV cache",
+				"partialPerReplica": "Known per-replica requirement · some inputs unavailable",
+				"weights": "Weights",
+				"kvCache": "KV cache",
+				"fleetTotal": "All replicas",
+				"kvCacheState": "KV cache",
+				"estimateUnavailable": "Not enough model data to calculate weights or KV cache.",
+				"showEstimateDetails": "Show KV cache estimate details",
+				"hideEstimateDetails": "Hide KV cache estimate details",
+				"noBlockingIssues": "No field or placement errors.",
+				"checksPending": "Field and placement checks have not run yet.",
+				"selectModel": "Select a model to calculate the weight and KV-cache estimate.",
+				"clusterCapacity": "Available cluster capacity",
+				"capacity": "Cluster capacity",
+				"available": "available",
+				"configuration": "Configuration summary",
+				"deployment": "Deployment",
+				"runtime": "Runtime",
+				"variables": "Variables",
+				"resourceRequest": "Request per replica",
+				"resourcePerReplicaValue": "{{cpu}} CPU · {{memory}} GiB · {{gpu}} GPU",
+				"gibValue": "{{value}} GiB",
+				"percentValue": "{{value}}%",
+				"versionResolvedAtDeployment": "Resolved at deployment",
+				"fileDefaultEntryPoint": "Default entry point",
+				"cacheConfiguration": "{{provider}} · {{timeout}}s timeout"
+			},
+			"issues": {
+				"capacityBlocked": "Requested resources cannot be placed on the selected cluster."
+			},
+			"errors": {
+				"serverFallback": "The server rejected this deployment. Review the highlighted step and try again."
+			},
+			"review": {
+				"title": "Final configuration",
+				"editTitle": "Review changes",
+				"edit": "Edit",
+				"redeployHint": "Saving these changes will redeploy the endpoint.",
+				"model": "{{model}} · {{count}} replica",
+				"model_other": "{{model}} · {{count}} replicas",
+				"resources": "{{cluster}} · {{count}} × {{gpu}} GPU · {{cpu}} CPU / {{memory}} GiB",
+				"runtimeCache": "{{engine}} {{version}} · ZCache · {{timeout}} s",
+				"runtimeNoCache": "{{engine}} {{version}} · KV cache not enabled",
+				"advanced": "{{scheduler}} · Engine args: {{engine}} · Environment: {{environment}}",
+				"checks": "Deployment checks",
+				"checksPending": "Validation has not run yet.",
+				"issueCount": "{{count}} deployment issue",
+				"issueCount_other": "{{count}} deployment issues",
+				"checkResources": "Resource request is calculated across {{count}} replica.",
+				"checkResources_other": "Resource request is calculated across {{count}} replicas.",
+				"checkResourcesAttention": "Deployment resources need attention.",
+				"checkCacheEnabled": "KV cache is enabled for this deployment.",
+				"checkCacheDisabled": "KV cache is optional and is not enabled.",
+				"checkRuntimeAttention": "Runtime configuration needs attention.",
+				"variableSummary": "Engine variables: {{engine}} · Environment variables: {{environment}}",
+				"redeployDetails": "Saving will redeploy the endpoint. Changed: {{changes}}.",
+				"noChanges": "No changes to save.",
+				"changesToSave": "Changes to save",
+				"before": "Before",
+				"after": "After",
+				"risks": "Deployment risks",
+				"capacity": "Request vs available capacity",
+				"requested": "Requested",
+				"available": "Available"
+			},
+			"saveAndRedeploy": "Save and redeploy"
+		},
+		"clusterDetails": {
+			"nodeCount": "{{count}} Nodes",
+			"nodeCount_one": "{{count}} Node"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -1116,7 +1250,9 @@
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
 			"selectSchedulerType": "Select Scheduler Type",
-			"workloadImage": "repository:tag"
+			"workloadImage": "repository:tag",
+			"resourcePlanRequiresCluster": "Select a cluster to configure CPU, memory, accelerator, and GPU resources.",
+			"clusterResourcesRequiresCluster": "Select a cluster to view its available GPU and node resources."
 		},
 		"options": {
 			"generic": "Generic",
@@ -1124,7 +1260,8 @@
 			"mib": "MiB",
 			"gib": "GiB",
 			"percent": "%",
-			"shared": "Shared"
+			"shared": "Shared",
+			"acceleratorCapacity": "{{free}} free · {{total}} total"
 		},
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
@@ -1134,6 +1271,8 @@
 		},
 		"actions": {
 			"openResources": "Open Resources",
+			"showDetails": "Show details",
+			"hideDetails": "Hide details",
 			"pause": "Pause",
 			"saveAsCatalog": "Save as Catalog",
 			"resume": "Resume"
@@ -1167,9 +1306,9 @@
 			"vgpuMemoryMiBPositive": "Virtual card memory must be greater than 0",
 			"vgpuMemoryPercentRange": "Virtual card memory percent must be between 1 and 100",
 			"vgpuCorePercentRange": "Virtual card core percent must be between 0 and 100",
-			"cardsAvailable": "{{count}} cards available",
+			"cardsAvailable": "Capacity: {{count}} cards",
 			"fullGpuResourcesInsufficient": "Requested full cards exceed the currently available capacity for this cluster.",
-			"fullGpuCardCapacityInsufficient": "The request needs {{requested}} full cards, but only {{available}} are currently available.",
+			"fullGpuCardCapacityInsufficient": "The request needs {{requested}} full cards, but the cluster can place {{available}}.",
 			"fractionalGpuResourcesInsufficient": "Requested fractional GPU capacity exceeds the remaining physical-card capacity for this cluster.",
 			"noNodeCanScheduleFullGpuRequest": "No single node can satisfy the scheduling requirements for a replica requesting {{count}} full cards.",
 			"noNodeCanScheduleFractionalGpuRequest": "No single node has a physical card with enough remaining capacity for one fractional-GPU replica.",
@@ -1189,7 +1328,12 @@
 			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
 			"runtimeDownloadHint": "Models in a public registry are downloaded when the endpoint starts: the first start takes noticeably longer, and it cannot start at all without access to the registry.",
 			"runtimeDownloadUnknown": "This registry did not report whether it stores its models locally, so whether they are downloaded when the endpoint starts is unknown.",
-			"fetchingImageTags": "Looking up tags…"
+			"fetchingImageTags": "Looking up tags…",
+			"cardsAvailable_one": "Capacity: {{count}} card",
+			"cardsAvailableHint": "Capacity includes cards that are free now and cards already held by this endpoint that can be reused.",
+			"vgpuCapacityPending": "Set per-card VRAM to check capacity",
+			"selectedAcceleratorResources": "Showing resources available to the selected accelerator.",
+			"engineAcceleratorIncompatible": "The selected engine version does not provide an image for this accelerator type."
 		},
 		"tabs": {
 			"playground": "Playground"
@@ -1221,7 +1365,9 @@
 			"engineArgCount_one": "1 engine arg",
 			"envCount": "{{count}} env vars",
 			"envCount_one": "1 env var",
-			"verifiedAccelerator": "Validated by this recipe"
+			"verifiedAccelerator": "Validated by this recipe",
+			"vramRequiredLabel": "Required VRAM",
+			"vramRequiredValue": "≥ {{gb}} GB"
 		},
 		"kvCache": {
 			"title": "KV cache estimate",
@@ -1290,14 +1436,14 @@
 				"manual": "manual",
 				"unstated": "unverified",
 				"constant": "constant",
-				"deployment": "this deployment"
+				"deployment": "engine args"
 			},
 			"sourceHints": {
 				"derived": "Computed from other checkpoint values by a documented convention",
 				"manual": "Typed in by a user, overriding what the checkpoint states",
 				"unstated": "This value states no provenance, so it is not known to come from the checkpoint",
 				"constant": "A fixed factor of the formula, not a value from the checkpoint",
-				"deployment": "Taken from the engine args this deployment will be created with, not from the checkpoint"
+				"deployment": "Comes from this deployment's engine arguments, not from the checkpoint."
 			},
 			"reading": "Reading the checkpoint…",
 			"unread": {
@@ -1334,7 +1480,11 @@
 			"compressionRates": "Cannot estimate: this checkpoint compresses at a rate ({{rates}}) whose cache layout has not been established from any released checkpoint, so whether those layers carry an indexer is unknown.",
 			"showFormula": "Show the formula",
 			"hideFormula": "Hide the formula",
-			"ownedBy": "Set by “{{control}}” above"
+			"ownedBy": "Change “{{control}}” in the deployment configuration.",
+			"formulaTitle": "KV cache formula",
+			"formulaDescription": "How the current token, sequence, precision, and checkpoint inputs produce the estimate.",
+			"sourceUnreported": "Source not reported for {{count}} formula input: {{fields}}.",
+			"sourceUnreported_other": "Sources not reported for {{count}} formula inputs: {{fields}}."
 		},
 		"monitor": {
 			"overviewMetrics": "Overview",
@@ -1418,20 +1568,55 @@
 		"weights": {
 			"declared": "Declared by the catalog",
 			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
-			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment"
+			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment",
+			"estimated": "Estimated from checkpoint metadata",
+			"sourceCatalog": "Measured by the model catalog for the weights alone, per replica.",
+			"sourceCheckpoint": "Estimated from checkpoint metadata for the weights alone, per replica."
 		},
 		"kvCacheSettings": {
 			"timeoutLabel": "Cache timeout",
 			"timeoutValue": "{{seconds}} s",
 			"clusterUnconfigured": "Cache is not configured on this cluster",
+			"endpointDisabled": "KV cache is not enabled for this endpoint.",
 			"viewCluster": "View cluster cache",
 			"enable": "KV cache",
+			"enableLabel": "Enable KV cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with cache enabled.",
+			"unavailable": "Unavailable.",
+			"unavailableCluster": "Select a cluster with ZCache enabled.",
+			"unavailableAccelerator": "Select an accelerator before enabling KV cache.",
+			"unavailableAcceleratorVendor": "KV cache requires an NVIDIA accelerator.",
+			"unavailableEngine": "Select vLLM as the engine.",
+			"unavailableTask": "Select the Text Generation task.",
+			"unavailableRuntime": "The selected cluster has no ZCache runtime configured.",
+			"checkingManager": "Checking whether ZCache is ready…",
+			"unavailableManager": "ZCache readiness has not been reported by the selected cluster.",
+			"managerReady": "ZCache is connected and healthy.",
+			"managerLoading": "Checking ZCache connection and health…",
+			"managerPending": "ZCache is still becoming ready ({{phase}}).",
+			"managerUnavailable": "ZCache is not available.",
+			"managerNotConfigured": "ZCache is not configured on the selected cluster.",
+			"l1Capacity": "L1 capacity: {{capacity}} GiB",
+			"sharedPool": "Shared pool · entries are evicted and reused automatically.",
+			"unavailableRuntimeCheck": "ZCache runtime compatibility could not be loaded.",
+			"checkingRuntime": "Checking ZCache runtime compatibility…",
+			"unavailableEngineVersion": "The selected engine version is not supported by the cluster's ZCache runtime.",
+			"noCompatibleEngineVersion": "The selected ZCache runtime does not support any available vLLM version.",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",
-			"redeploy": "Saving this change will redeploy the inference instance"
+			"redeploy": "Saving this change will redeploy the inference instance",
+			"viewConfig": "View configuration",
+			"configTitle": "KV cache configuration",
+			"configDescription": "Read-only settings produced by the platform for this deployment.",
+			"provider": "Provider",
+			"providerZCache": "ZCache",
+			"offloadTarget": "Offload target",
+			"cpuMemory": "CPU memory",
+			"clusterNotSelected": "No cluster selected",
+			"noConfig": "KV cache is not enabled. There is no cache configuration to show.",
+			"platformManaged": "Connection and transfer settings are managed by the platform and are not editable here."
 		},
 		"performance": {
 			"window5m": "Last 5m",
@@ -1443,6 +1628,7 @@
 			"kvCache": "KV-Cache",
 			"ttft": "TTFT",
 			"tpot": "TPOT",
+			"tps": "TPS",
 			"avg": "Avg",
 			"p95": "P95",
 			"totalTokensPerSecond": "Total tokens/s (TPS)",
@@ -1450,8 +1636,40 @@
 			"generationTokensPerSecond": "Generation tokens/s",
 			"l0HitRate": "L0 Hit Rate",
 			"l1HitRate": "L1 Hit Rate",
+			"viewTrend": "View trend",
 			"l1ReadSpeed": "Hosting-node L1 Read Speed",
 			"l1WriteSpeed": "Hosting-node L1 Write Speed"
+		},
+		"loadError": {
+			"notFoundTitle": "Endpoint not found",
+			"notFoundDescription": "This endpoint does not exist or is not available in this workspace.",
+			"failedTitle": "Could not load endpoint",
+			"failedDescription": "The endpoint could not be loaded. Return to the list and try again.",
+			"backToList": "Back to endpoints"
+		},
+		"modelSource": {
+			"label": "Model source",
+			"catalog": "Model Catalog",
+			"manual": "Model Registry",
+			"emptyTitle": "Choose a model source",
+			"emptyDescription": "Select a Model Catalog, or switch to Model Registry to choose the model directly."
+		},
+		"resolvedModel": {
+			"title": "Resolved model",
+			"selectedTitle": "Selected model",
+			"direct": "Direct",
+			"custom": "Custom",
+			"customizeModel": "Customize model",
+			"editModel": "Edit model",
+			"doneEditing": "Done editing",
+			"versionFile": "Version / file",
+			"auto": "Auto",
+			"overrideHint": "Registry, model, version, and file changes override the selected catalog profile.",
+			"reset": "Reset to profile",
+			"switched": "Switched to {{variant}}",
+			"resetNotice": "{{count}} custom model value was reset to the profile defaults. Endpoint name, cluster, replicas and cache settings were preserved.",
+			"resetNotice_other": "{{count}} custom model values were reset to the profile defaults. Endpoint name, cluster, replicas and cache settings were preserved.",
+			"undo": "Undo"
 		}
 	},
 	"external_endpoints": {
