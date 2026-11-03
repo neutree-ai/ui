@@ -19,9 +19,6 @@ vi.mock("@refinedev/core", () => ({
   useDataProvider: () => () => ({ getOne: mocks.getOne }),
   useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
 }));
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
-}));
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();

@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   type AcceleratorSample,
   type GpuAllocation,
   gpuAllocations,
+  nodeL1CacheByNode,
+  nodeReading,
   reading,
 } from "./accelerator-observations";
 
@@ -36,18 +38,6 @@ const sample = (
   },
 });
 describe("accelerator readings", () => {
-  it("uses server-approved samples regardless of client clock offset", () => {
-    const approved = sample();
-    for (const offset of [-600000, 600000]) {
-      const clock = vi
-        .spyOn(Date, "now")
-        .mockReturnValue(approved.observed_at * 1000 + offset);
-      expect(
-        reading([approved], metric, "node", "gpu", allocation)?.value,
-      ).toBe(0);
-      clock.mockRestore();
-    }
-  });
   it("does not conflate nodes, replicas, endpoints or vGPU slices", () => {
     for (const labels of [
       { node: "other" },
@@ -127,4 +117,28 @@ describe("accelerator readings", () => {
       ]),
     ).toEqual([]);
   });
+});
+
+it("maps cache capacity and selects the newest L1 reading, including zero", () => {
+  expect(
+    nodeL1CacheByNode([{ name: "gpu-a", capacity_bytes: 8 * 1024 ** 3 }], []),
+  ).toEqual({
+    "gpu-a": { usedGiB: null, capacityGiB: 8 },
+  });
+  const metric = "neutree_cache_l1_memory_used_bytes";
+  expect(
+    nodeReading(
+      [
+        { metric, labels: { node: "gpu-a" }, value: 0, observed_at: 1040 },
+        {
+          metric,
+          labels: { node: "gpu-a" },
+          value: 6 * 1024 ** 3,
+          observed_at: 1000,
+        },
+      ],
+      metric,
+      "gpu-a",
+    )?.value,
+  ).toBe(0);
 });

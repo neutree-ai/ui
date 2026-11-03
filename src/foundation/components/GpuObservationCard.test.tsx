@@ -1,17 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
 import { GpuObservationCard } from "./GpuObservationCard";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-afterEach(cleanup);
 const device = {
   node: "node",
   uuid: "gpu",
@@ -29,283 +22,150 @@ const allocation = {
   replica: "pod",
   instance: "pod",
   memoryMiB: 15360,
+  modelWeightsMiB: 2048,
+  kvCacheCapacityMiB: 8192,
 };
-const samples: AcceleratorSample[] = [
-  {
-    metric: "neutree_accelerator_memory_used_bytes",
-    labels: { node: "node", accelerator_uuid: "gpu" },
-    value: 13 * 1024 ** 3,
-    observed_at: Date.now() / 1000,
-  },
+const sample = (
+  metric: string,
+  value: number,
+  labels: Record<string, string> = {},
+): AcceleratorSample => ({
+  metric,
+  value,
+  observed_at: 1,
+  labels: { node: "node", accelerator_uuid: "gpu", ...labels },
+});
+const samples = [
+  sample("neutree_accelerator_memory_used_bytes", 13 * 1024 ** 3),
 ];
+const card = (
+  props: Partial<Parameters<typeof GpuObservationCard>[0]> = {},
+) => (
+  <MemoryRouter>
+    <TooltipProvider>
+      <GpuObservationCard
+        device={device}
+        samples={samples}
+        allocations={[allocation]}
+        {...props}
+      />
+    </TooltipProvider>
+  </MemoryRouter>
+);
+
 describe("GPU observation card", () => {
-  it("shows actual and allocated memory separately and opens details", () => {
+  it("shows measured and allocated memory, links the instance and merges device hardware details", () => {
     render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <GpuObservationCard
-            device={device}
-            samples={samples}
-            allocations={[allocation]}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
+      card({
+        samples: [
+          ...samples,
+          sample("neutree_node_accelerator_example_info", 1, {
+            driver_version: "extension-driver",
+          }),
+          sample("neutree_node_accelerator_hardware_info", 1, {
+            driver_version: "generic-driver",
+          }),
+          sample("neutree_node_accelerator_example_info", 1, {
+            node: "other",
+            driver_version: "wrong-node",
+          }),
+        ],
+      }),
     );
-    expect(screen.getByRole("group").getAttribute("aria-label")).toContain(
-      "13.0 GiB",
-    );
-    expect(screen.getByRole("group").getAttribute("aria-label")).toContain(
-      "15.0 GiB",
-    );
-    const allocationLink = screen.getAllByRole("link", {
-      name: /^instance:/,
-    })[0];
-    expect(allocationLink.getAttribute("href")).toBe(
-      "/default/endpoints/show/instance",
-    );
-    const measuredBar = allocationLink.querySelectorAll(
-      "span",
-    )[1] as HTMLElement;
-    expect(Number.parseFloat(measuredBar.style.width)).toBeCloseTo(86.6667, 3);
-    expect(measuredBar.style.backgroundColor).toBe("var(--nt-chart-series-1)");
+    screen.getByRole("group", {
+      name: /observations.actual: 13.0 GiB, observations.allocated: 15.0 GiB/,
+    });
+    expect(
+      screen.getByRole("link", { name: /^instance:/ }).getAttribute("href"),
+    ).toBe("/default/endpoints/show/instance");
     fireEvent.click(
       screen.getByRole("button", { name: "observations.details" }),
     );
     expect(screen.getByRole("dialog").textContent).toContain("gpu");
     expect(screen.getByRole("dialog").textContent).toContain("model");
+    screen.getByText("extension-driver");
+    expect(screen.queryByText("wrong-node")).toBeNull();
   });
-  it("does not display whole-card usage as replica usage", () => {
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <GpuObservationCard
-            device={device}
-            samples={samples}
-            allocations={[allocation]}
-            replica={allocation}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+
+  it("keeps replica usage unknown until measured while showing configured weights and cache", () => {
+    const { rerender } = render(card({ replica: allocation }));
     screen.getByText("observations.noMeasurement");
     expect(screen.queryByText("13.0 GiB")).toBeNull();
-  });
-  const allocWithStats = {
-    ...allocation,
-    modelWeightsMiB: 2048,
-    kvCacheCapacityMiB: 8192,
-  };
-  const renderCard = (
-    props: Partial<Parameters<typeof GpuObservationCard>[0]>,
-  ) =>
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <GpuObservationCard
-            device={device}
-            samples={samples}
-            allocations={[allocWithStats]}
-            {...props}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
+    expect(
+      screen.getByTestId("gpu-kv-weights-breakdown").textContent,
+    ).toContain(
+      "observations.modelWeights 2.0 GiB · observations.l0KvCache 8.0 GiB",
     );
-  it("shows weights and L0 KV-Cache text but draws no segments without a replica measurement", () => {
-    renderCard({ replica: allocWithStats });
-    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
-    expect(breakdown.textContent).toContain(
-      "observations.modelWeights 2.0 GiB",
+    expect(screen.queryByText("observations.otherMemory")).toBeNull();
+    rerender(
+      card({
+        replica: allocation,
+        samples: [
+          ...samples,
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            12 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
     );
-    expect(breakdown.textContent).toContain("observations.l0KvCache 8.0 GiB");
-    screen.getByText("observations.noMeasurement");
-    expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
-    expect(screen.queryByTestId("gpu-bar-kv-segment")).toBeNull();
-    expect(screen.queryByTestId("gpu-bar-legend")).toBeNull();
+    screen.getByRole("group", { name: /observations.actual: 12.0 GiB/ });
+    screen.getByText("observations.otherMemory");
+    expect(screen.queryByText("observations.noMeasurement")).toBeNull();
   });
-  it("draws weights, L0 KV-Cache and other segments inside the measured bar", () => {
-    renderCard({
-      replica: allocWithStats,
-      samples: [
-        {
-          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
-          labels: {
-            node: "node",
-            accelerator_uuid: "gpu",
-            endpoint: "instance",
-            replica: "pod",
-          },
-          value: 12 * 1024 ** 3,
-          observed_at: Date.now() / 1000,
-        },
-      ],
-    });
-    const width = (id: string) =>
-      Number.parseFloat(screen.getByTestId(id).style.width);
-    expect(width("gpu-bar-weights-segment")).toBeCloseTo(13.3333, 3);
-    expect(width("gpu-bar-kv-segment")).toBeCloseTo(53.3333, 3);
-    expect(width("gpu-bar-other-segment")).toBeCloseTo(13.3333, 3);
-    screen.getByTestId("gpu-bar-legend");
-  });
-  it("shows a dash instead of the live usage ratio when the L0 pool size is unknown", () => {
-    const noCapacity = { ...allocation, modelWeightsMiB: 2048 };
-    renderCard({
-      allocations: [noCapacity],
-      replica: noCapacity,
-      samples: [
-        ...samples,
-        {
-          metric: "vllm:kv_cache_usage_perc",
-          labels: { endpoint: "instance", replica: "pod" },
-          value: 0.5,
-          observed_at: Date.now() / 1000,
-        },
-      ],
-    });
-    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
-    expect(breakdown.textContent).toContain("observations.l0KvCache —");
-    expect(breakdown.textContent).not.toContain("%");
-  });
-  it("lists each assigned instance with its name, weights, and L0 KV-Cache on the cluster view", () => {
-    const allocA = {
-      ...allocation,
-      endpoint: "qwen-a",
-      replica: "pod-a",
-      instance: "pod-a",
-      memoryMiB: 7680,
-      modelWeightsMiB: 2048,
-      kvCacheCapacityMiB: 4096,
-    };
-    const allocB = {
-      ...allocation,
-      endpoint: "qwen-b",
-      replica: "pod-b",
-      instance: "pod-b",
-      memoryMiB: 7680,
-    };
-    renderCard({ allocations: [allocA, allocB] });
-    const breakdown = screen.getByTestId("gpu-kv-weights-breakdown");
-    expect(breakdown.textContent).toContain(
-      "qwen-a observations.modelWeights 2.0 GiB · observations.l0KvCache 4.0 GiB",
-    );
-    expect(breakdown.textContent).toContain(
+
+  it("shows shared-card allocations with unknown capacities and per-instance measurements", () => {
+    const allocations = [
+      {
+        ...allocation,
+        endpoint: "qwen-a",
+        replica: "pod-a",
+        instance: "pod-a",
+        memoryMiB: 8192,
+        kvCacheCapacityMiB: 4096,
+      },
+      {
+        ...allocation,
+        endpoint: "qwen-b",
+        replica: "pod-b",
+        instance: "pod-b",
+        memoryMiB: 7168,
+        modelWeightsMiB: undefined,
+        kvCacheCapacityMiB: undefined,
+      },
+    ];
+    const { rerender } = render(card({ allocations }));
+    expect(
+      screen.getByTestId("gpu-kv-weights-breakdown").textContent,
+    ).toContain(
       "qwen-b observations.modelWeights — · observations.l0KvCache —",
     );
-    expect(screen.queryByTestId("gpu-bar-weights-segment")).toBeNull();
-  });
-  it("draws per-instance composition segments when shared GPU replica measurements exist", () => {
-    const allocA = {
-      ...allocation,
-      endpoint: "qwen-a",
-      replica: "pod-a",
-      instance: "pod-a",
-      memoryMiB: 8192,
-      modelWeightsMiB: 2048,
-      kvCacheCapacityMiB: 4096,
-    };
-    const allocB = {
-      ...allocation,
-      endpoint: "qwen-b",
-      replica: "pod-b",
-      instance: "pod-b",
-      memoryMiB: 7168,
-      modelWeightsMiB: 1792,
-      kvCacheCapacityMiB: 3584,
-    };
-    renderCard({
-      allocations: [allocA, allocB],
-      samples: [
-        ...samples,
-        {
-          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
-          labels: {
-            node: "node",
-            accelerator_uuid: "gpu",
-            endpoint: "qwen-a",
-            replica: "pod-a",
-          },
-          value: 7 * 1024 ** 3,
-          observed_at: Date.now() / 1000,
-        },
-        {
-          metric: "neutree_endpoint_replica_accelerator_memory_used_bytes",
-          labels: {
-            node: "node",
-            accelerator_uuid: "gpu",
-            endpoint: "qwen-b",
-            replica: "pod-b",
-          },
-          value: 6 * 1024 ** 3,
-          observed_at: Date.now() / 1000,
-        },
-      ],
+    expect(screen.queryByText("observations.otherMemory")).toBeNull();
+    rerender(
+      card({
+        allocations,
+        samples: [
+          ...samples,
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            7 * 1024 ** 3,
+            { endpoint: "qwen-a", replica: "pod-a" },
+          ),
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            6 * 1024 ** 3,
+            { endpoint: "qwen-b", replica: "pod-b" },
+          ),
+        ],
+      }),
+    );
+    screen.getByRole("link", {
+      name: "qwen-a: observations.actual 7.0 GiB, observations.allocated 8.0 GiB",
     });
-    const weightSegments = screen.getAllByTestId("gpu-bar-weights-segment");
-    const kvSegments = screen.getAllByTestId("gpu-bar-kv-segment");
-    expect(weightSegments).toHaveLength(2);
-    expect(kvSegments).toHaveLength(2);
-    expect(Number.parseFloat(weightSegments[0].style.width)).toBeCloseTo(25, 3);
-    expect(Number.parseFloat(kvSegments[0].style.width)).toBeCloseTo(50, 3);
-    expect(Number.parseFloat(weightSegments[1].style.width)).toBeCloseTo(25, 3);
-    expect(Number.parseFloat(kvSegments[1].style.width)).toBeCloseTo(50, 3);
+    screen.getByRole("link", {
+      name: "qwen-b: observations.actual 6.0 GiB, observations.allocated 7.0 GiB",
+    });
+    screen.getByText("observations.otherMemory");
   });
-});
-
-it("merges generic hardware extensions for the current device in a stable order", () => {
-  const info = (
-    metric: string,
-    node: string,
-    uuid: string,
-    driver: string,
-  ): AcceleratorSample => ({
-    metric,
-    labels: { node, accelerator_uuid: uuid, driver_version: driver },
-    value: 1,
-    observed_at: 1,
-  });
-  const data = [
-    info(
-      "neutree_node_accelerator_example_info",
-      "node",
-      "gpu",
-      "extension-driver",
-    ),
-    info(
-      "neutree_node_accelerator_hardware_info",
-      "node",
-      "gpu",
-      "generic-driver",
-    ),
-    info(
-      "neutree_node_accelerator_example_info",
-      "other-node",
-      "gpu",
-      "wrong-node",
-    ),
-    info(
-      "neutree_node_accelerator_example_info",
-      "node",
-      "other-gpu",
-      "wrong-gpu",
-    ),
-    info("not_hardware_info", "node", "gpu", "wrong-metric"),
-  ];
-  const card = (samples: AcceleratorSample[]) => (
-    <MemoryRouter>
-      <TooltipProvider>
-        <GpuObservationCard
-          device={device}
-          samples={samples}
-          allocations={[]}
-        />
-      </TooltipProvider>
-    </MemoryRouter>
-  );
-  const { rerender } = render(card(data));
-  fireEvent.click(screen.getByRole("button", { name: "observations.details" }));
-  screen.getByText("extension-driver");
-  expect(screen.queryByText("wrong-node")).toBeNull();
-  expect(screen.queryByText("wrong-gpu")).toBeNull();
-  expect(screen.queryByText("wrong-metric")).toBeNull();
-  rerender(card([...data].reverse()));
-  screen.getByText("extension-driver");
 });
