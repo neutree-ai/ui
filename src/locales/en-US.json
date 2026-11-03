@@ -673,16 +673,8 @@
 			}
 		},
 		"gpuInventory": {
-			"summary": "{{count}} GPUs · {{free}} free",
-			"summary_one": "{{count}} GPU · {{free}} free",
 			"count": "{{count}} GPUs",
-			"count_one": "{{count}} GPU",
-			"title": "All GPU cards",
-			"description": "Counts across all accelerator models in this cluster.",
-			"byNode": "By node",
-			"selectedAccelerator": "Selected accelerator: {{product}}",
-			"fullyFreeForSelection": "{{count}} fully free for this accelerator",
-			"fullyFreeForSelection_one": "{{count}} fully free for this accelerator"
+			"count_one": "{{count}} GPU"
 		}
 	},
 	"model_registries": {
@@ -1273,6 +1265,8 @@
 		},
 		"actions": {
 			"openResources": "Open Resources",
+			"showDetails": "Show details",
+			"hideDetails": "Hide details",
 			"pause": "Pause",
 			"saveAsCatalog": "Save as Catalog",
 			"resume": "Resume"

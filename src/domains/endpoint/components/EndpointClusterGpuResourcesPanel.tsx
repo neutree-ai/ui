@@ -92,57 +92,6 @@ const formatCount = (value: number | null | undefined): string => {
   return Number.isFinite(numericValue) ? numericValue.toFixed(1) : EMPTY_VALUE;
 };
 
-type GpuInventorySummary = {
-  total: number;
-  free: number;
-  allocated: number;
-  unhealthy: number;
-  nodes: Array<{
-    nodeName: string;
-    total: number;
-    free: number;
-  }>;
-};
-
-const summarizeGpuInventory = (
-  rows: GpuDeviceResourceRow[],
-): GpuInventorySummary => {
-  const summary: GpuInventorySummary = {
-    total: rows.length,
-    free: 0,
-    allocated: 0,
-    unhealthy: 0,
-    nodes: [],
-  };
-  const nodes = new Map<string, { total: number; free: number }>();
-
-  for (const row of rows) {
-    if (!row.healthy) {
-      summary.unhealthy += 1;
-    } else if (row.fullFree) {
-      summary.free += 1;
-    } else {
-      summary.allocated += 1;
-    }
-
-    const node = nodes.get(row.nodeName) ?? { total: 0, free: 0 };
-    node.total += 1;
-    if (row.healthy && row.fullFree) node.free += 1;
-    nodes.set(row.nodeName, node);
-  }
-
-  summary.nodes = [...nodes].map(([nodeName, node]) => ({
-    nodeName,
-    ...node,
-  }));
-  return summary;
-};
-
-const countUsableForSelection = (rows: GpuDeviceResourceRow[]): number =>
-  rows.filter(
-    (row) => row.matchesSelectedAccelerator && row.healthy && row.fullFree,
-  ).length;
-
 const scaleMetricValue = (
   value: number | null | undefined,
   valueScale: number,
@@ -1382,22 +1331,6 @@ export function EndpointClusterGpuResourcesPanel({
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
   );
-  const deviceRows = useMemo(
-    () =>
-      buildGpuDeviceResourceRows(
-        resourceInfo?.node_resources,
-        selectedAccelerator,
-      ),
-    [resourceInfo?.node_resources, selectedAccelerator],
-  );
-  const gpuInventory = useMemo(
-    () => summarizeGpuInventory(deviceRows),
-    [deviceRows],
-  );
-  const usableForSelection = useMemo(
-    () => countUsableForSelection(deviceRows),
-    [deviceRows],
-  );
   const summaryRows = useMemo(() => {
     if (!selectedAccelerator?.product) {
       return rows;
@@ -1432,7 +1365,6 @@ export function EndpointClusterGpuResourcesPanel({
       <ClusterResourcesToolbar
         title={title}
         inset={inset}
-        gpuInventory={gpuInventory}
         filteredByAccelerator={filteredByAccelerator}
         detailsOpen={clusterDetailsOpen}
         onToggleDetails={() => setClusterDetailsOpen((open) => !open)}
@@ -1441,10 +1373,7 @@ export function EndpointClusterGpuResourcesPanel({
       {clusterDetailsOpen && (
         <EndpointClusterGpuResourcesInlineContent
           resourceInfo={resourceInfo}
-          selectedAccelerator={selectedAccelerator}
           nodeCount={nodeCount}
-          usableForSelection={usableForSelection}
-          gpuInventory={gpuInventory}
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
           summaryRows={summaryRows}
@@ -1469,7 +1398,6 @@ export function EndpointClusterGpuResourcesPanel({
 function ClusterResourcesToolbar({
   title,
   inset,
-  gpuInventory,
   filteredByAccelerator,
   detailsOpen,
   onToggleDetails,
@@ -1477,20 +1405,11 @@ function ClusterResourcesToolbar({
 }: {
   title: string;
   inset: boolean;
-  gpuInventory?: GpuInventorySummary;
   filteredByAccelerator?: boolean;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
   t?: Translate;
 }) {
-  const summaryLabel =
-    gpuInventory && t
-      ? t("clusters.gpuInventory.summary", {
-          count: gpuInventory.total,
-          free: gpuInventory.free,
-        })
-      : null;
-
   return (
     <div
       data-testid="endpoint-cluster-resource-toolbar"
@@ -1512,19 +1431,20 @@ function ClusterResourcesToolbar({
           </p>
         )}
       </div>
-      {summaryLabel && gpuInventory && t && (
+      {t && onToggleDetails && (
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="group h-7 shrink-0 gap-1.5 rounded-md px-2 text-xs font-medium"
-          data-testid="endpoint-cluster-gpu-inventory"
+          data-testid="endpoint-cluster-details-toggle"
           aria-expanded={detailsOpen}
           aria-controls="endpoint-cluster-resource-details"
           onClick={onToggleDetails}
         >
-          <Cpu className="size-3.5" aria-hidden="true" />
-          {summaryLabel}
+          {detailsOpen
+            ? t("endpoints.actions.hideDetails")
+            : t("endpoints.actions.showDetails")}
           <ChevronDown
             className={cn(
               "size-3.5 transition-transform",
@@ -1538,113 +1458,9 @@ function ClusterResourcesToolbar({
   );
 }
 
-function ClusterGpuInventoryDetails({
-  gpuInventory,
-  selectedAccelerator,
-  usableForSelection,
-  t,
-}: {
-  gpuInventory: GpuInventorySummary;
-  selectedAccelerator?: SelectedAccelerator | null;
-  usableForSelection: number;
-  t: Translate;
-}) {
-  return (
-    <div
-      data-testid="endpoint-cluster-gpu-inventory-details"
-      className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] p-3"
-    >
-      <div className="space-y-3">
-        <div>
-          <p className="text-sm font-semibold">
-            {t("clusters.gpuInventory.title")}
-          </p>
-          <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-            {t("clusters.gpuInventory.description")}
-          </p>
-        </div>
-        {selectedAccelerator?.product && (
-          <div className="rounded-md bg-muted/40 px-2 py-1.5 text-xs leading-5">
-            <div className="break-words text-muted-foreground">
-              {t("clusters.gpuInventory.selectedAccelerator", {
-                product: selectedAccelerator.product,
-              })}
-            </div>
-            <div className="mt-0.5 font-medium">
-              {t("clusters.gpuInventory.fullyFreeForSelection", {
-                count: usableForSelection,
-              })}
-            </div>
-          </div>
-        )}
-        <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/40 p-2">
-          {[
-            {
-              key: "free",
-              label: t("clusters.options.free"),
-              count: gpuInventory.free,
-              className: "text-[var(--nt-text-colorful-positive)]",
-            },
-            {
-              key: "allocated",
-              label: t("clusters.options.allocated"),
-              count: gpuInventory.allocated,
-              className: "text-[var(--nt-text-colorful-notice)]",
-            },
-            {
-              key: "unhealthy",
-              label: t("clusters.options.unhealthy"),
-              count: gpuInventory.unhealthy,
-              className: "text-[var(--nt-text-colorful-serious)]",
-            },
-          ].map((item) => (
-            <div key={item.key} className="min-w-0">
-              <div className="text-[11px] text-muted-foreground">
-                {item.label}
-              </div>
-              <div
-                className={cn(
-                  "mt-0.5 text-sm font-semibold tabular-nums",
-                  item.className,
-                )}
-              >
-                {item.count}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">
-            {t("clusters.gpuInventory.byNode")}
-          </p>
-          <div className="space-y-1">
-            {gpuInventory.nodes.map((node) => (
-              <div
-                key={node.nodeName}
-                className="flex items-start justify-between gap-3 text-xs leading-5"
-              >
-                <span className="min-w-0 break-all">{node.nodeName}</span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {t("clusters.gpuInventory.summary", {
-                    count: node.total,
-                    free: node.free,
-                  })}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
-  selectedAccelerator,
   nodeCount,
-  usableForSelection,
-  gpuInventory,
   hasGpuResources,
   virtualizationEnabled,
   summaryRows,
@@ -1652,10 +1468,7 @@ function EndpointClusterGpuResourcesInlineContent({
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
-  selectedAccelerator?: SelectedAccelerator | null;
   nodeCount?: number | null;
-  usableForSelection: number;
-  gpuInventory: GpuInventorySummary;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
@@ -1677,12 +1490,6 @@ function EndpointClusterGpuResourcesInlineContent({
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
           nodeCount={nodeCount}
-          t={t}
-        />
-        <ClusterGpuInventoryDetails
-          gpuInventory={gpuInventory}
-          selectedAccelerator={selectedAccelerator}
-          usableForSelection={usableForSelection}
           t={t}
         />
       </div>

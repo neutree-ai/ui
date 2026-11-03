@@ -23,18 +23,8 @@ const translations: Record<string, string> = {
   "clusters.fields.gpuDetails": "GPU details",
   "clusters.fields.gpuType": "GPU Type",
   "clusters.fields.memoryUsage": "Memory Usage",
-  "clusters.gpuInventory.summary": "{{count}} GPUs · {{free}} free",
-  "clusters.gpuInventory.summary_one": "{{count}} GPU · {{free}} free",
   "clusters.gpuInventory.count": "{{count}} GPUs",
   "clusters.gpuInventory.count_one": "{{count}} GPU",
-  "clusters.gpuInventory.title": "All GPU cards",
-  "clusters.gpuInventory.description":
-    "Counts across all accelerator models in this cluster.",
-  "clusters.gpuInventory.byNode": "By node",
-  "clusters.gpuInventory.selectedAccelerator":
-    "Selected accelerator: {{product}}",
-  "clusters.gpuInventory.fullyFreeForSelection":
-    "{{count}} fully free for this accelerator",
   "clusters.actions.copyUuid": "Copy UUID",
   "clusters.messages.copyUuidFailed": "Failed to copy GPU UUID",
   "clusters.messages.copyUuidSuccess": "GPU UUID copied",
@@ -49,6 +39,8 @@ const translations: Record<string, string> = {
   "endpoints.fields.physicalGpu": "Card Count",
   "endpoints.messages.selectedAcceleratorResources":
     "Showing resources available to the selected accelerator.",
+  "endpoints.actions.showDetails": "Show details",
+  "endpoints.actions.hideDetails": "Hide details",
   "endpoints.sections.clusterDeviceResources": "Cluster Resources",
 };
 
@@ -65,7 +57,7 @@ const renderPanel = (ui: ReactElement) =>
   render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
 
 const openClusterDetails = () =>
-  fireEvent.click(screen.getByTestId("endpoint-cluster-gpu-inventory"));
+  fireEvent.click(screen.getByTestId("endpoint-cluster-details-toggle"));
 
 const findByExactLabel = (cards: HTMLElement[], label: string) => {
   const card = cards.find((item) => within(item).queryByText(label));
@@ -217,7 +209,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toContain("Showing resources available to the selected accelerator.");
   });
 
-  it("opens cluster capacity and GPU inventory from the toolbar control", () => {
+  it("opens compact cluster capacity from the toolbar control", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -229,9 +221,9 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    const trigger = screen.getByTestId("endpoint-cluster-gpu-inventory");
+    const trigger = screen.getByTestId("endpoint-cluster-details-toggle");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(trigger.textContent).toContain("2 GPUs · 1 free");
+    expect(trigger.textContent).toContain("Show details");
     expect(
       screen.queryByTestId("endpoint-cluster-resource-metrics"),
     ).toBeNull();
@@ -244,10 +236,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       "endpoints.fields.nodeCount 2",
     );
     screen.getByTestId("endpoint-cluster-resource-metrics");
-    screen.getByTestId("endpoint-cluster-gpu-inventory-details");
     expect(
       screen.getAllByTestId("endpoint-resource-summary-progress"),
     ).toHaveLength(4);
+    expect(trigger.textContent).toContain("Hide details");
 
     openClusterDetails();
 
@@ -257,7 +249,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toBeNull();
   });
 
-  it("summarizes all cluster GPUs in the expanded toolbar details", async () => {
+  it("does not repeat GPU inventory already present in node cards", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -270,17 +262,11 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     openClusterDetails();
 
-    const details = await screen.findByTestId(
-      "endpoint-cluster-gpu-inventory-details",
-    );
-    within(details).getByText("All GPU cards");
-    within(details).getByText("Free");
-    within(details).getByText("Allocated");
-    within(details).getByText("Unhealthy");
-    within(details).getByText("Selected accelerator: Tesla-T4");
-    within(details).getByText("1 fully free for this accelerator");
-    within(details).getByText("node-a");
-    within(details).getByText("2 GPUs · 1 free");
+    expect(screen.queryByText("All GPU cards")).toBeNull();
+    expect(
+      screen.queryByTestId("endpoint-cluster-gpu-inventory-details"),
+    ).toBeNull();
+    screen.getByTestId("endpoint-compact-node-resources");
   });
 
   it("does not claim accelerator filtering when the selected product is absent", () => {
