@@ -1069,7 +1069,8 @@
 			"resourceSummary": "Resource Summary",
 			"replicaResources": "Replica Resources",
 			"gpuAllocation": "GPU Allocation & Usage",
-			"weights": "Weights & Cache"
+			"weights": "Weights & Cache",
+			"monitoringMetrics": "Monitoring Metrics"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -1400,6 +1401,26 @@
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",
 			"redeploy": "Saving this change will redeploy the inference instance"
+		},
+		"performance": {
+			"window5m": "Last 5m",
+			"window1h": "Last 1h",
+			"window24h": "Last 24h",
+			"cumulative": "Cumulative",
+			"latency": "Latency",
+			"throughput": "Throughput",
+			"kvCache": "KV-Cache",
+			"ttft": "TTFT",
+			"tpot": "TPOT",
+			"avg": "Avg",
+			"p95": "P95",
+			"totalTokensPerSecond": "Total tokens/s (TPS)",
+			"promptTokensPerSecond": "Prompt tokens/s",
+			"generationTokensPerSecond": "Generation tokens/s",
+			"l0HitRate": "L0 Hit Rate",
+			"l1HitRate": "L1 Hit Rate",
+			"l1ReadSpeed": "Hosting-node L1 Read Speed",
+			"l1WriteSpeed": "Hosting-node L1 Write Speed"
 		}
 	},
 	"external_endpoints": {

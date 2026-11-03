@@ -23,6 +23,7 @@ const {
 }));
 
 vi.mock("@refinedev/core", () => ({
+  useCustom: () => ({ data: undefined, isLoading: false }),
   useList: useListMock,
   useOne: useOneMock,
   useShow: useShowMock,
