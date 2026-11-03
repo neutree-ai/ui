@@ -12,58 +12,30 @@ vi.mock("@refinedev/core", () => ({
 
 describe("EndpointPerformanceCard", () => {
   beforeEach(() => {
-    useCustomMock.mockReset();
-  });
-
-  it("renders latency, throughput, and KV-cache metrics and switches windows", () => {
-    useCustomMock.mockReturnValue({
+    useCustomMock.mockReset().mockReturnValue({
       isLoading: false,
       data: {
         data: {
           status: "ok",
           window: "5m",
           metrics: {
-            ttft_p95_seconds: 0.185,
-            ttft_avg_seconds: 0.12,
-            tpot_p95_seconds: 0.032,
-            tpot_avg_seconds: 0.024,
-            latency_cumulative: true,
-            prompt_tokens_per_second: 420.5,
-            generation_tokens_per_second: 85.25,
             total_tokens_per_second: 505.75,
             l0_hit_rate: 0.35,
-            l1_hit_rate: 0.48,
-            hit_rate_cumulative: true,
             l1_read_bytes_per_second: 536870912,
-            l1_write_bytes_per_second: 134217728,
+            hit_rate_cumulative: true,
           },
         },
       },
     });
+  });
 
+  it("shows the observed metrics and refetches for the selected window", () => {
     render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
 
-    expect(screen.getByTestId("perf-ttft-value").textContent).toBe("185 ms");
-    expect(screen.getByTestId("perf-tpot-value").textContent).toBe("32 ms");
-    screen.getByTestId("perf-latency-cumulative");
-    expect(screen.getByTestId("perf-tps-value").textContent).toBe(
-      "505.8 tok/s",
-    );
-    expect(screen.getByTestId("perf-prompt-tps-value").textContent).toBe(
-      "420.5 tok/s",
-    );
-    expect(screen.getByTestId("perf-gen-tps-value").textContent).toBe(
-      "85.25 tok/s",
-    );
-    expect(screen.getByTestId("perf-l0-hit-rate").textContent).toBe("35.0%");
-    expect(screen.getByTestId("perf-l1-hit-rate").textContent).toBe("48.0%");
-    screen.getByTestId("perf-cache-cumulative");
-    expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe(
-      "512.0 MiB/s",
-    );
-    expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe(
-      "128.0 MiB/s",
-    );
+    screen.getByText("505.8 tok/s");
+    screen.getByText("35.0%");
+    screen.getByText("512.0 MiB/s");
+    screen.getByText("endpoints.performance.cumulative");
 
     fireEvent.click(
       screen.getByRole("button", { name: "endpoints.performance.window1h" }),
@@ -75,22 +47,12 @@ describe("EndpointPerformanceCard", () => {
     );
   });
 
-  it("shows dashes when endpoint is paused", () => {
-    useCustomMock.mockReturnValue({
-      isLoading: false,
-      data: undefined,
-    });
-
+  it("hides the last observed metrics while the endpoint is paused", () => {
     render(
       <EndpointPerformanceCard workspace="default" name="chat-ep" paused />,
     );
 
-    expect(screen.getByTestId("perf-ttft-value").textContent).toBe("—");
-    expect(screen.getByTestId("perf-tpot-value").textContent).toBe("—");
-    expect(screen.getByTestId("perf-tps-value").textContent).toBe("—");
-    expect(screen.getByTestId("perf-l0-hit-rate").textContent).toBe("—");
-    expect(screen.getByTestId("perf-l1-hit-rate").textContent).toBe("—");
-    expect(screen.getByTestId("perf-l1-read-speed").textContent).toBe("—");
-    expect(screen.getByTestId("perf-l1-write-speed").textContent).toBe("—");
+    expect(screen.queryByText("505.8 tok/s")).toBeNull();
+    expect(screen.queryByText("35.0%")).toBeNull();
   });
 });

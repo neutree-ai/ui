@@ -485,6 +485,7 @@
   "src/foundation/hooks/use-accelerator-observations.ts": "233b1046646e174d5b2447fc5ee29859",
   "src/foundation/components/GpuObservationCard.tsx": "6ee7139d56d4e2792a3ef1932ed1d3fb",
   "src/domains/cluster/components/ClusterFlops.tsx": "197c59e62c06e8ff16a24b32093d4dc1",
-  "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "8bd159b754c5c548bb9e2b3c30122165",
-  "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c"
+  "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "ce08ce3e89a9706d78893402d55768ee",
+  "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c",
+  "src/domains/endpoint/lib/performance-format.ts": "376905aa16c9d4b17a225ff7925ed77f"
 }
