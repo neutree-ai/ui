@@ -9,6 +9,8 @@ import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import { formatToDecimal } from "@/foundation/lib/unit";
 import {
   activeCacheChange,
   cacheMessage,
@@ -20,7 +22,13 @@ import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
 import { ZCacheEditor } from "./ZCacheEditor";
 
-export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
+export function ClusterCacheSection({
+  cluster,
+  l1CacheByNode,
+}: {
+  cluster: Cluster;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+}) {
   const { systemInfo } = useSystemApi();
   const [searchParams] = useSearchParams();
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -34,12 +42,18 @@ export function ClusterCacheSection({ cluster }: { cluster: Cluster }) {
   }, [focusCache, available]);
   return available ? (
     <div ref={sectionRef} id="cache" className="scroll-mt-4">
-      <ZCacheDetails cluster={cluster} />
+      <ZCacheDetails cluster={cluster} l1CacheByNode={l1CacheByNode} />
     </div>
   ) : null;
 }
 
-function ZCacheDetails({ cluster }: { cluster: Cluster }) {
+function ZCacheDetails({
+  cluster,
+  l1CacheByNode,
+}: {
+  cluster: Cluster;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+}) {
   const { t } = useTranslation();
   const { data: access } = useCan({ resource: "clusters", action: "edit" });
   const [editing, setEditing] = useState(false);
@@ -199,6 +213,9 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                 {names.map((name) => {
                   const node = nodes.find((n) => n.name === name);
                   const target = targetNodes.includes(name);
+                  const usedGiB = !stale
+                    ? l1CacheByNode?.[name]?.usedGiB
+                    : null;
                   return (
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
@@ -233,9 +250,11 @@ function ZCacheDetails({ cluster }: { cluster: Cluster }) {
                           </p>
                         )}
                       </td>
-                      <td className="whitespace-nowrap py-3">
+                      <td className="whitespace-nowrap py-3 tabular-nums">
                         {node && node.capacity_bytes > 0
-                          ? `${node.capacity_bytes / 2 ** 30} GiB`
+                          ? usedGiB != null
+                            ? `${formatToDecimal(usedGiB, 1)} / ${node.capacity_bytes / 2 ** 30} GiB`
+                            : `${node.capacity_bytes / 2 ** 30} GiB`
                           : "—"}
                         {target &&
                           desired &&
