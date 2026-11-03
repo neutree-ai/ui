@@ -481,7 +481,7 @@
   "src/domains/model-catalog/lib/advanced-parameters.ts": "f85dce83b2bb701b3949c829555f8c59",
   "src/foundation/lib/accelerator-extra-info.ts": "8593b9fb11ef0b10e6f87f9a004108a1",
   "src/foundation/lib/accelerator-observations.ts": "cbc2554da306ffdaca9b112cf75c1ccb",
-  "src/foundation/lib/accelerator-tflops.ts": "b2296f3bb57ec33bdb25484943a4b553",
+  "src/foundation/lib/accelerator-tflops.ts": "3695cd0ec68ff2f81b5b25297664e68d",
   "src/foundation/hooks/use-accelerator-observations.ts": "233b1046646e174d5b2447fc5ee29859",
   "src/foundation/components/GpuObservationCard.tsx": "6ee7139d56d4e2792a3ef1932ed1d3fb",
   "src/domains/cluster/components/ClusterFlops.tsx": "197c59e62c06e8ff16a24b32093d4dc1"

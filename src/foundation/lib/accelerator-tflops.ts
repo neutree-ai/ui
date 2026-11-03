@@ -95,7 +95,7 @@ export function flopsTotals(
   return { total, used };
 }
 
-export type FlopsPoint = { time: number; value: number | null };
+type FlopsPoint = { time: number; value: number | null };
 
 // Each historical sample is valued by its own card's product, rather than
 // multiplying today's card count by yesterday's cluster-average utilization.
