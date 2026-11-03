@@ -306,24 +306,25 @@ function ResourceMetricLabel({
 type ResourceMetricTestIds = {
   item: string;
   progress: string;
-  value: string;
-  percent?: string;
-  freeValue?: string;
+  usedValue: string;
+  totalValue: string;
+  freeValue: string;
 };
 
 const CLUSTER_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
   item: "endpoint-resource-summary-card",
   progress: "endpoint-resource-summary-progress",
-  value: "endpoint-resource-summary-value",
-  percent: "endpoint-resource-summary-percent",
+  usedValue: "endpoint-resource-summary-used-value",
+  totalValue: "endpoint-resource-summary-total-value",
   freeValue: "endpoint-resource-summary-free-value",
 };
 
 const NODE_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
   item: "endpoint-node-resource-pill",
   progress: "endpoint-node-resource-progress",
-  value: "endpoint-node-resource-pill-value",
-  freeValue: "endpoint-node-resource-pill-value",
+  usedValue: "endpoint-node-resource-pill-used-value",
+  totalValue: "endpoint-node-resource-pill-total-value",
+  freeValue: "endpoint-node-resource-pill-free-value",
 };
 
 function ResourceMetricCard({
@@ -352,10 +353,11 @@ function ResourceMetricCard({
           className="text-xs font-semibold"
         />
         <span
-          data-testid={testIds.percent}
+          data-testid={testIds.totalValue}
           className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground"
+          title={readingTitle(totalText)}
         >
-          {formatPercent(percent)}
+          {totalText} {t("clusters.options.total").toLowerCase()}
         </span>
       </div>
       <MetricBar
@@ -368,19 +370,11 @@ function ResourceMetricCard({
         <span className="min-w-0 tabular-nums">
           {t("clusters.options.used")}{" "}
           <strong
-            data-testid={testIds.value}
+            data-testid={testIds.usedValue}
             className="font-semibold text-foreground"
             title={readingTitle(usedText)}
           >
             {usedText}
-          </strong>
-          <span aria-hidden="true"> / </span>
-          <strong
-            data-testid={testIds.value}
-            className="font-medium text-foreground"
-            title={readingTitle(totalText)}
-          >
-            {totalText}
           </strong>
         </span>
         <span className="shrink-0 tabular-nums" title={readingTitle(freeText)}>
