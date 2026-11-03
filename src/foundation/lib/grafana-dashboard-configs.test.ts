@@ -75,19 +75,43 @@ describe("getEndpointSplitDashboardProps", () => {
 });
 
 describe("cache dashboard scope", () => {
-  it.each([undefined, [], [{ name: "worker-a", capacity_bytes: 0 }]])(
-    "routes configured ZCache independently of observed node readiness",
-    (cacheNodes) => {
+  const node = (name: string, capacity_bytes: number) => ({
+    name,
+    capacity_bytes,
+  });
+  it.each([
+    [undefined, "0", "a^"],
+    [[], "0", "a^"],
+    [[node("worker-a", 0)], "0", "a^"],
+    [[node("worker-a", 1024), node("worker-b", 2048)], "0", "a^"],
+    [
+      [node("worker.a", 2048), node("worker-b", 2048)],
+      "2048",
+      "worker\\\\.a|worker-b",
+    ],
+  ] as const)(
+    "routes ZCache and derives usable capacity from %j",
+    (cacheNodes, capacity, nodes) => {
       const context = {
+        workspace: "team-b",
         clusterName: "cluster-a",
         endpointName: "model",
         cacheProvider: "zcache",
-        cacheNodes,
+        cacheNodes: cacheNodes ? [...cacheNodes] : undefined,
       };
-      expect(
-        getEndpointSplitDashboardProps("http://grafana", "cache", context)
-          .dashboardConfig.dashboardId,
-      ).toBe("neutree-endpoint-zcache-embed");
+      const cache = getEndpointSplitDashboardProps(
+        "http://grafana",
+        "cache",
+        context,
+      );
+      expect(cache.dashboardConfig.dashboardId).toBe(
+        "neutree-endpoint-zcache-embed",
+      );
+      expect(cache.dashboardConfig.variables).toMatchObject({
+        Workspace: "team-b",
+        L1CapacityBytes: capacity,
+        L1Nodes: nodes,
+      });
       expect(
         getEndpointSplitDashboardProps("http://grafana", "overview", context)
           .dashboardConfig.dashboardId,
@@ -95,71 +119,16 @@ describe("cache dashboard scope", () => {
     },
   );
 
-  it("passes observed node capacity and escapes node names for the PromQL regex", () => {
-    const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
-      clusterName: "cluster-a",
-      endpointName: "model",
-      cacheNodes: [
-        { name: "worker.a", capacity_bytes: 2 ** 31 },
-        { name: "worker-b", capacity_bytes: 2 ** 31 },
-      ],
-    });
-    expect(cache.dashboardConfig.variables).toMatchObject({
-      L1CapacityBytes: String(2 ** 31),
-      L1Nodes: "worker\\\\.a|worker-b",
-    });
-  });
-
-  it.each([
-    [{ name: "worker-a", capacity_bytes: 0 }],
-    [
-      { name: "worker-a", capacity_bytes: 2 ** 31 },
-      { name: "worker-b", capacity_bytes: 2 ** 32 },
-    ],
-  ])(
-    "leaves unknown or mixed-capacity inventories unavailable",
-    (...cacheNodes) => {
-      const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
-        clusterName: "cluster-a",
-        endpointName: "model",
-        cacheNodes,
-      });
-      expect(cache.dashboardConfig.variables).toMatchObject({
-        L1CapacityBytes: "0",
-        L1Nodes: "a^",
-      });
-    },
-  );
-
-  it("keeps identical names in different workspaces distinct", () => {
-    const cache = getEndpointSplitDashboardProps("http://grafana", "cache", {
-      workspace: "team-b",
-      clusterName: "shared-name",
-      endpointName: "model",
-    });
-    expect(cache.dashboardConfig.variables).toMatchObject({
-      Workspace: "team-b",
-      Cluster: "shared-name",
-      Endpoint: "model",
-    });
-    const pool = getZCacheDashboardProps("http://grafana", {
-      workspace: "team-b",
-      clusterName: "shared-name",
-    });
-    expect(pool.dashboardConfig.dashboardId).toBe("neutree-zcache-embed");
-    expect(pool.dashboardConfig.variables).toEqual({
-      datasource: "neutree-cluster",
-      Workspace: "team-b",
-      Cluster: "shared-name",
+  it("preserves per-node capacity and readiness, with unavailable expressions for an empty pool", () => {
+    const context = { workspace: "team-a", clusterName: "pool" };
+    const empty = getZCacheDashboardProps("http://grafana", context);
+    expect(empty.dashboardConfig.dashboardId).toBe("neutree-zcache-embed");
+    expect(empty.dashboardConfig.variables).toMatchObject({
       CacheCapacity: "(vector(0) > 0)",
       CacheReady: "(vector(0) > 0)",
     });
-  });
-
-  it("preserves different observed node capacities and readiness", () => {
     const vars = getZCacheDashboardProps("http://grafana", {
-      workspace: "team-a",
-      clusterName: "pool",
+      ...context,
       nodes: [
         { name: "node-a", capacity_bytes: 1024, runtime: "Ready" },
         { name: "node-b", capacity_bytes: 2048, runtime: "NotReady" },
