@@ -497,7 +497,7 @@ describe("validateEndpointValues", () => {
     "$action with registry $registry among $listed -> error: $error",
     ({ action, registry, listed, error }) => {
       const errors = validate(
-        {},
+        { model: { registry } },
         {
           action,
           currentRegistry: registry,
@@ -508,6 +508,22 @@ describe("validateEndpointValues", () => {
       expect(Boolean(errors["spec.model.registry"])).toBe(error);
     },
   );
+
+  it("requires a registry when a catalog supplies only a model name", () => {
+    const errors = validate(
+      {},
+      {
+        action: "create",
+        currentModelName: "catalog/model",
+        currentRegistry: "",
+      },
+    );
+
+    expect(errors["spec.model.registry"]).toEqual({
+      type: "manual",
+      message: "common.validation.required",
+    });
+  });
 
   // `null` model names mean the existence lookup has not resolved.
   it.each([
@@ -571,7 +587,13 @@ describe("validateEndpointValues", () => {
     // memory_percent is ignored and a zero core percent is not configured.
     { memory_percent: 50, core_percent: 0 },
   ])("accepts vGPU virtualization %o", (virtualization) => {
-    expect(validate(withVirtualization(virtualization))).toEqual({});
+    const errors = validate(withVirtualization(virtualization));
+    expect(
+      errors["spec.resources.accelerator.virtualization.memory_mib"],
+    ).toBeUndefined();
+    expect(
+      errors["spec.resources.accelerator.virtualization.core_percent"],
+    ).toBeUndefined();
   });
 
   it("returns error when vGPU core percent is out of range", () => {
@@ -646,7 +668,9 @@ describe("validateEndpointValues GPU count precision", () => {
   ] as const)(
     "skips precision validation for $accelerator on $cluster",
     ({ accelerator, cluster }) => {
-      expect(validate(1.5, cluster, accelerator)).toEqual({});
+      expect(
+        validate(1.5, cluster, accelerator)["spec.resources.gpu"],
+      ).toBeUndefined();
     },
   );
 });

@@ -22,8 +22,8 @@ type AcceleratorOption = {
   value: string; // Unique value: "nvidia_gpu:Tesla-V100"
   type: string; // Accelerator type: "nvidia_gpu"
   product: string; // Product name: "Tesla-V100"
-  available: number; // Cluster-level available (for reference)
-  total: number; // Cluster-level total (for reference)
+  available: number; // Fully free cards, or the aggregate fallback
+  total: number; // Physical cards, or the aggregate fallback
   memoryTotalMiB?: number | null;
   virtualizationMemoryMiB?: number | null;
   virtualizationCoreUnits?: number | null;
@@ -128,6 +128,22 @@ const getProductMemoryTotalMiB = (
   return undefined;
 };
 
+const countPhysicalDevicesByProduct = (
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+) => {
+  const result = new Map<string, number>();
+
+  for (const node of Object.values(nodeResources ?? {})) {
+    for (const device of node.devices ?? []) {
+      if (device.product) {
+        result.set(device.product, (result.get(device.product) ?? 0) + 1);
+      }
+    }
+  }
+
+  return result;
+};
+
 /**
  * Parse cluster resource info into a summary and available accelerator options.
  */
@@ -159,6 +175,30 @@ export function parseClusterResources(
 
   // Build accelerator options from accelerator_groups
   const acceleratorOptions: AcceleratorOption[] = [];
+  // Device details are the physical inventory. The aggregate view can lag
+  // behind them or describe scheduler allocations differently, so prefer the
+  // same device rows that Cluster Resources and placement use whenever they
+  // exist for a product.
+  const physicalDeviceTotals = countPhysicalDevicesByProduct(
+    resourceInfo.node_resources,
+  );
+  const physicalDevicesFree = countFullCardAvailableDevicesByProduct(
+    resourceInfo.node_resources,
+  );
+  const productCounts = (
+    product: string,
+    aggregateAvailable: number,
+    aggregateTotal: number,
+  ) => {
+    const physicalTotal = physicalDeviceTotals.get(product);
+
+    return physicalTotal === undefined
+      ? { available: aggregateAvailable, total: aggregateTotal }
+      : {
+          available: physicalDevicesFree.get(product) ?? 0,
+          total: physicalTotal,
+        };
+  };
 
   if (allocatable.accelerator_groups) {
     for (const [type, allocatableGroup] of Object.entries(
@@ -177,6 +217,11 @@ export function parseClusterResources(
           allocatableProducts,
         )) {
           const availableProduct = availableGroup?.products?.[product];
+          const counts = productCounts(
+            product,
+            availableProduct?.quantity || 0,
+            productResources.quantity || 0,
+          );
 
           acceleratorOptions.push(
             withAcceleratorMetrics(
@@ -185,8 +230,8 @@ export function parseClusterResources(
                 value: `${type}:${product}`,
                 type,
                 product,
-                available: availableProduct?.quantity || 0,
-                total: productResources.quantity || 0,
+                available: counts.available,
+                total: counts.total,
               },
               {
                 memoryTotalMiB: getProductMemoryTotalMiB(
@@ -213,6 +258,7 @@ export function parseClusterResources(
         )) {
           const productAvailable =
             availableGroup?.product_groups?.[product] || 0;
+          const counts = productCounts(product, productAvailable, productTotal);
 
           acceleratorOptions.push(
             withAcceleratorMetrics(
@@ -221,8 +267,8 @@ export function parseClusterResources(
                 value: `${type}:${product}`,
                 type,
                 product,
-                available: productAvailable,
-                total: productTotal,
+                available: counts.available,
+                total: counts.total,
               },
               {
                 memoryTotalMiB: getProductMemoryTotalMiB(

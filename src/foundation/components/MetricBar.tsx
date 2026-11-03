@@ -1,4 +1,8 @@
-import type { ComponentPropsWithoutRef } from "react";
+import {
+  type ComponentPropsWithoutRef,
+  type ElementRef,
+  forwardRef,
+} from "react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/foundation/lib/utils";
 
@@ -67,15 +71,21 @@ const trackClasses = {
     "border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent [&>div]:bg-transparent",
 } as const;
 
-export function MetricBar({
-  value,
-  size = "md",
-  shape = "flat-end",
-  series = "blue",
-  track = "subtle",
-  className,
-  ...props
-}: MetricBarProps) {
+export const MetricBar = forwardRef<
+  ElementRef<typeof Progress>,
+  MetricBarProps
+>(function MetricBar(
+  {
+    value,
+    size = "md",
+    shape = "flat-end",
+    series = "blue",
+    track = "subtle",
+    className,
+    ...props
+  },
+  ref,
+) {
   const normalizedValue =
     track === "unavailable"
       ? 0
@@ -83,6 +93,7 @@ export function MetricBar({
 
   return (
     <Progress
+      ref={ref}
       value={normalizedValue}
       className={cn(
         sizeClasses[size],
@@ -94,4 +105,6 @@ export function MetricBar({
       {...props}
     />
   );
-}
+});
+
+MetricBar.displayName = "MetricBar";

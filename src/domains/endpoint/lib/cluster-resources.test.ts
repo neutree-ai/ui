@@ -125,6 +125,110 @@ describe("parseClusterResources", () => {
     ]);
   });
 
+  it("prefers physical device counts when aggregate accelerator counts disagree", () => {
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: {
+        cpu: 100,
+        memory: 256,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 8,
+            product_groups: null,
+            products: {
+              H100: { quantity: 4 },
+              L40S: { quantity: 4 },
+            },
+          },
+        },
+      },
+      available: {
+        cpu: 80,
+        memory: 200,
+        accelerator_groups: {
+          nvidia_gpu: {
+            quantity: 5,
+            product_groups: null,
+            products: {
+              H100: { quantity: 2 },
+              L40S: { quantity: 3 },
+            },
+          },
+        },
+      },
+      node_resources: {
+        "gpu-node-a": {
+          allocatable: {
+            cpu: 32,
+            memory: 128,
+            accelerator_groups: null,
+          },
+          available: {
+            cpu: 24,
+            memory: 96,
+            accelerator_groups: null,
+          },
+          devices: [
+            {
+              uuid: "h100-free",
+              product: "H100",
+              health: true,
+              allocatable: { memory_mib: 81920, core_units: 100 },
+              available: { memory_mib: 81920, core_units: 100 },
+            },
+            {
+              uuid: "h100-partial",
+              product: "H100",
+              health: true,
+              allocatable: { memory_mib: 81920, core_units: 100 },
+              available: { memory_mib: 40960, core_units: 50 },
+            },
+            {
+              uuid: "h100-unhealthy",
+              product: "H100",
+              health: false,
+              allocatable: { memory_mib: 81920, core_units: 100 },
+              available: { memory_mib: 0, core_units: 0 },
+            },
+          ],
+        },
+        "gpu-node-b": {
+          allocatable: {
+            cpu: 32,
+            memory: 128,
+            accelerator_groups: null,
+          },
+          available: {
+            cpu: 32,
+            memory: 128,
+            accelerator_groups: null,
+          },
+          devices: [
+            {
+              uuid: "l40s-free",
+              product: "L40S",
+              health: true,
+              allocatable: { memory_mib: 49152, core_units: 100 },
+              available: { memory_mib: 49152, core_units: 100 },
+            },
+          ],
+        },
+      },
+    };
+
+    const result = parseClusterResources(resourceInfo, mockTranslate);
+    const counts = Object.fromEntries(
+      result.acceleratorOptions.map((option) => [
+        option.product,
+        { available: option.available, total: option.total },
+      ]),
+    );
+
+    expect(counts).toEqual({
+      H100: { available: 1, total: 3 },
+      L40S: { available: 1, total: 1 },
+    });
+  });
+
   it("omits unknown accelerator memory totals instead of setting undefined", () => {
     const resourceInfo: ClusterResourceInfo = {
       allocatable: makeResourceInfo(100, 256, { "Tesla-T4": 4 }),

@@ -209,4 +209,22 @@ describe("EndpointAdvancedParameters", () => {
       name: "endpoints.messages.expandParameterValue:additional_config",
     });
   });
+
+  it("summarizes collapsible groups and expands their parameters", () => {
+    render(
+      <EndpointAdvancedParameters
+        collapsible
+        engineParameters={{ max_model_len: 32768 }}
+        environmentVariables={{ HF_HOME: "/models/cache" }}
+      />,
+    );
+
+    expect(
+      screen.getByText(/endpoints\.wizard\.review\.variableSummary/)
+        .textContent,
+    ).toContain(":1,1");
+    fireEvent.click(screen.getByRole("button"));
+    screen.getAllByText("max_model_len");
+    screen.getAllByText("HF_HOME");
+  });
 });

@@ -8,6 +8,8 @@ type FormCardGridProps = {
   variant?: "card" | "section";
 } & PropsWithChildren<unknown>;
 
+export const FORM_GRID_GAP_CLASS = "gap-x-6 gap-y-4";
+
 export default function FormCardGrid({
   children,
   title,
@@ -25,7 +27,12 @@ export default function FormCardGrid({
             </h2>
           </div>
         )}
-        <div className="grid grid-cols-4 gap-x-6 gap-y-4 px-6 py-5 xs:grid-cols-1">
+        <div
+          className={cn(
+            "grid grid-cols-1 px-6 py-5 sm:grid-cols-4",
+            FORM_GRID_GAP_CLASS,
+          )}
+        >
           {children}
         </div>
       </section>
@@ -48,7 +55,12 @@ export default function FormCardGrid({
           </h2>
         </div>
       )}
-      <div className="grid grid-cols-4 gap-x-5 gap-y-4 px-5 py-4 xs:grid-cols-1">
+      <div
+        className={cn(
+          "grid grid-cols-1 px-5 py-4 sm:grid-cols-4",
+          FORM_GRID_GAP_CLASS,
+        )}
+      >
         {children}
       </div>
     </section>

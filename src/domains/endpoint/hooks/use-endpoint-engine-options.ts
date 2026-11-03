@@ -27,13 +27,28 @@ export function useEndpointEngineOptions({
     return { engineNames, engineVersions, engineTasks };
   }, [enginesData]);
 
-  const engineValueSchema = useMemo(() => {
+  const engineVersion = useMemo(() => {
     return engineSpec.engine
       ? engineVersions[engineSpec.engine]?.find(
           (v) => v.version === engineSpec.version,
-        )?.values_schema
+        )
       : undefined;
   }, [engineSpec.engine, engineSpec.version, engineVersions]);
 
-  return { engineNames, engineVersions, engineTasks, engineValueSchema };
+  const engineTasksForVersion = useMemo(() => {
+    return engineSpec.engine
+      ? engineVersion?.supported_tasks?.length
+        ? engineVersion.supported_tasks
+        : (engineTasks[engineSpec.engine] ?? [])
+      : [];
+  }, [engineSpec.engine, engineTasks, engineVersion]);
+
+  return {
+    engineNames,
+    engineVersions,
+    engineTasks,
+    engineTasksForVersion,
+    engineValueSchema: engineVersion?.values_schema,
+    engineVersion,
+  };
 }
