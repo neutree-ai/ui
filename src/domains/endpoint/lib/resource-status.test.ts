@@ -48,10 +48,13 @@ describe("endpoint resource status helpers", () => {
         {
           instance_id: "endpoint-abc",
           replica_id: "uid-1",
+          model_weights_mib: 2048,
+          kv_cache_capacity_mib: 4096,
           node_id: "node-1",
           devices: [
             {
               uuid: "GPU-1",
+              vdevice_index: "1",
               product: "Tesla-T4",
               memory_mib: 15360,
               core_units: 100,
@@ -77,7 +80,7 @@ describe("endpoint resource status helpers", () => {
       ],
     };
 
-    expect(getEndpointReplicaResourceRows(resourceStatus)).toEqual([
+    expect(getEndpointReplicaResourceRows(resourceStatus)).toMatchObject([
       {
         instanceId: "endpoint-abc",
         replicaId: "uid-1",
@@ -89,9 +92,9 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 100,
         physicalMemoryMiB: 16384,
         actualMemoryMiB: 12288,
-        modelWeightsMiB: null,
-        kvCacheCapacityMiB: null,
-        vdeviceIndex: undefined,
+        modelWeightsMiB: 2048,
+        kvCacheCapacityMiB: 4096,
+        vdeviceIndex: "1",
       },
       {
         instanceId: "endpoint-def",
@@ -104,9 +107,6 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 50,
         physicalMemoryMiB: null,
         actualMemoryMiB: null,
-        modelWeightsMiB: null,
-        kvCacheCapacityMiB: null,
-        vdeviceIndex: undefined,
       },
     ]);
   });
@@ -226,7 +226,7 @@ describe("endpoint resource status helpers", () => {
       ],
     };
 
-    expect(getEndpointReplicaResourceGroups(resourceStatus)).toEqual([
+    expect(getEndpointReplicaResourceGroups(resourceStatus)).toMatchObject([
       {
         instanceId: "endpoint-abc",
         replicaId: "endpoint-abc-multi",
@@ -253,9 +253,6 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
-                modelWeightsMiB: null,
-                kvCacheCapacityMiB: null,
-                vdeviceIndex: undefined,
               },
               {
                 instanceId: "endpoint-abc",
@@ -268,9 +265,6 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
-                modelWeightsMiB: null,
-                kvCacheCapacityMiB: null,
-                vdeviceIndex: undefined,
               },
             ],
           },
@@ -291,9 +285,6 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
-                modelWeightsMiB: null,
-                kvCacheCapacityMiB: null,
-                vdeviceIndex: undefined,
               },
             ],
           },

@@ -10,14 +10,6 @@ vi.mock("@refinedev/core", () => ({
   useCustom: useCustomMock,
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 describe("EndpointPerformanceCard", () => {
   beforeEach(() => {
     useCustomMock.mockReset();
