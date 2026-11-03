@@ -1087,7 +1087,7 @@
 		},
 		"sections": {
 			"clusterSettings": "Cluster",
-			"clusterCapacity": "Cluster capacity",
+			"clusterCapacity": "Capacity",
 			"modelAndReplicas": "Model & Replicas",
 			"schedulingTargetResources": "Scheduling Target and Resource Selection",
 			"schedulingTarget": "Scheduling Target",
