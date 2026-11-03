@@ -1,12 +1,11 @@
-import { useTheme } from "next-themes";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { readMonitoringState } from "@/domains/external-endpoint/lib/monitoring-state";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getModelRoutingDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
-import { buildGrafanaDashboardUrl } from "@/foundation/lib/grafana-dashboard-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
@@ -15,7 +14,6 @@ import { useTranslation } from "@/foundation/lib/i18n";
  */
 function useModelRoutingDashboard(record: ExternalEndpoint) {
   const { i18n } = useTranslation();
-  const { resolvedTheme } = useTheme();
   const { grafanaUrl } = useSystemApi();
   const [params] = useSearchParams();
   // Navigation only supplies initial context. Grafana owns subsequent changes.
@@ -29,10 +27,6 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
           ...state,
         })
       : null;
-  const link = props
-    ? new URL(buildGrafanaDashboardUrl({ ...props, resolvedTheme }))
-    : null;
-  link?.searchParams.delete("kiosk");
   const embeddedProps = props && {
     ...props,
     dashboardConfig: {
@@ -43,7 +37,7 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
       ),
     },
   };
-  return { props: embeddedProps, link };
+  return { props: embeddedProps, linkProps: props };
 }
 
 /**
@@ -55,16 +49,9 @@ export function ExternalEndpointMonitorLink({
 }: {
   record: ExternalEndpoint;
 }) {
-  const { t } = useTranslation();
-  const { link } = useModelRoutingDashboard(record);
-  if (!link || !record.spec.model_routes?.length) return null;
-  return (
-    <Button variant="link" size="sm" className="h-auto p-0" asChild>
-      <a href={link.toString()} target="_blank" rel="noopener noreferrer">
-        {t("external_endpoints.monitor.openGrafana")}
-      </a>
-    </Button>
-  );
+  const { linkProps } = useModelRoutingDashboard(record);
+  if (!linkProps || !record.spec.model_routes?.length) return null;
+  return <GrafanaDashboardLink {...linkProps} />;
 }
 
 export default function ExternalEndpointMonitor({

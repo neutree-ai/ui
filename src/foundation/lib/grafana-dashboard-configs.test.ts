@@ -66,6 +66,31 @@ describe("getEndpointSplitDashboardProps", () => {
         Cluster: "cluster-a",
         Endpoint: "endpoint-a",
       });
+      expect(props.hideVariables).toBe(dashboardType !== "cache");
     },
   );
+});
+
+it("applies a cache provider's dashboard only to the cache panel", () => {
+  const context = {
+    clusterName: "cluster-a",
+    endpointName: "endpoint-a",
+    cache: { dashboardId: "provider-cache", variables: { Workspace: "w" } },
+  };
+  const cache = getEndpointSplitDashboardProps(
+    "http://grafana",
+    "cache",
+    context,
+  );
+  expect(cache.dashboardConfig.dashboardId).toBe("provider-cache");
+  expect(cache.dashboardConfig.variables).toMatchObject({ Workspace: "w" });
+  const overview = getEndpointSplitDashboardProps(
+    "http://grafana",
+    "overview",
+    context,
+  );
+  expect(overview.dashboardConfig.dashboardId).toBe(
+    "neutree-endpoint-overview-embed",
+  );
+  expect(overview.dashboardConfig.variables).not.toHaveProperty("Workspace");
 });
