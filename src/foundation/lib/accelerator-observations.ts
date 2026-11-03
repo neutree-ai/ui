@@ -1,4 +1,5 @@
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
   metric: string;
@@ -227,4 +228,30 @@ export function allocationColor(name: string, position = 0): string {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return colors[1 + ((hash + position - 1) % (colors.length - 1))];
+}
+
+type ObservationStatusValue =
+  | "unavailable"
+  | "loading"
+  | "not_configured"
+  | "ok"
+  | "no_data";
+
+// The status line shared by every observation query: a failed request first,
+// then loading, then a backend without a query service, then whether any value
+// came back.
+export function observationStatus(
+  failed: boolean,
+  loading: boolean,
+  reported: string | undefined,
+  hasData: boolean,
+): ObservationStatusValue {
+  if (failed) return "unavailable";
+  if (loading) return "loading";
+  if (reported === "not_configured") return "not_configured";
+  return hasData ? "ok" : "no_data";
+}
+
+export function formatL1CacheUsage(usage: NodeL1CacheUsage): string {
+  return `${formatToDecimal(usage.usedGiB, 1) ?? "—"} / ${formatToDecimal(usage.capacityGiB, 1)} GiB`;
 }

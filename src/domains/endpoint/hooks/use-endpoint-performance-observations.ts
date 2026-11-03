@@ -1,8 +1,9 @@
 import { useCustom } from "@refinedev/core";
+import { observationStatus } from "@/foundation/lib/accelerator-observations";
 
 export type PerformanceWindow = "5m" | "1h" | "24h";
 
-export type EndpointPerformanceMetrics = {
+type EndpointPerformanceMetrics = {
   ttft_p95_seconds?: number;
   ttft_avg_seconds?: number;
   tpot_p95_seconds?: number;
@@ -32,7 +33,7 @@ export function useEndpointPerformanceObservations(
   enabled = true,
 ) {
   const query = useCustom<EndpointPerformanceSnapshot>({
-    url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-observations?window=${encodeURIComponent(window)}`,
+    url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-observations?window=${window}`,
     method: "get",
     queryOptions: {
       enabled: Boolean(workspace && name && enabled),
@@ -41,22 +42,17 @@ export function useEndpointPerformanceObservations(
     },
   });
 
+  // A disabled query keeps its last cached result; it is not shown.
+  if (!enabled) return { metrics: {}, status: "no_data" as const };
   const data = query.error ? undefined : query.data?.data;
-  const metrics = data?.metrics ?? {};
-  const hasAnyMetric = Object.values(metrics).some(
-    (v) => typeof v === "number",
-  );
-
+  const metrics: EndpointPerformanceMetrics = data?.metrics ?? {};
   return {
     metrics,
-    status: query.error
-      ? "unavailable"
-      : query.isLoading
-        ? "loading"
-        : data?.status === "not_configured"
-          ? "not_configured"
-          : hasAnyMetric
-            ? "ok"
-            : "no_data",
+    status: observationStatus(
+      Boolean(query.error),
+      query.isLoading,
+      data?.status,
+      Object.values(metrics).some((v) => typeof v === "number"),
+    ),
   };
 }

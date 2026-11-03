@@ -27,6 +27,7 @@ import {
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
+import type { EndpointReplicaResourceRow } from "@/domains/endpoint/lib/resource-status";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
@@ -35,13 +36,11 @@ import {
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import {
-  GpuObservationCard,
-  ObservationStatus,
-} from "@/foundation/components/GpuObservationCard";
+import { GpuObservationCard } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -159,14 +158,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     query: { data, isLoading },
   } = useShow<Endpoint>({ queryOptions: { refetchInterval: 15000 } });
   const record = data?.data;
+  const isPaused = record?.status?.phase === "Paused";
   const observations = useAcceleratorObservations(
     "endpoints",
     record?.metadata.workspace,
     record?.metadata.name,
+    !isPaused,
   );
   const allocations = gpuAllocations(record ? [record] : []);
-  const gpuSamples =
-    record?.status?.phase === "Paused" ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -195,8 +194,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     },
   });
 
-  const cacheStatus = zcacheStatus(clusterData?.data?.[0]);
-  const clusterType = clusterData?.data?.[0]?.spec?.type;
+  const cluster = clusterData?.data?.[0];
+  const cacheStatus = zcacheStatus(cluster);
+  const clusterType = cluster?.spec?.type;
+  const tflopsOverrides = parseTflops(
+    cluster?.metadata?.annotations?.[TFLOPS_ANNOTATION],
+  );
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
 
@@ -222,6 +225,42 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
+
+  const renderDeviceObservation = (
+    device: EndpointReplicaResourceRow,
+    deviceIndex: number,
+  ) => (
+    <GpuObservationCard
+      device={{
+        node: device.nodeId,
+        uuid: device.uuid,
+        index: device.order ?? deviceIndex + 1,
+        product: device.product,
+        peakFP16TFLOPS: productPeakTflops(
+          cluster?.status?.resource_info,
+          device.product,
+        ),
+        totalMiB: device.physicalMemoryMiB,
+        allocatedMiB: device.memoryMiB,
+      }}
+      tflopsOverrides={tflopsOverrides}
+      samples={observations.samples}
+      allocations={allocations}
+      replica={{
+        endpoint: record.metadata.name,
+        workspace: record.metadata.workspace ?? "default",
+        model: record.spec.model?.name ?? "",
+        node: device.nodeId,
+        uuid: device.uuid,
+        replica: device.replicaId,
+        instance: device.instanceId,
+        vdevice: device.vdeviceIndex ?? undefined,
+        memoryMiB: device.memoryMiB,
+        modelWeightsMiB: device.modelWeightsMiB,
+        kvCacheCapacityMiB: device.kvCacheCapacityMiB,
+      }}
+    />
+  );
   const schedulerText = getSchedulerText(
     record.spec.deployment_options?.scheduler?.type,
     t,
@@ -376,15 +415,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               "zcache",
             ) ||
               record.spec.kv_cache) && (
-              <EndpointKVCacheSummary
-                endpoint={record}
-                cluster={clusterData?.data?.[0]}
-              />
+              <EndpointKVCacheSummary endpoint={record} cluster={cluster} />
             )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
-              paused={record.status?.phase === "Paused"}
+              paused={isPaused}
             />
             <div className="space-y-3">
               <ShowPage.Section
@@ -396,60 +432,20 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 }
               >
                 <div className="space-y-6">
-                  <ObservationStatus
-                    status={
-                      record.status?.phase === "Paused"
-                        ? "no_data"
-                        : observations.status
-                    }
-                  />
+                  <ObservationStatus status={observations.status} />
                   <EndpointRuntimeResourcesCard
-                    renderMemory={(device, deviceIndex) => (
-                      <GpuObservationCard
-                        device={{
-                          node: device.nodeId,
-                          uuid: device.uuid,
-                          index: device.order ?? deviceIndex + 1,
-                          product: device.product,
-                          peakFP16TFLOPS: productPeakTflops(
-                            clusterData?.data?.[0]?.status?.resource_info,
-                            device.product,
-                          ),
-                          totalMiB: device.physicalMemoryMiB,
-                          allocatedMiB: device.memoryMiB,
-                        }}
-                        tflopsOverrides={parseTflops(
-                          clusterData?.data?.[0]?.metadata.annotations?.[
-                            TFLOPS_ANNOTATION
-                          ],
-                        )}
-                        samples={gpuSamples}
-                        allocations={allocations}
-                        replica={{
-                          endpoint: record.metadata.name,
-                          workspace: record.metadata.workspace ?? "default",
-                          model: record.spec.model?.name ?? "",
-                          node: device.nodeId,
-                          uuid: device.uuid,
-                          replica: device.replicaId,
-                          instance: device.instanceId,
-                          vdevice: device.vdeviceIndex ?? undefined,
-                          memoryMiB: device.memoryMiB,
-                          modelWeightsMiB: device.modelWeightsMiB,
-                          kvCacheCapacityMiB: device.kvCacheCapacityMiB,
-                        }}
-                      />
-                    )}
+                    renderMemory={renderDeviceObservation}
                     l1CacheByNode={
                       record.spec.kv_cache?.provider === "zcache"
-                        ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
+                        ? nodeL1CacheByNode(
+                            cacheStatus?.nodes,
+                            observations.samples,
+                          )
                         : undefined
                     }
                     resources={record.status?.resources}
                     requestedResources={record.spec.resources}
-                    clusterResourceInfo={
-                      clusterData?.data?.[0]?.status?.resource_info
-                    }
+                    clusterResourceInfo={cluster?.status?.resource_info}
                   />
                 </div>
               </ShowPage.Section>
@@ -468,10 +464,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </TabsContent>
           {shouldShowRayDashboard && (
             <TabsContent value="ray" className="mt-0 flex-1">
-              <RayDashboardTab
-                record={record}
-                cluster={clusterData?.data?.[0]}
-              />
+              <RayDashboardTab record={record} cluster={cluster} />
             </TabsContent>
           )}
           <TabsContent

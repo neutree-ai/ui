@@ -1,20 +1,26 @@
 import { useCustom } from "@refinedev/core";
-import type { AcceleratorSnapshot } from "@/foundation/lib/accelerator-observations";
+import {
+  type AcceleratorSnapshot,
+  observationStatus,
+} from "@/foundation/lib/accelerator-observations";
 
 export function useAcceleratorObservations(
   resource: "clusters" | "endpoints",
   workspace?: string | null,
   name?: string | null,
+  enabled = true,
 ) {
   const query = useCustom<AcceleratorSnapshot>({
     url: `/${resource}/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/accelerator-observations`,
     method: "get",
     queryOptions: {
-      enabled: !!workspace && !!name,
+      enabled: Boolean(workspace && name && enabled),
       refetchInterval: 15000,
       retry: false,
     },
   });
+  // A disabled query keeps its last cached result; it is not shown.
+  if (!enabled) return { samples: [], status: "no_data" as const };
   const samples = query.error ? [] : (query.data?.data.samples ?? []);
   return {
     samples,
@@ -22,19 +28,7 @@ export function useAcceleratorObservations(
       Boolean(query.error),
       query.isLoading,
       query.data?.data.status,
-      samples.length,
+      samples.length > 0,
     ),
   };
-}
-
-function observationStatus(
-  failed: boolean,
-  loading: boolean,
-  reported: AcceleratorSnapshot["status"] | undefined,
-  sampleCount: number,
-) {
-  if (failed) return "unavailable";
-  if (loading) return "loading";
-  if (reported === "not_configured") return "not_configured";
-  return sampleCount ? "ok" : "no_data";
 }

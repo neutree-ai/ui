@@ -27,13 +27,11 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import {
-  GpuObservationCard,
-  ObservationStatus,
-} from "@/foundation/components/GpuObservationCard";
+import { GpuObservationCard } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";

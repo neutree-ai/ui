@@ -1,13 +1,12 @@
-import { Activity, Clock, Database } from "lucide-react";
-import { useState } from "react";
+import { Activity, Clock, Database, type LucideIcon } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  type EndpointPerformanceMetrics,
   type PerformanceWindow,
   useEndpointPerformanceObservations,
 } from "@/domains/endpoint/hooks/use-endpoint-performance-observations";
-import { ObservationStatus } from "@/foundation/components/GpuObservationCard";
 import { MetricBar } from "@/foundation/components/MetricBar";
+import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { Section } from "@/foundation/components/Section";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import {
@@ -28,13 +27,12 @@ export function EndpointPerformanceCard({
 }) {
   const { t } = useTranslation();
   const [window, setWindow] = useState<PerformanceWindow>("5m");
-  const { metrics: rawMetrics, status } = useEndpointPerformanceObservations(
+  const { metrics, status } = useEndpointPerformanceObservations(
     workspace,
     name,
     window,
     !paused,
   );
-  const metrics: EndpointPerformanceMetrics = paused ? {} : rawMetrics;
 
   return (
     <Section
@@ -53,74 +51,37 @@ export function EndpointPerformanceCard({
         />
       }
     >
-      <ObservationStatus status={paused ? "no_data" : status} />
+      <ObservationStatus status={status} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                {t("endpoints.performance.latency")}
-              </span>
-            </div>
-            {metrics.latency_cumulative && (
-              <span
-                data-testid="perf-latency-cumulative"
-                className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-              >
-                {t("endpoints.performance.cumulative")}
-              </span>
-            )}
-          </div>
+        <MetricTile
+          icon={Clock}
+          title={t("endpoints.performance.latency")}
+          cumulative={
+            metrics.latency_cumulative && (
+              <CumulativeBadge testId="perf-latency-cumulative" />
+            )
+          }
+        >
           <div className="mt-3 grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">
-                {t("endpoints.performance.ttft")}
-              </div>
-              <div
-                data-testid="perf-ttft-value"
-                className="mt-1 text-xl font-semibold tabular-nums text-foreground"
-              >
-                {formatLatency(
-                  metrics.ttft_p95_seconds ?? metrics.ttft_avg_seconds,
-                )}
-              </div>
-              <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-                {t("endpoints.performance.p95")}{" "}
-                {formatLatency(metrics.ttft_p95_seconds)} ·{" "}
-                {t("endpoints.performance.avg")}{" "}
-                {formatLatency(metrics.ttft_avg_seconds)}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">
-                {t("endpoints.performance.tpot")}
-              </div>
-              <div
-                data-testid="perf-tpot-value"
-                className="mt-1 text-xl font-semibold tabular-nums text-foreground"
-              >
-                {formatLatency(
-                  metrics.tpot_p95_seconds ?? metrics.tpot_avg_seconds,
-                )}
-              </div>
-              <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-                {t("endpoints.performance.p95")}{" "}
-                {formatLatency(metrics.tpot_p95_seconds)} ·{" "}
-                {t("endpoints.performance.avg")}{" "}
-                {formatLatency(metrics.tpot_avg_seconds)}
-              </div>
-            </div>
+            <LatencyStat
+              label={t("endpoints.performance.ttft")}
+              p95={metrics.ttft_p95_seconds}
+              avg={metrics.ttft_avg_seconds}
+              testId="perf-ttft-value"
+            />
+            <LatencyStat
+              label={t("endpoints.performance.tpot")}
+              p95={metrics.tpot_p95_seconds}
+              avg={metrics.tpot_avg_seconds}
+              testId="perf-tpot-value"
+            />
           </div>
-        </div>
+        </MetricTile>
 
-        <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">
-              {t("endpoints.performance.throughput")}
-            </span>
-          </div>
+        <MetricTile
+          icon={Activity}
+          title={t("endpoints.performance.throughput")}
+        >
           <div className="mt-3 space-y-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-xs font-medium text-muted-foreground">
@@ -134,127 +95,182 @@ export function EndpointPerformanceCard({
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
-              <div>
-                <div className="text-muted-foreground">
-                  {t("endpoints.performance.promptTokensPerSecond")}
-                </div>
-                <div
-                  data-testid="perf-prompt-tps-value"
-                  className="mt-0.5 font-semibold tabular-nums text-foreground"
-                >
-                  {formatTokenRate(metrics.prompt_tokens_per_second)}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">
-                  {t("endpoints.performance.generationTokensPerSecond")}
-                </div>
-                <div
-                  data-testid="perf-gen-tps-value"
-                  className="mt-0.5 font-semibold tabular-nums text-foreground"
-                >
-                  {formatTokenRate(metrics.generation_tokens_per_second)}
-                </div>
-              </div>
+              <SmallStat
+                label={t("endpoints.performance.promptTokensPerSecond")}
+                value={formatTokenRate(metrics.prompt_tokens_per_second)}
+                testId="perf-prompt-tps-value"
+              />
+              <SmallStat
+                label={t("endpoints.performance.generationTokensPerSecond")}
+                value={formatTokenRate(metrics.generation_tokens_per_second)}
+                testId="perf-gen-tps-value"
+              />
             </div>
           </div>
-        </div>
+        </MetricTile>
 
-        <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                {t("endpoints.performance.kvCache")}
-              </span>
-            </div>
-            {metrics.hit_rate_cumulative && (
-              <span
-                data-testid="perf-cache-cumulative"
-                className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-              >
-                {t("endpoints.performance.cumulative")}
-              </span>
-            )}
-          </div>
+        <MetricTile
+          icon={Database}
+          title={t("endpoints.performance.kvCache")}
+          cumulative={
+            metrics.hit_rate_cumulative && (
+              <CumulativeBadge testId="perf-cache-cumulative" />
+            )
+          }
+        >
           <div className="mt-3 space-y-2.5">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="flex items-center justify-between gap-1 text-xs">
-                  <span className="text-muted-foreground">
-                    {t("endpoints.performance.l0HitRate")}
-                  </span>
-                  <span
-                    data-testid="perf-l0-hit-rate"
-                    className="font-semibold tabular-nums text-foreground"
-                  >
-                    {formatPercent(metrics.l0_hit_rate)}
-                  </span>
-                </div>
-                <MetricBar
-                  className="mt-1.5"
-                  size="sm"
-                  series="green"
-                  value={
-                    metrics.l0_hit_rate != null
-                      ? metrics.l0_hit_rate * 100
-                      : null
-                  }
-                  track={metrics.l0_hit_rate != null ? "subtle" : "unavailable"}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-1 text-xs">
-                  <span className="text-muted-foreground">
-                    {t("endpoints.performance.l1HitRate")}
-                  </span>
-                  <span
-                    data-testid="perf-l1-hit-rate"
-                    className="font-semibold tabular-nums text-foreground"
-                  >
-                    {formatPercent(metrics.l1_hit_rate)}
-                  </span>
-                </div>
-                <MetricBar
-                  className="mt-1.5"
-                  size="sm"
-                  series="blue"
-                  value={
-                    metrics.l1_hit_rate != null
-                      ? metrics.l1_hit_rate * 100
-                      : null
-                  }
-                  track={metrics.l1_hit_rate != null ? "subtle" : "unavailable"}
-                />
-              </div>
+              <HitRate
+                label={t("endpoints.performance.l0HitRate")}
+                ratio={metrics.l0_hit_rate}
+                series="green"
+                testId="perf-l0-hit-rate"
+              />
+              <HitRate
+                label={t("endpoints.performance.l1HitRate")}
+                ratio={metrics.l1_hit_rate}
+                series="blue"
+                testId="perf-l1-hit-rate"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
-              <div>
-                <div className="text-muted-foreground">
-                  {t("endpoints.performance.l1ReadSpeed")}
-                </div>
-                <div
-                  data-testid="perf-l1-read-speed"
-                  className="mt-0.5 font-semibold tabular-nums text-foreground"
-                >
-                  {formatBandwidth(metrics.l1_read_bytes_per_second)}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">
-                  {t("endpoints.performance.l1WriteSpeed")}
-                </div>
-                <div
-                  data-testid="perf-l1-write-speed"
-                  className="mt-0.5 font-semibold tabular-nums text-foreground"
-                >
-                  {formatBandwidth(metrics.l1_write_bytes_per_second)}
-                </div>
-              </div>
+              <SmallStat
+                label={t("endpoints.performance.l1ReadSpeed")}
+                value={formatBandwidth(metrics.l1_read_bytes_per_second)}
+                testId="perf-l1-read-speed"
+              />
+              <SmallStat
+                label={t("endpoints.performance.l1WriteSpeed")}
+                value={formatBandwidth(metrics.l1_write_bytes_per_second)}
+                testId="perf-l1-write-speed"
+              />
             </div>
           </div>
-        </div>
+        </MetricTile>
       </div>
     </Section>
+  );
+}
+
+function MetricTile({
+  icon: Icon,
+  title,
+  cumulative,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  cumulative?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">{title}</span>
+        </div>
+        {cumulative}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function CumulativeBadge({ testId }: { testId: string }) {
+  const { t } = useTranslation();
+  return (
+    <span
+      data-testid={testId}
+      className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+    >
+      {t("endpoints.performance.cumulative")}
+    </span>
+  );
+}
+
+// The headline is the p95 when the backend reports one, otherwise the mean.
+function LatencyStat({
+  label,
+  p95,
+  avg,
+  testId,
+}: {
+  label: string;
+  p95?: number;
+  avg?: number;
+  testId: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div
+        data-testid={testId}
+        className="mt-1 text-xl font-semibold tabular-nums text-foreground"
+      >
+        {formatLatency(p95 ?? avg)}
+      </div>
+      <div className="mt-1 text-xs tabular-nums text-muted-foreground">
+        {t("endpoints.performance.p95")} {formatLatency(p95)} ·{" "}
+        {t("endpoints.performance.avg")} {formatLatency(avg)}
+      </div>
+    </div>
+  );
+}
+
+function SmallStat({
+  label,
+  value,
+  testId,
+}: {
+  label: string;
+  value: string;
+  testId: string;
+}) {
+  return (
+    <div>
+      <div className="text-muted-foreground">{label}</div>
+      <div
+        data-testid={testId}
+        className="mt-0.5 font-semibold tabular-nums text-foreground"
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function HitRate({
+  label,
+  ratio,
+  series,
+  testId,
+}: {
+  label: string;
+  ratio?: number;
+  series: "green" | "blue";
+  testId: string;
+}) {
+  const measured = ratio != null;
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-1 text-xs">
+        <span className="text-muted-foreground">{label}</span>
+        <span
+          data-testid={testId}
+          className="font-semibold tabular-nums text-foreground"
+        >
+          {formatPercent(ratio)}
+        </span>
+      </div>
+      <MetricBar
+        className="mt-1.5"
+        size="sm"
+        series={series}
+        value={measured ? ratio * 100 : null}
+        track={measured ? "subtle" : "unavailable"}
+      />
+    </div>
   );
 }

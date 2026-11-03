@@ -21,7 +21,10 @@ import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import {
+  formatL1CacheUsage,
+  type NodeL1CacheUsage,
+} from "@/foundation/lib/accelerator-observations";
 import {
   GPU_CELL_CLASS,
   GPU_GRID_CELL_CLASS,
@@ -43,16 +46,18 @@ import type {
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import type { EndpointReplicaResourceRow } from "../lib/resource-status";
 
+type RenderDeviceMemory = (
+  device: EndpointReplicaResourceRow,
+  deviceIndex: number,
+) => ReactNode;
+
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory?: (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => ReactNode;
+  renderMemory?: RenderDeviceMemory;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -180,10 +185,6 @@ export function EndpointRuntimeResourcesSummary({
 }: {
   resources: EndpointResourceStatus | null | undefined;
   className?: string;
-  renderMemory?: (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => ReactNode;
 }) {
   const { t } = useTranslation();
   const replicaGroups = getEndpointReplicaResourceGroups(resources);
@@ -326,10 +327,7 @@ function Replica({
 }: {
   group: EndpointReplicaResourceGroup;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory?: (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => ReactNode;
+  renderMemory?: RenderDeviceMemory;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -438,10 +436,7 @@ function Host({
 }: {
   node: EndpointReplicaNodeResourceGroup;
   l1Cache?: NodeL1CacheUsage;
-  renderMemory?: (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => ReactNode;
+  renderMemory?: RenderDeviceMemory;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -467,11 +462,7 @@ function Host({
             {l1Cache && (
               <span data-testid="runtime-host-l1-cache">
                 {" · "}
-                {t("observations.l1KvCache")}{" "}
-                {l1Cache.usedGiB != null
-                  ? formatToDecimal(l1Cache.usedGiB, 1)
-                  : "—"}{" "}
-                / {formatToDecimal(l1Cache.capacityGiB, 1)} GiB
+                {t("observations.l1KvCache")} {formatL1CacheUsage(l1Cache)}
               </span>
             )}{" "}
             ·{" "}
@@ -512,10 +503,7 @@ function GpuCell({
   onCopyUuid,
   t,
 }: {
-  renderMemory?: (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => ReactNode;
+  renderMemory?: RenderDeviceMemory;
   device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
   deviceIndex: number;
   acceleratorType: string | null;
