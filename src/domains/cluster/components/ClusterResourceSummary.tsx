@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   type AcceleratorProductResourceRow,
   getAcceleratorProductResourceRows,
@@ -26,7 +27,6 @@ type UsageMetricProps = {
   available?: number | null;
   unit?: string;
   series?: MetricBarSeries;
-  allocationLabels?: boolean;
   valueScale?: number;
   valuePrecision?: number;
   discrete?: boolean;
@@ -80,7 +80,6 @@ const UsageMetric = ({
   available,
   unit,
   series = "blue",
-  allocationLabels = false,
   valueScale = 1,
   valuePrecision = 1,
   discrete = false,
@@ -92,9 +91,7 @@ const UsageMetric = ({
     ? calcResourceUsage(total, available)
     : { used: 0, percent: 0 };
   const free = Math.max(total - used, 0);
-  const usedLabel = allocationLabels
-    ? t("clusters.options.allocated")
-    : t("clusters.options.used");
+  const usedLabel = t("clusters.options.allocated");
   const freeLabel = t("clusters.options.free");
   const usageLabel = usedLabel.toLowerCase();
   const totalText = formatValue(total, valueScale, precision);
@@ -177,8 +174,10 @@ const UsageMetric = ({
 export function ClusterResourceSummary({
   resourceInfo,
   t,
+  children,
 }: {
   resourceInfo: ClusterResourceInfo;
+  children?: ReactNode;
   t: Translate;
 }) {
   const allocatable = resourceInfo.allocatable;
@@ -257,7 +256,6 @@ export function ClusterResourceSummary({
               total={totalCards}
               available={availableCards}
               unit="cards"
-              allocationLabels
               discrete={useDiscreteCardMeter}
               series="amber"
               t={t}
@@ -288,6 +286,7 @@ export function ClusterResourceSummary({
           </div>
         </div>
       )}
+      {children}
     </div>
   );
 }

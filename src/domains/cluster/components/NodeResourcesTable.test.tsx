@@ -73,4 +73,29 @@ describe("NodeResourcesTable", () => {
       }),
     ).toBeNull();
   });
+
+  it("shows each node's L1 KV-Cache usage", () => {
+    render(
+      <NodeResourcesTable
+        nodeResources={{
+          "node-a": {
+            allocatable: { cpu: 16, memory: 64, accelerator_groups: null },
+            available: { cpu: 12, memory: 48, accelerator_groups: null },
+            devices: [],
+          },
+        }}
+        l1CacheByNode={{
+          "node-a": {
+            usedGiB: 12.5,
+            capacityGiB: 32.0,
+          },
+        }}
+        acceleratorTypes={[]}
+        t={t}
+      />,
+    );
+
+    screen.getByText("observations.l1KvCache 12.5 / 32.0 GiB");
+    screen.getByText("39%");
+  });
 });
