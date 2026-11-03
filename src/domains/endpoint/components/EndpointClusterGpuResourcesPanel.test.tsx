@@ -64,12 +64,8 @@ const t = (key: string, options: Record<string, unknown> = {}) =>
 const renderPanel = (ui: ReactElement) =>
   render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
 
-const openClusterSummary = () =>
-  fireEvent.click(
-    within(screen.getByTestId("endpoint-cluster-resource-summary")).getByRole(
-      "button",
-    ),
-  );
+const openClusterDetails = () =>
+  fireEvent.click(screen.getByTestId("endpoint-cluster-gpu-inventory"));
 
 const findByExactLabel = (cards: HTMLElement[], label: string) => {
   const card = cards.find((item) => within(item).queryByText(label));
@@ -202,7 +198,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(
       screen.getAllByTestId("endpoint-node-resource-progress").length,
     ).toBeGreaterThan(0);
-    openClusterSummary();
+    openClusterDetails();
     const clusterSummary = within(
       screen.getByTestId("endpoint-cluster-resource-summary"),
     );
@@ -221,7 +217,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     ).toContain("Showing resources available to the selected accelerator.");
   });
 
-  it("keeps node count in a collapsed cluster summary above node details", () => {
+  it("opens cluster capacity and GPU inventory from the toolbar control", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -233,23 +229,35 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
-      "endpoints.fields.nodeCount 2",
-    );
+    const trigger = screen.getByTestId("endpoint-cluster-gpu-inventory");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(trigger.textContent).toContain("2 GPUs · 1 free");
     expect(
       screen.queryByTestId("endpoint-cluster-resource-metrics"),
     ).toBeNull();
     screen.getByTestId("endpoint-compact-node-resources");
 
-    openClusterSummary();
+    openClusterDetails();
 
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
+      "endpoints.fields.nodeCount 2",
+    );
     screen.getByTestId("endpoint-cluster-resource-metrics");
+    screen.getByTestId("endpoint-cluster-gpu-inventory-details");
     expect(
       screen.getAllByTestId("endpoint-resource-summary-progress"),
     ).toHaveLength(4);
+
+    openClusterDetails();
+
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(
+      screen.queryByTestId("endpoint-cluster-resource-metrics"),
+    ).toBeNull();
   });
 
-  it("summarizes all cluster GPUs and exposes the status breakdown on hover", async () => {
+  it("summarizes all cluster GPUs in the expanded toolbar details", async () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -260,22 +268,19 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    const trigger = screen.getByRole("button", {
-      name: "2 GPUs · 1 free",
-    });
-    fireEvent.pointerEnter(trigger);
+    openClusterDetails();
 
-    const popover = await screen.findByTestId(
-      "endpoint-cluster-gpu-inventory-popover",
+    const details = await screen.findByTestId(
+      "endpoint-cluster-gpu-inventory-details",
     );
-    within(popover).getByText("All GPU cards");
-    within(popover).getByText("Free");
-    within(popover).getByText("Allocated");
-    within(popover).getByText("Unhealthy");
-    within(popover).getByText("Selected accelerator: Tesla-T4");
-    within(popover).getByText("1 fully free for this accelerator");
-    within(popover).getByText("node-a");
-    within(popover).getByText("2 GPUs · 1 free");
+    within(details).getByText("All GPU cards");
+    within(details).getByText("Free");
+    within(details).getByText("Allocated");
+    within(details).getByText("Unhealthy");
+    within(details).getByText("Selected accelerator: Tesla-T4");
+    within(details).getByText("1 fully free for this accelerator");
+    within(details).getByText("node-a");
+    within(details).getByText("2 GPUs · 1 free");
   });
 
   it("does not claim accelerator filtering when the selected product is absent", () => {
@@ -305,15 +310,18 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    openClusterSummary();
+    openClusterDetails();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
     expect(summaryCards).toHaveLength(4);
     expect(screen.queryByTestId("endpoint-cluster-card-usage")).toBeNull();
     screen.getByText((_, node) => node?.textContent === "Usable 1");
-    expect(screen.getAllByText("Usable")).toHaveLength(1);
-    expect(screen.getAllByText("Allocated")).toHaveLength(1);
+    const clusterSummary = within(
+      screen.getByTestId("endpoint-cluster-resource-summary"),
+    );
+    expect(clusterSummary.queryByText("Usable")).toBeNull();
+    expect(clusterSummary.queryByText("Allocated")).toBeNull();
     const availability = screen
       .getAllByTestId("endpoint-gpu-meter-row")
       .map((row) => row.getAttribute("data-availability"));
@@ -719,7 +727,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const nodeCards = screen.getAllByTestId("endpoint-node-resource-pill");
     const cpuCard = findByExactLabel(nodeCards, "CPU");
     const memoryCard = findByExactLabel(nodeCards, "Memory");
-    openClusterSummary();
+    openClusterDetails();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
@@ -754,7 +762,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    openClusterSummary();
+    openClusterDetails();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
@@ -955,7 +963,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
-    openClusterSummary();
+    openClusterDetails();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );

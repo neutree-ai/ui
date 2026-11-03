@@ -1,13 +1,15 @@
-import { CircleAlert, CircleCheck, Copy, Cpu, Server } from "lucide-react";
+import {
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Copy,
+  Cpu,
+  Server,
+} from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
@@ -827,26 +829,28 @@ function EndpointClusterResourceSummary({
   );
 
   return (
-    <Disclosure
-      variant="plain"
-      className="border-y py-1"
-      triggerClassName="py-2"
-      testId="endpoint-cluster-resource-summary"
-      title={t("endpoints.sections.clusterCapacity")}
-      summary={
-        <span data-testid="endpoint-cluster-node-count">
+    <div
+      data-testid="endpoint-cluster-resource-summary"
+      className="border-y py-3"
+    >
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-xs font-semibold text-foreground">
+          {t("endpoints.sections.clusterCapacity")}
+        </span>
+        <span
+          data-testid="endpoint-cluster-node-count"
+          className="text-xs text-muted-foreground"
+        >
           {t("endpoints.fields.nodeCount")}{" "}
           {nodeCount == null ? <EmptyValue /> : nodeCount}
         </span>
-      }
-      contentClassName="pb-4"
-    >
+      </div>
       <ResourceSummaryCardGrid
         items={items}
         testId="endpoint-cluster-resource-metrics"
         t={t}
       />
-    </Disclosure>
+    </div>
   );
 }
 
@@ -1373,6 +1377,7 @@ export function EndpointClusterGpuResourcesPanel({
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
   const title = t("endpoints.sections.clusterDeviceResources");
+  const [clusterDetailsOpen, setClusterDetailsOpen] = useState(false);
   const rows = useMemo(
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
@@ -1428,23 +1433,35 @@ export function EndpointClusterGpuResourcesPanel({
         title={title}
         inset={inset}
         gpuInventory={gpuInventory}
-        selectedAccelerator={selectedAccelerator}
-        usableForSelection={usableForSelection}
         filteredByAccelerator={filteredByAccelerator}
+        detailsOpen={clusterDetailsOpen}
+        onToggleDetails={() => setClusterDetailsOpen((open) => !open)}
         t={t}
       />
-      <EndpointClusterGpuResourcesInlineContent
-        resourceInfo={resourceInfo}
-        schedulingNodeResources={schedulingNodeResources}
-        selectedAccelerator={selectedAccelerator}
-        nodeCount={nodeCount}
-        hasGpuResources={hasGpuResources}
-        virtualizationEnabled={virtualizationEnabled}
-        summaryRows={summaryRows}
-        request={request}
-        inset={inset}
-        t={t}
-      />
+      {clusterDetailsOpen && (
+        <EndpointClusterGpuResourcesInlineContent
+          resourceInfo={resourceInfo}
+          selectedAccelerator={selectedAccelerator}
+          nodeCount={nodeCount}
+          usableForSelection={usableForSelection}
+          gpuInventory={gpuInventory}
+          hasGpuResources={hasGpuResources}
+          virtualizationEnabled={virtualizationEnabled}
+          summaryRows={summaryRows}
+          inset={inset}
+          t={t}
+        />
+      )}
+      <div className={cn("min-h-0", inset && "px-3 pb-3")}>
+        <EndpointNodeResources
+          nodeResources={resourceInfo.node_resources}
+          schedulingNodeResources={schedulingNodeResources}
+          selectedAccelerator={selectedAccelerator}
+          hasGpuResources={hasGpuResources}
+          request={request}
+          t={t}
+        />
+      </div>
     </div>
   );
 }
@@ -1453,17 +1470,17 @@ function ClusterResourcesToolbar({
   title,
   inset,
   gpuInventory,
-  selectedAccelerator,
-  usableForSelection,
   filteredByAccelerator,
+  detailsOpen,
+  onToggleDetails,
   t,
 }: {
   title: string;
   inset: boolean;
   gpuInventory?: GpuInventorySummary;
-  selectedAccelerator?: SelectedAccelerator | null;
-  usableForSelection?: number;
   filteredByAccelerator?: boolean;
+  detailsOpen?: boolean;
+  onToggleDetails?: () => void;
   t?: Translate;
 }) {
   const summaryLabel =
@@ -1496,137 +1513,160 @@ function ClusterResourcesToolbar({
         )}
       </div>
       {summaryLabel && gpuInventory && t && (
-        <HoverCard openDelay={120} closeDelay={120}>
-          <HoverCardTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 shrink-0 gap-1.5 rounded-md px-2 text-xs font-medium"
-              data-testid="endpoint-cluster-gpu-inventory"
-            >
-              <Cpu className="size-3.5" aria-hidden="true" />
-              {summaryLabel}
-            </Button>
-          </HoverCardTrigger>
-          <HoverCardContent
-            align="end"
-            className="w-80 p-3"
-            data-testid="endpoint-cluster-gpu-inventory-popover"
-          >
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold">
-                  {t("clusters.gpuInventory.title")}
-                </p>
-                <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-                  {t("clusters.gpuInventory.description")}
-                </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="group h-7 shrink-0 gap-1.5 rounded-md px-2 text-xs font-medium"
+          data-testid="endpoint-cluster-gpu-inventory"
+          aria-expanded={detailsOpen}
+          aria-controls="endpoint-cluster-resource-details"
+          onClick={onToggleDetails}
+        >
+          <Cpu className="size-3.5" aria-hidden="true" />
+          {summaryLabel}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform",
+              detailsOpen && "rotate-180",
+            )}
+            aria-hidden="true"
+          />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ClusterGpuInventoryDetails({
+  gpuInventory,
+  selectedAccelerator,
+  usableForSelection,
+  t,
+}: {
+  gpuInventory: GpuInventorySummary;
+  selectedAccelerator?: SelectedAccelerator | null;
+  usableForSelection: number;
+  t: Translate;
+}) {
+  return (
+    <div
+      data-testid="endpoint-cluster-gpu-inventory-details"
+      className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] p-3"
+    >
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-semibold">
+            {t("clusters.gpuInventory.title")}
+          </p>
+          <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
+            {t("clusters.gpuInventory.description")}
+          </p>
+        </div>
+        {selectedAccelerator?.product && (
+          <div className="rounded-md bg-muted/40 px-2 py-1.5 text-xs leading-5">
+            <div className="break-words text-muted-foreground">
+              {t("clusters.gpuInventory.selectedAccelerator", {
+                product: selectedAccelerator.product,
+              })}
+            </div>
+            <div className="mt-0.5 font-medium">
+              {t("clusters.gpuInventory.fullyFreeForSelection", {
+                count: usableForSelection,
+              })}
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/40 p-2">
+          {[
+            {
+              key: "free",
+              label: t("clusters.options.free"),
+              count: gpuInventory.free,
+              className: "text-[var(--nt-text-colorful-positive)]",
+            },
+            {
+              key: "allocated",
+              label: t("clusters.options.allocated"),
+              count: gpuInventory.allocated,
+              className: "text-[var(--nt-text-colorful-notice)]",
+            },
+            {
+              key: "unhealthy",
+              label: t("clusters.options.unhealthy"),
+              count: gpuInventory.unhealthy,
+              className: "text-[var(--nt-text-colorful-serious)]",
+            },
+          ].map((item) => (
+            <div key={item.key} className="min-w-0">
+              <div className="text-[11px] text-muted-foreground">
+                {item.label}
               </div>
-              {selectedAccelerator?.product && usableForSelection != null && (
-                <div className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] px-2 py-1.5 text-xs leading-5">
-                  <div className="break-words text-muted-foreground">
-                    {t("clusters.gpuInventory.selectedAccelerator", {
-                      product: selectedAccelerator.product,
-                    })}
-                  </div>
-                  <div className="mt-0.5 font-medium">
-                    {t("clusters.gpuInventory.fullyFreeForSelection", {
-                      count: usableForSelection,
-                    })}
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/40 p-2">
-                {[
-                  {
-                    key: "free",
-                    label: t("clusters.options.free"),
-                    count: gpuInventory.free,
-                    className: "text-[var(--nt-text-colorful-positive)]",
-                  },
-                  {
-                    key: "allocated",
-                    label: t("clusters.options.allocated"),
-                    count: gpuInventory.allocated,
-                    className: "text-[var(--nt-text-colorful-notice)]",
-                  },
-                  {
-                    key: "unhealthy",
-                    label: t("clusters.options.unhealthy"),
-                    count: gpuInventory.unhealthy,
-                    className: "text-[var(--nt-text-colorful-serious)]",
-                  },
-                ].map((item) => (
-                  <div key={item.key} className="min-w-0">
-                    <div className="text-[11px] text-muted-foreground">
-                      {item.label}
-                    </div>
-                    <div
-                      className={cn(
-                        "mt-0.5 text-sm font-semibold tabular-nums",
-                        item.className,
-                      )}
-                    >
-                      {item.count}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("clusters.gpuInventory.byNode")}
-                </p>
-                <div className="space-y-1">
-                  {gpuInventory.nodes.map((node) => (
-                    <div
-                      key={node.nodeName}
-                      className="flex items-start justify-between gap-3 text-xs leading-5"
-                    >
-                      <span className="min-w-0 break-all">{node.nodeName}</span>
-                      <span className="shrink-0 tabular-nums text-muted-foreground">
-                        {t("clusters.gpuInventory.summary", {
-                          count: node.total,
-                          free: node.free,
-                        })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <div
+                className={cn(
+                  "mt-0.5 text-sm font-semibold tabular-nums",
+                  item.className,
+                )}
+              >
+                {item.count}
               </div>
             </div>
-          </HoverCardContent>
-        </HoverCard>
-      )}
+          ))}
+        </div>
+        <div>
+          <p className="mb-1 text-xs font-medium text-muted-foreground">
+            {t("clusters.gpuInventory.byNode")}
+          </p>
+          <div className="space-y-1">
+            {gpuInventory.nodes.map((node) => (
+              <div
+                key={node.nodeName}
+                className="flex items-start justify-between gap-3 text-xs leading-5"
+              >
+                <span className="min-w-0 break-all">{node.nodeName}</span>
+                <span className="shrink-0 tabular-nums text-muted-foreground">
+                  {t("clusters.gpuInventory.summary", {
+                    count: node.total,
+                    free: node.free,
+                  })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
-  schedulingNodeResources,
   selectedAccelerator,
   nodeCount,
+  usableForSelection,
+  gpuInventory,
   hasGpuResources,
   virtualizationEnabled,
   summaryRows,
-  request,
   inset,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
-  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   nodeCount?: number | null;
+  usableForSelection: number;
+  gpuInventory: GpuInventorySummary;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
-  request?: EndpointResourceRequestContext;
   inset: boolean;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div className={cn("min-h-0", inset && "px-3 pb-3 pt-1")}>
+    <div
+      id="endpoint-cluster-resource-details"
+      className={cn("min-h-0", inset && "px-3 pb-3")}
+    >
       <div
         data-testid="endpoint-cluster-resource-board"
         className="grid min-w-0 gap-2.5"
@@ -1639,12 +1679,10 @@ function EndpointClusterGpuResourcesInlineContent({
           nodeCount={nodeCount}
           t={t}
         />
-        <EndpointNodeResources
-          nodeResources={resourceInfo.node_resources}
-          schedulingNodeResources={schedulingNodeResources}
+        <ClusterGpuInventoryDetails
+          gpuInventory={gpuInventory}
           selectedAccelerator={selectedAccelerator}
-          hasGpuResources={hasGpuResources}
-          request={request}
+          usableForSelection={usableForSelection}
           t={t}
         />
       </div>

@@ -662,6 +662,7 @@ describe("create vs edit", () => {
     expect(
       screen.queryByTestId("endpoint-scheduling-target-node-count"),
     ).toBeNull();
+    fireEvent.click(screen.getByTestId("endpoint-cluster-gpu-inventory"));
     await waitFor(() =>
       expect(
         screen.getByTestId("endpoint-cluster-node-count").textContent,
