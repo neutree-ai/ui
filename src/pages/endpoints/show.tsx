@@ -274,6 +274,22 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     className="shrink-0"
                   />
                 )}
+                <ShowPage.Meta label={t("endpoints.fields.servedModels")}>
+                  {record.status?.served_models?.length ? (
+                    <span className="inline-flex flex-wrap gap-1">
+                      {record.status.served_models.map((model) => (
+                        <code
+                          key={model}
+                          className="break-all font-mono text-xs"
+                        >
+                          {model}
+                        </code>
+                      ))}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </ShowPage.Meta>
                 <ShowPage.Meta label={t("endpoints.fields.replicas")}>
                   {replicaCount}
                 </ShowPage.Meta>

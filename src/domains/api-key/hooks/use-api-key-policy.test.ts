@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import { DEFAULT_TOKEN_QUOTA_UNIT } from "@/foundation/lib/token-quota";
@@ -15,8 +16,40 @@ import {
   type PolicyModelRow,
   rateSummary,
   resolveQuotaPeriod,
+  useModelSourceByValue,
+  useWorkspaceModelMap,
+  useWorkspaceModels,
   type WorkspaceModelOption,
 } from "./use-api-key-policy";
+
+const { useListMock } = vi.hoisted(() => ({ useListMock: vi.fn() }));
+
+vi.mock("@refinedev/core", () => ({
+  useList: useListMock,
+  useCustomMutation: vi.fn(),
+}));
+
+const mockWorkspaceModels = (servedModels: string[] | null | undefined) => {
+  const endpoints = [
+    {
+      metadata: { name: "local" },
+      spec: { model: { name: "physical-model" } },
+      status: { served_models: servedModels },
+    },
+  ];
+  const externalEndpoints = [
+    {
+      metadata: { name: "external" },
+      spec: {
+        upstreams: [{ model_mapping: { a: "provider-model" } }],
+        model_sources: { a: "third-party-public" },
+      },
+    },
+  ];
+  useListMock.mockImplementation(({ resource }) => ({
+    data: { data: resource === "endpoints" ? endpoints : externalEndpoints },
+  }));
+};
 
 const form = (
   over: Partial<ApiKeyPolicyFormValues> = {},
@@ -647,5 +680,68 @@ describe("per-model quota round trip", () => {
       limitsToForm({ allowed_models: [entry] }),
     );
     expect(rebuilt.allowed_models).toEqual([entry]);
+  });
+});
+
+describe("useWorkspaceModels", () => {
+  beforeEach(() => {
+    useListMock.mockReset();
+  });
+
+  it.each([
+    { names: ["z-first", "a-second"], models: ["z-first"] },
+    { names: [" model "], models: ["model"] },
+    { names: undefined, models: [] },
+    { names: null, models: [] },
+    { names: [], models: [] },
+    { names: ["", "second"], models: [] },
+    { names: ["   ", "second"], models: [] },
+  ])(
+    "uses only the first observed name: $names -> $models",
+    ({ names, models }) => {
+      mockWorkspaceModels(names);
+      const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+      expect(
+        result.current.filter((option) => option.type === "internal"),
+      ).toEqual(
+        models.map((model) =>
+          expect.objectContaining({ model, value: `internal:local:${model}` }),
+        ),
+      );
+    },
+  );
+
+  it("updates lookup maps when the first alias changes, retaining the external model", () => {
+    mockWorkspaceModels(["a", "b"]);
+    const { result, rerender } = renderHook(() => ({
+      models: useWorkspaceModelMap("workspace-a"),
+      sources: useModelSourceByValue("workspace-a"),
+    }));
+    expect(
+      result.current.models
+        .get("a")
+        ?.endpoints.map((e) => e.name)
+        .sort(),
+    ).toEqual(["external", "local"]);
+    expect(result.current.models.has("b")).toBe(false);
+    expect(result.current.sources.get("internal:local:a")).toBe(
+      SELF_HOSTED_MODEL_SOURCE,
+    );
+
+    mockWorkspaceModels(["b", "a"]);
+    rerender();
+    expect(
+      result.current.models.get("a")?.endpoints.map((e) => e.name),
+    ).toEqual(["external"]);
+    expect(
+      result.current.models.get("b")?.endpoints.map((e) => e.name),
+    ).toEqual(["local"]);
+    expect(result.current.sources.has("internal:local:a")).toBe(false);
+    expect(result.current.sources.get("internal:local:b")).toBe(
+      SELF_HOSTED_MODEL_SOURCE,
+    );
+    expect(result.current.sources.get("external:external:a")).toBe(
+      "third-party-public",
+    );
   });
 });

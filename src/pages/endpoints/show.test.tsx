@@ -56,16 +56,30 @@ vi.mock("@/foundation/components/ShowPage", () => {
   ShowPage.ObjectHeader = ({
     title,
     status,
+    description,
   }: {
     title?: ReactNode;
     status?: ReactNode;
+    description?: ReactNode;
   }) => (
     <header>
       <h1>{title}</h1>
       {status}
+      {description}
     </header>
   );
-  ShowPage.Meta = ({ children }: { children: ReactNode }) => <>{children}</>;
+  ShowPage.Meta = ({
+    children,
+    label,
+  }: {
+    children: ReactNode;
+    label?: ReactNode;
+  }) => (
+    <span>
+      <span>{label}</span>
+      {children}
+    </span>
+  );
   ShowPage.Section = ({ children }: { children: ReactNode }) => <>{children}</>;
   return { ShowPage };
 });
@@ -302,5 +316,30 @@ describe("EndpointsShow", () => {
     });
     render(<EndpointsShow />);
     expect(advancedParametersProps.current?.engineParameters).toEqual({});
+  });
+
+  it("shows all discovered served model names", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            status: {
+              served_models: ["chat-primary", "chat-alias"],
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
+    render(<EndpointsShow />);
+    screen.getByText("chat-primary");
+    screen.getByText("chat-alias");
+  });
+
+  it("shows a placeholder while served models have not been discovered", () => {
+    render(<EndpointsShow />);
+    screen.getByText("endpoints.fields.servedModels");
+    screen.getByText("-");
   });
 });

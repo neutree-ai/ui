@@ -397,8 +397,7 @@ export type WorkspaceModelOption = {
 
 type WorkspaceEndpointRef = {
   metadata?: { name?: string | null } | null;
-  spec?: { model?: { name?: string | null } | null } | null;
-  status?: { phase?: string | null } | null;
+  status?: { phase?: string | null; served_models?: string[] | null } | null;
 };
 
 type WorkspaceExternalEndpointRef = {
@@ -457,6 +456,8 @@ export function compareWorkspaceModelOptions(
 // Available client-facing models in a workspace (for the allowed-models
 // dropdown). Options are endpoint-level rows so duplicate model names served by
 // different internal/external endpoints remain visually distinct in the picker.
+// An internal endpoint contributes the first name the engine reports, since the
+// workspace model list exposes one candidate per endpoint.
 export function useWorkspaceModels(
   workspace: string | undefined,
 ): WorkspaceModelOption[] {
@@ -481,7 +482,7 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
-      const model = String(endpoint.spec?.model?.name ?? "").trim();
+      const model = String(endpoint.status?.served_models?.[0] ?? "").trim();
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!model || !endpointName) continue;
       options.push({
