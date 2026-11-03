@@ -22,7 +22,7 @@ export function GrafanaDashboardLink(props: GrafanaDashboardUrlOptions) {
   return (
     <Button variant="link" size="sm" className="h-auto p-0" asChild>
       <a href={href} target="_blank" rel="noopener noreferrer">
-        {t("external_endpoints.monitor.openGrafana")}
+        {t("common.monitor.openGrafana")}
       </a>
     </Button>
   );

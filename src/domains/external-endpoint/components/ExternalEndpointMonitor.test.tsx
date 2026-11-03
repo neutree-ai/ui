@@ -135,7 +135,7 @@ describe("ExternalEndpointMonitorLink", () => {
     expect(href).toContain("/d/neutree-model-routing");
     expect(href).not.toContain("kiosk");
     expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.textContent).toBe("external_endpoints.monitor.openGrafana");
+    expect(link.textContent).toBe("common.monitor.openGrafana");
   });
 
   it("renders nothing when there is no dashboard to open", () => {

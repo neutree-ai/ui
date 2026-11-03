@@ -489,6 +489,6 @@
   "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "03ce79257f3e9b1231fef3abb535a3bc",
   "src/domains/endpoint/lib/performance-format.ts": "0a74b36148dd931d9ae99b5c3105789b",
   "src/foundation/components/ObservationStatus.tsx": "72070cc927e9285b655609e92af68e45",
-  "src/foundation/components/GrafanaDashboardLink.tsx": "b22bafd590a32deb0a5fcaf7a73b16d2",
+  "src/foundation/components/GrafanaDashboardLink.tsx": "7862ccafc12a19c02c1eb8c35d173258",
   "src/domains/cluster/lib/zcache-dashboard.ts": "022a6c3b0eca23bbe761fb60c5309aec"
 }

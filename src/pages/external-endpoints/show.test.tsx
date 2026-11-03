@@ -128,7 +128,7 @@ vi.mock(
     default: () => <div data-testid="monitor" />,
     ExternalEndpointMonitorLink: () => (
       <a data-testid="monitor-link" href="/d/x">
-        external_endpoints.monitor.openGrafana
+        common.monitor.openGrafana
       </a>
     ),
   }),
