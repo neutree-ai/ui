@@ -167,6 +167,14 @@ export const isPositiveIntLimit = (s: string): boolean => {
   return Number.isInteger(n) && n > 0;
 };
 
+// A model name is an identity the engine reports and the gateway matches
+// exactly, so it is returned verbatim, surrounding whitespace included. Only a
+// blank name is not a name.
+function nonBlankModelName(raw: unknown): string | undefined {
+  const name = String(raw ?? "");
+  return name.trim() ? name : undefined;
+}
+
 // Build the limits object from the form. `disabled` is preserved separately (it
 // is toggled via its own action, not this form), so callers pass it through.
 export function buildApiKeyLimits(
@@ -191,8 +199,8 @@ export function buildApiKeyLimits(
   const seen = new Set<string>();
   const allowed: AllowedModel[] = [];
   for (const r of values.models ?? []) {
-    const model = String(r.model ?? "").trim();
-    if (!model) continue;
+    const model = nonBlankModelName(r.model);
+    if (model === undefined) continue;
     // Emit whichever dimensions the row carries. A row the picker produced has
     // both; a stored entry that pins only one (which the backend allows, and a
     // CLI can write) must keep it -- dropping `type` would widen "any external
@@ -482,9 +490,9 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
-      const model = String(endpoint.status?.served_models?.[0] ?? "").trim();
+      const model = nonBlankModelName(endpoint.status?.served_models?.[0]);
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
-      if (!model || !endpointName) continue;
+      if (model === undefined || !endpointName) continue;
       options.push({
         value: modelOptionValue("internal", endpointName, model),
         label: model,
@@ -500,17 +508,17 @@ export function useWorkspaceModels(
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
       for (const model of exposedExternalModels(endpoint.spec)) {
-        const trimmed = String(model ?? "").trim();
-        if (!trimmed) continue;
+        const name = nonBlankModelName(model);
+        if (name === undefined) continue;
         options.push({
-          value: modelOptionValue("external", endpointName, trimmed),
-          label: trimmed,
-          model: trimmed,
+          value: modelOptionValue("external", endpointName, name),
+          label: name,
+          model: name,
           endpointName,
           type: "external",
           // Resolved per model, not once per endpoint: two models of one
           // endpoint can genuinely have different sources.
-          source: resolveExternalModelSource(endpoint.spec, trimmed),
+          source: resolveExternalModelSource(endpoint.spec, name),
           phase: endpoint.status?.phase ?? null,
         });
       }

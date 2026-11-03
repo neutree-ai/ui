@@ -29,7 +29,10 @@ vi.mock("@refinedev/core", () => ({
   useCustomMutation: vi.fn(),
 }));
 
-const mockWorkspaceModels = (servedModels: string[] | null | undefined) => {
+const mockWorkspaceModels = (
+  servedModels: string[] | null | undefined,
+  externalModel = "a",
+) => {
   const endpoints = [
     {
       metadata: { name: "local" },
@@ -41,8 +44,8 @@ const mockWorkspaceModels = (servedModels: string[] | null | undefined) => {
     {
       metadata: { name: "external" },
       spec: {
-        upstreams: [{ model_mapping: { a: "provider-model" } }],
-        model_sources: { a: "third-party-public" },
+        upstreams: [{ model_mapping: { [externalModel]: "provider-model" } }],
+        model_sources: { [externalModel]: "third-party-public" },
       },
     },
   ];
@@ -133,6 +136,17 @@ describe("buildApiKeyLimits", () => {
         { model: "gpt-4o", type: "external", endpoint_name: "ee-a" },
       ],
     });
+  });
+
+  it("saves a model name verbatim, untrimmed", () => {
+    const model = " qwen ";
+    expect(
+      buildApiKeyLimits(
+        form({
+          models: [row({ model, type: "internal", endpoint_name: "local" })],
+        }),
+      ).allowed_models,
+    ).toEqual([{ model, type: "internal", endpoint_name: "local" }]);
   });
 
   it("keeps endpoint-scoped selections distinct (same model, different endpoints)", () => {
@@ -690,7 +704,7 @@ describe("useWorkspaceModels", () => {
 
   it.each([
     { names: ["z-first", "a-second"], models: ["z-first"] },
-    { names: [" model "], models: ["model"] },
+    { names: [" model "], models: [" model "] },
     { names: undefined, models: [] },
     { names: null, models: [] },
     { names: [], models: [] },
@@ -710,6 +724,18 @@ describe("useWorkspaceModels", () => {
       );
     },
   );
+
+  it("offers an external model name verbatim and resolves its source by it", () => {
+    mockWorkspaceModels([], " gpt-4 ");
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current).toEqual([
+      expect.objectContaining({
+        model: " gpt-4 ",
+        value: "external:external: gpt-4 ",
+        source: "third-party-public",
+      }),
+    ]);
+  });
 
   it("updates lookup maps when the first alias changes, retaining the external model", () => {
     mockWorkspaceModels(["a", "b"]);
