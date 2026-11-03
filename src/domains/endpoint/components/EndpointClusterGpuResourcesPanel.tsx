@@ -363,12 +363,22 @@ function ResourceMetricCard({
           {totalText} {t("clusters.options.total").toLowerCase()}
         </span>
       </div>
-      <MetricBar
-        data-testid={testIds.progress}
-        value={percent}
-        size="sm"
-        series={metric.series}
-      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <MetricBar
+            data-testid={testIds.progress}
+            value={percent}
+            size="sm"
+            series={metric.series}
+            tabIndex={0}
+            aria-label={`${metric.label}: ${formatPercent(percent)}`}
+            className="focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
+          />
+        </TooltipTrigger>
+        <TooltipContent data-testid={testIds.percent}>
+          {formatPercent(percent)}
+        </TooltipContent>
+      </Tooltip>
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
         <span className="min-w-0 tabular-nums">
           {t("clusters.options.used")}{" "}
@@ -379,12 +389,6 @@ function ResourceMetricCard({
           >
             {usedText}
           </strong>
-          <span
-            data-testid={testIds.percent}
-            className="ml-1.5 font-medium text-muted-foreground"
-          >
-            {formatPercent(percent)}
-          </span>
         </span>
         <span className="shrink-0 tabular-nums" title={readingTitle(freeText)}>
           <strong

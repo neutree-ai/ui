@@ -649,10 +649,6 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         .textContent,
     ).toBe("7.5");
     expect(
-      within(memoryCard).getByTestId("endpoint-node-resource-pill-percent")
-        .textContent,
-    ).toBe("25.0%");
-    expect(
       within(memoryCard).getByTestId("endpoint-node-resource-pill-total-value")
         .textContent,
     ).toBe("30.0 total");
@@ -809,7 +805,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(coreCard.textContent).toContain("200.0 total");
   });
 
-  it("shows system memory alongside core allocation in the cluster summary", () => {
+  it("shows system memory alongside core allocation in the cluster summary", async () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
@@ -837,13 +833,18 @@ describe("EndpointClusterGpuResourcesPanel", () => {
         .textContent,
     ).toBe("64.0");
     expect(
-      within(memoryCard).getByTestId("endpoint-resource-summary-percent")
-        .textContent,
-    ).toBe("25.0%");
-    expect(
       within(memoryCard).getByTestId("endpoint-resource-summary-free-value")
         .textContent,
     ).toBe("192.0");
+
+    expect(memoryCard.textContent).not.toContain("25.0%");
+    fireEvent.focus(
+      within(memoryCard).getByTestId("endpoint-resource-summary-progress"),
+    );
+    expect(
+      (await screen.findByTestId("endpoint-resource-summary-percent"))
+        .textContent,
+    ).toContain("25.0%");
   });
 
   it("shows a long GPU product name in full on the device card", async () => {
