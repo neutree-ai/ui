@@ -41,14 +41,20 @@ const translations: Record<string, string> = {
     "Showing resources available to the selected accelerator.",
   "endpoints.actions.showDetails": "Show details",
   "endpoints.actions.hideDetails": "Hide details",
+  "endpoints.clusterDetails.nodeCount": "{{count}} Nodes",
+  "endpoints.clusterDetails.nodeCount_one": "{{count}} Node",
   "endpoints.sections.clusterDeviceResources": "Cluster Resources",
 };
 
-const t = (key: string, options: Record<string, unknown> = {}) =>
-  Object.entries(options).reduce(
+const t = (key: string, options: Record<string, unknown> = {}) => {
+  const pluralKey =
+    options.count === 1 && translations[`${key}_one`] ? `${key}_one` : key;
+
+  return Object.entries(options).reduce(
     (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
-    translations[key] ?? key,
+    translations[pluralKey] ?? pluralKey,
   );
+};
 
 // The panel's device cards hang a tooltip off each product badge. The app
 // mounts one TooltipProvider in its layout, so the panel only ever renders
@@ -233,7 +239,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
-      "endpoints.fields.nodeCount 2",
+      "2 Nodes · 2 GPUs",
     );
     screen.getByTestId("endpoint-cluster-resource-metrics");
     expect(
@@ -247,6 +253,25 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(
       screen.queryByTestId("endpoint-cluster-resource-metrics"),
     ).toBeNull();
+  });
+
+  it("uses singular node copy for a one-node cluster", () => {
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        nodeCount={1}
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    openClusterDetails();
+
+    expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
+      "1 Node · 2 GPUs",
+    );
   });
 
   it("does not repeat GPU inventory already present in node cards", () => {

@@ -308,7 +308,10 @@ function ResourceSummaryCard({
   t,
 }: {
   metric: ResourceSummaryMetric;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: (
+    key: string,
+    options?: { defaultValue?: string; count?: number },
+  ) => string;
 }) {
   const percent = toPercentValue(metric.used, metric.total);
   const totalText = formatPoolValue(metric.total, "", metric.valueScale);
@@ -712,6 +715,7 @@ function EndpointClusterResourceSummary({
   hasGpuResources,
   virtualizationEnabled,
   nodeCount,
+  gpuCount,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
@@ -719,7 +723,11 @@ function EndpointClusterResourceSummary({
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   nodeCount?: number | null;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  gpuCount: number | null;
+  t: (
+    key: string,
+    options?: { defaultValue?: string; count?: number },
+  ) => string;
 }) {
   const cpuSummary = summarizeResourcePool(
     resourceInfo.allocatable?.cpu,
@@ -790,8 +798,17 @@ function EndpointClusterResourceSummary({
           data-testid="endpoint-cluster-node-count"
           className="text-xs text-muted-foreground"
         >
-          {t("endpoints.fields.nodeCount")}{" "}
-          {nodeCount == null ? <EmptyValue /> : nodeCount}
+          {nodeCount == null ? (
+            <EmptyValue />
+          ) : (
+            t("endpoints.clusterDetails.nodeCount", { count: nodeCount })
+          )}
+          <span aria-hidden="true"> · </span>
+          {gpuCount == null ? (
+            <EmptyValue />
+          ) : (
+            t("clusters.gpuInventory.count", { count: gpuCount })
+          )}
         </span>
       </div>
       <ResourceSummaryCardGrid
@@ -1345,6 +1362,10 @@ export function EndpointClusterGpuResourcesPanel({
     Boolean(selectedAccelerator?.product) &&
     rows.some((row) => row.matchesSelectedAccelerator);
   const hasGpuResources = hasGpuResourceRows(rows);
+  const gpuCount = useMemo(
+    () => sumOptionalNumbers(rows.map((row) => row.quantity.total)),
+    [rows],
+  );
   if (!resourceInfo) {
     return (
       <div className="grid min-h-[220px] grid-rows-[auto_1fr] overflow-hidden">
@@ -1374,6 +1395,7 @@ export function EndpointClusterGpuResourcesPanel({
         <EndpointClusterGpuResourcesInlineContent
           resourceInfo={resourceInfo}
           nodeCount={nodeCount}
+          gpuCount={gpuCount}
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
           summaryRows={summaryRows}
@@ -1381,7 +1403,13 @@ export function EndpointClusterGpuResourcesPanel({
           t={t}
         />
       )}
-      <div className={cn("min-h-0", inset && "px-3 pb-3")}>
+      <div
+        className={cn(
+          "min-h-0",
+          inset && "px-3 pb-3",
+          clusterDetailsOpen && "mt-4",
+        )}
+      >
         <EndpointNodeResources
           nodeResources={resourceInfo.node_resources}
           schedulingNodeResources={schedulingNodeResources}
@@ -1461,6 +1489,7 @@ function ClusterResourcesToolbar({
 function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
   nodeCount,
+  gpuCount,
   hasGpuResources,
   virtualizationEnabled,
   summaryRows,
@@ -1469,6 +1498,7 @@ function EndpointClusterGpuResourcesInlineContent({
 }: {
   resourceInfo: ClusterResourceInfo;
   nodeCount?: number | null;
+  gpuCount: number | null;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
@@ -1490,6 +1520,7 @@ function EndpointClusterGpuResourcesInlineContent({
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
           nodeCount={nodeCount}
+          gpuCount={gpuCount}
           t={t}
         />
       </div>

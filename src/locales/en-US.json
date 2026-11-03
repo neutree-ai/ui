@@ -1231,6 +1231,10 @@
 			},
 			"saveAndRedeploy": "Save and redeploy"
 		},
+		"clusterDetails": {
+			"nodeCount": "{{count}} Nodes",
+			"nodeCount_one": "{{count}} Node"
+		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
 			"selectCluster": "Select A Cluster",
