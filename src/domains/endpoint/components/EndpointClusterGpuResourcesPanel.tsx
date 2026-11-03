@@ -303,11 +303,36 @@ function ResourceMetricLabel({
   );
 }
 
-function ResourceSummaryCard({
+type ResourceMetricTestIds = {
+  item: string;
+  progress: string;
+  value: string;
+  percent?: string;
+  freeValue?: string;
+};
+
+const CLUSTER_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
+  item: "endpoint-resource-summary-card",
+  progress: "endpoint-resource-summary-progress",
+  value: "endpoint-resource-summary-value",
+  percent: "endpoint-resource-summary-percent",
+  freeValue: "endpoint-resource-summary-free-value",
+};
+
+const NODE_RESOURCE_METRIC_TEST_IDS: ResourceMetricTestIds = {
+  item: "endpoint-node-resource-pill",
+  progress: "endpoint-node-resource-progress",
+  value: "endpoint-node-resource-pill-value",
+  freeValue: "endpoint-node-resource-pill-value",
+};
+
+function ResourceMetricCard({
   metric,
+  testIds,
   t,
 }: {
   metric: ResourceSummaryMetric;
+  testIds: ResourceMetricTestIds;
   t: (
     key: string,
     options?: { defaultValue?: string; count?: number },
@@ -315,128 +340,35 @@ function ResourceSummaryCard({
 }) {
   const percent = toPercentValue(metric.used, metric.total);
   const totalText = formatPoolValue(metric.total, "", metric.valueScale);
-  const freeText = formatPoolValue(metric.available, "", metric.valueScale);
-
-  return (
-    <div
-      data-testid="endpoint-resource-summary-card"
-      className="grid min-w-0 gap-1.5"
-    >
-      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-        <ResourceMetricLabel
-          label={metric.label}
-          unit={metric.unit}
-          className="text-xs font-semibold"
-        />
-        <span
-          className="shrink-0 text-xs tabular-nums text-muted-foreground"
-          title={readingTitle(totalText)}
-        >
-          {totalText} {t("clusters.options.total").toLowerCase()}
-        </span>
-      </div>
-      <MetricBar
-        data-testid="endpoint-resource-summary-progress"
-        value={percent}
-        size="sm"
-        series={metric.series}
-      />
-      <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
-        <span
-          data-testid="endpoint-resource-summary-percent"
-          className="min-w-0 tabular-nums text-muted-foreground"
-        >
-          {formatPercent(percent)}{" "}
-          {t("clusters.options.used", { defaultValue: "used" }).toLowerCase()}
-        </span>
-        <strong
-          data-testid="endpoint-resource-summary-free-value"
-          className="shrink-0 font-semibold tabular-nums text-card-foreground"
-          title={
-            typeof freeText === "string"
-              ? `${t("clusters.options.free")} ${freeText}`
-              : undefined
-          }
-        >
-          {t("clusters.options.free")} {freeText}
-        </strong>
-      </div>
-    </div>
-  );
-}
-
-function ResourceSummaryCardGrid({
-  items,
-  testId,
-  t,
-}: {
-  items: ResourceSummaryMetric[];
-  testId: string;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  return (
-    <div
-      data-testid={testId}
-      className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 min-[1920px]:grid-cols-4"
-    >
-      {items.map((metric) => (
-        <ResourceSummaryCard
-          key={`${metric.label}:${metric.unit ?? ""}`}
-          metric={metric}
-          t={t}
-        />
-      ))}
-    </div>
-  );
-}
-
-function NodeResourcePill({
-  metric,
-  rightEdge,
-  bottomEdge,
-  t,
-}: {
-  metric: ResourceSummaryMetric;
-  rightEdge: boolean;
-  bottomEdge: boolean;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  const totalText = formatPoolValue(metric.total, "", metric.valueScale);
   const usedText = formatPoolValue(metric.used, "", metric.valueScale);
   const freeText = formatPoolValue(metric.available, "", metric.valueScale);
-  const percent = toPercentValue(metric.used, metric.total);
 
   return (
-    <div
-      data-testid="endpoint-node-resource-pill"
-      className={cn(
-        "min-w-0 px-3 py-2.5",
-        !rightEdge && "border-r border-[var(--nt-stroke-neutral-trans-2)]",
-        !bottomEdge && "border-b border-[var(--nt-stroke-neutral-trans-2)]",
-      )}
-    >
+    <div data-testid={testIds.item} className="grid min-w-0 gap-1.5">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <ResourceMetricLabel
           label={metric.label}
           unit={metric.unit}
           className="text-xs font-semibold"
         />
-        <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+        <span
+          data-testid={testIds.percent}
+          className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground"
+        >
           {formatPercent(percent)}
         </span>
       </div>
       <MetricBar
-        data-testid="endpoint-node-resource-progress"
+        data-testid={testIds.progress}
         value={percent}
         size="sm"
         series={metric.series}
-        className="mt-1.5"
       />
-      <div className="mt-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
         <span className="min-w-0 tabular-nums">
           {t("clusters.options.used")}{" "}
           <strong
-            data-testid="endpoint-node-resource-pill-value"
+            data-testid={testIds.value}
             className="font-semibold text-foreground"
             title={readingTitle(usedText)}
           >
@@ -444,18 +376,17 @@ function NodeResourcePill({
           </strong>
           <span aria-hidden="true"> / </span>
           <strong
-            data-testid="endpoint-node-resource-pill-value"
+            data-testid={testIds.value}
             className="font-medium text-foreground"
             title={readingTitle(totalText)}
           >
             {totalText}
           </strong>
         </span>
-        <span className="shrink-0 tabular-nums">
+        <span className="shrink-0 tabular-nums" title={readingTitle(freeText)}>
           <strong
-            data-testid="endpoint-node-resource-pill-value"
+            data-testid={testIds.freeValue}
             className="font-semibold text-foreground"
-            title={readingTitle(freeText)}
           >
             {freeText}
           </strong>{" "}
@@ -466,26 +397,32 @@ function NodeResourcePill({
   );
 }
 
-function NodeResourcePillGrid({
+function ResourceMetricGrid({
   items,
+  testId,
+  testIds,
+  className,
   t,
 }: {
   items: ResourceSummaryMetric[];
+  testId: string;
+  testIds: ResourceMetricTestIds;
+  className?: string;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
-  const finalRowStart = items.length - (items.length % 2 === 0 ? 2 : 1);
-
   return (
     <div
-      data-testid="endpoint-node-resource-metrics"
-      className="mt-3 grid min-w-0 grid-cols-2 overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
+      data-testid={testId}
+      className={cn(
+        "grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 min-[1920px]:grid-cols-4",
+        className,
+      )}
     >
-      {items.map((metric, index) => (
-        <NodeResourcePill
+      {items.map((metric) => (
+        <ResourceMetricCard
           key={`${metric.label}:${metric.unit ?? ""}`}
           metric={metric}
-          rightEdge={index % 2 === 1}
-          bottomEdge={index >= finalRowStart}
+          testIds={testIds}
           t={t}
         />
       ))}
@@ -811,9 +748,10 @@ function EndpointClusterResourceSummary({
           )}
         </span>
       </div>
-      <ResourceSummaryCardGrid
+      <ResourceMetricGrid
         items={items}
         testId="endpoint-cluster-resource-metrics"
+        testIds={CLUSTER_RESOURCE_METRIC_TEST_IDS}
         t={t}
       />
     </div>
@@ -1144,7 +1082,13 @@ function EndpointNodeResourceSummaries({
                   {group.nodeName}
                 </div>
               </div>
-              <NodeResourcePillGrid items={items} t={t} />
+              <ResourceMetricGrid
+                items={items}
+                testId="endpoint-node-resource-metrics"
+                testIds={NODE_RESOURCE_METRIC_TEST_IDS}
+                className="mt-3"
+                t={t}
+              />
             </div>
           </div>
         );
@@ -1279,7 +1223,13 @@ function EndpointVirtualizedNodeGpuResources({
                   </div>
                 )}
               </div>
-              <NodeResourcePillGrid items={items} t={t} />
+              <ResourceMetricGrid
+                items={items}
+                testId="endpoint-node-resource-metrics"
+                testIds={NODE_RESOURCE_METRIC_TEST_IDS}
+                className="mt-3"
+                t={t}
+              />
             </div>
 
             {group.rows.length > 0 && (

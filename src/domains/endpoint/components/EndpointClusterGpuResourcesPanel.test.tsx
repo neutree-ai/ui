@@ -785,10 +785,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     within(cpuCard).getByText("32.0");
     within(memoryCard).getByText("128.0");
     expect(vramCard.textContent).not.toContain("7.5 / 30.0 GiB");
-    within(vramCard).getByText((text) => text.includes("30.0 total"));
+    expect(vramCard.textContent).toContain("Used 7.5 / 30.0");
     expect(coreCard.textContent).not.toContain("cores");
     expect(coreCard.textContent).not.toContain("GiB");
-    within(coreCard).getByText((text) => text.includes("200.0 total"));
+    expect(coreCard.textContent).toContain("/ 200.0");
   });
 
   it("shows system memory alongside core allocation in the cluster summary", () => {
@@ -810,9 +810,14 @@ describe("EndpointClusterGpuResourcesPanel", () => {
 
     expect(summaryCards).toHaveLength(4);
     screen.getByTestId("endpoint-cluster-resource-metrics");
-    within(memoryCard).getByText("256.0 total");
-    within(memoryCard).getByText("25.0% used");
-    within(memoryCard).getByText("Free 192.0");
+    within(memoryCard).getByText("25.0%");
+    within(memoryCard).getByText((_, node) => {
+      return node?.textContent === "Used 64.0 / 256.0";
+    });
+    expect(
+      within(memoryCard).getByTestId("endpoint-resource-summary-free-value")
+        .textContent,
+    ).toBe("192.0");
   });
 
   it("shows a long GPU product name in full on the device card", async () => {
@@ -1009,7 +1014,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
     const vramCard = findByExactLabel(summaryCards, "Memory Usage");
 
-    expect(vramCard.textContent).toContain("30.0 total");
-    expect(vramCard.textContent).not.toContain("total -");
+    expect(vramCard.textContent).toContain("Used 7.5 / 30.0");
+    expect(vramCard.textContent).not.toContain("Used - /");
   });
 });
