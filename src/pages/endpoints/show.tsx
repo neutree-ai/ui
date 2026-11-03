@@ -28,6 +28,7 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import type { EndpointReplicaResourceRow } from "@/domains/endpoint/lib/resource-status";
+import { endpointCacheDashboard } from "@/domains/endpoint/lib/zcache";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
@@ -236,14 +237,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       ? getEndpointSplitDashboardProps(grafanaUrl, selectedPanel, {
           clusterName: record.spec.cluster,
           endpointName: record.metadata.name,
-          workspace: record.metadata.workspace ?? "default",
-          cacheProvider: record.spec.kv_cache?.provider,
-          cacheNodes:
-            record.spec.kv_cache?.provider === "zcache" &&
-            cacheStatus?.current?.enabled &&
-            !cacheStatus.observation_error
-              ? cacheStatus.nodes?.filter((node) => node.runtime === "Ready")
-              : undefined,
+          cache: endpointCacheDashboard({
+            workspace: record.metadata.workspace,
+            provider: record.spec.kv_cache?.provider,
+            cacheStatus,
+          }),
         })
       : null;
 
@@ -544,7 +542,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <GrafanaDashboard
                     {...monitorDashboardProps}
                     className="flex-1"
-                    hideVariables={selectedPanel !== "cache"}
                   />
                 ) : null}
               </div>

@@ -15,6 +15,8 @@ export interface GrafanaDashboardUrlOptions {
   initialRefresh?: string;
   hideVariables?: boolean;
   hideTimePicker?: boolean;
+  /** Kiosk mode strips Grafana's chrome for embedding; a deep link keeps it. */
+  kiosk?: boolean;
 }
 
 export function buildGrafanaDashboardUrl({
@@ -25,6 +27,7 @@ export function buildGrafanaDashboardUrl({
   initialRefresh = "30s",
   hideVariables = false,
   hideTimePicker = false,
+  kiosk = true,
 }: GrafanaDashboardUrlOptions): string {
   const url = new URL(
     `/d/${dashboardConfig.dashboardId}`,
@@ -58,7 +61,7 @@ export function buildGrafanaDashboardUrl({
     }
   }
 
-  let result = `${url.toString()}&kiosk`;
+  let result = kiosk ? `${url.toString()}&kiosk` : url.toString();
   if (hideVariables) {
     result += "&_dash.hideVariables=true";
   }

@@ -237,3 +237,14 @@ export function zcacheStatus(
     ? (cluster.status.cache.details as ZCacheStatus | undefined)
     : undefined;
 }
+
+/** Whether the cluster runs ZCache, as configured or as last reported. */
+export function hasZCache(cluster?: {
+  spec: { cache?: ClusterCacheSpec };
+  status?: { cache?: ClusterCacheStatus } | null;
+}): boolean {
+  return (
+    cluster?.spec.cache?.provider === "zcache" ||
+    cluster?.status?.cache?.provider === "zcache"
+  );
+}

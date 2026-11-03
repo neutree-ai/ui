@@ -4,7 +4,7 @@ import type { GrafanaDashboardConfig } from "@/foundation/lib/grafana-dashboard-
 /** Grafana template variable value that selects all options */
 export const GRAFANA_VAR_ALL = "$__all";
 
-const getBaseDashboardConfig = (
+export const getBaseDashboardConfig = (
   grafanaUrl: string,
 ): Omit<GrafanaDashboardConfig, "dashboardId" | "variables"> => ({
   baseUrl: grafanaUrl,
@@ -12,7 +12,7 @@ const getBaseDashboardConfig = (
   timezone: "browser",
 });
 
-const getCommonVariables = () => ({
+export const getCommonVariables = () => ({
   datasource: "neutree-cluster",
 });
 
@@ -48,6 +48,7 @@ export const getClusterSplitDashboardProps = (
       Cluster: clusterName,
     },
   },
+  hideVariables: true,
 });
 
 export type EndpointSplitDashboardType =
@@ -66,50 +67,40 @@ const ENDPOINT_SPLIT_DASHBOARD_IDS: Record<EndpointSplitDashboardType, string> =
     cache: "neutree-endpoint-cache-embed",
   };
 
+/**
+ * A cache provider can replace the cache panel's dashboard and add the
+ * variables it needs; the other panels are fixed.
+ */
+export type EndpointCacheDashboard = {
+  dashboardId?: string;
+  variables: Record<string, string>;
+};
+
 export const getEndpointSplitDashboardProps = (
   grafanaUrl: string,
   dashboardType: EndpointSplitDashboardType,
   context: {
     clusterName: string;
     endpointName: string;
-    workspace?: string;
-    cacheProvider?: string;
-    cacheNodes?: { name: string; capacity_bytes: number }[];
+    cache?: EndpointCacheDashboard;
   },
 ): GrafanaDashboardProps => {
-  const nodes = context.cacheNodes ?? [];
-  const capacity = nodes[0]?.capacity_bytes ?? 0;
-  // A single per-node capacity is safe only for a uniform observed pool.
-  // Leave mixed/unknown inventories empty rather than average their sizes.
-  const uniform =
-    Number.isSafeInteger(capacity) &&
-    capacity > 0 &&
-    nodes.every((node) => node.name && node.capacity_bytes === capacity);
-  const nodePattern = uniform
-    ? nodes
-        .map((node) => node.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-        .join("|")
-    : "a^";
+  const cache = dashboardType === "cache" ? context.cache : undefined;
   return {
     dashboardConfig: {
       ...getBaseDashboardConfig(grafanaUrl),
       dashboardId:
-        dashboardType === "cache" && context.cacheProvider === "zcache"
-          ? "neutree-endpoint-zcache-embed"
-          : ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
+        cache?.dashboardId ?? ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
       variables: {
         ...getCommonVariables(),
         Cluster: context.clusterName,
         Endpoint: context.endpointName,
-        ...(dashboardType === "cache"
-          ? {
-              Workspace: context.workspace ?? "default",
-              L1CapacityBytes: String(uniform ? capacity : 0),
-              L1Nodes: JSON.stringify(nodePattern).slice(1, -1),
-            }
-          : {}),
+        ...cache?.variables,
       },
     },
+    // The cache panel lets the user narrow its variables; the others are
+    // fully scoped by the page.
+    hideVariables: dashboardType !== "cache",
   };
 };
 
@@ -143,44 +134,4 @@ export const getModelRoutingDashboardProps = (
   initialFrom: context.from,
   initialTo: context.to,
   initialRefresh: context.refresh,
-});
-
-export const getZCacheDashboardProps = (
-  grafanaUrl: string,
-  context: {
-    workspace: string;
-    clusterName: string;
-    nodes?: { name: string; capacity_bytes: number; runtime: string }[];
-  },
-): GrafanaDashboardProps => ({
-  dashboardConfig: {
-    ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "neutree-zcache-embed",
-    variables: {
-      ...getCommonVariables(),
-      Workspace: context.workspace,
-      Cluster: context.clusterName,
-      CacheCapacity:
-        (context.nodes ?? [])
-          .filter(
-            (n) =>
-              n.name &&
-              Number.isSafeInteger(n.capacity_bytes) &&
-              n.capacity_bytes > 0,
-          )
-          .map(
-            (n) =>
-              `label_replace(vector(${n.capacity_bytes}), "node", ${JSON.stringify(n.name)}, "", "")`,
-          )
-          .join(" or ") || "(vector(0) > 0)",
-      CacheReady:
-        (context.nodes ?? [])
-          .filter((n) => n.name)
-          .map(
-            (n) =>
-              `label_replace(vector(${n.runtime === "Ready" ? 1 : 0}), "node", ${JSON.stringify(n.name)}, "", "")`,
-          )
-          .join(" or ") || "(vector(0) > 0)",
-    },
-  },
 });
