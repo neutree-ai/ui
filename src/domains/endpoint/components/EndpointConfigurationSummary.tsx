@@ -61,10 +61,16 @@ export function EndpointConfigurationSummary({
 
       <ConfigSection title={t("endpoints.wizard.summary.deployment")}>
         <ConfigRow label={t("common.fields.cluster")}>
-          {spec.cluster || <EmptyValue />}
-        </ConfigRow>
-        <ConfigRow label={t("endpoints.fields.nodeCount")}>
-          {reviewContext.nodeCount ?? <EmptyValue />}
+          <span
+            data-testid="endpoint-summary-cluster-identity"
+            className="inline-flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5"
+          >
+            <span>{spec.cluster || <EmptyValue />}</span>
+            <span className="text-xs text-muted-foreground">
+              · {t("endpoints.fields.nodeCount")}{" "}
+              {reviewContext.nodeCount ?? <EmptyValue />}
+            </span>
+          </span>
         </ConfigRow>
         <ConfigRow label={t("endpoints.fields.replicas")}>{replicas}</ConfigRow>
         <ConfigRow label={t("endpoints.fields.schedulerType")}>

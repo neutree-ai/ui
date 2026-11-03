@@ -651,6 +651,23 @@ describe("create vs edit", () => {
     ).findByRole("combobox");
     expect(cluster.textContent).toContain("unlisted-cluster");
   });
+
+  it("shows node count in cluster capacity rather than beside the selector", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster()],
+    });
+
+    setValues(result, { "spec.cluster": "plain-gpu" });
+
+    expect(
+      screen.queryByTestId("endpoint-scheduling-target-node-count"),
+    ).toBeNull();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("endpoint-cluster-node-count").textContent,
+      ).toContain("2"),
+    );
+  });
 });
 
 describe("loading an existing endpoint", () => {

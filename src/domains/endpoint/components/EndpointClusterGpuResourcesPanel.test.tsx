@@ -64,6 +64,13 @@ const t = (key: string, options: Record<string, unknown> = {}) =>
 const renderPanel = (ui: ReactElement) =>
   render(<TooltipProvider delayDuration={0}>{ui}</TooltipProvider>);
 
+const openClusterSummary = () =>
+  fireEvent.click(
+    within(screen.getByTestId("endpoint-cluster-resource-summary")).getByRole(
+      "button",
+    ),
+  );
+
 const findByExactLabel = (cards: HTMLElement[], label: string) => {
   const card = cards.find((item) => within(item).queryByText(label));
 
@@ -184,6 +191,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       <EndpointClusterGpuResourcesPanel
         resourceInfo={resourceInfo}
         currentCluster="cluster-a"
+        nodeCount={2}
         selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
         virtualizationEnabled={false}
         t={t}
@@ -191,6 +199,10 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
 
     screen.getByTestId("endpoint-node-gpu-card-grid");
+    expect(
+      screen.getAllByTestId("endpoint-node-resource-progress").length,
+    ).toBeGreaterThan(0);
+    openClusterSummary();
     const clusterSummary = within(
       screen.getByTestId("endpoint-cluster-resource-summary"),
     );
@@ -207,6 +219,34 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     expect(
       screen.getByTestId("endpoint-cluster-accelerator-scope-hint").textContent,
     ).toContain("Showing resources available to the selected accelerator.");
+  });
+
+  it("keeps node count in a collapsed cluster summary above node details", () => {
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={resourceInfo}
+        currentCluster="cluster-a"
+        nodeCount={2}
+        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
+      "endpoints.fields.nodeCount 2",
+    );
+    expect(
+      screen.queryByTestId("endpoint-cluster-resource-metrics"),
+    ).toBeNull();
+    screen.getByTestId("endpoint-compact-node-resources");
+
+    openClusterSummary();
+
+    screen.getByTestId("endpoint-cluster-resource-metrics");
+    expect(
+      screen.getAllByTestId("endpoint-resource-summary-progress"),
+    ).toHaveLength(4);
   });
 
   it("summarizes all cluster GPUs and exposes the status breakdown on hover", async () => {
@@ -265,6 +305,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
+    openClusterSummary();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
@@ -678,6 +719,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     const nodeCards = screen.getAllByTestId("endpoint-node-resource-pill");
     const cpuCard = findByExactLabel(nodeCards, "CPU");
     const memoryCard = findByExactLabel(nodeCards, "Memory");
+    openClusterSummary();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
@@ -712,6 +754,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
+    openClusterSummary();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );
@@ -912,6 +955,7 @@ describe("EndpointClusterGpuResourcesPanel", () => {
       />,
     );
 
+    openClusterSummary();
     const summaryCards = screen.getAllByTestId(
       "endpoint-resource-summary-card",
     );

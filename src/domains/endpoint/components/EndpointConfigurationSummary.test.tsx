@@ -122,7 +122,9 @@ describe("EndpointConfigurationSummary", () => {
     ]) {
       screen.getByText(text);
     }
-    expect(screen.getAllByText("2")).toHaveLength(2);
+    expect(
+      screen.getByTestId("endpoint-summary-cluster-identity").textContent,
+    ).toContain("endpoints.fields.nodeCount 2");
     for (const [key, values] of [
       ["cpu", ["248", "384"]],
       ["memory", ["980", "1536"]],

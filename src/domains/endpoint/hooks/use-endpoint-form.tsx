@@ -652,12 +652,6 @@ export const useEndpointForm = ({
     selectedCluster?.status?.ready_nodes,
     selectedCluster?.status?.resource_info?.node_resources,
   ]);
-  const selectedClusterNodeCountText =
-    selectedClusterNodeCount === null ? (
-      <EmptyValue />
-    ) : (
-      String(selectedClusterNodeCount)
-    );
   const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
   const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
     selectedVirtualization,
@@ -1893,6 +1887,7 @@ export const useEndpointForm = ({
         resourceInfo={schedulingResourceInfo}
         schedulingNodeResources={reusableNodeResources}
         currentCluster={currentCluster}
+        nodeCount={selectedClusterNodeCount}
         selectedAccelerator={selectedAccelerator}
         virtualizationEnabled={isSelectedClusterVgpuEnabled}
         inset={layout !== "wizard"}
@@ -3281,8 +3276,8 @@ export const useEndpointForm = ({
                 className={cn(
                   "grid min-w-0 grid-cols-1 gap-3",
                   layout === "wizard"
-                    ? "w-full max-w-[520px] sm:grid-cols-[minmax(0,280px)_minmax(108px,auto)] sm:items-start"
-                    : "items-end justify-start sm:grid-cols-[minmax(220px,280px)_max-content]",
+                    ? "w-full max-w-[520px]"
+                    : "items-end justify-start",
                 )}
               >
                 <FormFieldGroup
@@ -3307,17 +3302,6 @@ export const useEndpointForm = ({
                     options={clusterOptions}
                   />
                 </FormFieldGroup>
-                <div
-                  data-testid="endpoint-scheduling-target-node-count"
-                  className="grid min-w-[108px] gap-2"
-                >
-                  <span className="block text-sm font-normal leading-[22px] text-[var(--nt-text-neutral-secondary)]">
-                    {t("endpoints.fields.nodeCount")}
-                  </span>
-                  <span className="flex h-8 items-center text-sm font-medium leading-[22px] text-foreground">
-                    {selectedClusterNodeCountText}
-                  </span>
-                </div>
               </div>
             </div>
           </section>

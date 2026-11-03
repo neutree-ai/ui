@@ -17,6 +17,10 @@ import {
 import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
@@ -50,6 +54,7 @@ type EndpointClusterGpuResourcesPanelProps = {
   resourceInfo: ClusterResourceInfo | null | undefined;
   schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   currentCluster?: string | null;
+  nodeCount?: number | null;
   selectedAccelerator?: SelectedAccelerator | null;
   virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
@@ -311,11 +316,6 @@ const getGpuAvailabilityClasses = (
   return getAcceleratorUsageClasses(percent);
 };
 
-const getSystemUsageClasses = () => ({
-  progress: "bg-primary/15 [&>div]:bg-primary",
-  text: "text-primary",
-});
-
 type ResourceSummaryMetric = {
   label: string;
   used: number | null | undefined;
@@ -323,7 +323,7 @@ type ResourceSummaryMetric = {
   available: number | null | undefined;
   unit?: string;
   valueScale?: number;
-  variant?: "accelerator" | "system";
+  series: MetricBarSeries;
 };
 
 function ResourceMetricLabel({
@@ -360,13 +360,8 @@ function ResourceSummaryCard({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   const percent = toPercentValue(metric.used, metric.total);
-  const acceleratorUsageClasses = getAcceleratorUsageClasses(percent);
   const totalText = formatPoolValue(metric.total, "", metric.valueScale);
   const freeText = formatPoolValue(metric.available, "", metric.valueScale);
-  const isAccelerator = metric.variant === "accelerator";
-  const usageClasses = isAccelerator
-    ? acceleratorUsageClasses
-    : getSystemUsageClasses();
 
   return (
     <div
@@ -386,10 +381,11 @@ function ResourceSummaryCard({
           {totalText} {t("clusters.options.total").toLowerCase()}
         </span>
       </div>
-      <Progress
+      <MetricBar
         data-testid="endpoint-resource-summary-progress"
         value={percent}
-        className={cn("h-1.5", usageClasses.progress)}
+        size="sm"
+        series={metric.series}
       />
       <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
         <span
@@ -454,6 +450,7 @@ function NodeResourcePill({
   const totalText = formatPoolValue(metric.total, "", metric.valueScale);
   const usedText = formatPoolValue(metric.used, "", metric.valueScale);
   const freeText = formatPoolValue(metric.available, "", metric.valueScale);
+  const percent = toPercentValue(metric.used, metric.total);
 
   return (
     <div
@@ -470,36 +467,46 @@ function NodeResourcePill({
           unit={metric.unit}
           className="text-xs font-semibold"
         />
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            {t("clusters.options.used")}{" "}
-            <strong
-              data-testid="endpoint-node-resource-pill-value"
-              className="font-semibold text-foreground"
-              title={readingTitle(usedText)}
-            >
-              {usedText}
-            </strong>
-            <span aria-hidden="true"> / </span>
-            <strong
-              data-testid="endpoint-node-resource-pill-value"
-              className="font-medium text-foreground"
-              title={readingTitle(totalText)}
-            >
-              {totalText}
-            </strong>
-          </span>
-          <span className="tabular-nums">
-            <strong
-              data-testid="endpoint-node-resource-pill-value"
-              className="font-semibold text-foreground"
-              title={readingTitle(freeText)}
-            >
-              {freeText}
-            </strong>{" "}
-            {t("clusters.options.free").toLowerCase()}
-          </span>
-        </div>
+        <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+          {formatPercent(percent)}
+        </span>
+      </div>
+      <MetricBar
+        data-testid="endpoint-node-resource-progress"
+        value={percent}
+        size="sm"
+        series={metric.series}
+        className="mt-1.5"
+      />
+      <div className="mt-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+        <span className="min-w-0 tabular-nums">
+          {t("clusters.options.used")}{" "}
+          <strong
+            data-testid="endpoint-node-resource-pill-value"
+            className="font-semibold text-foreground"
+            title={readingTitle(usedText)}
+          >
+            {usedText}
+          </strong>
+          <span aria-hidden="true"> / </span>
+          <strong
+            data-testid="endpoint-node-resource-pill-value"
+            className="font-medium text-foreground"
+            title={readingTitle(totalText)}
+          >
+            {totalText}
+          </strong>
+        </span>
+        <span className="shrink-0 tabular-nums">
+          <strong
+            data-testid="endpoint-node-resource-pill-value"
+            className="font-semibold text-foreground"
+            title={readingTitle(freeText)}
+          >
+            {freeText}
+          </strong>{" "}
+          {t("clusters.options.free").toLowerCase()}
+        </span>
       </div>
     </div>
   );
@@ -753,12 +760,14 @@ function EndpointClusterResourceSummary({
   summaryRows,
   hasGpuResources,
   virtualizationEnabled,
+  nodeCount,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
+  nodeCount?: number | null;
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   const cpuSummary = summarizeResourcePool(
@@ -786,14 +795,14 @@ function EndpointClusterResourceSummary({
         available: acceleratorMemorySummary.available,
         unit: " GiB",
         valueScale: VRAM_VALUE_SCALE,
-        variant: "accelerator",
+        series: "blue",
       },
       {
         label: t("clusters.fields.coreUsage"),
         used: acceleratorCoreSummary.used,
         total: acceleratorCoreSummary.total,
         available: acceleratorCoreSummary.available,
-        variant: "accelerator",
+        series: "cyan",
       },
     );
   }
@@ -805,6 +814,7 @@ function EndpointClusterResourceSummary({
       total: cpuSummary.total,
       available: cpuSummary.available,
       unit: " cores",
+      series: "green",
     },
     {
       label: t("common.fields.memory"),
@@ -812,20 +822,31 @@ function EndpointClusterResourceSummary({
       total: memorySummary.total,
       available: memorySummary.available,
       unit: " GiB",
+      series: "purple",
     },
   );
 
   return (
-    <div
-      data-testid="endpoint-cluster-resource-summary"
-      className="border-y py-4"
+    <Disclosure
+      variant="plain"
+      className="border-y py-1"
+      triggerClassName="py-2"
+      testId="endpoint-cluster-resource-summary"
+      title={t("endpoints.sections.clusterCapacity")}
+      summary={
+        <span data-testid="endpoint-cluster-node-count">
+          {t("endpoints.fields.nodeCount")}{" "}
+          {nodeCount == null ? <EmptyValue /> : nodeCount}
+        </span>
+      }
+      contentClassName="pb-4"
     >
       <ResourceSummaryCardGrid
         items={items}
         testId="endpoint-cluster-resource-metrics"
         t={t}
       />
-    </div>
+    </Disclosure>
   );
 }
 
@@ -1111,7 +1132,7 @@ function EndpointNodeResourceSummaries({
             used: group.quantity.used,
             total: group.quantity.total,
             available: group.quantity.available,
-            variant: "accelerator",
+            series: "amber",
           });
         }
 
@@ -1122,6 +1143,7 @@ function EndpointNodeResourceSummaries({
             total: group.cpu.total,
             available: group.cpu.available,
             unit: " cores",
+            series: "green",
           },
           {
             label: t("common.fields.memory"),
@@ -1129,6 +1151,7 @@ function EndpointNodeResourceSummaries({
             total: group.memory.total,
             available: group.memory.available,
             unit: " GiB",
+            series: "purple",
           },
         );
 
@@ -1215,14 +1238,14 @@ function EndpointVirtualizedNodeGpuResources({
               available: group.availableMemory,
               unit: " GiB",
               valueScale: VRAM_VALUE_SCALE,
-              variant: "accelerator",
+              series: "blue",
             },
             {
               label: t("clusters.fields.coreUsage"),
               used: group.usedCore,
               total: group.totalCore,
               available: group.availableCore,
-              variant: "accelerator",
+              series: "cyan",
             },
           );
         }
@@ -1234,6 +1257,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.cpuSummary.total,
             available: group.cpuSummary.available,
             unit: " cores",
+            series: "green",
           },
           {
             label: t("common.fields.memory"),
@@ -1241,6 +1265,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.memorySummary.total,
             available: group.memorySummary.available,
             unit: " GiB",
+            series: "purple",
           },
         );
 
@@ -1340,6 +1365,7 @@ export function EndpointClusterGpuResourcesPanel({
   resourceInfo,
   schedulingNodeResources,
   currentCluster,
+  nodeCount,
   selectedAccelerator,
   virtualizationEnabled,
   request,
@@ -1411,6 +1437,7 @@ export function EndpointClusterGpuResourcesPanel({
         resourceInfo={resourceInfo}
         schedulingNodeResources={schedulingNodeResources}
         selectedAccelerator={selectedAccelerator}
+        nodeCount={nodeCount}
         hasGpuResources={hasGpuResources}
         virtualizationEnabled={virtualizationEnabled}
         summaryRows={summaryRows}
@@ -1579,6 +1606,7 @@ function EndpointClusterGpuResourcesInlineContent({
   resourceInfo,
   schedulingNodeResources,
   selectedAccelerator,
+  nodeCount,
   hasGpuResources,
   virtualizationEnabled,
   summaryRows,
@@ -1589,6 +1617,7 @@ function EndpointClusterGpuResourcesInlineContent({
   resourceInfo: ClusterResourceInfo;
   schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
+  nodeCount?: number | null;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
@@ -1607,6 +1636,7 @@ function EndpointClusterGpuResourcesInlineContent({
           summaryRows={summaryRows}
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
+          nodeCount={nodeCount}
           t={t}
         />
         <EndpointNodeResources
