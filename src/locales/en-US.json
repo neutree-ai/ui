@@ -638,9 +638,7 @@
 			},
 			"serviceName": "Cache service",
 			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
-			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds.",
-			"monitorTitle": "Shared L1 monitoring",
-			"monitorHint": "Shared cache per node, not exclusive inference instance memory. Read/write rates are chunks/s. Missing or uncollected metrics show no samples, not zero."
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
 		}
 	},
 	"model_registries": {
