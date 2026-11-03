@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Disclosure } from "@/foundation/components/Disclosure";
@@ -418,22 +419,24 @@ function ResourceMetricGrid({
   t: (key: string, options?: { defaultValue?: string }) => string;
 }) {
   return (
-    <div
-      data-testid={testId}
-      className={cn(
-        "grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 min-[1920px]:grid-cols-4",
-        className,
-      )}
-    >
-      {items.map((metric) => (
-        <ResourceMetricCard
-          key={`${metric.label}:${metric.unit ?? ""}`}
-          metric={metric}
-          testIds={testIds}
-          t={t}
-        />
-      ))}
-    </div>
+    <TooltipProvider delayDuration={0}>
+      <div
+        data-testid={testId}
+        className={cn(
+          "grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 min-[1920px]:grid-cols-4",
+          className,
+        )}
+      >
+        {items.map((metric) => (
+          <ResourceMetricCard
+            key={`${metric.label}:${metric.unit ?? ""}`}
+            metric={metric}
+            testIds={testIds}
+            t={t}
+          />
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }
 

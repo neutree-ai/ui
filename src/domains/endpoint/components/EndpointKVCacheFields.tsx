@@ -115,7 +115,6 @@ export function EndpointKVCacheFields({
     return null;
   })();
   const supported = unavailableReason === null;
-
   form.register("spec.kv_cache", {
     validate: (value) =>
       value?.provider !== "zcache" ||

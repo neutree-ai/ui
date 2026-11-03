@@ -3606,13 +3606,13 @@ export const useEndpointForm = ({
                               value,
                               userSetValueOptions,
                             )
-                           }
-                           min={0}
-                           // Capacity is a cross-field constraint:
-                           // cardsPerReplica × replicas. Keeping it out of the
-                           // input max avoids lowering the ceiling to the
-                           // current value and lets the capacity message own
-                           // the verdict.
+                          }
+                          min={0}
+                          // Capacity is a cross-field constraint:
+                          // cardsPerReplica × replicas. Keeping it out of the
+                          // input max avoids lowering the ceiling to the
+                          // current value and lets the capacity message own
+                          // the verdict.
                           // SSH clusters step by 0.1 below one card and by whole
                           // cards at or above one, so the spinner never lands on
                           // a value the precision rule rejects. Kubernetes (and

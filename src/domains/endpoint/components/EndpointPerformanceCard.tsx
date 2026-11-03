@@ -1,7 +1,6 @@
-import { Activity, ArrowUpRight, Clock, Database } from "lucide-react";
+import { Activity, Clock, Database } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import {
   type EndpointPerformanceMetrics,
   type PerformanceWindow,
@@ -57,37 +56,14 @@ function formatBandwidth(bytesPerSec?: number | null): string {
   return `${bytesPerSec.toFixed(0)} B/s`;
 }
 
-function TrendButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <Button
-      type="button"
-      variant="link"
-      size="sm"
-      className="mt-3 h-auto w-fit px-0 text-xs"
-      onClick={onClick}
-    >
-      {label}
-      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-    </Button>
-  );
-}
-
 export function EndpointPerformanceCard({
   workspace,
   name,
   paused = false,
-  onOpenMonitor,
 }: {
   workspace?: string | null;
   name?: string | null;
   paused?: boolean;
-  onOpenMonitor?: (panel: "latency" | "throughput" | "cache") => void;
 }) {
   const { t } = useTranslation();
   const [window, setWindow] = useState<PerformanceWindow>("5m");
@@ -117,7 +93,7 @@ export function EndpointPerformanceCard({
       }
     >
       <ObservationStatus status={paused ? "no_data" : status} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -175,24 +151,13 @@ export function EndpointPerformanceCard({
               </div>
             </div>
           </div>
-          {onOpenMonitor && (
-            <TrendButton
-              label={t("endpoints.performance.viewTrend")}
-              onClick={() => onOpenMonitor("latency")}
-            />
-          )}
         </div>
 
         <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                {t("endpoints.performance.throughput")}
-              </span>
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">
-              {t("endpoints.performance.tps")}
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
+              {t("endpoints.performance.throughput")}
             </span>
           </div>
           <div className="mt-3 space-y-3">
@@ -202,7 +167,7 @@ export function EndpointPerformanceCard({
               </span>
               <span
                 data-testid="perf-tps-value"
-                className="text-2xl font-semibold tabular-nums text-foreground"
+                className="text-xl font-semibold tabular-nums text-foreground"
               >
                 {formatTokenRate(metrics.total_tokens_per_second)}
               </span>
@@ -232,106 +197,98 @@ export function EndpointPerformanceCard({
               </div>
             </div>
           </div>
-          {onOpenMonitor && (
-            <TrendButton
-              label={t("endpoints.performance.viewTrend")}
-              onClick={() => onOpenMonitor("throughput")}
-            />
-          )}
         </div>
-      </div>
 
-      <div className="mt-4 rounded-lg border bg-muted/10 p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">
-              {t("endpoints.performance.kvCache")}
-            </span>
-          </div>
-          {metrics.hit_rate_cumulative && (
-            <span
-              data-testid="perf-cache-cumulative"
-              className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-            >
-              {t("endpoints.performance.cumulative")}
-            </span>
-          )}
-          {onOpenMonitor && (
-            <TrendButton
-              label={t("endpoints.performance.viewTrend")}
-              onClick={() => onOpenMonitor("cache")}
-            />
-          )}
-        </div>
-        <div className="mt-3 space-y-2.5">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="flex items-center justify-between gap-1 text-xs">
-                <span className="text-muted-foreground">
-                  {t("endpoints.performance.l0HitRate")}
-                </span>
-                <span
-                  data-testid="perf-l0-hit-rate"
-                  className="font-semibold tabular-nums text-foreground"
-                >
-                  {formatPercent(metrics.l0_hit_rate)}
-                </span>
-              </div>
-              <MetricBar
-                className="mt-1.5"
-                size="sm"
-                series="green"
-                value={
-                  metrics.l0_hit_rate != null ? metrics.l0_hit_rate * 100 : null
-                }
-                track={metrics.l0_hit_rate != null ? "subtle" : "unavailable"}
-              />
+        <div className="flex flex-col justify-between rounded-lg border bg-muted/20 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                {t("endpoints.performance.kvCache")}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center justify-between gap-1 text-xs">
-                <span className="text-muted-foreground">
-                  {t("endpoints.performance.l1HitRate")}
-                </span>
-                <span
-                  data-testid="perf-l1-hit-rate"
-                  className="font-semibold tabular-nums text-foreground"
-                >
-                  {formatPercent(metrics.l1_hit_rate)}
-                </span>
-              </div>
-              <MetricBar
-                className="mt-1.5"
-                size="sm"
-                series="blue"
-                value={
-                  metrics.l1_hit_rate != null ? metrics.l1_hit_rate * 100 : null
-                }
-                track={metrics.l1_hit_rate != null ? "subtle" : "unavailable"}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
-            <div>
-              <div className="text-muted-foreground">
-                {t("endpoints.performance.l1ReadSpeed")}
-              </div>
-              <div
-                data-testid="perf-l1-read-speed"
-                className="mt-0.5 font-semibold tabular-nums text-foreground"
+            {metrics.hit_rate_cumulative && (
+              <span
+                data-testid="perf-cache-cumulative"
+                className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
               >
-                {formatBandwidth(metrics.l1_read_bytes_per_second)}
+                {t("endpoints.performance.cumulative")}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 space-y-2.5">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between gap-1 text-xs">
+                  <span className="text-muted-foreground">
+                    {t("endpoints.performance.l0HitRate")}
+                  </span>
+                  <span
+                    data-testid="perf-l0-hit-rate"
+                    className="font-semibold tabular-nums text-foreground"
+                  >
+                    {formatPercent(metrics.l0_hit_rate)}
+                  </span>
+                </div>
+                <MetricBar
+                  className="mt-1.5"
+                  size="sm"
+                  series="green"
+                  value={
+                    metrics.l0_hit_rate != null
+                      ? metrics.l0_hit_rate * 100
+                      : null
+                  }
+                  track={metrics.l0_hit_rate != null ? "subtle" : "unavailable"}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-1 text-xs">
+                  <span className="text-muted-foreground">
+                    {t("endpoints.performance.l1HitRate")}
+                  </span>
+                  <span
+                    data-testid="perf-l1-hit-rate"
+                    className="font-semibold tabular-nums text-foreground"
+                  >
+                    {formatPercent(metrics.l1_hit_rate)}
+                  </span>
+                </div>
+                <MetricBar
+                  className="mt-1.5"
+                  size="sm"
+                  series="blue"
+                  value={
+                    metrics.l1_hit_rate != null
+                      ? metrics.l1_hit_rate * 100
+                      : null
+                  }
+                  track={metrics.l1_hit_rate != null ? "subtle" : "unavailable"}
+                />
               </div>
             </div>
-            <div>
-              <div className="text-muted-foreground">
-                {t("endpoints.performance.l1WriteSpeed")}
+            <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
+              <div>
+                <div className="text-muted-foreground">
+                  {t("endpoints.performance.l1ReadSpeed")}
+                </div>
+                <div
+                  data-testid="perf-l1-read-speed"
+                  className="mt-0.5 font-semibold tabular-nums text-foreground"
+                >
+                  {formatBandwidth(metrics.l1_read_bytes_per_second)}
+                </div>
               </div>
-              <div
-                data-testid="perf-l1-write-speed"
-                className="mt-0.5 font-semibold tabular-nums text-foreground"
-              >
-                {formatBandwidth(metrics.l1_write_bytes_per_second)}
+              <div>
+                <div className="text-muted-foreground">
+                  {t("endpoints.performance.l1WriteSpeed")}
+                </div>
+                <div
+                  data-testid="perf-l1-write-speed"
+                  className="mt-0.5 font-semibold tabular-nums text-foreground"
+                >
+                  {formatBandwidth(metrics.l1_write_bytes_per_second)}
+                </div>
               </div>
             </div>
           </div>

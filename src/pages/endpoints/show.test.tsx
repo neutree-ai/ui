@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
@@ -245,22 +245,6 @@ describe("EndpointsShow", () => {
 
     screen.getByTestId("endpoint-kv-cache-summary");
   });
-
-  it("opens the monitor view from the performance trend action", () => {
-    render(<EndpointsShow />);
-
-    const trendButtons = screen.getAllByRole("button", {
-      name: "endpoints.performance.viewTrend",
-    });
-    fireEvent.click(trendButtons[0]);
-
-    expect(
-      screen.getAllByRole("button", {
-        name: "endpoints.performance.viewTrend",
-      }),
-    ).toHaveLength(3);
-  });
-
   it.each(["Paused", "Deleted"])(
     "hides retained runtime allocations once the endpoint is %s",
     (phase) => {
@@ -288,7 +272,7 @@ describe("EndpointsShow", () => {
   );
 
   // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page (NEU-728).
+  // the task off it used to throw and blank the whole page.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {

@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -155,7 +155,6 @@ const getSchedulerText = (
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("basic");
   const { grafanaUrl, systemInfo } = useSystemApi();
   const {
     query: { data, isLoading },
@@ -269,11 +268,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </>
         )}
       >
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex h-full flex-col"
-        >
+        <Tabs defaultValue="basic" className="flex h-full flex-col">
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -395,14 +390,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
+            {(systemInfo?.capabilities?.cluster_cache_providers?.includes(
+              "zcache",
+            ) ||
+              record.spec.kv_cache) && (
+              <EndpointKVCacheSummary
+                endpoint={record}
+                cluster={clusterData?.data?.[0]}
+              />
+            )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
               paused={inactive}
-              onOpenMonitor={(panel) => {
-                setSelectedPanel(panel);
-                setActiveTab("monitor");
-              }}
             />
             {!inactive && (
               <div className="space-y-3">
@@ -467,15 +467,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   </div>
                 </ShowPage.Section>
               </div>
-            )}
-            {(systemInfo?.capabilities?.cluster_cache_providers?.includes(
-              "zcache",
-            ) ||
-              record.spec.kv_cache) && (
-              <EndpointKVCacheSummary
-                endpoint={record}
-                cluster={clusterData?.data?.[0]}
-              />
             )}
             <EndpointAdvancedParameters
               engineParameters={{

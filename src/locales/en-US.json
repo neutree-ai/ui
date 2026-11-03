@@ -828,7 +828,8 @@
 		},
 		"sections": {
 			"keyConfig": "Key Configuration",
-			"env": "Environment Variables"
+			"env": "Environment Variables",
+			"advanced": "Advanced (all fields)"
 		},
 		"keyConfig": {
 			"contextLength": "Context Length",

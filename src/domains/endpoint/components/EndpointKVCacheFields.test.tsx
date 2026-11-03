@@ -47,7 +47,6 @@ function Editor({
   invalid,
   engineVersion = "v0.32.0-zcache-enabled",
   runtimeVersion = "v0.5.6-post.1",
-  configuredVersion,
   cacheStatusLoading = false,
   acceleratorType = "nvidia_gpu",
   cachePhase = "Ready",
