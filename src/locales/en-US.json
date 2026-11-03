@@ -790,8 +790,7 @@
 		},
 		"sections": {
 			"keyConfig": "Key Configuration",
-			"env": "Environment Variables",
-			"advanced": "Advanced (all fields)"
+			"env": "Environment Variables"
 		},
 		"keyConfig": {
 			"contextLength": "Context Length",
@@ -2060,13 +2059,6 @@
 				"off": "Off"
 			},
 			"defaultPanelTitle": "Grafana Panel {{id}}"
-		},
-		"jsonSchemaValueVisualizer": {
-			"undefined": "undefined",
-			"null": "null",
-			"typeMismatch": "type miss match: expect {{expectedType}}, actual {{actualType}}",
-			"noValue": "no value",
-			"root": "Root"
 		},
 		"jsonSchemaVisualizer": {
 			"empty": "This version declares no values schema.",
