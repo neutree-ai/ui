@@ -686,75 +686,77 @@ describe("per-model quota round trip", () => {
 describe("model name handling", () => {
   // The gateway matches the request name exactly, so a stored name must survive
   // an unrelated edit unchanged; trimming it would authorize a different name.
-  it("saves a stored model name verbatim", () => {
+  // A blank name is still not a name, so it is dropped.
+  it.each([
+    { model: " qwen ", kept: true },
+    { model: "   ", kept: false },
+  ])("saves $model verbatim, keeping it unless blank", ({ model, kept }) => {
     const limits = buildApiKeyLimits(
       form({
-        models: [
-          row({ model: " qwen ", type: "internal", endpoint_name: "local" }),
-        ],
+        models: [row({ model, type: "internal", endpoint_name: "local" })],
       }),
     );
-    expect(limits.allowed_models).toEqual([
-      { model: " qwen ", type: "internal", endpoint_name: "local" },
-    ]);
-  });
-
-  it("drops a row whose model name is blank", () => {
-    const limits = buildApiKeyLimits(
-      form({
-        models: [
-          row({ model: "   ", type: "internal", endpoint_name: "local" }),
-        ],
-      }),
+    expect(limits.allowed_models).toEqual(
+      kept ? [{ model, type: "internal", endpoint_name: "local" }] : undefined,
     );
-    expect(limits.allowed_models).toBeUndefined();
   });
 
-  it("offers a served name verbatim, including surrounding spaces", () => {
-    mockWorkspaceModels([" qwen ", "qwen"]);
-    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
-    expect(
-      result.current.filter((option) => option.type === "internal"),
-    ).toEqual([
-      expect.objectContaining({
-        label: " qwen ",
-        model: " qwen ",
-        value: "internal:local: qwen ",
-      }),
-    ]);
-  });
+  // Offered verbatim as well: the engine reports the name and the gateway
+  // matches it exactly, so a trimmed candidate is one the engine never answers
+  // to. The external row also proves the source still resolves by the same name.
+  it.each([
+    {
+      kind: "internal",
+      model: " qwen ",
+      endpoints: [
+        {
+          metadata: { name: "local" },
+          spec: { model: { name: "physical-model" } },
+          status: { served_models: [" qwen ", "qwen"] },
+        },
+      ],
+      externalEndpoints: [],
+      value: "internal:local: qwen ",
+      source: "self-hosted",
+    },
+    {
+      kind: "external",
+      model: " gpt-4 ",
+      endpoints: [],
+      externalEndpoints: [
+        {
+          metadata: { name: "external" },
+          spec: {
+            upstreams: [{ model_mapping: { " gpt-4 ": "provider-model" } }],
+            model_sources: { " gpt-4 ": "third-party-public" },
+          },
+        },
+      ],
+      value: "external:external: gpt-4 ",
+      source: "third-party-public",
+    },
+  ])(
+    "offers the $kind name $model verbatim",
+    ({ kind, model, endpoints, externalEndpoints, value, source }) => {
+      useListMock.mockImplementation(({ resource }) => ({
+        data: {
+          data: resource === "endpoints" ? endpoints : externalEndpoints,
+        },
+      }));
 
-  it("offers an external model name verbatim and still resolves its source", () => {
-    useListMock.mockImplementation(({ resource }) => ({
-      data: {
-        data:
-          resource === "endpoints"
-            ? []
-            : [
-                {
-                  metadata: { name: "external" },
-                  spec: {
-                    upstreams: [
-                      { model_mapping: { " gpt-4 ": "provider-model" } },
-                    ],
-                    model_sources: { " gpt-4 ": "third-party-public" },
-                  },
-                },
-              ],
-      },
-    }));
+      const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
 
-    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
-
-    expect(result.current).toEqual([
-      expect.objectContaining({
-        type: "external",
-        model: " gpt-4 ",
-        value: "external:external: gpt-4 ",
-        source: "third-party-public",
-      }),
-    ]);
-  });
+      expect(result.current).toEqual([
+        expect.objectContaining({
+          type: kind,
+          label: model,
+          model,
+          value,
+          source,
+        }),
+      ]);
+    },
+  );
 });
 
 describe("useWorkspaceModels", () => {
