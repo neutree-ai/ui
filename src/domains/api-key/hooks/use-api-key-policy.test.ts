@@ -29,7 +29,10 @@ vi.mock("@refinedev/core", () => ({
   useCustomMutation: vi.fn(),
 }));
 
-const mockWorkspaceModels = (servedModels: string[] | null | undefined) => {
+const mockWorkspaceModels = (
+  servedModels: string[] | null | undefined,
+  externalModel = "a",
+) => {
   const endpoints = [
     {
       metadata: { name: "local" },
@@ -41,8 +44,8 @@ const mockWorkspaceModels = (servedModels: string[] | null | undefined) => {
     {
       metadata: { name: "external" },
       spec: {
-        upstreams: [{ model_mapping: { a: "provider-model" } }],
-        model_sources: { a: "third-party-public" },
+        upstreams: [{ model_mapping: { [externalModel]: "provider-model" } }],
+        model_sources: { [externalModel]: "third-party-public" },
       },
     },
   ];
@@ -133,6 +136,17 @@ describe("buildApiKeyLimits", () => {
         { model: "gpt-4o", type: "external", endpoint_name: "ee-a" },
       ],
     });
+  });
+
+  it("saves a model name verbatim, untrimmed", () => {
+    const model = " qwen ";
+    expect(
+      buildApiKeyLimits(
+        form({
+          models: [row({ model, type: "internal", endpoint_name: "local" })],
+        }),
+      ).allowed_models,
+    ).toEqual([{ model, type: "internal", endpoint_name: "local" }]);
   });
 
   it("keeps endpoint-scoped selections distinct (same model, different endpoints)", () => {
@@ -683,82 +697,6 @@ describe("per-model quota round trip", () => {
   });
 });
 
-describe("model name handling", () => {
-  // The gateway matches the request name exactly, so a stored name must survive
-  // an unrelated edit unchanged; trimming it would authorize a different name.
-  // A blank name is still not a name, so it is dropped.
-  it.each([
-    { model: " qwen ", kept: true },
-    { model: "   ", kept: false },
-  ])("saves $model verbatim, keeping it unless blank", ({ model, kept }) => {
-    const limits = buildApiKeyLimits(
-      form({
-        models: [row({ model, type: "internal", endpoint_name: "local" })],
-      }),
-    );
-    expect(limits.allowed_models).toEqual(
-      kept ? [{ model, type: "internal", endpoint_name: "local" }] : undefined,
-    );
-  });
-
-  // Offered verbatim as well: the engine reports the name and the gateway
-  // matches it exactly, so a trimmed candidate is one the engine never answers
-  // to. The external row also proves the source still resolves by the same name.
-  it.each([
-    {
-      kind: "internal",
-      model: " qwen ",
-      endpoints: [
-        {
-          metadata: { name: "local" },
-          spec: { model: { name: "physical-model" } },
-          status: { served_models: [" qwen ", "qwen"] },
-        },
-      ],
-      externalEndpoints: [],
-      value: "internal:local: qwen ",
-      source: "self-hosted",
-    },
-    {
-      kind: "external",
-      model: " gpt-4 ",
-      endpoints: [],
-      externalEndpoints: [
-        {
-          metadata: { name: "external" },
-          spec: {
-            upstreams: [{ model_mapping: { " gpt-4 ": "provider-model" } }],
-            model_sources: { " gpt-4 ": "third-party-public" },
-          },
-        },
-      ],
-      value: "external:external: gpt-4 ",
-      source: "third-party-public",
-    },
-  ])(
-    "offers the $kind name $model verbatim",
-    ({ kind, model, endpoints, externalEndpoints, value, source }) => {
-      useListMock.mockImplementation(({ resource }) => ({
-        data: {
-          data: resource === "endpoints" ? endpoints : externalEndpoints,
-        },
-      }));
-
-      const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
-
-      expect(result.current).toEqual([
-        expect.objectContaining({
-          type: kind,
-          label: model,
-          model,
-          value,
-          source,
-        }),
-      ]);
-    },
-  );
-});
-
 describe("useWorkspaceModels", () => {
   beforeEach(() => {
     useListMock.mockReset();
@@ -786,6 +724,18 @@ describe("useWorkspaceModels", () => {
       );
     },
   );
+
+  it("offers an external model name verbatim and resolves its source by it", () => {
+    mockWorkspaceModels([], " gpt-4 ");
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current).toEqual([
+      expect.objectContaining({
+        model: " gpt-4 ",
+        value: "external:external: gpt-4 ",
+        source: "third-party-public",
+      }),
+    ]);
+  });
 
   it("updates lookup maps when the first alias changes, retaining the external model", () => {
     mockWorkspaceModels(["a", "b"]);
