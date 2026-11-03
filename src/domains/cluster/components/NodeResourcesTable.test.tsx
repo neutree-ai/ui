@@ -74,7 +74,7 @@ describe("NodeResourcesTable", () => {
     ).toBeNull();
   });
 
-  it("renders unified node L1 KV-Cache usage when l1CacheByNode is provided", () => {
+  it("shows each node's L1 KV-Cache usage", () => {
     render(
       <NodeResourcesTable
         nodeResources={{
@@ -95,9 +95,7 @@ describe("NodeResourcesTable", () => {
       />,
     );
 
-    const l1Bar = screen.getByTestId("node-l1-cache-bar");
-    expect(l1Bar.textContent).toContain("observations.l1KvCache");
-    expect(l1Bar.textContent).toContain("12.5 / 32.0 GiB");
-    expect(l1Bar.textContent).toContain("39%");
+    screen.getByText("observations.l1KvCache 12.5 / 32.0 GiB");
+    screen.getByText("39%");
   });
 });

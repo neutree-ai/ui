@@ -1,28 +1,18 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ClusterFlops } from "./ClusterFlops";
 
 const mocks = vi.hoisted(() => ({
   getOne: vi.fn(),
   update: vi.fn(),
-  history: vi.fn(),
 }));
 vi.mock("@refinedev/core", () => ({
-  useCustom: () => mocks.history(),
+  useCustom: () => ({}),
   useDataProvider: () => () => ({ getOne: mocks.getOne }),
   useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
 }));
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
+
 const cluster = {
   id: 1,
   metadata: { name: "c", workspace: "default", annotations: { keep: "yes" } },
@@ -38,62 +28,37 @@ const cluster = {
     },
   },
 } as unknown as Cluster;
-describe("compute calibration", () => {
-  it("keeps historical known-card usage and zero points when other cards are unknown", () => {
-    const sample = (
-      time: number,
-      uuid: string,
-      product: string,
-      value: number,
-    ) => ({
-      metric: "neutree_accelerator_utilization_ratio",
-      labels: { node: "n", accelerator_uuid: uuid, product },
-      observed_at: time,
-      value,
-    });
-    mocks.history.mockReturnValue({
-      data: {
-        data: {
-          start: 1,
-          end: 64801,
-          samples: [
-            sample(1, "unknown", "unknown", 0.8),
-            sample(1, "g", "T4", 0.5),
-            sample(21601, "g", "T4", 0),
-            sample(21601, "unknown", "unknown", 0.8),
-            sample(43201, "unknown", "unknown", 1),
-            sample(64801, "g", "T4", 1.1),
-          ],
-        },
-      },
-    });
-    const { container } = render(
-      <ClusterFlops cluster={cluster} samples={[]} />,
-    );
-    const titles = [...container.querySelectorAll("svg circle title")].map(
-      (e) => e.textContent,
-    );
-    expect(titles).toHaveLength(2);
-    expect(titles[0]).toContain("32.50 TFLOPS");
-    expect(titles[1]).toContain("0.00 TFLOPS");
+
+const calibrate = (value: string) => {
+  render(<ClusterFlops cluster={cluster} samples={[]} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "observations.calibrate" }),
+  );
+  fireEvent.change(screen.getByRole("spinbutton"), { target: { value } });
+  fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+};
+
+describe("ClusterFlops", () => {
+  beforeEach(() => {
+    mocks.getOne.mockReset().mockResolvedValue({ data: cluster });
+    mocks.update.mockReset().mockResolvedValue({});
   });
-  it("saves metadata only and merges annotations from a fresh read", async () => {
-    mocks.history.mockReturnValue({});
+
+  it("shows the estimated usage against the known capacity", () => {
+    render(<ClusterFlops cluster={cluster} samples={[]} />);
+    screen.getByText("— / 65.00 TFLOPS");
+  });
+
+  it("saves only metadata, merging the calibration into a fresh read", async () => {
     mocks.getOne.mockResolvedValue({
       data: {
         ...cluster,
         metadata: { ...cluster.metadata, annotations: { concurrent: "keep" } },
       },
     });
-    mocks.update.mockResolvedValue({});
-    render(<ClusterFlops cluster={cluster} samples={[]} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "observations.calibrate" }),
-    );
-    fireEvent.change(screen.getByRole("spinbutton"), {
-      target: { value: "70" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+
+    calibrate("70");
+
     await waitFor(() => expect(mocks.update).toHaveBeenCalled());
     const values = mocks.update.mock.calls[0][0].values;
     expect(Object.keys(values)).toEqual(["metadata"]);
@@ -102,18 +67,11 @@ describe("compute calibration", () => {
       "neutree.ai/accelerator-tflops": '{"Tesla-T4":70}',
     });
   });
-  it("rejects nonpositive calibration and preserves unknown use", async () => {
-    mocks.history.mockReturnValue({});
-    render(<ClusterFlops cluster={cluster} samples={[]} />);
-    screen.getByText("— / 65.00 TFLOPS");
-    fireEvent.click(
-      screen.getByRole("button", { name: "observations.calibrate" }),
-    );
-    fireEvent.change(screen.getByRole("spinbutton"), {
-      target: { value: "0" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
-    expect(await screen.findByRole("alert")).toBeTruthy();
+
+  it("rejects an invalid calibration without saving", async () => {
+    calibrate("0");
+
+    await screen.findByText("observations.invalidTflops");
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });

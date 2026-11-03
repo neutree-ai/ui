@@ -480,9 +480,9 @@
   "src/pages/identity-sources/show.tsx": "2e4fe4ee85ba6a3e9b1f6d7d5e66f894",
   "src/domains/model-catalog/lib/advanced-parameters.ts": "f85dce83b2bb701b3949c829555f8c59",
   "src/foundation/lib/accelerator-extra-info.ts": "8593b9fb11ef0b10e6f87f9a004108a1",
-  "src/foundation/lib/accelerator-observations.ts": "45fb7230754502e4ffdde6eb81e127bf",
-  "src/foundation/lib/accelerator-tflops.ts": "5ad904b9bcc465e7d81ca0912de5859b",
+  "src/foundation/lib/accelerator-observations.ts": "f8f1c2857efb71c297948e37afee3899",
+  "src/foundation/lib/accelerator-tflops.ts": "eae0f803250292b34ff58106ae3a4188",
   "src/foundation/hooks/use-accelerator-observations.ts": "ce032daa0e2e1ce5adae80193f0edc42",
-  "src/foundation/components/GpuObservationCard.tsx": "adab59fffed97ffc72af651365230357",
-  "src/domains/cluster/components/ClusterFlops.tsx": "dfc23d64d2173612b02695745ac7d768"
+  "src/foundation/components/GpuObservationCard.tsx": "db08b49ccc94362324f20b65d9e48451",
+  "src/domains/cluster/components/ClusterFlops.tsx": "b5b222c962c628257c2e0d3ce4303db3"
 }

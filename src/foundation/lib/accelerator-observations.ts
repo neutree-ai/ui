@@ -106,6 +106,71 @@ export function reading(
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
+const REPLICA_MEMORY_METRIC =
+  "neutree_endpoint_replica_accelerator_memory_used_bytes";
+const HARDWARE_INFO_METRIC = "neutree_node_accelerator_hardware_info";
+
+// The generic hardware info first, then each vendor or extension info metric in
+// name order, so a more specific source overrides the generic labels.
+export function deviceHardwareInfo(
+  samples: AcceleratorSample[],
+  node: string,
+  uuid: string,
+): Record<string, string> {
+  const extensions = [
+    ...new Set(
+      samples
+        .map((sample) => sample.metric)
+        .filter(
+          (metric) =>
+            /^neutree_node_accelerator_.+_info$/.test(metric) &&
+            metric !== HARDWARE_INFO_METRIC,
+        ),
+    ),
+  ].sort();
+  return Object.assign(
+    {},
+    ...[HARDWARE_INFO_METRIC, ...extensions].map(
+      (metric) => reading(samples, metric, node, uuid)?.labels ?? {},
+    ),
+  );
+}
+
+export function hasAllocationReading(
+  samples: AcceleratorSample[],
+  allocation: GpuAllocation,
+): boolean {
+  return Boolean(
+    reading(
+      samples,
+      REPLICA_MEMORY_METRIC,
+      allocation.node,
+      allocation.uuid,
+      allocation,
+    ),
+  );
+}
+
+// A replica's own measurement when there is one. A card with a single
+// allocation attributes the whole-card measurement to it; a shared card has no
+// way to split it, so the usage stays unknown.
+export function allocationUsedMiB(
+  samples: AcceleratorSample[],
+  allocation: GpuAllocation,
+  allocationsOnCard: number,
+  cardUsedMiB: number | null,
+): number | null {
+  const measured = reading(
+    samples,
+    REPLICA_MEMORY_METRIC,
+    allocation.node,
+    allocation.uuid,
+    allocation,
+  );
+  if (measured) return measured.value / 1024 ** 2;
+  return allocationsOnCard === 1 ? cardUsedMiB : null;
+}
+
 export function nodeReading(
   samples: AcceleratorSample[],
   metric: string,

@@ -92,3 +92,74 @@ export function flopsTotals(
   }
   return { total, used };
 }
+
+export type FlopsPoint = { time: number; value: number | null };
+
+// Each historical sample is valued by its own card's product, rather than
+// multiplying today's card count by yesterday's cluster-average utilization.
+// A point stays unknown until at least one card in it has a known peak and a
+// valid utilization.
+export function flopsHistory(
+  samples: AcceleratorSample[],
+  devices: ObservedGpu[],
+  overrides: Record<string, number>,
+  info?: ClusterResourceInfo | null,
+): FlopsPoint[] {
+  const byTime = new Map<number, Map<string, AcceleratorSample>>();
+  for (const sample of samples) {
+    const cards = byTime.get(sample.observed_at) ?? new Map();
+    cards.set(
+      `${sample.labels.node}/${sample.labels.accelerator_uuid}`,
+      sample,
+    );
+    byTime.set(sample.observed_at, cards);
+  }
+  return [...byTime.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([time, cards]) => {
+      let value: number | null = null;
+      for (const s of cards.values()) {
+        const device = devices.find(
+          (d) =>
+            d.node === s.labels.node && d.uuid === s.labels.accelerator_uuid,
+        );
+        const product = device?.product || s.labels.product || "";
+        const peak = peakTflops(
+          product,
+          overrides,
+          productPeakTflops(info, product),
+        );
+        if (
+          peak != null &&
+          Number.isFinite(s.value) &&
+          s.value >= 0 &&
+          s.value <= 1
+        )
+          value = (value ?? 0) + peak * s.value;
+      }
+      return { time, value };
+    });
+}
+
+// A blank entry clears the product's calibration; anything else must be a
+// positive number.
+export function isValidTflopsDraft(draft: Record<string, string>): boolean {
+  return Object.values(draft).every(
+    (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) > 0),
+  );
+}
+
+// Applies the draft for the cluster's products onto the stored calibration,
+// keeping entries for products the dialog did not show.
+export function mergeTflopsDraft(
+  stored: Record<string, number>,
+  draft: Record<string, string>,
+  products: string[],
+): Record<string, number> {
+  const next = { ...stored };
+  for (const product of products) {
+    if (draft[product]?.trim()) next[product] = Number(draft[product]);
+    else delete next[product];
+  }
+  return next;
+}

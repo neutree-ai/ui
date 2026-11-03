@@ -17,7 +17,10 @@ import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
   allocationColor,
+  allocationUsedMiB,
+  deviceHardwareInfo,
   type GpuAllocation,
+  hasAllocationReading,
   reading,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
@@ -100,23 +103,7 @@ export function GpuObservationCard({
   const actual = used ? used.value / 1024 ** 2 : null;
   const temperature = get("neutree_accelerator_temperature_celsius");
   const power = get("neutree_accelerator_power_usage_watts");
-  const hardware = Object.assign(
-    {},
-    get("neutree_node_accelerator_hardware_info")?.labels ?? {},
-    ...Array.from(
-      new Set(
-        samples
-          .filter(
-            (sample) =>
-              /^neutree_node_accelerator_.+_info$/.test(sample.metric) &&
-              sample.metric !== "neutree_node_accelerator_hardware_info",
-          )
-          .map((sample) => sample.metric),
-      ),
-    )
-      .sort()
-      .map((name) => get(name)?.labels ?? {}),
-  ) as Record<string, string>;
+  const hardware = deviceHardwareInfo(samples, device.node, device.uuid);
   const assigned = allocations.filter(
     (a) => a.node === device.node && a.uuid === device.uuid,
   );
@@ -133,31 +120,9 @@ export function GpuObservationCard({
     assigned.length > 0 &&
     !replica &&
     (assigned.length === 1 ||
-      assigned.some((a) =>
-        Boolean(
-          reading(
-            samples,
-            "neutree_endpoint_replica_accelerator_memory_used_bytes",
-            device.node,
-            device.uuid,
-            a,
-          ),
-        ),
-      ));
-  const assignedUsedMiB = (a: GpuAllocation) => {
-    const measured = reading(
-      samples,
-      "neutree_endpoint_replica_accelerator_memory_used_bytes",
-      device.node,
-      device.uuid,
-      a,
-    );
-    return measured
-      ? measured.value / 1024 ** 2
-      : assigned.length === 1
-        ? actual
-        : null;
-  };
+      assigned.some((a) => hasAllocationReading(samples, a)));
+  const assignedUsedMiB = (a: GpuAllocation) =>
+    allocationUsedMiB(samples, a, assigned.length, actual);
   // Segments are only drawn on top of a real measurement, never on their own.
   const firstComposedIndex = multiBar
     ? assigned.findIndex((a) => hasComposition(a) && assignedUsedMiB(a) != null)

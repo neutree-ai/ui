@@ -15,11 +15,13 @@ import type {
   AcceleratorSnapshot,
 } from "@/foundation/lib/accelerator-observations";
 import {
+  flopsHistory,
   flopsTotals,
   formatFlops,
+  isValidTflopsDraft,
+  mergeTflopsDraft,
   observedDevices,
   parseTflops,
-  peakTflops,
   productPeakTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
@@ -53,42 +55,12 @@ export function ClusterFlops({
     method: "get",
     queryOptions: { retry: false, staleTime: 300000, refetchInterval: 300000 },
   });
-  const byTime = new Map<number, AcceleratorSample[]>();
-  for (const sample of history.error ? [] : (history.data?.data.samples ?? []))
-    byTime.set(sample.observed_at, [
-      ...(byTime.get(sample.observed_at) ?? []),
-      sample,
-    ]);
-  // Use each historical device identity/product, rather than multiplying today's
-  // card count by yesterday's cluster-average utilization.
-  const points = [...byTime.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([time, values]) => {
-      const distinct = new Map(
-        values.map((s) => [`${s.labels.node}/${s.labels.accelerator_uuid}`, s]),
-      );
-      let value: number | null = null;
-      for (const s of distinct.values()) {
-        const device = devices.find(
-          (d) =>
-            d.node === s.labels.node && d.uuid === s.labels.accelerator_uuid,
-        );
-        const product = device?.product || s.labels.product || "";
-        const peak = peakTflops(
-          product,
-          overrides,
-          productPeakTflops(cluster.status?.resource_info, product),
-        );
-        if (
-          peak != null &&
-          Number.isFinite(s.value) &&
-          s.value >= 0 &&
-          s.value <= 1
-        )
-          value = (value ?? 0) + peak * s.value;
-      }
-      return { time, value };
-    });
+  const points = flopsHistory(
+    history.error ? [] : (history.data?.data.samples ?? []),
+    devices,
+    overrides,
+    cluster.status?.resource_info,
+  );
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...points.map((p) => p.value ?? 0));
   const start = history.data?.data.start ?? points[0]?.time ?? 0,
@@ -114,12 +86,7 @@ export function ClusterFlops({
       .join(" ");
   const save = async () => {
     setError("");
-    if (
-      Object.values(draft).some(
-        (v) =>
-          v.trim() !== "" && (!Number.isFinite(Number(v)) || Number(v) <= 0),
-      )
-    ) {
+    if (!isValidTflopsDraft(draft)) {
       setError(t("observations.invalidTflops"));
       return;
     }
@@ -128,13 +95,11 @@ export function ClusterFlops({
         resource: "clusters",
         id: cluster.id,
       });
-      const next = parseTflops(
-        current.data.metadata.annotations?.[TFLOPS_ANNOTATION],
+      const next = mergeTflopsDraft(
+        parseTflops(current.data.metadata.annotations?.[TFLOPS_ANNOTATION]),
+        draft,
+        products,
       );
-      for (const product of products) {
-        if (draft[product]?.trim()) next[product] = Number(draft[product]);
-        else delete next[product];
-      }
       await update.mutateAsync({
         resource: "clusters",
         id: cluster.id,
