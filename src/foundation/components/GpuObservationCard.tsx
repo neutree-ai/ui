@@ -50,16 +50,6 @@ const ratio = (
     ? 0
     : Math.max(0, Math.min(100, (value / total) * 100));
 
-export function ObservationStatus({ status }: { status: string }) {
-  const { t } = useTranslation();
-  if (status !== "unavailable" && status !== "not_configured") return null;
-  return (
-    <p role="status" className="mb-3 text-xs text-muted-foreground">
-      {t(`observations.status.${status}`)}
-    </p>
-  );
-}
-
 export function GpuObservationCard({
   device,
   samples,

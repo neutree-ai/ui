@@ -13,7 +13,10 @@ import {
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
 import { MetricBar } from "@/foundation/components/MetricBar";
-import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import {
+  formatL1CacheUsage,
+  type NodeL1CacheUsage,
+} from "@/foundation/lib/accelerator-observations";
 import type { GpuDeviceResourceRow } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -77,9 +80,7 @@ const NodeL1CacheBar = ({
     >
       <div className="flex items-center justify-between gap-2 tabular-nums">
         <span>
-          {t("observations.l1KvCache")}{" "}
-          {formatToDecimal(usage.usedGiB, 1) ?? "—"} /{" "}
-          {formatToDecimal(usage.capacityGiB, 1)} GiB
+          {t("observations.l1KvCache")} {formatL1CacheUsage(usage)}
         </span>
         <span>{percent != null ? `${Math.round(percent)}%` : "—"}</span>
       </div>

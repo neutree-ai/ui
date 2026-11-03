@@ -17,10 +17,13 @@ import {
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import {
+  formatL1CacheUsage,
+  type NodeL1CacheUsage,
+} from "@/foundation/lib/accelerator-observations";
 import {
   GPU_CELL_CLASS,
   GPU_GRID_CELL_CLASS,
@@ -29,23 +32,27 @@ import {
   GPU_GRID_STYLE,
   GPU_USAGE_TEXT_CLASS,
 } from "@/foundation/lib/gpu-device-resources";
-import {
-  formatMiBAsGiB,
-  formatMiBAsGiBValue,
-  formatToDecimal,
-} from "@/foundation/lib/unit";
+import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type {
   ClusterResourceInfo,
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
+import type { EndpointReplicaResourceRow } from "../lib/resource-status";
+
+type RenderDeviceMemory = (
+  device: EndpointReplicaResourceRow,
+  deviceIndex: number,
+) => ReactNode;
 
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+  renderMemory: RenderDeviceMemory;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -56,12 +63,6 @@ const formatCoreLimit = (value: number): ReactNode =>
 
 const formatMemoryGiB = (value: number): ReactNode =>
   formatMiBAsGiB(value) ?? <EmptyValue />;
-
-const formatVramValue = (value: number | null): ReactNode => {
-  if (value == null) return <EmptyValue />;
-  const formatted = formatMiBAsGiBValue(value);
-  return formatted == null ? <EmptyValue /> : formatted.replace(/\.0$/, "");
-};
 
 const formatCount = (
   count: number,
@@ -80,51 +81,8 @@ const formatAllocatedCardCount = (
       : "endpoints.fields.allocatedCards",
   )}`;
 
-const VRAM_BAR_PERCENT_MAX = 100;
-
-const VramBar = ({
-  requestedMiB,
-  physicalMiB,
-}: {
-  requestedMiB: number;
-  physicalMiB: number | null;
-}) => {
-  const hasScale = physicalMiB != null && physicalMiB > 0;
-  const requestedPercent = hasScale
-    ? Math.min(
-        VRAM_BAR_PERCENT_MAX,
-        Math.max(0, (requestedMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
-      )
-    : 0;
-
-  return (
-    <div className="min-w-0">
-      <MetricBar
-        data-testid="runtime-vram-bar"
-        value={requestedPercent}
-        series="neutral"
-        track={hasScale ? "outlined" : "unavailable"}
-      />
-      {/* Restore a requested-VRAM boundary marker here when the bar once again
-          includes a separate real-time actual-usage fill. */}
-      <div
-        data-testid="runtime-vram-values"
-        className={cn(
-          "mt-1 flex items-center gap-1 whitespace-nowrap tabular-nums text-muted-foreground",
-          GPU_USAGE_TEXT_CLASS,
-        )}
-      >
-        <span className="font-semibold text-[var(--nt-text-neutral-super)]">
-          {formatVramValue(requestedMiB)}
-        </span>
-        <span>/</span>
-        <span>{formatVramValue(physicalMiB)}</span>
-        <span>GiB</span>
-      </div>
-    </div>
-  );
-};
-
+// The memory slot always shows the observed card, so the legend explains its
+// layers: the measured fill, the allocated track, and the physical size.
 const Legend = ({
   t,
 }: {
@@ -134,12 +92,16 @@ const Legend = ({
     className="ml-0 text-[11px] leading-4"
     items={[
       {
-        label: t("endpoints.fields.requestedMemory"),
-        markerClassName:
-          "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+        label: t("observations.actualMemory"),
+        markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
       },
       {
-        label: t("endpoints.fields.physicalMemory"),
+        label: t("observations.allocated"),
+        markerClassName:
+          "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
+      },
+      {
+        label: t("observations.physical"),
         markerClassName:
           "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
       },
@@ -183,6 +145,8 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
+  l1CacheByNode,
+  renderMemory,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
@@ -222,6 +186,8 @@ export default function EndpointRuntimeResourcesCard({
               <Replica
                 key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
                 group={group}
+                l1CacheByNode={l1CacheByNode}
+                renderMemory={renderMemory}
                 groupIndex={groupIndex}
                 requestedCpu={requestedCpu}
                 requestedMemory={requestedMemory}
@@ -278,6 +244,8 @@ export default function EndpointRuntimeResourcesCard({
 }
 
 function Replica({
+  renderMemory,
+  l1CacheByNode,
   group,
   groupIndex,
   requestedCpu,
@@ -288,6 +256,8 @@ function Replica({
   t,
 }: {
   group: EndpointReplicaResourceGroup;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+  renderMemory: RenderDeviceMemory;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -369,6 +339,8 @@ function Replica({
             <Host
               key={node.nodeId}
               node={node}
+              l1Cache={l1CacheByNode?.[node.nodeId]}
+              renderMemory={renderMemory}
               requestedCpu={requestedCpu}
               requestedMemory={requestedMemory}
               acceleratorType={acceleratorType}
@@ -383,7 +355,9 @@ function Replica({
 }
 
 function Host({
+  renderMemory,
   node,
+  l1Cache,
   requestedCpu,
   requestedMemory,
   acceleratorType,
@@ -391,6 +365,8 @@ function Host({
   t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
+  l1Cache?: NodeL1CacheUsage;
+  renderMemory: RenderDeviceMemory;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -412,7 +388,14 @@ function Host({
           </span>
           <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
             {t("common.fields.cpu")} {requestedCpu} ·{" "}
-            {t("common.fields.memory")} {requestedMemory} GiB ·{" "}
+            {t("common.fields.memory")} {requestedMemory} GiB
+            {l1Cache && (
+              <span data-testid="runtime-host-l1-cache">
+                {" · "}
+                {t("observations.l1KvCache")} {formatL1CacheUsage(l1Cache)}
+              </span>
+            )}{" "}
+            ·{" "}
             {formatCount(
               node.deviceCount,
               "endpoints.fields.card",
@@ -426,12 +409,13 @@ function Host({
           <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
             {node.devices.map((device, deviceIndex) => (
               <GpuCell
-                key={device.uuid || deviceIndex}
+                key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
                 device={device}
                 deviceIndex={deviceIndex}
                 acceleratorType={acceleratorType}
                 onCopyUuid={onCopyUuid}
                 t={t}
+                renderMemory={renderMemory}
               />
             ))}
           </div>
@@ -443,11 +427,13 @@ function Host({
 
 function GpuCell({
   device,
+  renderMemory,
   deviceIndex,
   acceleratorType,
   onCopyUuid,
   t,
 }: {
+  renderMemory: RenderDeviceMemory;
   device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
   deviceIndex: number;
   acceleratorType: string | null;
@@ -478,27 +464,37 @@ function GpuCell({
       data-testid="runtime-gpu-cell"
       className={cn(GPU_CELL_CLASS, GPU_GRID_CELL_CLASS)}
     >
-      <div className="flex min-w-0 items-center gap-1">
-        <span className="whitespace-nowrap text-sm font-semibold leading-5">
-          {t("clusters.fields.gpuNumber")} {gpuNumber}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          title={t("clusters.actions.copyUuid")}
-          aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
-          className="h-6 w-6 shrink-0 text-muted-foreground"
-          onClick={() =>
-            onCopyUuid(device.uuid, {
-              successMessage: t("clusters.messages.copyUuidSuccess"),
-              errorMessage: t("clusters.messages.copyUuidFailed"),
-            })
-          }
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="whitespace-nowrap text-sm font-semibold leading-5">
+            {t("clusters.fields.gpuNumber")} {gpuNumber}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title={t("clusters.actions.copyUuid")}
+            aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
+            className="h-6 w-6 shrink-0 text-muted-foreground"
+            onClick={() =>
+              onCopyUuid(device.uuid, {
+                successMessage: t("clusters.messages.copyUuidSuccess"),
+                errorMessage: t("clusters.messages.copyUuidFailed"),
+              })
+            }
+          >
+            <Copy className="h-3.5 w-3.5" />
+            <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
+          </Button>
+        </div>
+        <div
+          className={cn(
+            "shrink-0 whitespace-nowrap tabular-nums text-muted-foreground",
+            GPU_USAGE_TEXT_CLASS,
+          )}
         >
-          <Copy className="h-3.5 w-3.5" />
-          <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
-        </Button>
+          {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
+        </div>
       </div>
 
       {/* Clipped, the tooltip is the only way to read the name in full, so it
@@ -519,16 +515,7 @@ function GpuCell({
         productLabel
       )}
 
-      <div className="mt-2">
-        <VramBar
-          requestedMiB={device.memoryMiB}
-          physicalMiB={device.physicalMemoryMiB}
-        />
-      </div>
-
-      <div className={cn("mt-1 text-muted-foreground", GPU_USAGE_TEXT_CLASS)}>
-        {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
-      </div>
+      <div className="mt-2">{renderMemory(device, deviceIndex)}</div>
     </div>
   );
 }

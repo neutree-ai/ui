@@ -1,4 +1,5 @@
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
   metric: string;
@@ -40,15 +41,40 @@ export type NodeL1CacheUsage = {
   capacityGiB: number;
 };
 
+type AllocationEndpoint = {
+  metadata: { name: string; workspace: string | null };
+  spec: { model: { name: string } | null };
+  status: {
+    phase?: string | null;
+    resources?: EndpointResourceStatus | null;
+  } | null;
+};
+type ReplicaStatus = NonNullable<EndpointResourceStatus["replicas"]>[number];
+
+// The identity reading() matches a replica's samples on: endpoint, replica or
+// instance, and vGPU slice.
+export function toGpuAllocation(
+  endpoint: AllocationEndpoint,
+  replica: ReplicaStatus,
+  device: NonNullable<ReplicaStatus["devices"]>[number],
+): GpuAllocation {
+  return {
+    endpoint: endpoint.metadata.name,
+    workspace: endpoint.metadata.workspace ?? "default",
+    model: endpoint.spec.model?.name ?? "",
+    node: device.node_id || replica.node_id || "",
+    uuid: device.uuid,
+    replica: replica.replica_id ?? "",
+    instance: replica.instance_id,
+    vdevice: device.vdevice_index ?? undefined,
+    memoryMiB: device.memory_mib,
+    modelWeightsMiB: replica.model_weights_mib ?? null,
+    kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
+  };
+}
+
 export function gpuAllocations(
-  endpoints: Array<{
-    metadata: { name: string; workspace: string | null };
-    spec: { model: { name: string } | null };
-    status: {
-      phase?: string | null;
-      resources?: EndpointResourceStatus | null;
-    } | null;
-  }>,
+  endpoints: AllocationEndpoint[],
 ): GpuAllocation[] {
   return endpoints
     .flatMap((endpoint) => {
@@ -58,19 +84,9 @@ export function gpuAllocations(
       )
         return [];
       return (endpoint.status?.resources?.replicas ?? []).flatMap((replica) =>
-        (replica.devices ?? []).map((device) => ({
-          endpoint: endpoint.metadata.name,
-          workspace: endpoint.metadata.workspace ?? "default",
-          model: endpoint.spec.model?.name ?? "",
-          node: device.node_id || replica.node_id || "",
-          uuid: device.uuid,
-          replica: replica.replica_id ?? "",
-          instance: replica.instance_id,
-          vdevice: device.vdevice_index ?? undefined,
-          memoryMiB: device.memory_mib,
-          modelWeightsMiB: replica.model_weights_mib ?? null,
-          kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
-        })),
+        (replica.devices ?? []).map((device) =>
+          toGpuAllocation(endpoint, replica, device),
+        ),
       );
     })
     .sort(
@@ -227,4 +243,30 @@ export function allocationColor(name: string, position = 0): string {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return colors[1 + ((hash + position - 1) % (colors.length - 1))];
+}
+
+type ObservationStatusValue =
+  | "unavailable"
+  | "loading"
+  | "not_configured"
+  | "ok"
+  | "no_data";
+
+// The status line shared by every observation query: a failed request first,
+// then loading, then a backend without a query service, then whether any value
+// came back.
+export function observationStatus(
+  failed: boolean,
+  loading: boolean,
+  reported: string | undefined,
+  hasData: boolean,
+): ObservationStatusValue {
+  if (failed) return "unavailable";
+  if (loading) return "loading";
+  if (reported === "not_configured") return "not_configured";
+  return hasData ? "ok" : "no_data";
+}
+
+export function formatL1CacheUsage(usage: NodeL1CacheUsage): string {
+  return `${formatToDecimal(usage.usedGiB, 1) ?? "—"} / ${formatToDecimal(usage.capacityGiB, 1)} GiB`;
 }

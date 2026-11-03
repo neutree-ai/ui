@@ -103,6 +103,53 @@ describe("deviceHardwareInfo", () => {
 });
 
 describe("gpuAllocations", () => {
+  it("builds the replica identity with its fallbacks", () => {
+    expect(
+      gpuAllocations([
+        {
+          metadata: { name: "a", workspace: null },
+          spec: { model: { name: "m" } },
+          status: {
+            phase: "Running",
+            resources: {
+              replicas: [
+                {
+                  instance_id: "pod",
+                  node_id: "replica-node",
+                  model_weights_mib: 2048,
+                  devices: [
+                    {
+                      uuid: "gpu",
+                      node_id: "",
+                      vdevice_index: "1",
+                      product: "T4",
+                      memory_mib: 100,
+                      core_units: 100,
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]),
+    ).toEqual([
+      {
+        endpoint: "a",
+        workspace: "default",
+        model: "m",
+        node: "replica-node",
+        uuid: "gpu",
+        replica: "",
+        instance: "pod",
+        vdevice: "1",
+        memoryMiB: 100,
+        modelWeightsMiB: 2048,
+        kvCacheCapacityMiB: null,
+      },
+    ]);
+  });
+
   it.each(["Paused", "Deleted"])(
     "excludes allocations retained by a %s endpoint",
     (phase) => {
