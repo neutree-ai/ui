@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "cb35c8f7f98c0e100f1868c32490dadc",
   "src/pages/endpoints/edit.tsx": "ef661bb90e2dfbc2be9ac65b92fbc3f1",
   "src/pages/endpoints/list.tsx": "74ae1fda1411a31fa8ddcab05f4d7162",
-  "src/pages/endpoints/show.tsx": "424f1a911e113d0e7f2ff6705496b5be",
+  "src/pages/endpoints/show.tsx": "9a12b6d1332a587c5add476fc37020f0",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "2e019fc4a0e9b0a2fa52bcb5b44906b1",
   "src/pages/clusters/edit.tsx": "bfb67faeac1f09a71a10f782b7cb9d59",
@@ -286,8 +286,8 @@
   "src/domains/api-key/hooks/use-workspace-usage.ts": "5f008c9efecb5f75398ae4fb67414d69",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
   "src/domains/endpoint/lib/vgpu.ts": "f469e7def2573f6b5f0eb3e78a905817",
-  "src/domains/endpoint/lib/resource-status.ts": "7cd97a910989338a1b9f4dff4c071577",
-  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "e4980ab762113a03f5bd9d757c18af7d",
+  "src/domains/endpoint/lib/resource-status.ts": "47ae5d5b6bb349c10a15478c7f89f9ad",
+  "src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": "d04137646d3b41889913a34e71829c77",
   "src/domains/cluster/lib/resource-status.ts": "9e759f014c4589740efe23ebdaf8bf74",
   "src/foundation/lib/gpu-device-resources.ts": "3b39f0e47c43bead4fd3f9ed117572f3",
   "src/foundation/components/GpuDeviceResourcesView.tsx": "ee8aba18d41b03177714851d8eb61e1d",
@@ -484,5 +484,7 @@
   "src/foundation/lib/accelerator-tflops.ts": "3695cd0ec68ff2f81b5b25297664e68d",
   "src/foundation/hooks/use-accelerator-observations.ts": "233b1046646e174d5b2447fc5ee29859",
   "src/foundation/components/GpuObservationCard.tsx": "6ee7139d56d4e2792a3ef1932ed1d3fb",
-  "src/domains/cluster/components/ClusterFlops.tsx": "197c59e62c06e8ff16a24b32093d4dc1"
+  "src/domains/cluster/components/ClusterFlops.tsx": "197c59e62c06e8ff16a24b32093d4dc1",
+  "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "8bd159b754c5c548bb9e2b3c30122165",
+  "src/domains/endpoint/hooks/use-endpoint-performance-observations.ts": "52d1f1840fc64c3e005123cb8203341c"
 }
