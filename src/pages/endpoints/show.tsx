@@ -40,6 +40,7 @@ import {
   ObservationStatus,
 } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
@@ -219,6 +220,22 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   if (!record) {
     return <div>{t("pages.error.notFound")}</div>;
   }
+
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? getEndpointSplitDashboardProps(grafanaUrl, selectedPanel, {
+          clusterName: record.spec.cluster,
+          endpointName: record.metadata.name,
+          workspace: record.metadata.workspace ?? "default",
+          cacheProvider: record.spec.kv_cache?.provider,
+          cacheNodes:
+            record.spec.kv_cache?.provider === "zcache" &&
+            cacheStatus?.current?.enabled &&
+            !cacheStatus.observation_error
+              ? cacheStatus.nodes?.filter((node) => node.runtime === "Ready")
+              : undefined,
+        })
+      : null;
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
@@ -480,8 +497,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           >
             {grafanaUrl ? (
               <div className="flex flex-col gap-4 h-full">
-                {showSelector && (
-                  <div className="flex justify-start pb-2">
+                <div className="flex items-center justify-between gap-4 pb-2">
+                  {showSelector && (
                     <SegmentedControl
                       ariaLabel={t("common.tabs.monitor")}
                       className="shrink-0"
@@ -511,21 +528,19 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       onValueChange={setSelectedPanel}
                       value={selectedPanel || undefined}
                     />
-                  </div>
-                )}
+                  )}
+                  {monitorDashboardProps && (
+                    <div className="ml-auto shrink-0">
+                      <GrafanaDashboardLink {...monitorDashboardProps} />
+                    </div>
+                  )}
+                </div>
 
-                {selectedPanel ? (
+                {monitorDashboardProps ? (
                   <GrafanaDashboard
-                    {...getEndpointSplitDashboardProps(
-                      grafanaUrl,
-                      selectedPanel,
-                      {
-                        clusterName: record.spec.cluster,
-                        endpointName: record.metadata.name,
-                      },
-                    )}
+                    {...monitorDashboardProps}
                     className="flex-1"
-                    hideVariables
+                    hideVariables={selectedPanel !== "cache"}
                   />
                 ) : null}
               </div>
