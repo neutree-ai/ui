@@ -274,6 +274,35 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     );
   });
 
+  it("keeps the GPU total empty when the cluster reports no accelerator pool", () => {
+    renderPanel(
+      <EndpointClusterGpuResourcesPanel
+        resourceInfo={{
+          ...resourceInfo,
+          allocatable: {
+            ...resourceInfo.allocatable!,
+            accelerator_groups: null,
+          },
+          available: {
+            ...resourceInfo.available!,
+            accelerator_groups: null,
+          },
+          accelerator_metadata: undefined,
+        }}
+        currentCluster="cluster-a"
+        nodeCount={2}
+        virtualizationEnabled={false}
+        t={t}
+      />,
+    );
+
+    openClusterDetails();
+
+    expect(screen.getByTestId("endpoint-cluster-node-count").textContent).toBe(
+      "2 Nodes · -",
+    );
+  });
+
   it("does not repeat GPU inventory already present in node cards", () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
