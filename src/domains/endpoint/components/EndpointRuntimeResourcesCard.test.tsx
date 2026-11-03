@@ -2,7 +2,6 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
 } from "./EndpointRuntimeResourcesCard";
@@ -56,10 +55,19 @@ const bareDevice = (overrides: Partial<Device> = {}): Device => ({
   ...overrides,
 });
 
-const vramValues = () =>
-  within(screen.getByTestId("runtime-gpu-cell"))
-    .getByTestId("runtime-vram-values")
-    .textContent?.replace(/\s/g, "");
+// The page fills the memory slot with the observed card; here it only
+// reports which device and position it was given.
+const RuntimeCard = (
+  props: Omit<
+    ComponentProps<typeof EndpointRuntimeResourcesCard>,
+    "renderMemory"
+  >,
+) => (
+  <EndpointRuntimeResourcesCard
+    renderMemory={(device, index) => `memory:${device.uuid}#${index}`}
+    {...props}
+  />
+);
 
 describe("EndpointRuntimeResourcesCard", () => {
   beforeEach(() => {
@@ -74,7 +82,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       );
 
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         requestedResources={{
           cpu: 12,
           memory: 48,
@@ -129,25 +137,14 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(screen.queryByText(/endpoints\.fields\.instance/)).toBeNull();
 
     const [firstCell] = screen.getAllByTestId("runtime-gpu-cell");
-    expect(
-      within(firstCell)
-        .getByTestId("runtime-vram-values")
-        .textContent?.replace(/\s/g, ""),
-    ).toBe("8/80GiB");
-    expect(
-      within(firstCell)
-        .getByTestId("runtime-vram-bar")
-        .getAttribute("aria-valuenow"),
-    ).toBe("10");
-    // The summary line lives outside the card, and the card shows only the
-    // requested VRAM, never the actual usage.
+    within(firstCell).getByText(/^memory:.+#0$/);
+    // The allocated-card summary lives outside the card.
     expect(screen.queryByText(/endpoints\.fields\.allocatedCards/)).toBeNull();
-    expect(screen.queryByText("endpoints.fields.actualMemory")).toBeNull();
   });
 
   it("uses the shared placeholder when a replica has no identifier", () => {
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         requestedResources={{
           cpu: 1,
           memory: 1,
@@ -164,14 +161,13 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(within(replica).getByTestId("empty-value").textContent).toBe("-");
   });
 
-  it("falls back to a dash when physical VRAM is unavailable", () => {
+  it("falls back to a dash when the device reports no resources", () => {
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         resources={withReplicas(makeReplica({ devices: [bareDevice()] }))}
       />,
     );
 
-    expect(vramValues()).toBe("8/-GiB");
     const bodyText = document.body.textContent ?? "";
     expect(bodyText).toContain("common.fields.cpu -");
     expect(bodyText).toContain("common.fields.memory -");
@@ -180,37 +176,9 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
   });
 
-  it("uses matching cluster metadata when device physical VRAM is unavailable", () => {
-    const clusterResourceInfo: ClusterResourceInfo = {
-      allocatable: null,
-      available: null,
-      node_resources: null,
-      accelerator_metadata: {
-        nvidia_gpu: {
-          products: { "Tesla-T4": { memory_total_mib: 15 * 1024 } },
-        },
-      },
-    };
-
-    render(
-      <EndpointRuntimeResourcesCard
-        requestedResources={{
-          cpu: 4,
-          memory: 8,
-          gpu: 1,
-          accelerator: { type: "nvidia_gpu", product: "Tesla-T4" },
-        }}
-        clusterResourceInfo={clusterResourceInfo}
-        resources={withReplicas(makeReplica({ devices: [bareDevice()] }))}
-      />,
-    );
-
-    expect(vramValues()).toBe("8/15GiB");
-  });
-
   it("uses the requested vGPU core percentage when runtime core units are unavailable", () => {
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         requestedResources={{
           cpu: 12,
           memory: 48,
@@ -234,34 +202,11 @@ describe("EndpointRuntimeResourcesCard", () => {
     screen.getByText("clusters.fields.coreUsage 50");
   });
 
-  it("does not expose actual VRAM usage when runtime status includes it", () => {
-    render(
-      <EndpointRuntimeResourcesCard
-        resources={withReplicas(
-          makeReplica({
-            devices: [
-              makeDevice({
-                available: { memory_mib: 69120, core_units: 65 },
-              }),
-            ],
-          }),
-        )}
-      />,
-    );
-
-    const gpuCell = screen.getByTestId("runtime-gpu-cell");
-    expect(
-      within(gpuCell).queryByTestId("runtime-vram-over-requested"),
-    ).toBeNull();
-    expect(vramValues()).toBe("8/80GiB");
-    expect(gpuCell.textContent).not.toContain("12.5");
-  });
-
   it("exposes a long replica name via title", () => {
     const longName =
       "endpoint-with-a-very-long-replica-name-that-should-truncate";
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         resources={withReplicas(makeReplica({ replica_id: longName }))}
       />,
     );
@@ -270,9 +215,7 @@ describe("EndpointRuntimeResourcesCard", () => {
   });
 
   it("copies a GPU UUID from the GPU cell", () => {
-    render(
-      <EndpointRuntimeResourcesCard resources={withReplicas(makeReplica())} />,
-    );
+    render(<RuntimeCard resources={withReplicas(makeReplica())} />);
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -287,7 +230,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     vi.mocked(useIsTruncated).mockReturnValue(true);
 
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         resources={withReplicas(
           makeReplica({ devices: [makeDevice({ product: longProduct })] }),
         )}
@@ -308,9 +251,7 @@ describe("EndpointRuntimeResourcesCard", () => {
   });
 
   it("leaves a product name that fits alone", () => {
-    render(
-      <EndpointRuntimeResourcesCard resources={withReplicas(makeReplica())} />,
-    );
+    render(<RuntimeCard resources={withReplicas(makeReplica())} />);
 
     const product = screen.getByTestId("runtime-gpu-product");
     expect(product.getAttribute("tabindex")).toBeNull();
@@ -324,7 +265,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     vi.mocked(useIsTruncated).mockReturnValue(true);
 
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         resources={withReplicas(
           makeReplica({ devices: [makeDevice({ product: "" })] }),
         )}
@@ -365,15 +306,13 @@ describe("EndpointRuntimeResourcesCard", () => {
   });
 
   it("renders nothing when runtime resources are empty", () => {
-    const { container } = render(
-      <EndpointRuntimeResourcesCard resources={null} />,
-    );
+    const { container } = render(<RuntimeCard resources={null} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("renders product summary fallback when no replicas are present", () => {
     render(
-      <EndpointRuntimeResourcesCard
+      <RuntimeCard
         resources={{
           summary: {
             products: { "Tesla-T4": { memory_mib: 30720, core_units: 0 } },

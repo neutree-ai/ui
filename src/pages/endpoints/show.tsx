@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef } from "react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -50,6 +50,7 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   gpuAllocations,
   nodeL1CacheByNode,
+  toGpuAllocation,
 } from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
@@ -154,16 +155,22 @@ const getSchedulerText = (
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
   const { grafanaUrl, systemInfo } = useSystemApi();
+  // Live observations and the polling that feeds them only serve the basic
+  // tab, so the other tabs do not keep refetching and re-rendering the page.
+  const [tab, setTab] = useState("basic");
+  const onBasicTab = tab === "basic";
   const {
     query: { data, isLoading },
-  } = useShow<Endpoint>({ queryOptions: { refetchInterval: 15000 } });
+  } = useShow<Endpoint>({
+    queryOptions: { refetchInterval: onBasicTab ? 15000 : false },
+  });
   const record = data?.data;
   const isPaused = record?.status?.phase === "Paused";
   const observations = useAcceleratorObservations(
     "endpoints",
     record?.metadata.workspace,
     record?.metadata.name,
-    !isPaused,
+    !isPaused && onBasicTab,
   );
   const allocations = gpuAllocations(record ? [record] : []);
 
@@ -190,7 +197,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     ],
     queryOptions: {
       enabled: Boolean(record?.spec.cluster),
-      refetchInterval: 30_000,
+      refetchInterval: onBasicTab ? 30_000 : false,
     },
   });
 
@@ -226,6 +233,18 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
 
+  // The card reads only this replica's samples, so it gets the same
+  // allocation identity the cluster view derives from the raw status.
+  const replicaAllocation = (device: EndpointReplicaResourceRow) => {
+    const replica = record.status?.resources?.replicas?.find(
+      (r) => r.instance_id === device.instanceId,
+    );
+    const raw = replica?.devices?.find(
+      (d) => d.uuid === device.uuid && d.vdevice_index === device.vdeviceIndex,
+    );
+    return replica && raw ? toGpuAllocation(record, replica, raw) : undefined;
+  };
+
   const renderDeviceObservation = (
     device: EndpointReplicaResourceRow,
     deviceIndex: number,
@@ -246,19 +265,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       tflopsOverrides={tflopsOverrides}
       samples={observations.samples}
       allocations={allocations}
-      replica={{
-        endpoint: record.metadata.name,
-        workspace: record.metadata.workspace ?? "default",
-        model: record.spec.model?.name ?? "",
-        node: device.nodeId,
-        uuid: device.uuid,
-        replica: device.replicaId,
-        instance: device.instanceId,
-        vdevice: device.vdeviceIndex ?? undefined,
-        memoryMiB: device.memoryMiB,
-        modelWeightsMiB: device.modelWeightsMiB,
-        kvCacheCapacityMiB: device.kvCacheCapacityMiB,
-      }}
+      replica={replicaAllocation(device)}
     />
   );
   const schedulerText = getSchedulerText(
@@ -289,7 +296,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </>
         )}
       >
-        <Tabs defaultValue="basic" className="flex h-full flex-col">
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="flex h-full flex-col"
+        >
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"

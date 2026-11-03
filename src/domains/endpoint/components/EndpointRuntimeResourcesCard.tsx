@@ -17,7 +17,6 @@ import {
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
@@ -33,11 +32,7 @@ import {
   GPU_GRID_STYLE,
   GPU_USAGE_TEXT_CLASS,
 } from "@/foundation/lib/gpu-device-resources";
-import {
-  formatMiBAsGiB,
-  formatMiBAsGiBValue,
-  formatToDecimal,
-} from "@/foundation/lib/unit";
+import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type {
   ClusterResourceInfo,
@@ -57,7 +52,7 @@ type EndpointRuntimeResourcesCardProps = {
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory?: RenderDeviceMemory;
+  renderMemory: RenderDeviceMemory;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -68,12 +63,6 @@ const formatCoreLimit = (value: number): ReactNode =>
 
 const formatMemoryGiB = (value: number): ReactNode =>
   formatMiBAsGiB(value) ?? <EmptyValue />;
-
-const formatVramValue = (value: number | null): ReactNode => {
-  if (value == null) return <EmptyValue />;
-  const formatted = formatMiBAsGiBValue(value);
-  return formatted == null ? <EmptyValue /> : formatted.replace(/\.0$/, "");
-};
 
 const formatCount = (
   count: number,
@@ -92,86 +81,27 @@ const formatAllocatedCardCount = (
       : "endpoints.fields.allocatedCards",
   )}`;
 
-const VRAM_BAR_PERCENT_MAX = 100;
-
-const VramBar = ({
-  requestedMiB,
-  physicalMiB,
-}: {
-  requestedMiB: number;
-  physicalMiB: number | null;
-}) => {
-  const hasScale = physicalMiB != null && physicalMiB > 0;
-  const requestedPercent = hasScale
-    ? Math.min(
-        VRAM_BAR_PERCENT_MAX,
-        Math.max(0, (requestedMiB / physicalMiB) * VRAM_BAR_PERCENT_MAX),
-      )
-    : 0;
-
-  return (
-    <div className="min-w-0">
-      <MetricBar
-        data-testid="runtime-vram-bar"
-        value={requestedPercent}
-        series="neutral"
-        track={hasScale ? "outlined" : "unavailable"}
-      />
-      {/* Restore a requested-VRAM boundary marker here when the bar once again
-          includes a separate real-time actual-usage fill. */}
-      <div
-        data-testid="runtime-vram-values"
-        className={cn(
-          "mt-1 flex items-center gap-1 whitespace-nowrap tabular-nums text-muted-foreground",
-          GPU_USAGE_TEXT_CLASS,
-        )}
-      >
-        <span className="font-semibold text-[var(--nt-text-neutral-super)]">
-          {formatVramValue(requestedMiB)}
-        </span>
-        <span>/</span>
-        <span>{formatVramValue(physicalMiB)}</span>
-        <span>GiB</span>
-      </div>
-    </div>
-  );
-};
-
+// The memory slot always shows the observed card, so the legend explains its
+// layers: the measured fill, the allocated track, and the physical size.
 const Legend = ({
   t,
-  observations = false,
 }: {
   t: (key: string, options?: Record<string, unknown>) => string;
-  observations?: boolean;
 }) => (
   <ResourceUsageLegend
     className="ml-0 text-[11px] leading-4"
     items={[
-      ...(observations
-        ? [
-            {
-              label: t("observations.actualMemory"),
-              markerClassName:
-                "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
-            },
-          ]
-        : []),
       {
-        label: t(
-          observations
-            ? "observations.allocated"
-            : "endpoints.fields.requestedMemory",
-        ),
-        markerClassName: observations
-          ? "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30"
-          : "h-2 w-2 rounded-sm bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+        label: t("observations.actualMemory"),
+        markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
       },
       {
-        label: t(
-          observations
-            ? "observations.physical"
-            : "endpoints.fields.physicalMemory",
-        ),
+        label: t("observations.allocated"),
+        markerClassName:
+          "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
+      },
+      {
+        label: t("observations.physical"),
         markerClassName:
           "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
       },
@@ -327,7 +257,7 @@ function Replica({
 }: {
   group: EndpointReplicaResourceGroup;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory?: RenderDeviceMemory;
+  renderMemory: RenderDeviceMemory;
   groupIndex: number;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
@@ -402,7 +332,7 @@ function Replica({
           <span className="text-xs text-muted-foreground">
             {t("endpoints.sections.gpuAllocation")}
           </span>
-          <Legend t={t} observations={!!renderMemory} />
+          <Legend t={t} />
         </div>
         <div className="mt-3">
           {group.nodes.map((node) => (
@@ -436,7 +366,7 @@ function Host({
 }: {
   node: EndpointReplicaNodeResourceGroup;
   l1Cache?: NodeL1CacheUsage;
-  renderMemory?: RenderDeviceMemory;
+  renderMemory: RenderDeviceMemory;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
   acceleratorType: string | null;
@@ -503,7 +433,7 @@ function GpuCell({
   onCopyUuid,
   t,
 }: {
-  renderMemory?: RenderDeviceMemory;
+  renderMemory: RenderDeviceMemory;
   device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
   deviceIndex: number;
   acceleratorType: string | null;
@@ -585,16 +515,7 @@ function GpuCell({
         productLabel
       )}
 
-      <div className="mt-2">
-        {renderMemory ? (
-          renderMemory(device, deviceIndex)
-        ) : (
-          <VramBar
-            requestedMiB={device.memoryMiB}
-            physicalMiB={device.physicalMemoryMiB}
-          />
-        )}
-      </div>
+      <div className="mt-2">{renderMemory(device, deviceIndex)}</div>
     </div>
   );
 }

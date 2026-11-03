@@ -48,8 +48,6 @@ describe("endpoint resource status helpers", () => {
         {
           instance_id: "endpoint-abc",
           replica_id: "uid-1",
-          model_weights_mib: 2048,
-          kv_cache_capacity_mib: 4096,
           node_id: "node-1",
           devices: [
             {
@@ -80,7 +78,7 @@ describe("endpoint resource status helpers", () => {
       ],
     };
 
-    expect(getEndpointReplicaResourceRows(resourceStatus)).toMatchObject([
+    expect(getEndpointReplicaResourceRows(resourceStatus)).toEqual([
       {
         instanceId: "endpoint-abc",
         replicaId: "uid-1",
@@ -92,8 +90,6 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 100,
         physicalMemoryMiB: 16384,
         actualMemoryMiB: 12288,
-        modelWeightsMiB: 2048,
-        kvCacheCapacityMiB: 4096,
         vdeviceIndex: "1",
       },
       {
@@ -226,7 +222,7 @@ describe("endpoint resource status helpers", () => {
       ],
     };
 
-    expect(getEndpointReplicaResourceGroups(resourceStatus)).toMatchObject([
+    expect(getEndpointReplicaResourceGroups(resourceStatus)).toEqual([
       {
         instanceId: "endpoint-abc",
         replicaId: "endpoint-abc-multi",
