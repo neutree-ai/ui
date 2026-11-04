@@ -498,5 +498,6 @@
   "src/domains/log-sink/components/LogSinkEnableAction.tsx": "87ecd20ab60f8198c791dca75ccabee7",
   "src/domains/log-sink/lib/forwarding-summary.ts": "e9879c3b420e20d6f57b4a3f7d45e553",
   "src/domains/role/lib/permission-resource-order.ts": "adf8ba8e52a78108c0a8f3520cb2107f",
-  "src/pages/ai-traces/components/LogForwardingButton.tsx": "ebf39f7fa67dad5359243be2e167079c"
+  "src/pages/ai-traces/components/LogForwardingButton.tsx": "ebf39f7fa67dad5359243be2e167079c",
+  "src/domains/log-sink/testing/builders.ts": "14953d93a5c8e4bc2420d8856684d61e"
 }

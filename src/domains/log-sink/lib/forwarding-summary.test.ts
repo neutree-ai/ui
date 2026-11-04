@@ -1,19 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { LogSink } from "@/domains/log-sink/types";
+import { makeLogSink } from "@/domains/log-sink/testing/builders";
 import { summarizeForwarding } from "./forwarding-summary";
 
 const sink = (
   phase: string | undefined,
   options: { enabled?: boolean; deleted?: boolean } = {},
 ) =>
-  ({
-    metadata: {
-      name: "s",
-      deletion_timestamp: options.deleted ? "2026-01-01T00:00:00Z" : null,
-    },
-    spec: { type: "victorialogs", enabled: options.enabled },
-    status: phase ? { phase } : null,
-  }) as unknown as LogSink;
+  makeLogSink({
+    phase,
+    spec: { enabled: options.enabled },
+    deleted: options.deleted,
+  });
 
 describe("summarizeForwarding", () => {
   it("counts enabled destinations, treating an absent flag as enabled", () => {

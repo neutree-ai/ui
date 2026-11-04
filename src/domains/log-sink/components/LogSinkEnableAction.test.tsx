@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { LogSink } from "@/domains/log-sink/types";
+import { makeLogSink } from "@/domains/log-sink/testing/builders";
 
 const mocks = vi.hoisted(() => ({
   invalidate: vi.fn(),
@@ -26,16 +26,8 @@ vi.mock("@/foundation/components/Table", () => ({
 
 import { LogSinkEnableAction } from "./LogSinkEnableAction";
 
-const sink = (enabled?: boolean): LogSink =>
-  ({
-    id: 3,
-    metadata: { name: "ext-a" },
-    spec: {
-      type: "victorialogs",
-      enabled,
-      victorialogs: { url: "http://vl", auth: { type: "bearer" } },
-    },
-  }) as unknown as LogSink;
+const sink = (enabled?: boolean) =>
+  makeLogSink({ name: "ext-a", spec: { enabled } });
 
 describe("LogSinkEnableAction", () => {
   beforeEach(() => {
@@ -60,7 +52,7 @@ describe("LogSinkEnableAction", () => {
         spec: {
           type: "victorialogs",
           enabled: next,
-          victorialogs: { url: "http://vl", auth: { type: "bearer" } },
+          victorialogs: { url: "https://vl:9428" },
         },
       });
       await waitFor(() => expect(mocks.invalidate).toHaveBeenCalled());

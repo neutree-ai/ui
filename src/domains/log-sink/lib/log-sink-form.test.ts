@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import {
+  makeLogSink,
+  makeLogSinkFormValues,
+} from "@/domains/log-sink/testing/builders";
 import type { LogSink } from "@/domains/log-sink/types";
 import {
   bytesToGib,
-  emptyLogSinkFormValues,
   gibToBytes,
-  type LogSinkFormValues,
   toLogSinkFormValues,
   toLogSinkPayload,
   toLogSinkSpec,
@@ -15,25 +17,7 @@ import {
   validateTimeoutSeconds,
 } from "./log-sink-form";
 
-const record = (spec: LogSink["spec"]): LogSink =>
-  ({
-    id: 1,
-    api_version: "v1",
-    kind: "LogSink",
-    metadata: { name: "vl", creation_timestamp: "2026-01-01" },
-    spec,
-    status: null,
-  }) as LogSink;
-
-const withForm = (
-  patch: (values: LogSinkFormValues) => void,
-): LogSinkFormValues => {
-  const values = emptyLogSinkFormValues();
-  values.metadata.name = "vl";
-  values.spec.victorialogs.url = "https://vl.example.com:9428";
-  patch(values);
-  return values;
-};
+const record = (spec: LogSink["spec"]) => makeLogSink({ spec });
 
 describe("GiB <-> bytes", () => {
   it("treats blank as unset", () => {
@@ -60,16 +44,16 @@ describe("GiB <-> bytes", () => {
 
 describe("toLogSinkSpec", () => {
   it("builds a minimal spec with no auth and no optional fields", () => {
-    expect(toLogSinkSpec(withForm(() => {}))).toEqual({
+    expect(toLogSinkSpec(makeLogSinkFormValues())).toEqual({
       type: "victorialogs",
       enabled: true,
-      victorialogs: { url: "https://vl.example.com:9428" },
+      victorialogs: { url: "https://vl:9428" },
     });
   });
 
   it("builds basic auth with password", () => {
     const spec = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.victorialogs.auth = {
           type: "basic",
           username: "u",
@@ -87,7 +71,7 @@ describe("toLogSinkSpec", () => {
 
   it("builds bearer auth with token only", () => {
     const spec = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.victorialogs.auth = {
           type: "bearer",
           username: "stale",
@@ -101,7 +85,7 @@ describe("toLogSinkSpec", () => {
 
   it("omits auth for none", () => {
     const spec = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.victorialogs.auth.type = "none";
         v.spec.victorialogs.auth.token = "stale";
       }),
@@ -111,7 +95,7 @@ describe("toLogSinkSpec", () => {
 
   it("omits blank secrets so the API keeps the stored ones", () => {
     const basic = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.victorialogs.auth.type = "basic";
         v.spec.victorialogs.auth.username = "u";
       }),
@@ -119,7 +103,7 @@ describe("toLogSinkSpec", () => {
     expect(basic.victorialogs?.auth).toEqual({ type: "basic", username: "u" });
 
     const bearer = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.victorialogs.auth.type = "bearer";
       }),
     );
@@ -128,7 +112,7 @@ describe("toLogSinkSpec", () => {
 
   it("writes advanced fields only when set", () => {
     const spec = toLogSinkSpec(
-      withForm((v) => {
+      makeLogSinkFormValues((v) => {
         v.spec.enabled = false;
         v.spec.victorialogs.ca_cert = "PEM";
         v.spec.victorialogs.insecure_skip_verify = true;
@@ -144,7 +128,7 @@ describe("toLogSinkSpec", () => {
       type: "victorialogs",
       enabled: false,
       victorialogs: {
-        url: "https://vl.example.com:9428",
+        url: "https://vl:9428",
         ca_cert: "PEM",
         insecure_skip_verify: true,
         timeout_seconds: 30,
@@ -157,10 +141,7 @@ describe("toLogSinkSpec", () => {
 
 describe("toLogSinkPayload", () => {
   it("sends the whole object on create", () => {
-    const payload = toLogSinkPayload(
-      withForm(() => {}),
-      "create",
-    );
+    const payload = toLogSinkPayload(makeLogSinkFormValues(), "create");
     expect(payload).toMatchObject({
       api_version: "v1",
       kind: "LogSink",
@@ -169,10 +150,7 @@ describe("toLogSinkPayload", () => {
   });
 
   it("sends only spec on edit", () => {
-    const payload = toLogSinkPayload(
-      withForm(() => {}),
-      "edit",
-    );
+    const payload = toLogSinkPayload(makeLogSinkFormValues(), "edit");
     expect(Object.keys(payload)).toEqual(["spec"]);
   });
 });
@@ -185,7 +163,7 @@ describe("reopen: stored -> form -> stored is unchanged", () => {
         type: "victorialogs",
         enabled: true,
         victorialogs: {
-          url: "https://vl.example.com:9428",
+          url: "https://vl:9428",
           ca_cert: "PEM",
           insecure_skip_verify: true,
           timeout_seconds: 15,
@@ -246,7 +224,7 @@ describe("validation", () => {
     ["http://", "invalid"],
     ["https://vl:9428?x=1", "queryOrFragment"],
     ["https://vl:9428/#frag", "queryOrFragment"],
-    ["https://vl.example.com:9428", undefined],
+    ["https://vl:9428", undefined],
   ])("url %j -> %s", (url, error) => {
     expect(validateSinkUrl(url)).toBe(error);
   });

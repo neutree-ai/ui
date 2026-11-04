@@ -1,23 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { emptyLogSinkFormValues, toLogSinkSpec } from "./log-sink-form";
+import { makeLogSinkFormValues } from "@/domains/log-sink/testing/builders";
+import { toLogSinkSpec } from "./log-sink-form";
 import {
   buildTestConnectionRequest,
   readTestConnectionError,
 } from "./test-connection";
 
-const values = () => {
-  const v = emptyLogSinkFormValues();
-  v.metadata.name = "vl";
-  v.spec.victorialogs.url = "https://vl:9428";
-  v.spec.victorialogs.auth = {
-    type: "bearer",
-    username: "",
-    password: "",
-    token: "",
-  };
-  v.spec.buffer.max_size_gib = "2";
-  return v;
-};
+const values = () =>
+  makeLogSinkFormValues((v) => {
+    v.spec.victorialogs.auth.type = "bearer";
+    v.spec.buffer.max_size_gib = "2";
+  });
 
 describe("buildTestConnectionRequest", () => {
   it("create: sends only the spec the submit would save", () => {

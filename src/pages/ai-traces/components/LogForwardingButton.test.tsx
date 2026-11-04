@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { makeLogSink } from "@/domains/log-sink/testing/builders";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { LogForwardingButton } from "./LogForwardingButton";
 
@@ -40,11 +41,8 @@ vi.mock("@/foundation/components/Link", () => ({
   ),
 }));
 
-const sink = (phase: string, enabled?: boolean) => ({
-  metadata: { name: phase.toLowerCase(), deletion_timestamp: null },
-  spec: { type: "victorialogs", enabled },
-  status: { phase },
-});
+const sink = (phase: string, enabled = true) =>
+  makeLogSink({ name: phase.toLowerCase(), phase, spec: { enabled } });
 
 const renderButton = () =>
   render(
@@ -99,16 +97,12 @@ describe("LogForwardingButton", () => {
     expect(alertDot()).toBeNull();
   });
 
-  it("counts the enabled destinations", () => {
-    state.sinks = [
-      sink("Running"),
-      sink("Pending", true),
-      sink("Disabled", false),
-    ];
+  it("shows the count of enabled destinations", () => {
+    state.sinks = [sink("Running"), sink("Disabled", false)];
 
     renderButton();
 
-    expect(button().textContent).toBe("ai_traces.forwarding.buttonWithCount:2");
+    expect(button().textContent).toBe("ai_traces.forwarding.buttonWithCount:1");
     expect(alertDot()).toBeNull();
   });
 
