@@ -7,7 +7,9 @@ import {
   Database,
   Eye,
   FileText,
+  Gauge,
   HardDrive,
+  KeyRound,
   Layers,
   LayoutTemplate,
   Network,
@@ -19,6 +21,7 @@ import {
   Trash,
   UserCheck,
   UsersRound,
+  Zap,
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -36,6 +39,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   create: <Plus className="h-4 w-4" />,
   update: <Pencil className="h-4 w-4" />,
   delete: <Trash className="h-4 w-4" />,
+  invoke: <Zap className="h-4 w-4" />,
 };
 
 const resourceIcons: Record<string, React.ReactNode> = {
@@ -52,6 +56,8 @@ const resourceIcons: Record<string, React.ReactNode> = {
   identity_source: <ShieldCheck className="h-5 w-5" />,
   org_unit: <Network className="h-5 w-5" />,
   team: <UsersRound className="h-5 w-5" />,
+  team_api_key: <KeyRound className="h-5 w-5" />,
+  team_usage: <Gauge className="h-5 w-5" />,
 };
 
 const hiddenResources = new Set(["static_node_cluster", "static_node"]);

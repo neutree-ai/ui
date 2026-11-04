@@ -465,8 +465,10 @@ export const resources: ResourceProps[] = [
     meta: {
       icon: <Network />,
       parent: "access_control",
-      // Also granted on an OrgUnit subtree (department admins).
+      // Also granted on an OrgUnit subtree (department admins), or on a
+      // Team (team admins).
       requiredPermission: "org_unit:read",
+      orPermission: "team:read",
     },
   },
   {
@@ -741,7 +743,10 @@ function App({ i18nProvider }: { i18nProvider: I18nProvider }) {
                 <Route
                   path="/organization"
                   element={
-                    <PermissionGate permission="org_unit:read">
+                    <PermissionGate
+                      permission="org_unit:read"
+                      orPermission="team:read"
+                    >
                       <Outlet />
                     </PermissionGate>
                   }

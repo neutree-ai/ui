@@ -1,14 +1,16 @@
-import { useCustomMutation, useList } from "@refinedev/core";
+import { useCustom, useCustomMutation, useList } from "@refinedev/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   AllowedModel,
   ApiKeyLimits,
   QuotaGranularity,
 } from "@/domains/api-key/types";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import {
   type ExternalModelSourceSpec,
   type ModelSource,
+  modelSourceFromWorkspaceModelRow,
   modelSourceRank,
   resolveExternalModelSource,
   SELF_HOSTED_MODEL_SOURCE,
@@ -532,6 +534,78 @@ export function useWorkspaceModels(
 
     return options.sort(compareWorkspaceModelOptions);
   }, [endpointsData?.data, externalEndpointsData?.data, workspace]);
+}
+
+type InvokableModelRow = {
+  model: string;
+  type: string;
+  endpoint_name: string;
+  source_label: string | null;
+};
+
+/** list_invokable_models rows as picker options; phases come from `known`. */
+export function invokableModelOptions(
+  rows: InvokableModelRow[],
+  known: WorkspaceModelOption[],
+  workspace: string,
+): WorkspaceModelOption[] {
+  const byValue = new Map(known.map((option) => [option.value, option]));
+  const options: WorkspaceModelOption[] = [];
+  for (const row of rows) {
+    const model = String(row.model ?? "").trim();
+    const endpointName = String(row.endpoint_name ?? "").trim();
+    if (!model || !endpointName) continue;
+    const type = row.type === "external" ? "external" : "internal";
+    const value = modelOptionValue(type, endpointName, model);
+    const seen = byValue.get(value);
+    options.push({
+      value,
+      label: model,
+      model,
+      endpointName,
+      type,
+      source:
+        type === "internal"
+          ? resolveModelSource("internal")
+          : (modelSourceFromWorkspaceModelRow(row) ?? seen?.source),
+      phase: seen?.phase ?? null,
+      workspace,
+    });
+  }
+  return options.sort(compareWorkspaceModelOptions);
+}
+
+// The models an API key may be limited to, from list_invokable_models: it
+// needs model:invoke only, so a user who cannot read endpoints still gets a
+// list. With teamId, the models of that Team's keys. Falls back to the endpoint
+// lists for a personal key when the RPC is unavailable.
+export function useInvokableModels(
+  workspace: string | undefined,
+  teamId?: number,
+): WorkspaceModelOption[] {
+  const enabled = Boolean(workspace) && workspace !== ALL_WORKSPACES;
+  const query = useCustom<InvokableModelRow[]>({
+    url: "/rpc/list_invokable_models",
+    method: "post",
+    config: {
+      payload: {
+        p_workspace: workspace,
+        ...(teamId === undefined ? {} : { p_team_id: teamId }),
+      },
+    },
+    queryOptions: { enabled, retry: false },
+    successNotification: false,
+    errorNotification: false,
+  });
+  const known = useWorkspaceModels(workspace);
+  const rows = query.data?.data as InvokableModelRow[] | undefined;
+  const failed = query.isError;
+
+  return useMemo(() => {
+    if (!enabled || !workspace) return [];
+    if (rows) return invokableModelOptions(rows, known, workspace);
+    return failed && teamId === undefined ? known : [];
+  }, [enabled, workspace, rows, known, failed, teamId]);
 }
 
 // Per-model serving info: whether the model is served internally / externally

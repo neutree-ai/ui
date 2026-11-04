@@ -2077,7 +2077,8 @@
 			"scope": "Scope",
 			"subject": "Subject",
 			"subjectKind": "Subject Type",
-			"subtreeRoot": "Subtree root department"
+			"subtreeRoot": "Subtree root department",
+			"scopeTeam": "Scoped team"
 		},
 		"placeholders": {
 			"policyName": "Workspace Policy Name",
@@ -2086,16 +2087,19 @@
 			"selectTeam": "Select A Team"
 		},
 		"descriptions": {
-			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments."
+			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments. Team policies apply to the selected team only.",
+			"scopeTeam": "The role applies to this team only, e.g. team-admin manages the team's API keys and members. Only global administrators can grant it."
 		},
 		"options": {
 			"global": "Global",
 			"workspace": "Workspace",
-			"orgUnit": "Organization subtree"
+			"orgUnit": "Organization subtree",
+			"team": "Team"
 		},
 		"scope": {
 			"workspace": "Workspace:",
-			"orgUnit": "Subtree:"
+			"orgUnit": "Subtree:",
+			"team": "Team:"
 		},
 		"validation": {
 			"orgUnitRequired": "Select a department",
@@ -2161,7 +2165,8 @@
 			"status": "Status",
 			"createdAt": "Created at",
 			"apiKeyAndDescription": "API key / description",
-			"projectAndDescription": "Project / description"
+			"projectAndDescription": "Project / description",
+			"team": "Team"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select A Workspace",
@@ -2342,7 +2347,28 @@
 			"selectAllInProject": "Select all API keys in {{name}}",
 			"deleteMany": "Delete {{count}} API keys?"
 		},
-		"detailsTitle": "API key details"
+		"detailsTitle": "API key details",
+		"team": {
+			"tab": "API Keys",
+			"usageTab": "Usage",
+			"hint": "Keys owned by {{team}}. They call models with the team's model access and token pool, and keep working when members leave.",
+			"empty": "This team has no API keys yet.",
+			"models": "Models",
+			"limits": "Limits",
+			"modelCount": "{{count}} models",
+			"allTeamModels": "All team models",
+			"editLimits": "Edit limits",
+			"deleteTitle": "Delete API key {{name}}?",
+			"deleteHint": "Applications using this key can no longer call models. This cannot be undone.",
+			"createTitle": "Create Team API Key",
+			"createHint": "The key belongs to {{team}}, not to you. Copy the secret key after creating it: it is shown only once.",
+			"usageHint": "Token usage of the team: its members' personal keys and the team's keys.",
+			"usageFailed": "Failed to load the team usage.",
+			"usageEmpty": "No usage in this period.",
+			"totalTokens": "Total tokens",
+			"totalRequests": "Requests",
+			"requests": "Requests"
+		}
 	},
 	"infrastructure": {
 		"title": "Infrastructure"
@@ -3053,7 +3079,9 @@
 			"usage": "{{used}} used, {{remaining}} left. Resets on {{resetsAt}}.",
 			"exhausted": "Used up",
 			"userTitle": "Token pools",
-			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over."
+			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over.",
+			"none": "This team has no token pool.",
+			"unreadable": "You cannot read this team's token pool."
 		}
 	},
 	"oem_configs": {
@@ -3259,7 +3287,15 @@
 		"usage-read": "Usage Read",
 		"requiredBy": "Required by: {{actions}}",
 		"dependenciesAdded": "Added required permissions: {{actions}}",
-		"assign-member": "Assign Member"
+		"assign-member": "Assign Member",
+		"invoke": "Invoke",
+		"resources": {
+			"team_api_key": "Team API Keys",
+			"team_usage": "Team Usage"
+		},
+		"labels": {
+			"modelInvoke": "Models:Invoke (call models with an API key; does not show endpoints)"
+		}
 	},
 	"systems": {
 		"title": "Systems"

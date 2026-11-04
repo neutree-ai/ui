@@ -23,6 +23,7 @@ const useRoleAssignmentColumns = () => {
           <RoleAssignmentScopeLabel
             spec={row.original.spec}
             renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+            renderTeam={(name) => <TeamLabel name={name} />}
           />
         )}
       />

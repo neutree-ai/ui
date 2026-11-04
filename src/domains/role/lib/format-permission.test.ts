@@ -15,4 +15,16 @@ describe("formatPermission", () => {
       "group_policies.permissionTitle:permissions.read",
     );
   });
+
+  it("labels model:invoke as calling models, apart from the registry actions", () => {
+    expect(formatPermission(t, "model:invoke")).toBe(
+      "permissions.labels.modelInvoke",
+    );
+  });
+
+  it("labels the Team-level resources", () => {
+    expect(formatPermission(t, "team_api_key:create")).toBe(
+      "permissions.resources.team_api_key:permissions.create",
+    );
+  });
 });

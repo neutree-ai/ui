@@ -37,7 +37,11 @@ const SCOPE_OPTION_KEYS: Record<RoleAssignmentScope, string> = {
   global: "role_assignments.options.global",
   workspace: "role_assignments.options.workspace",
   org_unit: "role_assignments.options.orgUnit",
+  team: "role_assignments.options.team",
 };
+
+// Only a global administrator may grant it; the server refuses anyone else.
+const TEAM_ADMIN_PRESET = "team-admin";
 
 export const useRoleAssignmentForm = ({
   action,
@@ -99,10 +103,14 @@ export const useRoleAssignmentForm = ({
 
   const spec = form.watch("spec");
   const scope = scopeOf(spec);
+  const isGlobalAdmin = globalAllowed === true;
   const scopes = availableScopes({
     supportMultiWorkspace,
     delegated,
+    canScopeTeam: isGlobalAdmin && !!teamField,
   });
+  // An existing Team-scoped assignment keeps its scope on the list.
+  if (!scopes.includes(scope)) scopes.push(scope);
 
   const subjectKind = subjectKindOf(spec);
   const subjectKinds = availableSubjectKinds({
@@ -138,6 +146,10 @@ export const useRoleAssignmentForm = ({
     form.setValue("spec.global", fields.global, { shouldDirty: true });
     form.setValue("spec.workspace", fields.workspace, { shouldDirty: true });
     form.setValue("spec.org_unit", fields.org_unit, { shouldDirty: true });
+    // Written only when in play, so servers without the field are not sent it.
+    if (next === "team" || form.getValues("spec.team") !== undefined) {
+      form.setValue("spec.team", fields.team, { shouldDirty: true });
+    }
   };
 
   // A delegated administrator can grant subtree assignments only, so a new
@@ -157,9 +169,19 @@ export const useRoleAssignmentForm = ({
     resource: "user_profiles",
   });
 
-  const roles = useSelect<{ id: number; metadata: Metadata }>({
+  const roles = useSelect<{
+    id: number;
+    metadata: Metadata;
+    spec?: { preset_key?: string | null };
+  }>({
     resource: "roles",
   });
+  const roleOptions = (roles.query.data?.data || []).filter(
+    (role) =>
+      isGlobalAdmin ||
+      role.spec?.preset_key !== TEAM_ADMIN_PRESET ||
+      role.metadata.name === spec.role,
+  );
 
   return {
     form,
@@ -250,7 +272,7 @@ export const useRoleAssignmentForm = ({
           <FormCombobox
             placeholder={t("role_assignments.placeholders.selectRole")}
             disabled={roles.query.isLoading}
-            options={(roles.query.data?.data || []).map((e) => ({
+            options={roleOptions.map((e) => ({
               label: e.metadata.name,
               value: e.metadata.name,
             }))}
@@ -305,6 +327,22 @@ export const useRoleAssignmentForm = ({
             }}
           >
             {orgUnitField}
+          </FormFieldGroup>
+        )}
+        {teamField && scope === "team" && (
+          <FormFieldGroup
+            {...form}
+            name="spec.team"
+            label={t("role_assignments.fields.scopeTeam")}
+            description={t("role_assignments.descriptions.scopeTeam")}
+            rules={{
+              validate: (value) =>
+                typeof value !== "string" ||
+                value.trim() !== "" ||
+                t("role_assignments.validation.teamRequired"),
+            }}
+          >
+            {teamField}
           </FormFieldGroup>
         )}
       </FormCardGrid>

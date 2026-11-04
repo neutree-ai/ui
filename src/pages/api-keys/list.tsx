@@ -255,6 +255,8 @@ export const ApiKeysList = () => {
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
     pagination: { mode: "off" },
+    // Team keys the caller may read are listed on their Team.
+    filters: [{ field: "team_id", operator: "null", value: true }],
     meta: { workspace, workspaced: true },
     queryOptions: { enabled: Boolean(workspace) },
   });

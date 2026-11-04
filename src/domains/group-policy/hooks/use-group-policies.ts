@@ -168,5 +168,6 @@ export const useGroupTokenPool = (
   return {
     pool: rows?.[0],
     error: query.error,
+    isLoading: enabled && name !== "" && query.isLoading,
   };
 };

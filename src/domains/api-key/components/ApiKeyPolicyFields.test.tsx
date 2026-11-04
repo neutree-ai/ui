@@ -19,7 +19,7 @@ vi.mock(
       ...actual,
       // One external option, so a row matching it can be shown with the source
       // the workspace actually reports rather than one guessed from its side.
-      useWorkspaceModels: () => [
+      useInvokableModels: () => [
         {
           value: "external:ep-vendor:gpt-4o",
           label: "gpt-4o",

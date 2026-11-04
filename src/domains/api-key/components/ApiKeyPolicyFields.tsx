@@ -12,7 +12,7 @@ import {
   overlappingModelRowValues,
   type PolicyModelRow,
   resolveQuotaPeriod,
-  useWorkspaceModels,
+  useInvokableModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import {
@@ -26,6 +26,8 @@ type ApiKeyPolicyFieldsProps = {
   form: UseFormReturn<any>;
   // Workspace whose available models populate the allowed-models dropdown.
   workspace: string;
+  // Set for a Team key: the models that Team may call.
+  teamId?: number;
 };
 
 // API-key limits editor: allowed models (each with an optional per-model token
@@ -39,9 +41,10 @@ type ApiKeyPolicyFieldsProps = {
 export const ApiKeyPolicyFields = ({
   form,
   workspace,
+  teamId,
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
-  const modelOptions = useWorkspaceModels(workspace);
+  const modelOptions = useInvokableModels(workspace, teamId);
   const sourceByValue = useMemo(
     () => new Map(modelOptions.map((o) => [o.value, o.source])),
     [modelOptions],

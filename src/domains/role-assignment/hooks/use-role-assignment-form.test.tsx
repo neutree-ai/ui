@@ -141,6 +141,7 @@ const DEPARTMENT = "role_assignments.subjectKinds.OrgUnit";
 const GLOBAL = "role_assignments.options.global";
 const WORKSPACE = "role_assignments.options.workspace";
 const SUBTREE = "role_assignments.options.orgUnit";
+const TEAM_SCOPE = "role_assignments.options.team";
 
 function setup({
   supportMultiWorkspace = true,
@@ -438,9 +439,9 @@ describe("useRoleAssignmentForm", () => {
   });
 
   describe("available scopes", () => {
-    it("offers all three scopes with multi-workspace", () => {
+    it("offers every scope, the Team one included, to a global administrator", () => {
       render(<TestForm />);
-      expect(scopeOptions()).toEqual([GLOBAL, WORKSPACE, SUBTREE]);
+      expect(scopeOptions()).toEqual([GLOBAL, WORKSPACE, SUBTREE, TEAM_SCOPE]);
     });
 
     it("offers the subtree scope without multi-workspace", () => {
@@ -448,7 +449,7 @@ describe("useRoleAssignmentForm", () => {
       render(<TestForm />);
 
       expect(spec()?.global).toBe(true);
-      expect(scopeOptions()).toEqual([GLOBAL, SUBTREE]);
+      expect(scopeOptions()).toEqual([GLOBAL, SUBTREE, TEAM_SCOPE]);
     });
 
     it("gives a delegated administrator only the subtree scope, preselected", async () => {

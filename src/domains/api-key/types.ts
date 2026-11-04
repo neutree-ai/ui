@@ -65,8 +65,12 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
-  /** The owner. */
-  user_id?: string;
+  /** The owner of a personal key; null for a Team key. */
+  user_id?: string | null;
+  /** The owning Team's id; null for a personal key. */
+  team_id?: number | null;
+  /** Who created the key. */
+  created_by?: string | null;
 };
 
 export type ApiKeyProject = {

@@ -52,6 +52,7 @@ export const ApiKeyLimitsCard = ({
   projectId,
   displayName,
   description,
+  teamId,
   onSaved,
 }: {
   apiKeyId: string;
@@ -59,6 +60,8 @@ export const ApiKeyLimitsCard = ({
   projectId: string | null;
   displayName: string;
   description: string;
+  /** Set for a Team key, which has no project. */
+  teamId?: number;
   onSaved?: () => unknown;
 }) => {
   const { t } = useTranslation();
@@ -252,19 +255,21 @@ export const ApiKeyLimitsCard = ({
             >
               <Textarea />
             </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="project_id"
-              label={t("api_keys.fields.project")}
-            >
-              <ProjectPicker
-                workspace={workspace}
-                value={form.watch("project_id")}
-                onChange={(id) =>
-                  form.setValue("project_id", id, { shouldValidate: true })
-                }
-              />
-            </FormFieldGroup>
+            {teamId === undefined && (
+              <FormFieldGroup
+                {...form}
+                name="project_id"
+                label={t("api_keys.fields.project")}
+              >
+                <ProjectPicker
+                  workspace={workspace}
+                  value={form.watch("project_id")}
+                  onChange={(id) =>
+                    form.setValue("project_id", id, { shouldValidate: true })
+                  }
+                />
+              </FormFieldGroup>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -462,7 +467,11 @@ export const ApiKeyLimitsCard = ({
               </div>
             )}
 
-            <ApiKeyPolicyFields form={form} workspace={workspace} />
+            <ApiKeyPolicyFields
+              form={form}
+              workspace={workspace}
+              teamId={teamId}
+            />
             <div className="flex justify-end gap-2">
               {/* Discards the edits and goes back to what is stored — the form
                   is on the detail page, so there is nowhere to navigate away

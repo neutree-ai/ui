@@ -8,12 +8,15 @@ type RoleAssignmentScopeLabelProps = {
   spec: RoleAssignmentSpec;
   /** Renders the department; the page supplies it from the organization domain. */
   renderOrgUnit?: (name: string) => ReactNode;
+  /** Renders the Team, likewise. */
+  renderTeam?: (name: string) => ReactNode;
 };
 
-/** "Global", "Workspace: <name>" or "Subtree: <department>". */
+/** "Global", "Workspace: <name>", "Subtree: <department>" or "Team: <team>". */
 export function RoleAssignmentScopeLabel({
   spec,
   renderOrgUnit = (name) => name,
+  renderTeam = (name) => name,
 }: RoleAssignmentScopeLabelProps) {
   const { t } = useTranslation();
   const scope = scopeOf(spec);
@@ -42,6 +45,11 @@ export function RoleAssignmentScopeLabel({
           >
             {spec.workspace}
           </ShowButton>
+        </>
+      ) : scope === "team" ? (
+        <>
+          {t("role_assignments.scope.team")}
+          {renderTeam(spec.team ?? "")}
         </>
       ) : (
         <>

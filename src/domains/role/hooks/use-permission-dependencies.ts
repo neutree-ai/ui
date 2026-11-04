@@ -42,6 +42,7 @@ const ALL_RULES: PermissionDependencyRule[] = [
   // Assigning goes through PostgREST, which reads the member row first and so
   // needs the org_unit:read policy too.
   { action: "org_unit:assign-member", deps: ["org_unit:read"] },
+  { action: "team:assign-member", deps: ["team:read"] },
 ];
 
 type PermissionsTreeData = Record<

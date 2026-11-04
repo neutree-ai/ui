@@ -45,7 +45,13 @@ function AppSidebarMenuItem(props: AppSidebarMenuItemProps) {
   const requiredPermission = props.item.meta?.requiredPermission as
     | string
     | undefined;
-  const { allowed } = useHasPermission(requiredPermission);
+  // Either permission lists the entry, e.g. a Team admin on the organization.
+  const orPermission = props.item.meta?.orPermission as string | undefined;
+  const required = useHasPermission(requiredPermission);
+  const alternative = useHasPermission(orPermission);
+  const allowed = orPermission
+    ? required.allowed || alternative.allowed
+    : required.allowed;
   if (!allowed) {
     return null;
   }

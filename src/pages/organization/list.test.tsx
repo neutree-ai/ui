@@ -25,13 +25,16 @@ vi.mock("@/domains/group-policy/components/GroupModelAccess", () => ({
   GroupModelAccess: () => null,
 }));
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasGlobalPermission: vi.fn(),
+  useHasPermission: vi.fn(),
+}));
+vi.mock("@/pages/organization/team-detail-tabs", () => ({
+  TeamDetailTabs: () => null,
 }));
 vi.mock("@/pages/organization/use-team-delete-check", () => ({
   useTeamDeleteCheck: vi.fn(),
 }));
 
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { OrganizationList } from "./list";
 
 const LocationProbe = () => (
@@ -45,31 +48,36 @@ const render = (ui: ReactElement, path = "/organization") =>
     </MemoryRouter>,
   );
 
+// Grants the listed permissions, in any scope.
+const grant = (...permissions: string[]) =>
+  vi.mocked(useHasPermission).mockImplementation((permission?: string) => ({
+    allowed: permissions.includes(permission ?? ""),
+    isLoading: false,
+  }));
+
 describe("OrganizationList", () => {
-  it("offers the Teams tab only with a global team:read", () => {
-    vi.mocked(useHasGlobalPermission).mockReturnValue({
-      allowed: false,
-      isLoading: false,
-    });
+  it("offers the Teams tab only with team:read", () => {
+    grant("org_unit:read");
     const { unmount } = render(<OrganizationList />);
-    expect(vi.mocked(useHasGlobalPermission)).toHaveBeenCalledWith("team:read");
+    expect(vi.mocked(useHasPermission)).toHaveBeenCalledWith("team:read");
     expect(screen.getByTestId("departments-panel")).toBeTruthy();
     expect(screen.queryByTestId("organization-teams-tab")).toBeNull();
     unmount();
 
-    vi.mocked(useHasGlobalPermission).mockReturnValue({
-      allowed: true,
-      isLoading: false,
-    });
+    grant("org_unit:read", "team:read");
     render(<OrganizationList />);
     expect(screen.getByTestId("organization-teams-tab")).toBeTruthy();
   });
 
+  it("opens the Teams tab for a team admin who cannot read departments", () => {
+    grant("team:read");
+    render(<OrganizationList />);
+    expect(screen.getByTestId("teams-panel")).toBeTruthy();
+    expect(screen.queryByText("organization.departments.title")).toBeNull();
+  });
+
   it("opens the tab named in the URL and records a switch", () => {
-    vi.mocked(useHasGlobalPermission).mockReturnValue({
-      allowed: true,
-      isLoading: false,
-    });
+    grant("org_unit:read", "team:read");
     const { unmount } = render(
       <OrganizationList />,
       "/organization?tab=teams&team=guild",
@@ -84,10 +92,7 @@ describe("OrganizationList", () => {
     unmount();
 
     // Without team:read the Teams tab in a link falls back to Departments.
-    vi.mocked(useHasGlobalPermission).mockReturnValue({
-      allowed: false,
-      isLoading: false,
-    });
+    grant("org_unit:read");
     render(<OrganizationList />, "/organization?tab=teams");
     expect(screen.getByTestId("departments-panel")).toBeTruthy();
   });

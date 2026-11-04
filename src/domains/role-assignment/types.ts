@@ -14,6 +14,11 @@ export interface RoleAssignmentSpec {
    * global false and no workspace. Absent on servers older than the field.
    */
   org_unit?: string | null;
+  /**
+   * metadata.name of a Team: the assignment applies to that Team only, with
+   * global false and no workspace or OrgUnit. Absent on older servers.
+   */
+  team?: string | null;
   /** Absent or null reads as "User" (older rows and servers). */
   subject_kind?: RoleAssignmentSubjectKind | null;
   /** metadata.name of the Team or OrgUnit; null for a User subject. */

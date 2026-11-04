@@ -51,6 +51,7 @@ export const RoleAssignmentsShow = () => {
               <RoleAssignmentScopeLabel
                 spec={record.spec}
                 renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+                renderTeam={(name) => <TeamLabel name={name} />}
               />
             </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.role")}>

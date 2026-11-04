@@ -68,3 +68,20 @@ export const useHasPermission = (permission?: string): PermissionState =>
  */
 export const useHasGlobalPermission = (permission?: string): PermissionState =>
   usePermissionRpc("/rpc/has_permission", permission, { workspace: null });
+
+/**
+ * Whether the signed-in user holds a permission on one Team, through a global
+ * or a Team-scoped role assignment (has_permission_on_team). Undefined teamId
+ * skips the check and reports not allowed.
+ */
+export const useHasTeamPermission = (
+  permission: string,
+  teamId: number | undefined,
+): PermissionState => {
+  const state = usePermissionRpc(
+    "/rpc/has_permission_on_team",
+    teamId === undefined ? undefined : permission,
+    { team_id: teamId },
+  );
+  return teamId === undefined ? { allowed: false, isLoading: false } : state;
+};

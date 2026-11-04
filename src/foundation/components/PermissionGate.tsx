@@ -4,13 +4,21 @@ import { Loader } from "@/foundation/components/Loader";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-/** Renders its children only for a user holding `permission`. */
+/** Renders its children only for a user holding `permission` or `orPermission`. */
 export function PermissionGate({
   permission,
+  orPermission,
   children,
-}: PropsWithChildren<{ permission: string }>) {
+}: PropsWithChildren<{ permission: string; orPermission?: string }>) {
   const { t } = useTranslation();
-  const { allowed, isLoading } = useHasPermission(permission);
+  const required = useHasPermission(permission);
+  const alternative = useHasPermission(orPermission);
+  const allowed =
+    required.allowed === true ||
+    (!!orPermission && alternative.allowed === true);
+  const isLoading =
+    !allowed &&
+    (required.isLoading || (!!orPermission && alternative.isLoading));
 
   if (isLoading) {
     return (

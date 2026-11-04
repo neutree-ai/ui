@@ -40,6 +40,7 @@ vi.mock("@/foundation/components/ShowPage", () => ({
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: vi.fn(),
+  useHasTeamPermission: vi.fn(),
 }));
 
 vi.mock("@/domains/organization/hooks/use-organization", () => ({
@@ -63,7 +64,10 @@ import {
   useTeamWrites,
 } from "@/domains/organization/hooks/use-organization";
 import type { MemberProfile, Team } from "@/domains/organization/types";
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  useHasGlobalPermission,
+  useHasTeamPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { TeamsPanel } from "./TeamsPanel";
 
 const LocationProbe = () => (
@@ -100,11 +104,17 @@ const writes = {
 };
 const memberWrites = { add: vi.fn(), remove: vi.fn(), isPending: false };
 
-const grant = (...permissions: string[]) =>
+// A global grant also holds on every Team, as has_permission_on_team decides.
+const grant = (...permissions: string[]) => {
   vi.mocked(useHasGlobalPermission).mockImplementation((permission) => ({
     allowed: permissions.includes(permission ?? ""),
     isLoading: false,
   }));
+  vi.mocked(useHasTeamPermission).mockImplementation((permission, teamId) => ({
+    allowed: teamId !== undefined && permissions.includes(permission),
+    isLoading: false,
+  }));
+};
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -23,12 +23,15 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
 import { isManualTeam, teamSource } from "@/domains/organization/lib/team";
-import type { TeamDeleteCheck } from "@/domains/organization/types";
+import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  useHasGlobalPermission,
+  useHasTeamPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import {
   getErrorMessage,
@@ -54,9 +57,15 @@ const noDeleteCheck = (): TeamDeleteCheck | undefined => undefined;
 
 export function TeamsPanel({
   renderRoleAssignments,
+  renderTeamDetail,
   useDeleteCheck = noDeleteCheck,
 }: {
   renderRoleAssignments?: (teamName: string, label: string) => ReactNode;
+  /**
+   * Wraps the selected Team's members section, e.g. in tabs with the Team's
+   * API keys and usage, which belong to other domains.
+   */
+  renderTeamDetail?: (team: Team, members: ReactNode) => ReactNode;
   /**
    * Reads what blocks deleting the Team while the delete dialog is open; a
    * hook, as the reads belong to other domains.
@@ -91,8 +100,6 @@ export function TeamsPanel({
   const canCreate = useHasGlobalPermission("team:create").allowed === true;
   const canUpdate = useHasGlobalPermission("team:update").allowed === true;
   const canDelete = useHasGlobalPermission("team:delete").allowed === true;
-  const canAssign =
-    useHasGlobalPermission("team:assign-member").allowed === true;
 
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
@@ -111,6 +118,9 @@ export function TeamsPanel({
     ? all.find((team) => team.metadata.name === view.team)
     : undefined;
   const selectedId = selected?.id;
+  // A team admin holds it on the Team only.
+  const canAssign =
+    useHasTeamPermission("team:assign-member", selectedId).allowed === true;
   const members = useTeamMembers(selected?.id);
   const deleteCheck = useDeleteCheck(
     selected?.metadata.name ?? "",
@@ -155,6 +165,202 @@ export function TeamsPanel({
       }
     }
   };
+
+  const membersSection = (
+    <div className="space-y-3">
+      <ShowPage.Section
+        title={
+          selected ? (
+            <span className="inline-flex items-center gap-2">
+              {displayName(selected.metadata)}
+              {isInactive(selected) && <InactiveBadge />}
+            </span>
+          ) : (
+            t("organization.members.title")
+          )
+        }
+        description={
+          selected &&
+          (manual
+            ? t("organization.teams.manualSource", {
+                name: selected.metadata.name,
+              })
+            : t("organization.teams.syncedSource", {
+                source: teamSource(selected),
+              }))
+        }
+        actions={
+          manual && (
+            <div className="flex items-center gap-2">
+              {canAssign && (
+                <Button
+                  size="sm"
+                  onClick={() => open({ kind: "add-members" })}
+                  data-testid="team-add-members"
+                >
+                  <UserPlus className="mr-1 h-4 w-4" />
+                  {t("organization.teams.addMembers")}
+                </Button>
+              )}
+              {canUpdate && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => open({ kind: "edit" })}
+                  data-testid="team-edit"
+                >
+                  <Pencil className="mr-1 h-4 w-4" />
+                  {t("buttons.edit")}
+                </Button>
+              )}
+              {canDelete && (
+                <ConfirmDialog
+                  open={dialog?.kind === "delete"}
+                  onOpenChange={(next) =>
+                    next ? open({ kind: "delete" }) : close()
+                  }
+                  title={t("organization.teams.deleteTitle", {
+                    team: displayName(selected.metadata),
+                  })}
+                  description={
+                    deleteBlocked
+                      ? t("organization.teams.deleteBlocked", {
+                          count: deleteCheck?.roleAssignments,
+                        })
+                      : t("organization.teams.deleteHint", {
+                          count: members.members.length,
+                        })
+                  }
+                  content={
+                    deleteCheck?.isLoading ? (
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-testid="team-delete-checking"
+                      >
+                        {t("organization.teams.deleteChecking")}
+                      </p>
+                    ) : (
+                      !deleteBlocked &&
+                      deleteCheck?.hasPolicy && (
+                        <p
+                          className="text-sm text-muted-foreground"
+                          data-testid="team-delete-policy"
+                        >
+                          {t("organization.teams.deletePolicyHint")}
+                        </p>
+                      )
+                    )
+                  }
+                  okText={t("buttons.delete")}
+                  cancelText={t("buttons.cancel")}
+                  okButtonVariant="destructive"
+                  okDisabled={deleteBlocked || !!deleteCheck?.isLoading}
+                  loading={teamWrites.isPending}
+                  onConfirm={() =>
+                    attempt(
+                      async () => {
+                        await teamWrites.remove(selected);
+                        select(undefined);
+                      },
+                      { inline: true },
+                    )
+                  }
+                >
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive"
+                    data-testid="team-delete"
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {t("buttons.delete")}
+                  </Button>
+                </ConfirmDialog>
+              )}
+            </div>
+          )
+        }
+      >
+        {selected ? (
+          <MemberTable
+            rows={members.members.map((m) => ({
+              key: m.user_id,
+              profile: m.user_profiles,
+              since: m.created_at,
+            }))}
+            isLoading={members.isLoading}
+            error={errorText(members.error)}
+            sinceLabel={t("organization.fields.joinedAt")}
+            renderActions={
+              manual && canAssign
+                ? (row) => (
+                    <ConfirmDialog
+                      open={
+                        dialog?.kind === "remove-member" &&
+                        dialog.userId === row.key
+                      }
+                      onOpenChange={(next) =>
+                        next
+                          ? open({
+                              kind: "remove-member",
+                              userId: row.key,
+                            })
+                          : close()
+                      }
+                      title={t("organization.teams.removeMemberTitle")}
+                      description={t("organization.teams.removeMemberHint", {
+                        user: row.profile
+                          ? displayName(row.profile.metadata)
+                          : row.key,
+                        team: displayName(selected.metadata),
+                      })}
+                      okText={t("organization.teams.removeMember")}
+                      cancelText={t("buttons.cancel")}
+                      okButtonVariant="destructive"
+                      loading={memberWrites.isPending}
+                      onConfirm={() =>
+                        attempt(() => memberWrites.remove(row.key), {
+                          inline: true,
+                        })
+                      }
+                    >
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        aria-label={t("organization.teams.removeMember")}
+                        title={t("organization.teams.removeMember")}
+                        data-testid={`team-remove-member-${row.key}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </ConfirmDialog>
+                  )
+                : undefined
+            }
+          />
+        ) : (
+          <EmptyState variant="inline">
+            {t("organization.members.selectTeam")}
+          </EmptyState>
+        )}
+        {actionError && (
+          <Alert
+            variant="destructive"
+            className="mt-3"
+            data-testid="team-action-error"
+          >
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
+        )}
+      </ShowPage.Section>
+      {selected &&
+        renderRoleAssignments?.(
+          selected.metadata.name,
+          displayName(selected.metadata),
+        )}
+    </div>
+  );
 
   return (
     <div className="space-y-3">
@@ -227,197 +433,9 @@ export function TeamsPanel({
         </ShowPage.Section>
 
         <div className="min-w-0 space-y-3">
-          <ShowPage.Section
-            title={
-              selected ? (
-                <span className="inline-flex items-center gap-2">
-                  {displayName(selected.metadata)}
-                  {isInactive(selected) && <InactiveBadge />}
-                </span>
-              ) : (
-                t("organization.members.title")
-              )
-            }
-            description={
-              selected &&
-              (manual
-                ? t("organization.teams.manualSource", {
-                    name: selected.metadata.name,
-                  })
-                : t("organization.teams.syncedSource", {
-                    source: teamSource(selected),
-                  }))
-            }
-            actions={
-              manual && (
-                <div className="flex items-center gap-2">
-                  {canAssign && (
-                    <Button
-                      size="sm"
-                      onClick={() => open({ kind: "add-members" })}
-                      data-testid="team-add-members"
-                    >
-                      <UserPlus className="mr-1 h-4 w-4" />
-                      {t("organization.teams.addMembers")}
-                    </Button>
-                  )}
-                  {canUpdate && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => open({ kind: "edit" })}
-                      data-testid="team-edit"
-                    >
-                      <Pencil className="mr-1 h-4 w-4" />
-                      {t("buttons.edit")}
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <ConfirmDialog
-                      open={dialog?.kind === "delete"}
-                      onOpenChange={(next) =>
-                        next ? open({ kind: "delete" }) : close()
-                      }
-                      title={t("organization.teams.deleteTitle", {
-                        team: displayName(selected.metadata),
-                      })}
-                      description={
-                        deleteBlocked
-                          ? t("organization.teams.deleteBlocked", {
-                              count: deleteCheck?.roleAssignments,
-                            })
-                          : t("organization.teams.deleteHint", {
-                              count: members.members.length,
-                            })
-                      }
-                      content={
-                        deleteCheck?.isLoading ? (
-                          <p
-                            className="text-sm text-muted-foreground"
-                            data-testid="team-delete-checking"
-                          >
-                            {t("organization.teams.deleteChecking")}
-                          </p>
-                        ) : (
-                          !deleteBlocked &&
-                          deleteCheck?.hasPolicy && (
-                            <p
-                              className="text-sm text-muted-foreground"
-                              data-testid="team-delete-policy"
-                            >
-                              {t("organization.teams.deletePolicyHint")}
-                            </p>
-                          )
-                        )
-                      }
-                      okText={t("buttons.delete")}
-                      cancelText={t("buttons.cancel")}
-                      okButtonVariant="destructive"
-                      okDisabled={deleteBlocked || !!deleteCheck?.isLoading}
-                      loading={teamWrites.isPending}
-                      onConfirm={() =>
-                        attempt(
-                          async () => {
-                            await teamWrites.remove(selected);
-                            select(undefined);
-                          },
-                          { inline: true },
-                        )
-                      }
-                    >
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive"
-                        data-testid="team-delete"
-                      >
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        {t("buttons.delete")}
-                      </Button>
-                    </ConfirmDialog>
-                  )}
-                </div>
-              )
-            }
-          >
-            {selected ? (
-              <MemberTable
-                rows={members.members.map((m) => ({
-                  key: m.user_id,
-                  profile: m.user_profiles,
-                  since: m.created_at,
-                }))}
-                isLoading={members.isLoading}
-                error={errorText(members.error)}
-                sinceLabel={t("organization.fields.joinedAt")}
-                renderActions={
-                  manual && canAssign
-                    ? (row) => (
-                        <ConfirmDialog
-                          open={
-                            dialog?.kind === "remove-member" &&
-                            dialog.userId === row.key
-                          }
-                          onOpenChange={(next) =>
-                            next
-                              ? open({ kind: "remove-member", userId: row.key })
-                              : close()
-                          }
-                          title={t("organization.teams.removeMemberTitle")}
-                          description={t(
-                            "organization.teams.removeMemberHint",
-                            {
-                              user: row.profile
-                                ? displayName(row.profile.metadata)
-                                : row.key,
-                              team: displayName(selected.metadata),
-                            },
-                          )}
-                          okText={t("organization.teams.removeMember")}
-                          cancelText={t("buttons.cancel")}
-                          okButtonVariant="destructive"
-                          loading={memberWrites.isPending}
-                          onConfirm={() =>
-                            attempt(() => memberWrites.remove(row.key), {
-                              inline: true,
-                            })
-                          }
-                        >
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            aria-label={t("organization.teams.removeMember")}
-                            title={t("organization.teams.removeMember")}
-                            data-testid={`team-remove-member-${row.key}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </ConfirmDialog>
-                      )
-                    : undefined
-                }
-              />
-            ) : (
-              <EmptyState variant="inline">
-                {t("organization.members.selectTeam")}
-              </EmptyState>
-            )}
-            {actionError && (
-              <Alert
-                variant="destructive"
-                className="mt-3"
-                data-testid="team-action-error"
-              >
-                <AlertDescription>{actionError}</AlertDescription>
-              </Alert>
-            )}
-          </ShowPage.Section>
-          {selected &&
-            renderRoleAssignments?.(
-              selected.metadata.name,
-              displayName(selected.metadata),
-            )}
+          {selected && renderTeamDetail
+            ? renderTeamDetail(selected, membersSection)
+            : membersSection}
         </div>
       </div>
 
