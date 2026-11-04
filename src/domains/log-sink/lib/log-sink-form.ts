@@ -1,13 +1,24 @@
-import type {
-  LogSink,
-  LogSinkAuth,
-  LogSinkAuthType,
-  LogSinkSpec,
-  VictoriaLogsSinkSpec,
+import {
+  LOG_SINK_TYPES,
+  type LogSink,
+  type LogSinkAuth,
+  type LogSinkAuthType,
+  type LogSinkSpec,
+  type LogSinkType,
+  type S3Compression,
+  type S3SinkSpec,
+  type VictoriaLogsSinkSpec,
 } from "@/domains/log-sink/types";
 
 const GIB = 1024 ** 3;
 const MIN_BUFFER_BYTES = 268435488;
+
+export const S3_DEFAULT_KEY_PREFIX = "traces/%Y/%m/%d/";
+export const S3_DEFAULT_FLUSH_INTERVAL_SECONDS = 300;
+export const S3_DEFAULT_FORCE_PATH_STYLE = true;
+export const S3_DEFAULT_COMPRESSION = "gzip";
+const S3_MAX_FLUSH_INTERVAL_SECONDS = 86400;
+const S3_MAX_KEY_PREFIX_LENGTH = 512;
 
 export type ExtraFieldRow = { key: string; value: string };
 
@@ -17,7 +28,7 @@ export type LogSinkFormValues = {
   kind: "LogSink";
   metadata: { name: string };
   spec: {
-    type: "victorialogs";
+    type: LogSinkType;
     enabled: boolean;
     victorialogs: {
       url: string;
@@ -31,6 +42,16 @@ export type LogSinkFormValues = {
         token: string;
       };
       extra_fields: ExtraFieldRow[];
+    };
+    s3: {
+      endpoint: string;
+      region: string;
+      bucket: string;
+      key_prefix: string;
+      force_path_style: boolean;
+      compression: S3Compression;
+      flush_interval_seconds: string;
+      auth: { access_key_id: string; secret_access_key: string };
     };
     buffer: { max_size_gib: string };
   };
@@ -50,6 +71,16 @@ export const emptyLogSinkFormValues = (): LogSinkFormValues => ({
       timeout_seconds: "",
       auth: { type: "none", username: "", password: "", token: "" },
       extra_fields: [],
+    },
+    s3: {
+      endpoint: "",
+      region: "",
+      bucket: "",
+      key_prefix: "",
+      force_path_style: S3_DEFAULT_FORCE_PATH_STYLE,
+      compression: S3_DEFAULT_COMPRESSION,
+      flush_interval_seconds: "",
+      auth: { access_key_id: "", secret_access_key: "" },
     },
     buffer: { max_size_gib: "" },
   },
@@ -72,9 +103,17 @@ export const isLogSinkEnabled = (spec: LogSinkSpec | undefined): boolean =>
 export const toAuthType = (type: string | undefined): LogSinkAuthType =>
   type === "basic" || type === "bearer" ? type : "none";
 
+/** An unknown or absent type opens as VictoriaLogs, the original type. */
+const toLogSinkType = (type: string | undefined): LogSinkType =>
+  LOG_SINK_TYPES.find((known) => known === type) ?? "victorialogs";
+
+const toCompression = (value: string | undefined): S3Compression =>
+  value === "zstd" || value === "none" ? value : S3_DEFAULT_COMPRESSION;
+
 export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
   const base = emptyLogSinkFormValues();
   const vl = record.spec?.victorialogs;
+  const s3 = record.spec?.s3;
   const authType = toAuthType(vl?.auth?.type);
   const maxSize = record.spec?.buffer?.max_size;
 
@@ -82,7 +121,7 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
     ...base,
     metadata: { name: record.metadata?.name ?? "" },
     spec: {
-      type: "victorialogs",
+      type: toLogSinkType(record.spec?.type),
       enabled: isLogSinkEnabled(record.spec),
       victorialogs: {
         url: vl?.url ?? "",
@@ -99,6 +138,19 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
           ([key, value]) => ({ key, value }),
         ),
       },
+      s3: {
+        endpoint: s3?.endpoint ?? "",
+        region: s3?.region ?? "",
+        bucket: s3?.bucket ?? "",
+        key_prefix: s3?.key_prefix ?? "",
+        force_path_style: s3?.force_path_style ?? S3_DEFAULT_FORCE_PATH_STYLE,
+        compression: toCompression(s3?.compression),
+        flush_interval_seconds: s3?.flush_interval_seconds
+          ? String(s3.flush_interval_seconds)
+          : "",
+        // Keys are masked on read; blank means "keep the stored key".
+        auth: { access_key_id: "", secret_access_key: "" },
+      },
       buffer: { max_size_gib: maxSize ? String(bytesToGib(maxSize)) : "" },
     },
   };
@@ -106,9 +158,37 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
 
 const isBlankRow = (row: ExtraFieldRow) => !row.key && !row.value;
 
-/** The whole spec: PATCH replaces it, so every kept value must be sent. */
-export function toLogSinkSpec(values: LogSinkFormValues): LogSinkSpec {
-  const form = values.spec.victorialogs;
+function toS3SinkSpec(form: LogSinkFormValues["spec"]["s3"]): S3SinkSpec {
+  const s3: S3SinkSpec = {
+    region: form.region.trim(),
+    bucket: form.bucket.trim(),
+  };
+  if (form.endpoint.trim()) s3.endpoint = form.endpoint.trim();
+  if (form.key_prefix) s3.key_prefix = form.key_prefix;
+  if (form.force_path_style !== S3_DEFAULT_FORCE_PATH_STYLE) {
+    s3.force_path_style = form.force_path_style;
+  }
+  if (form.compression !== S3_DEFAULT_COMPRESSION) {
+    s3.compression = form.compression;
+  }
+  const flush = Number(form.flush_interval_seconds.trim() || 0);
+  if (flush) s3.flush_interval_seconds = flush;
+
+  // Blank keys are left out so the API keeps the stored ones.
+  const auth: NonNullable<S3SinkSpec["auth"]> = {};
+  if (form.auth.access_key_id.trim()) {
+    auth.access_key_id = form.auth.access_key_id.trim();
+  }
+  if (form.auth.secret_access_key) {
+    auth.secret_access_key = form.auth.secret_access_key;
+  }
+  if (Object.keys(auth).length) s3.auth = auth;
+  return s3;
+}
+
+function toVictoriaLogsSinkSpec(
+  form: LogSinkFormValues["spec"]["victorialogs"],
+): VictoriaLogsSinkSpec {
   const vl: VictoriaLogsSinkSpec = { url: form.url.trim() };
 
   if (form.ca_cert.trim()) vl.ca_cert = form.ca_cert;
@@ -135,11 +215,22 @@ export function toLogSinkSpec(values: LogSinkFormValues): LogSinkSpec {
     );
   }
 
-  const spec: LogSinkSpec = {
-    type: "victorialogs",
-    enabled: values.spec.enabled,
-    victorialogs: vl,
-  };
+  return vl;
+}
+
+/** The whole spec: PATCH replaces it, so every kept value must be sent. */
+export function toLogSinkSpec(values: LogSinkFormValues): LogSinkSpec {
+  // Only the chosen type's settings are sent (the server drops the other's).
+  const { type, enabled } = values.spec;
+  const spec: LogSinkSpec = { type, enabled };
+  switch (type) {
+    case "s3":
+      spec.s3 = toS3SinkSpec(values.spec.s3);
+      break;
+    case "victorialogs":
+      spec.victorialogs = toVictoriaLogsSinkSpec(values.spec.victorialogs);
+      break;
+  }
   const maxSize = gibToBytes(values.spec.buffer.max_size_gib);
   if (maxSize !== undefined) spec.buffer = { max_size: maxSize };
   return spec;
@@ -168,9 +259,8 @@ export const NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
 
 type UrlError = "required" | "invalid" | "scheme" | "host" | "queryOrFragment";
 
-export function validateSinkUrl(url: string): UrlError | undefined {
-  const value = url.trim();
-  if (!value) return "required";
+/** An http(s) URL with a host, or why the value is not one. */
+function parseHttpUrl(value: string): URL | "scheme" | "invalid" | "host" {
   if (!/^https?:\/\//i.test(value)) return "scheme";
   let parsed: URL;
   try {
@@ -178,9 +268,51 @@ export function validateSinkUrl(url: string): UrlError | undefined {
   } catch {
     return "invalid";
   }
-  if (!parsed.host) return "host";
+  return parsed.host ? parsed : "host";
+}
+
+export function validateSinkUrl(url: string): UrlError | undefined {
+  const value = url.trim();
+  if (!value) return "required";
+  const parsed = parseHttpUrl(value);
+  if (typeof parsed === "string") return parsed;
   if (parsed.search || parsed.hash) return "queryOrFragment";
   return undefined;
+}
+
+type S3EndpointError = "scheme" | "invalid" | "host" | "extraParts";
+
+/** Optional; the controller's rules (the API only checks the scheme). */
+export function validateS3Endpoint(url: string): S3EndpointError | undefined {
+  const value = url.trim();
+  if (!value) return undefined;
+  const parsed = parseHttpUrl(value);
+  if (typeof parsed === "string") return parsed;
+  if (parsed.search || parsed.hash || parsed.username || parsed.password) {
+    return "extraParts";
+  }
+  return undefined;
+}
+
+type KeyPrefixError = "tooLong" | "leadingSlash" | "template" | "invalidChars";
+
+/** Controller-only rules; the API accepts any string. */
+export function validateKeyPrefix(prefix: string): KeyPrefixError | undefined {
+  if (prefix.length > S3_MAX_KEY_PREFIX_LENGTH) return "tooLong";
+  if (prefix.startsWith("/")) return "leadingSlash";
+  if (prefix.includes("{{") || prefix.includes("}}")) return "template";
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point
+  if (/[\u0000-\u001f\u007f\\]/.test(prefix)) return "invalidChars";
+  return undefined;
+}
+
+export function validateFlushInterval(value: string): "invalid" | undefined {
+  if (!value.trim()) return undefined;
+  if (validateTimeoutSeconds(value)) return "invalid";
+  const seconds = Number(value.trim());
+  return seconds >= 1 && seconds <= S3_MAX_FLUSH_INTERVAL_SECONDS
+    ? undefined
+    : "invalid";
 }
 
 export function validateBufferGib(gib: string): "invalid" | "min" | undefined {
@@ -226,4 +358,12 @@ export const LOG_SINK_ERROR_FIELDS: Record<string, string> = {
   "10247": "spec.victorialogs.auth.username",
   "10248": "spec.victorialogs.auth.token",
   "10249": "spec.buffer.max_size_gib",
+  // Shape errors the form cannot produce; shown on the type.
+  "10305": "spec.type",
+  "10306": "spec.s3.bucket",
+  "10307": "spec.s3.region",
+  "10308": "spec.s3.endpoint",
+  "10309": "spec.s3.compression",
+  "10310": "spec.s3.flush_interval_seconds",
+  "10311": "spec.s3.auth.access_key_id",
 };

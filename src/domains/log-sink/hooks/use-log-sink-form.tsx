@@ -13,21 +13,36 @@ import {
   LOG_SINK_ERROR_FIELDS,
   type LogSinkFormValues,
   NAME_PATTERN,
+  S3_DEFAULT_FLUSH_INTERVAL_SECONDS,
+  S3_DEFAULT_KEY_PREFIX,
   toLogSinkFormValues,
   toLogSinkPayload,
   validateBufferGib,
   validateExtraFieldKey,
   validateExtraFieldValue,
+  validateFlushInterval,
+  validateKeyPrefix,
+  validateS3Endpoint,
   validateSinkUrl,
   validateTimeoutSeconds,
 } from "@/domains/log-sink/lib/log-sink-form";
-import type { LogSink } from "@/domains/log-sink/types";
+import { LOG_SINK_TYPES, type LogSink } from "@/domains/log-sink/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+
+/**
+ * A `validate` rule that fails with `message` on a blank value. `when: false`
+ * turns it off (a stored secret kept on edit); `trim: false` keeps whitespace
+ * significant (secrets are sent as typed).
+ */
+const requiredText =
+  (message: string, { when = true, trim = true } = {}) =>
+  (value: string) =>
+    !when || (trim ? value.trim() : value) !== "" || message;
 
 export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -102,7 +117,9 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
     refineForm: form,
   });
 
+  const sinkType = form.watch("spec.type");
   const authType = form.watch("spec.victorialogs.auth.type");
+  const forcePathStyle = form.watch("spec.s3.force_path_style");
   const enabled = form.watch("spec.enabled");
   const skipVerify = form.watch("spec.victorialogs.insecure_skip_verify");
   // A stored bearer token can be kept by leaving the input blank; otherwise
@@ -119,6 +136,20 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
     host: t("log_sinks.validation.urlHost"),
     queryOrFragment: t("log_sinks.validation.urlQueryOrFragment"),
   };
+  const endpointMessages = {
+    scheme: t("log_sinks.validation.endpointScheme"),
+    invalid: t("log_sinks.validation.endpointInvalid"),
+    host: t("log_sinks.validation.endpointHost"),
+    extraParts: t("log_sinks.validation.endpointExtraParts"),
+  };
+  const keyPrefixMessages = {
+    tooLong: t("log_sinks.validation.keyPrefixTooLong"),
+    leadingSlash: t("log_sinks.validation.keyPrefixLeadingSlash"),
+    template: t("log_sinks.validation.keyPrefixTemplate"),
+    invalidChars: t("log_sinks.validation.keyPrefixInvalidChars"),
+  };
+  // Keys are masked on read: at edit a blank input keeps the stored key.
+  const keysRequired = !isEdit;
   const extraKeyMessages = {
     required: t("log_sinks.validation.extraFieldKeyRequired"),
     invalidChars: t("log_sinks.validation.extraFieldKeyInvalid"),
@@ -177,83 +208,181 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
           >
             <FormSelect
               disabled={isEdit}
-              options={[
-                {
-                  label: t("log_sinks.types.victorialogs"),
-                  value: "victorialogs",
-                },
-              ]}
-            />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.victorialogs.url"
-            label={t("log_sinks.fields.url")}
-            required
-            className="col-span-3"
-            rules={{
-              validate: (value: string) => {
-                const error = validateSinkUrl(value);
-                return error ? urlMessages[error] : true;
-              },
-            }}
-          >
-            <Input placeholder={t("log_sinks.placeholders.url")} />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.victorialogs.auth.type"
-            label={t("log_sinks.fields.authType")}
-          >
-            <FormSelect
-              options={(["none", "basic", "bearer"] as const).map((type) => ({
-                label: t(`log_sinks.authTypes.${type}`),
+              options={LOG_SINK_TYPES.map((type) => ({
+                label: t(`log_sinks.types.${type}`),
                 value: type,
               }))}
             />
           </FormFieldGroup>
-          {authType === "basic" && (
+          {sinkType === "victorialogs" && (
             <>
               <FormFieldGroup
                 {...form}
-                name="spec.victorialogs.auth.username"
-                label={t("log_sinks.fields.username")}
+                name="spec.victorialogs.url"
+                label={t("log_sinks.fields.url")}
                 required
+                className="col-span-3"
                 rules={{
-                  validate: (value: string) =>
-                    value.trim() !== "" ||
-                    t("log_sinks.validation.usernameRequired"),
+                  validate: (value: string) => {
+                    const error = validateSinkUrl(value);
+                    return error ? urlMessages[error] : true;
+                  },
                 }}
               >
-                <Input autoComplete="off" />
+                <Input placeholder={t("log_sinks.placeholders.url")} />
               </FormFieldGroup>
               <FormFieldGroup
                 {...form}
-                name="spec.victorialogs.auth.password"
-                label={t("log_sinks.fields.password")}
+                name="spec.victorialogs.auth.type"
+                label={t("log_sinks.fields.authType")}
+              >
+                <FormSelect
+                  options={(["none", "basic", "bearer"] as const).map(
+                    (type) => ({
+                      label: t(`log_sinks.authTypes.${type}`),
+                      value: type,
+                    }),
+                  )}
+                />
+              </FormFieldGroup>
+              {authType === "basic" && (
+                <>
+                  <FormFieldGroup
+                    {...form}
+                    name="spec.victorialogs.auth.username"
+                    label={t("log_sinks.fields.username")}
+                    required
+                    rules={{
+                      validate: requiredText(
+                        t("log_sinks.validation.usernameRequired"),
+                      ),
+                    }}
+                  >
+                    <Input autoComplete="off" />
+                  </FormFieldGroup>
+                  <FormFieldGroup
+                    {...form}
+                    name="spec.victorialogs.auth.password"
+                    label={t("log_sinks.fields.password")}
+                    description={keepSecretHint}
+                  >
+                    <Input type="password" autoComplete="new-password" />
+                  </FormFieldGroup>
+                </>
+              )}
+              {authType === "bearer" && (
+                <FormFieldGroup
+                  {...form}
+                  name="spec.victorialogs.auth.token"
+                  label={t("log_sinks.fields.token")}
+                  required={tokenRequired}
+                  description={tokenRequired ? undefined : keepSecretHint}
+                  className="col-span-2"
+                  rules={{
+                    validate: requiredText(
+                      t("log_sinks.validation.tokenRequired"),
+                      { when: tokenRequired },
+                    ),
+                  }}
+                >
+                  <Input type="password" autoComplete="new-password" />
+                </FormFieldGroup>
+              )}
+            </>
+          )}
+          {sinkType === "s3" && (
+            <>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.endpoint"
+                label={t("log_sinks.fields.endpoint")}
+                description={t("log_sinks.descriptions.endpoint")}
+                className="col-span-3"
+                rules={{
+                  validate: (value: string) => {
+                    const error = validateS3Endpoint(value);
+                    return error ? endpointMessages[error] : true;
+                  },
+                }}
+              >
+                <Input placeholder={t("log_sinks.placeholders.endpoint")} />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.region"
+                label={t("log_sinks.fields.region")}
+                description={t("log_sinks.descriptions.region")}
+                required
+                rules={{
+                  validate: requiredText(
+                    t("log_sinks.validation.regionRequired"),
+                  ),
+                }}
+              >
+                <Input placeholder={t("log_sinks.placeholders.region")} />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.bucket"
+                label={t("log_sinks.fields.bucket")}
+                description={t("log_sinks.descriptions.bucket")}
+                required
+                rules={{
+                  validate: requiredText(
+                    t("log_sinks.validation.bucketRequired"),
+                  ),
+                }}
+              >
+                <Input />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.key_prefix"
+                label={t("log_sinks.fields.keyPrefix")}
+                description={t("log_sinks.descriptions.keyPrefix")}
+                className="col-span-3"
+                rules={{
+                  validate: (value: string) => {
+                    const error = validateKeyPrefix(value);
+                    return error ? keyPrefixMessages[error] : true;
+                  },
+                }}
+              >
+                <Input placeholder={S3_DEFAULT_KEY_PREFIX} />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.auth.access_key_id"
+                label={t("log_sinks.fields.accessKeyId")}
+                required={keysRequired}
                 description={keepSecretHint}
+                className="col-span-2"
+                rules={{
+                  validate: requiredText(
+                    t("log_sinks.validation.accessKeyIdRequired"),
+                    { when: keysRequired },
+                  ),
+                }}
+              >
+                <Input type="password" autoComplete="new-password" />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.auth.secret_access_key"
+                label={t("log_sinks.fields.secretAccessKey")}
+                required={keysRequired}
+                description={keepSecretHint}
+                className="col-span-2"
+                rules={{
+                  validate: requiredText(
+                    t("log_sinks.validation.secretAccessKeyRequired"),
+                    { when: keysRequired, trim: false },
+                  ),
+                }}
               >
                 <Input type="password" autoComplete="new-password" />
               </FormFieldGroup>
             </>
-          )}
-          {authType === "bearer" && (
-            <FormFieldGroup
-              {...form}
-              name="spec.victorialogs.auth.token"
-              label={t("log_sinks.fields.token")}
-              required={tokenRequired}
-              description={tokenRequired ? undefined : keepSecretHint}
-              className="col-span-2"
-              rules={{
-                validate: (value: string) =>
-                  !tokenRequired ||
-                  value.trim() !== "" ||
-                  t("log_sinks.validation.tokenRequired"),
-              }}
-            >
-              <Input type="password" autoComplete="new-password" />
-            </FormFieldGroup>
           )}
           <div className="col-span-4">
             <TestConnectionButton
@@ -264,22 +393,56 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
           </div>
         </FormCardGrid>
         <FormCardGrid title={t("log_sinks.sections.advanced")}>
-          <FormFieldGroup
-            {...form}
-            name="spec.victorialogs.timeout_seconds"
-            label={t("log_sinks.fields.timeoutSeconds")}
-            description={t("log_sinks.descriptions.timeoutSeconds")}
-            rules={{
-              validate: (value: string) =>
-                !validateTimeoutSeconds(value) ||
-                t("log_sinks.validation.timeoutInvalid"),
-            }}
-          >
-            <Input
-              inputMode="numeric"
-              placeholder={t("log_sinks.placeholders.timeoutSeconds")}
-            />
-          </FormFieldGroup>
+          {sinkType === "s3" && (
+            <>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.compression"
+                label={t("log_sinks.fields.compression")}
+              >
+                <FormSelect
+                  options={(["gzip", "zstd", "none"] as const).map((value) => ({
+                    label: t(`log_sinks.compressions.${value}`),
+                    value,
+                  }))}
+                />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.s3.flush_interval_seconds"
+                label={t("log_sinks.fields.flushIntervalSeconds")}
+                description={t("log_sinks.descriptions.flushIntervalSeconds")}
+                rules={{
+                  validate: (value: string) =>
+                    !validateFlushInterval(value) ||
+                    t("log_sinks.validation.flushIntervalInvalid"),
+                }}
+              >
+                <Input
+                  inputMode="numeric"
+                  placeholder={String(S3_DEFAULT_FLUSH_INTERVAL_SECONDS)}
+                />
+              </FormFieldGroup>
+            </>
+          )}
+          {sinkType === "victorialogs" && (
+            <FormFieldGroup
+              {...form}
+              name="spec.victorialogs.timeout_seconds"
+              label={t("log_sinks.fields.timeoutSeconds")}
+              description={t("log_sinks.descriptions.timeoutSeconds")}
+              rules={{
+                validate: (value: string) =>
+                  !validateTimeoutSeconds(value) ||
+                  t("log_sinks.validation.timeoutInvalid"),
+              }}
+            >
+              <Input
+                inputMode="numeric"
+                placeholder={t("log_sinks.placeholders.timeoutSeconds")}
+              />
+            </FormFieldGroup>
+          )}
           <FormFieldGroup
             {...form}
             name="spec.buffer.max_size_gib"
@@ -299,102 +462,125 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
               placeholder={t("log_sinks.placeholders.bufferSize")}
             />
           </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.victorialogs.insecure_skip_verify"
-            label={t("log_sinks.fields.insecureSkipVerify")}
-            description={t("log_sinks.descriptions.insecureSkipVerify")}
-            isCheckbox
-            className="col-span-4"
-          >
-            <Checkbox
-              checked={skipVerify === true}
-              onCheckedChange={(checked) =>
-                form.setValue(
-                  "spec.victorialogs.insecure_skip_verify",
-                  checked === true,
-                  { shouldDirty: true },
-                )
-              }
-            />
-          </FormFieldGroup>
-          <FormFieldGroup
-            {...form}
-            name="spec.victorialogs.ca_cert"
-            label={t("log_sinks.fields.caCert")}
-            className="col-span-4"
-          >
-            <Textarea
-              rows={4}
-              className="font-mono text-xs"
-              placeholder={t("log_sinks.placeholders.caCert")}
-            />
-          </FormFieldGroup>
-          <div className="col-span-4 space-y-2">
-            <div className="text-sm leading-[22px] text-[var(--nt-text-neutral-secondary)]">
-              {t("log_sinks.fields.extraFields")}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("log_sinks.descriptions.extraFields")}
-            </div>
-            {extraFieldRows.map((row, index) => (
-              <div key={row.id} className="flex items-start gap-3">
-                <FormFieldGroup
-                  {...form}
-                  name={`spec.victorialogs.extra_fields.${index}.key`}
-                  className="flex-1"
-                  rules={{
-                    validate: (_: string, values) => {
-                      const error = validateExtraFieldKey(
-                        (values as LogSinkFormValues).spec.victorialogs
-                          .extra_fields,
-                        index,
-                      );
-                      return error ? extraKeyMessages[error] : true;
-                    },
-                  }}
-                >
-                  <Input
-                    aria-label={t("log_sinks.fields.extraFieldKey")}
-                    placeholder={t("log_sinks.fields.extraFieldKey")}
-                  />
-                </FormFieldGroup>
-                <FormFieldGroup
-                  {...form}
-                  name={`spec.victorialogs.extra_fields.${index}.value`}
-                  className="flex-1"
-                  rules={{
-                    validate: (value: string) =>
-                      !validateExtraFieldValue(value) ||
-                      t("log_sinks.validation.extraFieldValueComma"),
-                  }}
-                >
-                  <Input
-                    aria-label={t("log_sinks.fields.extraFieldValue")}
-                    placeholder={t("log_sinks.fields.extraFieldValue")}
-                  />
-                </FormFieldGroup>
+          {sinkType === "s3" && (
+            <FormFieldGroup
+              {...form}
+              name="spec.s3.force_path_style"
+              label={t("log_sinks.fields.forcePathStyle")}
+              description={t("log_sinks.descriptions.forcePathStyle")}
+              isCheckbox
+              className="col-span-4"
+            >
+              <Switch
+                checked={forcePathStyle === true}
+                onCheckedChange={(checked) =>
+                  form.setValue("spec.s3.force_path_style", checked, {
+                    shouldDirty: true,
+                  })
+                }
+              />
+            </FormFieldGroup>
+          )}
+          {sinkType === "victorialogs" && (
+            <>
+              <FormFieldGroup
+                {...form}
+                name="spec.victorialogs.insecure_skip_verify"
+                label={t("log_sinks.fields.insecureSkipVerify")}
+                description={t("log_sinks.descriptions.insecureSkipVerify")}
+                isCheckbox
+                className="col-span-4"
+              >
+                <Checkbox
+                  checked={skipVerify === true}
+                  onCheckedChange={(checked) =>
+                    form.setValue(
+                      "spec.victorialogs.insecure_skip_verify",
+                      checked === true,
+                      { shouldDirty: true },
+                    )
+                  }
+                />
+              </FormFieldGroup>
+              <FormFieldGroup
+                {...form}
+                name="spec.victorialogs.ca_cert"
+                label={t("log_sinks.fields.caCert")}
+                className="col-span-4"
+              >
+                <Textarea
+                  rows={4}
+                  className="font-mono text-xs"
+                  placeholder={t("log_sinks.placeholders.caCert")}
+                />
+              </FormFieldGroup>
+              <div className="col-span-4 space-y-2">
+                <div className="text-sm leading-[22px] text-[var(--nt-text-neutral-secondary)]">
+                  {t("log_sinks.fields.extraFields")}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t("log_sinks.descriptions.extraFields")}
+                </div>
+                {extraFieldRows.map((row, index) => (
+                  <div key={row.id} className="flex items-start gap-3">
+                    <FormFieldGroup
+                      {...form}
+                      name={`spec.victorialogs.extra_fields.${index}.key`}
+                      className="flex-1"
+                      rules={{
+                        validate: (_: string, values) => {
+                          const error = validateExtraFieldKey(
+                            (values as LogSinkFormValues).spec.victorialogs
+                              .extra_fields,
+                            index,
+                          );
+                          return error ? extraKeyMessages[error] : true;
+                        },
+                      }}
+                    >
+                      <Input
+                        aria-label={t("log_sinks.fields.extraFieldKey")}
+                        placeholder={t("log_sinks.fields.extraFieldKey")}
+                      />
+                    </FormFieldGroup>
+                    <FormFieldGroup
+                      {...form}
+                      name={`spec.victorialogs.extra_fields.${index}.value`}
+                      className="flex-1"
+                      rules={{
+                        validate: (value: string) =>
+                          !validateExtraFieldValue(value) ||
+                          t("log_sinks.validation.extraFieldValueComma"),
+                      }}
+                    >
+                      <Input
+                        aria-label={t("log_sinks.fields.extraFieldValue")}
+                        placeholder={t("log_sinks.fields.extraFieldValue")}
+                      />
+                    </FormFieldGroup>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      title={t("log_sinks.buttons.removeExtraField")}
+                      onClick={() => removeExtraField(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  title={t("log_sinks.buttons.removeExtraField")}
-                  onClick={() => removeExtraField(index)}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendExtraField({ key: "", value: "" })}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Plus className="mr-1 h-4 w-4" />
+                  {t("log_sinks.buttons.addExtraField")}
                 </Button>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendExtraField({ key: "", value: "" })}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              {t("log_sinks.buttons.addExtraField")}
-            </Button>
-          </div>
+            </>
+          )}
         </FormCardGrid>
       </>
     ),
