@@ -87,6 +87,9 @@ vi.mock("@/domains/endpoint/hooks/use-playground-models", () => ({
 // ScrollArea itself is covered by its own test; Radix's scrollbar needs layout
 // this environment does not have, so the transcript stands on a plain box here
 // and the component still hands it the viewport ref it would get in the app.
+// The box is installed in the ref, at the moment the element is attached: the
+// hook reads the container's size when it mounts, the way it would in a browser
+// that has already laid the element out.
 vi.mock("@/components/ui/scroll-area", () => ({
   ScrollArea: ({
     children,
@@ -95,11 +98,33 @@ vi.mock("@/components/ui/scroll-area", () => ({
     children: ReactNode;
     viewportRef?: Ref<HTMLDivElement>;
   }) => (
-    <div ref={viewportRef} data-testid="transcript">
+    <div
+      ref={(node) => {
+        if (node) installTranscriptBox(node);
+        if (typeof viewportRef === "function") viewportRef(node);
+        else if (viewportRef && node) {
+          (viewportRef as { current: HTMLDivElement | null }).current = node;
+        }
+      }}
+      data-testid="transcript"
+    >
       {children}
     </div>
   ),
 }));
+
+const transcriptBox = { width: 800, height: 200 };
+
+function installTranscriptBox(element: HTMLElement) {
+  Object.defineProperty(element, "clientWidth", {
+    configurable: true,
+    get: () => transcriptBox.width,
+  });
+  Object.defineProperty(element, "clientHeight", {
+    configurable: true,
+    get: () => transcriptBox.height,
+  });
+}
 
 type Observer = { callback: ResizeObserverCallback };
 let observers: Observer[] = [];
@@ -127,13 +152,8 @@ const endpoint = {
 function describeTranscript(element: HTMLElement) {
   let top = 0;
   let scrollHeight = 400;
-  const clientHeight = 200;
-  const maxTop = () => Math.max(0, scrollHeight - clientHeight);
+  const maxTop = () => Math.max(0, scrollHeight - transcriptBox.height);
 
-  Object.defineProperty(element, "clientHeight", {
-    configurable: true,
-    get: () => clientHeight,
-  });
   Object.defineProperty(element, "scrollHeight", {
     configurable: true,
     get: () => scrollHeight,

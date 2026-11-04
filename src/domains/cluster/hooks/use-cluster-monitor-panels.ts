@@ -1,32 +1,21 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { type Cluster, hasZCache } from "../types";
 
-// Cluster monitor panel types
-type ClusterMonitorPanelType = "overview";
+type ClusterMonitorPanelType = "overview" | "cache";
 
-const CLUSTER_MONITOR_PANELS = ["overview"] satisfies ClusterMonitorPanelType[];
+const PANELS: ClusterMonitorPanelType[] = ["overview"];
+const PANELS_WITH_CACHE: ClusterMonitorPanelType[] = ["overview", "cache"];
 
-/**
- * Hook for managing cluster monitoring panels
- */
-export const useClusterMonitorPanels = () => {
-  const [userSelectedPanel, setUserSelectedPanel] =
-    useState<ClusterMonitorPanelType | null>(null);
-
-  const selectedPanel = useMemo(() => {
-    if (
-      userSelectedPanel &&
-      CLUSTER_MONITOR_PANELS.includes(userSelectedPanel)
-    ) {
-      return userSelectedPanel;
-    }
-    return CLUSTER_MONITOR_PANELS[0];
-  }, [userSelectedPanel]);
-
+/** The cache panel is offered only on a cluster that runs ZCache. */
+export const useClusterMonitorPanels = (cluster?: Cluster) => {
+  const [selection, setSelectedPanel] =
+    useState<ClusterMonitorPanelType>("overview");
+  const cacheAvailable = hasZCache(cluster);
   return {
-    panels: CLUSTER_MONITOR_PANELS,
-    selectedPanel,
-    setSelectedPanel: setUserSelectedPanel,
+    panels: cacheAvailable ? PANELS_WITH_CACHE : PANELS,
+    selectedPanel: cacheAvailable ? selection : ("overview" as const),
+    setSelectedPanel,
     showMonitorTab: true,
-    showSelector: false,
+    showSelector: cacheAvailable,
   };
 };

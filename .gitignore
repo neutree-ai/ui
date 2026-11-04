@@ -52,5 +52,4 @@ e2e/profiles/*
 .mcp.json
 skills-lock.json
 CLAUDE.local.md
-AGENTS.md
 build-preview.sh

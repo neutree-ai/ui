@@ -52,6 +52,7 @@ describe("endpoint resource status helpers", () => {
           devices: [
             {
               uuid: "GPU-1",
+              vdevice_index: "1",
               product: "Tesla-T4",
               memory_mib: 15360,
               core_units: 100,
@@ -89,6 +90,7 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 100,
         physicalMemoryMiB: 16384,
         actualMemoryMiB: 12288,
+        vdeviceIndex: "1",
       },
       {
         instanceId: "endpoint-def",

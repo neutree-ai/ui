@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Server } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,6 +12,12 @@ import {
 } from "@/components/ui/table";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
+import { MetricBar } from "@/foundation/components/MetricBar";
+import {
+  formatL1CacheUsage,
+  type NodeL1CacheUsage,
+} from "@/foundation/lib/accelerator-observations";
+import type { GpuDeviceResourceRow } from "@/foundation/lib/gpu-device-resources";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
@@ -56,12 +62,41 @@ const ProductGroupsBreakdown = ({
   );
 };
 
+const NodeL1CacheBar = ({
+  usage,
+  t,
+}: {
+  usage: NodeL1CacheUsage;
+  t: (key: string) => string;
+}) => {
+  const percent =
+    usage.usedGiB != null && usage.capacityGiB > 0
+      ? Math.min(100, Math.max(0, (usage.usedGiB / usage.capacityGiB) * 100))
+      : null;
+  return (
+    <div
+      className="space-y-1 text-xs text-muted-foreground"
+      data-testid="node-l1-cache-bar"
+    >
+      <div className="flex items-center justify-between gap-2 tabular-nums">
+        <span>
+          {t("observations.l1KvCache")} {formatL1CacheUsage(usage)}
+        </span>
+        <span>{percent != null ? `${Math.round(percent)}%` : "—"}</span>
+      </div>
+      <MetricBar size="sm" series="blue" value={percent} track="subtle" />
+    </div>
+  );
+};
+
 interface NodeResourcesTableProps {
   nodeResources: Record<string, NodeResourceStatus>;
   acceleratorTypes: string[];
   t: (key: string, options?: Record<string, unknown>) => string;
   framed?: boolean;
   className?: string;
+  renderGpuMemory?: (row: GpuDeviceResourceRow) => ReactNode;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }
 
 export const NodeResourcesTable = ({
@@ -70,6 +105,8 @@ export const NodeResourcesTable = ({
   t,
   framed = true,
   className,
+  renderGpuMemory,
+  l1CacheByNode,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
     ([, left], [, right]) => {
@@ -189,14 +226,19 @@ export const NodeResourcesTable = ({
                     />
                   </TableCell>
                   <TableCell className="align-top">
-                    <ResourceProgressBar
-                      label=""
-                      used={memory.used}
-                      total={nodeStatus.allocatable?.memory || 0}
-                      unit="GiB"
-                      compact
-                      series="purple"
-                    />
+                    <div className="space-y-2">
+                      <ResourceProgressBar
+                        label=""
+                        used={memory.used}
+                        total={nodeStatus.allocatable?.memory || 0}
+                        unit="GiB"
+                        compact
+                        series="purple"
+                      />
+                      {l1CacheByNode?.[nodeName] && (
+                        <NodeL1CacheBar usage={l1CacheByNode[nodeName]} t={t} />
+                      )}
+                    </div>
                   </TableCell>
                   {acceleratorTypes.map((accType) => {
                     const accGroup =
@@ -230,6 +272,7 @@ export const NodeResourcesTable = ({
                     <TableCell colSpan={3 + acceleratorTypes.length}>
                       <div className="pl-9">
                         <GpuDeviceResourcesView
+                          renderMemory={renderGpuMemory}
                           nodeResources={{ [nodeName]: nodeStatus }}
                           labels={{
                             title: t("clusters.sections.nodeDevices"),

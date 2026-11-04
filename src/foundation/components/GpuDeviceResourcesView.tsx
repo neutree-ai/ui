@@ -100,6 +100,7 @@ type GpuDeviceResourcesViewProps = {
   resourceControlsTestId?: string;
   showNodeColumn?: boolean;
   request?: GpuDeviceRequestFitContext;
+  renderMemory?: (row: GpuDeviceResourceRow) => ReactNode;
 };
 
 type GpuDeviceRequestFitContext = {
@@ -408,7 +409,9 @@ const GpuGridCell = ({
   row,
   labels,
   copy,
+  renderMemory,
 }: {
+  renderMemory?: (row: GpuDeviceResourceRow) => ReactNode;
   row: GpuDeviceResourceRow;
   labels: GpuDeviceResourcesViewLabels;
   copy: ReturnType<typeof useCopyToClipboard>["copy"];
@@ -494,16 +497,20 @@ const GpuGridCell = ({
       ) : (
         productLabel
       )}
-      <GridResourceUsage
-        label={labels.memoryUsage}
-        remainingLabel={labels.remaining}
-        pool={row.memory}
-        unit="GiB"
-        valueScale={VRAM_VALUE_SCALE}
-        precision={VRAM_VALUE_PRECISION}
-        unavailable={!row.healthy}
-        series="blue"
-      />
+      {renderMemory ? (
+        renderMemory(row)
+      ) : (
+        <GridResourceUsage
+          label={labels.memoryUsage}
+          remainingLabel={labels.remaining}
+          pool={row.memory}
+          unit="GiB"
+          valueScale={VRAM_VALUE_SCALE}
+          precision={VRAM_VALUE_PRECISION}
+          unavailable={!row.healthy}
+          series="blue"
+        />
+      )}
       <GridResourceUsage
         label={labels.coreUsage}
         remainingLabel={labels.remaining}
@@ -572,6 +579,7 @@ export function GpuDeviceResourcesView({
   resourceControlsTestId = "gpu-device-resource-toolbar",
   showNodeColumn = true,
   request,
+  renderMemory,
 }: GpuDeviceResourcesViewProps) {
   const [productFilter, setProductFilter] = useState(GPU_DEVICE_FILTER_ALL);
   const [nodeFilter, setNodeFilter] = useState(GPU_DEVICE_FILTER_ALL);
@@ -787,6 +795,7 @@ export function GpuDeviceResourcesView({
                 row={row}
                 labels={labels}
                 copy={copy}
+                renderMemory={renderMemory}
               />
             ))}
           </div>
@@ -861,15 +870,19 @@ export function GpuDeviceResourcesView({
                 data-testid="gpu-device-resource-usage-row"
                 className="mt-2.5 grid grid-cols-2 gap-2"
               >
-                <ResourceUsageCard
-                  label={labels.memoryUsage}
-                  remainingLabel={labels.remaining}
-                  pool={row.memory}
-                  unit="GiB"
-                  valueScale={VRAM_VALUE_SCALE}
-                  precision={VRAM_VALUE_PRECISION}
-                  series="blue"
-                />
+                {renderMemory ? (
+                  renderMemory(row)
+                ) : (
+                  <ResourceUsageCard
+                    label={labels.memoryUsage}
+                    remainingLabel={labels.remaining}
+                    pool={row.memory}
+                    unit="GiB"
+                    valueScale={VRAM_VALUE_SCALE}
+                    precision={VRAM_VALUE_PRECISION}
+                    series="blue"
+                  />
+                )}
                 <ResourceUsageCard
                   label={labels.coreUsage}
                   remainingLabel={labels.remaining}
@@ -962,15 +975,19 @@ export function GpuDeviceResourcesView({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <ResourceUsageCell
-                      label={labels.usedSlashTotal}
-                      remainingLabel={labels.remaining}
-                      pool={row.memory}
-                      unit="GiB"
-                      valueScale={VRAM_VALUE_SCALE}
-                      precision={VRAM_VALUE_PRECISION}
-                      series="blue"
-                    />
+                    {renderMemory ? (
+                      renderMemory(row)
+                    ) : (
+                      <ResourceUsageCell
+                        label={labels.usedSlashTotal}
+                        remainingLabel={labels.remaining}
+                        pool={row.memory}
+                        unit="GiB"
+                        valueScale={VRAM_VALUE_SCALE}
+                        precision={VRAM_VALUE_PRECISION}
+                        series="blue"
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     <ResourceUsageCell

@@ -56,6 +56,9 @@
 			"logs": "Logs",
 			"rayDashboard": "Ray Dashboard"
 		},
+		"monitor": {
+			"openGrafana": "View detailed monitoring"
+		},
 		"options": {
 			"none": "None",
 			"enabled": "Enabled",
@@ -538,7 +541,9 @@
 			"acceleratorVirtualizationUnsupportedVersion": "Accelerator virtualization requires cluster version v1.1.0 or later."
 		},
 		"monitor": {
-			"overviewMetrics": "Cluster Overview"
+			"overviewMetrics": "Cluster Overview",
+			"overview": "Overview",
+			"cache": "Cache"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",
@@ -791,8 +796,7 @@
 		},
 		"sections": {
 			"keyConfig": "Key Configuration",
-			"env": "Environment Variables",
-			"advanced": "Advanced (all fields)"
+			"env": "Environment Variables"
 		},
 		"keyConfig": {
 			"contextLength": "Context Length",
@@ -1102,6 +1106,7 @@
 			"hoverTitle": "Access URLs"
 		},
 		"fields": {
+			"servedModels": "Served models",
 			"serviceUrl": "Service URL",
 			"npu": "NPU",
 			"modelRegistry": "Model Registry",
@@ -1115,11 +1120,11 @@
 			"cards": "cards",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
-			"physicalGpuCount": "Card Count",
+			"physicalGpuCount": "Cards per replica",
 			"physicalGpu": "Card Count",
 			"perReplica": "Per Replica",
 			"perCard": "per card",
-			"vgpuCount": "Card Count",
+			"vgpuCount": "Cards per replica",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -1182,7 +1187,8 @@
 			"resourceSummary": "Resource Summary",
 			"replicaResources": "Replica Resources",
 			"gpuAllocation": "GPU Allocation & Usage",
-			"weights": "Weights & Cache"
+			"weights": "Weights & Cache",
+			"monitoringMetrics": "Monitoring Metrics"
 		},
 		"placeholders": {
 			"endpointName": "Endpoint Name",
@@ -1513,6 +1519,26 @@
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",
 			"redeploy": "Saving this change will redeploy the inference instance"
+		},
+		"performance": {
+			"window5m": "Last 5m",
+			"window1h": "Last 1h",
+			"window24h": "Last 24h",
+			"cumulative": "Cumulative",
+			"latency": "Latency",
+			"throughput": "Throughput",
+			"kvCache": "KV-Cache",
+			"ttft": "TTFT",
+			"tpot": "TPOT",
+			"avg": "Avg",
+			"p95": "P95",
+			"totalTokensPerSecond": "Total tokens/s (TPS)",
+			"promptTokensPerSecond": "Prompt tokens/s",
+			"generationTokensPerSecond": "Generation tokens/s",
+			"l0HitRate": "L0 Hit Rate",
+			"l1HitRate": "L1 Hit Rate",
+			"l1ReadSpeed": "Hosting-node L1 Read Speed",
+			"l1WriteSpeed": "Hosting-node L1 Write Speed"
 		}
 	},
 	"external_endpoints": {
@@ -1675,7 +1701,6 @@
 		"monitor": {
 			"view": "View monitoring",
 			"legacy": "Monitoring requires virtual model routing. This endpoint uses legacy model mappings.",
-			"openGrafana": "View detailed monitoring",
 			"chartArea": "Chart area (scroll inside to view details)",
 			"loading": "Loading monitoring configuration…",
 			"configError": "Could not load monitoring configuration.",
@@ -2173,13 +2198,6 @@
 				"off": "Off"
 			},
 			"defaultPanelTitle": "Grafana Panel {{id}}"
-		},
-		"jsonSchemaValueVisualizer": {
-			"undefined": "undefined",
-			"null": "null",
-			"typeMismatch": "type miss match: expect {{expectedType}}, actual {{actualType}}",
-			"noValue": "no value",
-			"root": "Root"
 		},
 		"jsonSchemaVisualizer": {
 			"empty": "This version declares no values schema.",
@@ -2738,5 +2756,57 @@
 		},
 		"byApiKeyOnDay": "By API key · {{date}}",
 		"byModelOnDay": "By model · {{date}}"
+	},
+	"observations": {
+		"actualMemory": "Actual VRAM",
+		"actual": "Actual",
+		"allocated": "Allocated",
+		"physical": "Physical",
+		"modelWeights": "Model weights",
+		"l0KvCache": "L0 KV-Cache",
+		"otherMemory": "Other",
+		"allocatedUnused": "Allocated, unused",
+		"l1KvCache": "L1 KV-Cache",
+		"noMeasurement": "No recent measurement",
+		"utilization": "GPU utilization",
+		"assignments": "Allocated inference instances",
+		"replicaUsage": "Replica usage",
+		"deviceUsage": "Physical device usage",
+		"deviceTemperature": "Device temperature",
+		"devicePower": "Device power",
+		"sampleTime": "VRAM sampled at",
+		"hardware": "Hardware and connection",
+		"noAssignments": "No visible instance allocations",
+		"status": {
+			"no_data": "No recent GPU measurements. Allocation information remains available.",
+			"not_configured": "GPU monitoring query service is not configured.",
+			"unavailable": "GPU measurements are unavailable. Allocation information remains available."
+		},
+		"hardwareFields": {
+			"architecture": "Architecture",
+			"cuda_capability": "CUDA capability",
+			"driver_version": "Driver",
+			"cuda_driver_version": "CUDA driver",
+			"pcie_bus_id": "PCIe bus ID",
+			"pcie_generation": "PCIe generation",
+			"pcie_width": "PCIe width",
+			"numa_node": "NUMA node",
+			"nvlink": "NVLink",
+			"nvswitch": "NVSwitch"
+		},
+		"details": "Device details",
+		"present": "Present",
+		"absent": "Absent",
+		"overAllocation": "Actual usage exceeds allocation",
+		"fp16": "FP16 compute (TFLOPS)",
+		"flopsEstimate": "Estimated usage = nominal FP16 peak × utilization",
+		"flops": "Compute monitoring (FLOPS)",
+		"calibrate": "Calibrate compute",
+		"flopsTrend": "Last 30 days · 6-hour average usage",
+		"noTrend": "No compute history available",
+		"calibrationHelp": "Single-card FP16 TFLOPS by model. Leave blank to restore the default.",
+		"invalidTflops": "Enter a finite number greater than zero.",
+		"calibrationFailed": "Could not save calibration. Please retry.",
+		"trendEstimate": "Reported devices; calculated with current calibration"
 	}
 }

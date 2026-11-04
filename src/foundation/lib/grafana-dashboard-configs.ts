@@ -4,7 +4,7 @@ import type { GrafanaDashboardConfig } from "@/foundation/lib/grafana-dashboard-
 /** Grafana template variable value that selects all options */
 export const GRAFANA_VAR_ALL = "$__all";
 
-const getBaseDashboardConfig = (
+export const getBaseDashboardConfig = (
   grafanaUrl: string,
 ): Omit<GrafanaDashboardConfig, "dashboardId" | "variables"> => ({
   baseUrl: grafanaUrl,
@@ -12,7 +12,7 @@ const getBaseDashboardConfig = (
   timezone: "browser",
 });
 
-const getCommonVariables = () => ({
+export const getCommonVariables = () => ({
   datasource: "neutree-cluster",
 });
 
@@ -48,6 +48,7 @@ export const getClusterSplitDashboardProps = (
       Cluster: clusterName,
     },
   },
+  hideVariables: true,
 });
 
 export type EndpointSplitDashboardType =
@@ -66,28 +67,47 @@ const ENDPOINT_SPLIT_DASHBOARD_IDS: Record<EndpointSplitDashboardType, string> =
     cache: "neutree-endpoint-cache-embed",
   };
 
+/**
+ * A cache provider can replace the cache panel's dashboard and add the
+ * variables it needs; the other panels are fixed.
+ */
+export type EndpointCacheDashboard = {
+  dashboardId?: string;
+  variables: Record<string, string>;
+};
+
 export const getEndpointSplitDashboardProps = (
   grafanaUrl: string,
   dashboardType: EndpointSplitDashboardType,
   context: {
     clusterName: string;
     endpointName: string;
+    cache?: EndpointCacheDashboard;
   },
-): GrafanaDashboardProps => ({
-  dashboardConfig: {
-    ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
-    variables: {
-      ...getCommonVariables(),
-      Cluster: context.clusterName,
-      Endpoint: context.endpointName,
+): GrafanaDashboardProps => {
+  const cache = dashboardType === "cache" ? context.cache : undefined;
+  return {
+    dashboardConfig: {
+      ...getBaseDashboardConfig(grafanaUrl),
+      dashboardId:
+        cache?.dashboardId ?? ENDPOINT_SPLIT_DASHBOARD_IDS[dashboardType],
+      variables: {
+        ...getCommonVariables(),
+        Cluster: context.clusterName,
+        Endpoint: context.endpointName,
+        ...cache?.variables,
+      },
     },
-  },
-});
+    // The cache panel lets the user narrow its variables; the others are
+    // fully scoped by the page.
+    hideVariables: dashboardType !== "cache",
+  };
+};
 
 export const getModelRoutingDashboardProps = (
   grafanaUrl: string,
   context: {
+    language?: string;
     workspace: string;
     endpoint: string;
     models: string[];
@@ -99,7 +119,7 @@ export const getModelRoutingDashboardProps = (
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
-    dashboardId: "neutree-model-routing",
+    dashboardId: `neutree-model-routing${context.language && context.language !== "en-US" ? `-${context.language}` : ""}`,
     variables: {
       ...getCommonVariables(),
       // Encode once as PromQL string literals. Grafana 11 formatters differ
