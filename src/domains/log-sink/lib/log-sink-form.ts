@@ -1,12 +1,13 @@
-import type {
-  LogSink,
-  LogSinkAuth,
-  LogSinkAuthType,
-  LogSinkSpec,
-  LogSinkType,
-  S3Compression,
-  S3SinkSpec,
-  VictoriaLogsSinkSpec,
+import {
+  LOG_SINK_TYPES,
+  type LogSink,
+  type LogSinkAuth,
+  type LogSinkAuthType,
+  type LogSinkSpec,
+  type LogSinkType,
+  type S3Compression,
+  type S3SinkSpec,
+  type VictoriaLogsSinkSpec,
 } from "@/domains/log-sink/types";
 
 const GIB = 1024 ** 3;
@@ -102,6 +103,10 @@ export const isLogSinkEnabled = (spec: LogSinkSpec | undefined): boolean =>
 export const toAuthType = (type: string | undefined): LogSinkAuthType =>
   type === "basic" || type === "bearer" ? type : "none";
 
+/** An unknown or absent type opens as VictoriaLogs, the original type. */
+const toLogSinkType = (type: string | undefined): LogSinkType =>
+  LOG_SINK_TYPES.find((known) => known === type) ?? "victorialogs";
+
 const toCompression = (value: string | undefined): S3Compression =>
   value === "zstd" || value === "none" ? value : S3_DEFAULT_COMPRESSION;
 
@@ -116,7 +121,7 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
     ...base,
     metadata: { name: record.metadata?.name ?? "" },
     spec: {
-      type: record.spec?.type === "s3" ? "s3" : "victorialogs",
+      type: toLogSinkType(record.spec?.type),
       enabled: isLogSinkEnabled(record.spec),
       victorialogs: {
         url: vl?.url ?? "",
@@ -218,8 +223,14 @@ export function toLogSinkSpec(values: LogSinkFormValues): LogSinkSpec {
   // Only the chosen type's settings are sent (the server drops the other's).
   const { type, enabled } = values.spec;
   const spec: LogSinkSpec = { type, enabled };
-  if (type === "s3") spec.s3 = toS3SinkSpec(values.spec.s3);
-  else spec.victorialogs = toVictoriaLogsSinkSpec(values.spec.victorialogs);
+  switch (type) {
+    case "s3":
+      spec.s3 = toS3SinkSpec(values.spec.s3);
+      break;
+    case "victorialogs":
+      spec.victorialogs = toVictoriaLogsSinkSpec(values.spec.victorialogs);
+      break;
+  }
   const maxSize = gibToBytes(values.spec.buffer.max_size_gib);
   if (maxSize !== undefined) spec.buffer = { max_size: maxSize };
   return spec;

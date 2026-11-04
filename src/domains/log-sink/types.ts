@@ -27,7 +27,9 @@ export type VictoriaLogsSinkSpec = {
   extra_fields?: Record<string, string>;
 };
 
-export type LogSinkType = "victorialogs" | "s3";
+export const LOG_SINK_TYPES = ["victorialogs", "s3"] as const;
+
+export type LogSinkType = (typeof LOG_SINK_TYPES)[number];
 
 export type S3Compression = "gzip" | "zstd" | "none";
 

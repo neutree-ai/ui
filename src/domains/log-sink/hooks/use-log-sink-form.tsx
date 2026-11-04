@@ -26,13 +26,23 @@ import {
   validateSinkUrl,
   validateTimeoutSeconds,
 } from "@/domains/log-sink/lib/log-sink-form";
-import type { LogSink } from "@/domains/log-sink/types";
+import { LOG_SINK_TYPES, type LogSink } from "@/domains/log-sink/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+
+/**
+ * A `validate` rule that fails with `message` on a blank value. `when: false`
+ * turns it off (a stored secret kept on edit); `trim: false` keeps whitespace
+ * significant (secrets are sent as typed).
+ */
+const requiredText =
+  (message: string, { when = true, trim = true } = {}) =>
+  (value: string) =>
+    !when || (trim ? value.trim() : value) !== "" || message;
 
 export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
@@ -198,7 +208,7 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
           >
             <FormSelect
               disabled={isEdit}
-              options={(["victorialogs", "s3"] as const).map((type) => ({
+              options={LOG_SINK_TYPES.map((type) => ({
                 label: t(`log_sinks.types.${type}`),
                 value: type,
               }))}
@@ -243,9 +253,9 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                     label={t("log_sinks.fields.username")}
                     required
                     rules={{
-                      validate: (value: string) =>
-                        value.trim() !== "" ||
+                      validate: requiredText(
                         t("log_sinks.validation.usernameRequired"),
+                      ),
                     }}
                   >
                     <Input autoComplete="off" />
@@ -269,10 +279,10 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                   description={tokenRequired ? undefined : keepSecretHint}
                   className="col-span-2"
                   rules={{
-                    validate: (value: string) =>
-                      !tokenRequired ||
-                      value.trim() !== "" ||
+                    validate: requiredText(
                       t("log_sinks.validation.tokenRequired"),
+                      { when: tokenRequired },
+                    ),
                   }}
                 >
                   <Input type="password" autoComplete="new-password" />
@@ -304,9 +314,9 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                 description={t("log_sinks.descriptions.region")}
                 required
                 rules={{
-                  validate: (value: string) =>
-                    value.trim() !== "" ||
+                  validate: requiredText(
                     t("log_sinks.validation.regionRequired"),
+                  ),
                 }}
               >
                 <Input placeholder={t("log_sinks.placeholders.region")} />
@@ -318,9 +328,9 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                 description={t("log_sinks.descriptions.bucket")}
                 required
                 rules={{
-                  validate: (value: string) =>
-                    value.trim() !== "" ||
+                  validate: requiredText(
                     t("log_sinks.validation.bucketRequired"),
+                  ),
                 }}
               >
                 <Input />
@@ -348,10 +358,10 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                 description={keepSecretHint}
                 className="col-span-2"
                 rules={{
-                  validate: (value: string) =>
-                    !keysRequired ||
-                    value.trim() !== "" ||
+                  validate: requiredText(
                     t("log_sinks.validation.accessKeyIdRequired"),
+                    { when: keysRequired },
+                  ),
                 }}
               >
                 <Input type="password" autoComplete="new-password" />
@@ -364,10 +374,10 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
                 description={keepSecretHint}
                 className="col-span-2"
                 rules={{
-                  validate: (value: string) =>
-                    !keysRequired ||
-                    value !== "" ||
+                  validate: requiredText(
                     t("log_sinks.validation.secretAccessKeyRequired"),
+                    { when: keysRequired, trim: false },
+                  ),
                 }}
               >
                 <Input type="password" autoComplete="new-password" />
