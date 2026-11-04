@@ -1,6 +1,6 @@
 import { useUpdate } from "@refinedev/core";
 import { Power, PowerOff } from "lucide-react";
-import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-display";
+import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { RowAction, type RowActionProps } from "@/foundation/components/Table";
 import { getErrorMessage } from "@/foundation/lib/error-message";

@@ -5,7 +5,6 @@ import type {
   LogSinkSpec,
   VictoriaLogsSinkSpec,
 } from "@/domains/log-sink/types";
-import { isLogSinkEnabled } from "./log-sink-display";
 
 const GIB = 1024 ** 3;
 const MIN_BUFFER_BYTES = 268435488;
@@ -65,6 +64,10 @@ export const gibToBytes = (gib: string): number | undefined => {
   const value = Number(trimmed);
   return Number.isFinite(value) ? Math.round(value * GIB) : Number.NaN;
 };
+
+/** `spec.enabled` is stored as true when omitted; only an explicit false is off. */
+export const isLogSinkEnabled = (spec: LogSinkSpec | undefined): boolean =>
+  spec?.enabled !== false;
 
 export const toAuthType = (type: string | undefined): LogSinkAuthType =>
   type === "basic" || type === "bearer" ? type : "none";

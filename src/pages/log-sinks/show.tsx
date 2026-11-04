@@ -4,11 +4,12 @@ import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import TestConnectionButton from "@/domains/log-sink/components/TestConnectionButton";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
 import { useLogSinkTestConnection } from "@/domains/log-sink/hooks/use-log-sink-test-connection";
+import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
 import {
-  formatEventCount,
+  bytesToGib,
   isLogSinkEnabled,
-} from "@/domains/log-sink/lib/log-sink-display";
-import { bytesToGib, toAuthType } from "@/domains/log-sink/lib/log-sink-form";
+  toAuthType,
+} from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";

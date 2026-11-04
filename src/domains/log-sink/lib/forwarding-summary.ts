@@ -1,5 +1,5 @@
 import type { LogSink } from "@/domains/log-sink/types";
-import { isLogSinkEnabled } from "./log-sink-display";
+import { isLogSinkEnabled } from "./log-sink-form";
 
 type ForwardingSummary = {
   /** Destinations switched on. */

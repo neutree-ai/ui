@@ -2,10 +2,8 @@ import { Edit, Trash2 } from "lucide-react";
 import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
-import {
-  formatEventCount,
-  isLogSinkEnabled,
-} from "@/domains/log-sink/lib/log-sink-display";
+import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
+import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { ListPage } from "@/foundation/components/ListPage";
