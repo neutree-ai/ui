@@ -10,13 +10,11 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 export function useLogSinkTestConnection() {
   const { t } = useTranslation();
-  const { mutateAsync } = useCustomMutation();
-  const [testing, setTesting] = useState(false);
+  const { mutateAsync, isLoading: testing } = useCustomMutation();
   const [result, setResult] = useState<TestConnectionResult | null>(null);
 
   const test = useCallback(
     async (target: TestConnectionTarget) => {
-      setTesting(true);
       setResult(null);
       try {
         const res = await mutateAsync({
@@ -32,8 +30,6 @@ export function useLogSinkTestConnection() {
           ok: false,
           message: readTestConnectionError(err, t("common.errors.unknown")),
         });
-      } finally {
-        setTesting(false);
       }
     },
     [mutateAsync, t],

@@ -1,7 +1,8 @@
 import type { LogSink } from "@/domains/log-sink/types";
+import { isLogSinkEnabled } from "./log-sink-display";
 
 type ForwardingSummary = {
-  /** Destinations switched on; `spec.enabled` is true when absent. */
+  /** Destinations switched on. */
   enabled: number;
   failed: number;
   degraded: number;
@@ -11,7 +12,7 @@ type ForwardingSummary = {
 
 export const summarizeForwarding = (sinks: LogSink[]): ForwardingSummary => {
   const live = sinks.filter((sink) => !sink.metadata?.deletion_timestamp);
-  const enabled = live.filter((sink) => sink.spec?.enabled !== false).length;
+  const enabled = live.filter((sink) => isLogSinkEnabled(sink.spec)).length;
   const failed = live.filter((sink) => sink.status?.phase === "Failed").length;
   const degraded = live.filter(
     (sink) => sink.status?.phase === "Degraded",

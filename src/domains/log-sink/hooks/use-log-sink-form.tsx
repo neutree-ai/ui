@@ -26,9 +26,9 @@ import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
+import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-// Every field and rule here traces to src/domains/log-sink/data.md.
 export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const isEdit = action === "edit";
@@ -53,7 +53,8 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
         }),
       },
       onMutationError: (error) => {
-        const field = LOG_SINK_ERROR_FIELDS[String(error?.code ?? "")];
+        const code = getApiErrorCode(error);
+        const field = code && LOG_SINK_ERROR_FIELDS[code];
         if (field) {
           form.setError(field, {
             type: "server",

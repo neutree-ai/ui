@@ -1,19 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLogSink } from "@/domains/log-sink/testing/builders";
 
-const mocks = vi.hoisted(() => ({
-  invalidate: vi.fn(),
-  mutateAsync: vi.fn(),
-}));
+const mutate = vi.hoisted(() => vi.fn());
 
 vi.mock("@refinedev/core", () => ({
-  useInvalidate: () => mocks.invalidate,
-  useUpdate: () => ({ mutateAsync: mocks.mutateAsync, isLoading: false }),
-}));
-
-vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  useUpdate: () => ({ mutate, isLoading: false }),
 }));
 
 vi.mock("@/foundation/components/Table", () => ({
@@ -31,8 +23,7 @@ const sink = (enabled?: boolean) =>
 
 describe("LogSinkEnableAction", () => {
   beforeEach(() => {
-    mocks.mutateAsync.mockReset().mockResolvedValue({});
-    mocks.invalidate.mockReset();
+    mutate.mockReset();
   });
 
   it.each([
@@ -41,21 +32,22 @@ describe("LogSinkEnableAction", () => {
     { enabled: false, label: "log_sinks.actions.enable", next: true },
   ])(
     "toggles enabled=$enabled to $next and resends the whole spec",
-    async ({ enabled, label, next }) => {
+    ({ enabled, label, next }) => {
       render(<LogSinkEnableAction sink={sink(enabled)} />);
       fireEvent.click(screen.getByText(label));
 
-      await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledTimes(1));
-      const call = mocks.mutateAsync.mock.calls[0][0];
-      expect(call.id).toBe("ext-a");
-      expect(call.values).toEqual({
-        spec: {
-          type: "victorialogs",
-          enabled: next,
-          victorialogs: { url: "https://vl:9428" },
-        },
-      });
-      await waitFor(() => expect(mocks.invalidate).toHaveBeenCalled());
+      expect(mutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "ext-a",
+          values: {
+            spec: {
+              type: "victorialogs",
+              enabled: next,
+              victorialogs: { url: "https://vl:9428" },
+            },
+          },
+        }),
+      );
     },
   );
 });

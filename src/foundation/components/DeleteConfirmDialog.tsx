@@ -58,10 +58,7 @@ export function DeleteConfirmDialog({
   const handleOpenChange = (v: boolean) => {
     if (!loading) {
       onOpenChange?.(v);
-      if (!v) {
-        setForceDelete(false);
-        setTypedName("");
-      }
+      if (!v) setForceDelete(false);
     }
   };
 

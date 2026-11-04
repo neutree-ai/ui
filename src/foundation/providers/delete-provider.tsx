@@ -67,9 +67,7 @@ function DeleteActionModal(props: DeleteContextType) {
       open={props?.data?.toogle}
       loading={isLoading}
       errorMessage={props.data?.row?.status?.error_message}
-      description={props.data?.confirmation?.description}
-      confirmName={props.data?.confirmation?.confirmName}
-      allowForceDelete={props.data?.confirmation?.allowForceDelete}
+      {...props.data?.confirmation}
       onOpenChange={() => {
         if (!isLoading) {
           props?.updateData({

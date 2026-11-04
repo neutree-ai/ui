@@ -5,8 +5,7 @@ import type {
   LogSinkSpec,
   VictoriaLogsSinkSpec,
 } from "@/domains/log-sink/types";
-
-// Facts: src/domains/log-sink/data.md
+import { isLogSinkEnabled } from "./log-sink-display";
 
 const GIB = 1024 ** 3;
 const MIN_BUFFER_BYTES = 268435488;
@@ -67,7 +66,7 @@ export const gibToBytes = (gib: string): number | undefined => {
   return Number.isFinite(value) ? Math.round(value * GIB) : Number.NaN;
 };
 
-const toAuthType = (type: string | undefined): LogSinkAuthType =>
+export const toAuthType = (type: string | undefined): LogSinkAuthType =>
   type === "basic" || type === "bearer" ? type : "none";
 
 export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
@@ -81,7 +80,7 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
     metadata: { name: record.metadata?.name ?? "" },
     spec: {
       type: "victorialogs",
-      enabled: record.spec?.enabled ?? true,
+      enabled: isLogSinkEnabled(record.spec),
       victorialogs: {
         url: vl?.url ?? "",
         ca_cert: vl?.ca_cert ?? "",

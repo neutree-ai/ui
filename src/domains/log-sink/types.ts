@@ -34,8 +34,8 @@ export type LogSinkSpec = {
   buffer?: { max_size?: number } | null;
 };
 
-type LogSinkConnectionTest = {
-  time: string;
+export type LogSinkConnectionTest = {
+  time?: string;
   ok: boolean;
   message?: string;
 };

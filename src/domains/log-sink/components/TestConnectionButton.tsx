@@ -14,7 +14,7 @@ type Props = {
   onTest: () => void;
 };
 
-/** The result is this run's only; it is not saved to the sink (data.md). */
+/** The result is this run's only; it is not saved to the sink. */
 export default function TestConnectionButton({
   testing,
   result,
@@ -46,7 +46,7 @@ export default function TestConnectionButton({
           ? t("log_sinks.testConnection.testing")
           : t("log_sinks.testConnection.button")}
       </Button>
-      {result && !testing && result.ok && (
+      {result?.ok && (
         <span
           data-testid="log-sink-test-result"
           className="inline-flex items-center gap-1 pt-2 text-sm text-[var(--nt-text-colorful-positive)]"
@@ -55,7 +55,7 @@ export default function TestConnectionButton({
           {t("log_sinks.testConnection.ok")}
         </span>
       )}
-      {result && !testing && !result.ok && (
+      {result && !result.ok && (
         // The message can carry the store's whole error body (e.g. a proxy's
         // HTML page): keep one line here and show all of it on hover.
         <Tooltip>

@@ -1,9 +1,11 @@
 import { Edit, Trash2 } from "lucide-react";
 import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
-import LogSinkEnabled from "@/domains/log-sink/components/LogSinkEnabled";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
-import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
+import {
+  formatEventCount,
+  isLogSinkEnabled,
+} from "@/domains/log-sink/lib/log-sink-display";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { ListPage } from "@/foundation/components/ListPage";
@@ -13,7 +15,6 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
-// Columns and order: src/domains/log-sink/data.md (List).
 export const LogSinksList = () => {
   const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
@@ -57,9 +58,13 @@ export const LogSinksList = () => {
           accessorKey="spec.enabled"
           id="enabled"
           enableHiding
-          cell={({ row }) => (
-            <LogSinkEnabled enabled={(row.original as LogSink).spec?.enabled} />
-          )}
+          cell={({ row }) =>
+            t(
+              isLogSinkEnabled((row.original as LogSink).spec)
+                ? "log_sinks.values.yes"
+                : "log_sinks.values.no",
+            )
+          }
         />
         <Table.Column
           header={t("log_sinks.fields.sentEvents")}

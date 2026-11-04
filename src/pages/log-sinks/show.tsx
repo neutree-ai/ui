@@ -1,12 +1,14 @@
 import { useShow } from "@refinedev/core";
 import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
-import LogSinkEnabled from "@/domains/log-sink/components/LogSinkEnabled";
 import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import TestConnectionButton from "@/domains/log-sink/components/TestConnectionButton";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
 import { useLogSinkTestConnection } from "@/domains/log-sink/hooks/use-log-sink-test-connection";
-import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
-import { bytesToGib } from "@/domains/log-sink/lib/log-sink-form";
+import {
+  formatEventCount,
+  isLogSinkEnabled,
+} from "@/domains/log-sink/lib/log-sink-display";
+import { bytesToGib, toAuthType } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -15,7 +17,6 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-// Fields and sections: src/domains/log-sink/data.md (Detail).
 export const LogSinksShow = () => {
   const { t } = useTranslation();
   const deleteConfirmation = useLogSinkDeleteConfirmation();
@@ -34,10 +35,7 @@ export const LogSinksShow = () => {
   }
 
   const vl = record.spec?.victorialogs;
-  const authType =
-    vl?.auth?.type === "basic" || vl?.auth?.type === "bearer"
-      ? vl.auth.type
-      : "none";
+  const authType = toAuthType(vl?.auth?.type);
   const maxSize = record.spec?.buffer?.max_size;
   const extraFields = Object.entries(vl?.extra_fields ?? {});
   const lastTest = record.status?.last_connection_test;
@@ -54,7 +52,11 @@ export const LogSinksShow = () => {
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("log_sinks.fields.enabled")}>
-              <LogSinkEnabled enabled={record.spec?.enabled} />
+              {t(
+                isLogSinkEnabled(record.spec)
+                  ? "log_sinks.values.yes"
+                  : "log_sinks.values.no",
+              )}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
