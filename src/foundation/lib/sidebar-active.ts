@@ -3,18 +3,21 @@ interface MenuItemRoutes {
   create?: { toString(): string };
   edit?: { toString(): string };
   show?: { toString(): string };
+  children?: MenuItemRoutes[];
 }
 
 /**
  * Build the resolved route paths for a menu item by substituting
- * `:workspace` and `:id` placeholders.
+ * `:workspace` and `:id` placeholders. A child resource's pages count as the
+ * item's own: such a child is kept out of the menu and opened from the
+ * item's page (Log Forwarding under Access Log).
  */
 export function buildMenuItemPaths(
   item: MenuItemRoutes,
   currentWorkspace: string,
   resourceId: string,
 ): string[] {
-  return [
+  const own = [
     item.list?.toString(),
     item.create?.toString(),
     item.edit?.toString().replace(":id", resourceId),
@@ -22,6 +25,12 @@ export function buildMenuItemPaths(
   ]
     .map((s) => s?.replace(":workspace", currentWorkspace))
     .filter(Boolean) as string[];
+  return [
+    ...own,
+    ...(item.children ?? []).flatMap((child) =>
+      buildMenuItemPaths(child, currentWorkspace, resourceId),
+    ),
+  ];
 }
 
 /**

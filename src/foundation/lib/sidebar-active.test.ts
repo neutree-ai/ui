@@ -46,6 +46,27 @@ describe("buildMenuItemPaths", () => {
 
     expect(paths).toEqual(["/prod/endpoints", "/prod/endpoints/edit/ep-1"]);
   });
+
+  it("includes the routes of child resources opened from the item", () => {
+    const item = {
+      list: "/:workspace/ai-traces",
+      children: [
+        {
+          list: "/log-forwarding",
+          show: "/log-forwarding/show/:id",
+        },
+      ],
+    };
+
+    const paths = buildMenuItemPaths(item, "default", "7");
+
+    expect(paths).toEqual([
+      "/default/ai-traces",
+      "/log-forwarding",
+      "/log-forwarding/show/7",
+    ]);
+    expect(isMenuItemActive(paths, "/log-forwarding/show/7")).toBe(true);
+  });
 });
 
 describe("isMenuItemActive", () => {
