@@ -1,3 +1,5 @@
+import { translateApiError } from "@/foundation/lib/api-error-code";
+
 type ErrorRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is ErrorRecord {
@@ -19,4 +21,26 @@ export function apiKeyActionErrorMessage(
   fallback: string,
 ): string {
   return errorText(cause) || fallback;
+}
+
+const SERVICE_ACCOUNT_KEY_ERROR_KEYS: Readonly<Record<string, string>> = {
+  "10044": "api_keys.serviceAccount.errors.workspace",
+  "10316": "api_keys.serviceAccount.errors.noProject",
+  "10317": "api_keys.serviceAccount.errors.inactive",
+  "10318": "api_keys.serviceAccount.errors.immutable",
+  "10320": "api_keys.serviceAccount.errors.applicationActor",
+};
+
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** As apiKeyActionErrorMessage, with readable text for application keys. */
+export function serviceAccountKeyErrorMessage(
+  t: Translate,
+  cause: unknown,
+  fallback: string,
+): string {
+  return (
+    translateApiError(t, cause, SERVICE_ACCOUNT_KEY_ERROR_KEYS) ??
+    apiKeyActionErrorMessage(cause, fallback)
+  );
 }

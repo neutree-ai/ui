@@ -56,7 +56,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   identity_source: <ShieldCheck className="h-5 w-5" />,
   org_unit: <Network className="h-5 w-5" />,
   team: <UsersRound className="h-5 w-5" />,
-  team_api_key: <KeyRound className="h-5 w-5" />,
+  service_account: <KeyRound className="h-5 w-5" />,
   team_usage: <Gauge className="h-5 w-5" />,
 };
 

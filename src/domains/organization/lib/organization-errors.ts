@@ -22,6 +22,7 @@ export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10291": "organization.errors.manualTeamAlwaysActive",
   "10295": "organization.errors.teamHasRoleAssignments",
   "10296": "organization.errors.memberGrantExceeds",
+  "10315": "organization.errors.teamHasApplications",
 };
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;

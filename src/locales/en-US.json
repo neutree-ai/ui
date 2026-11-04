@@ -2088,7 +2088,8 @@
 		},
 		"descriptions": {
 			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments. Team policies apply to the selected team only.",
-			"scopeTeam": "The role applies to this team only, e.g. team-admin manages the team's API keys and members. Only global administrators can grant it."
+			"scopeTeam": "The role applies to this team only, e.g. team-admin manages the team's API keys and members. Only global administrators can grant it.",
+			"serviceAccount": "Only roles in the application's team ceiling are offered; an application's role is for all workspaces or one workspace."
 		},
 		"options": {
 			"global": "Global",
@@ -2105,7 +2106,8 @@
 			"orgUnitRequired": "Select a department",
 			"userRequired": "Select a user",
 			"workspaceRequired": "Select a workspace",
-			"teamRequired": "Select a team"
+			"teamRequired": "Select a team",
+			"serviceAccountRequired": "Select an application."
 		},
 		"errors": {
 			"saveFailed": "Failed to save the policy",
@@ -2121,12 +2123,16 @@
 			"subjectMismatch": "The subject does not match its type. A user policy names a user; a team or department policy names a team or department and no user.",
 			"subjectNotFound": "The selected team or department does not exist.",
 			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator.",
-			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department."
+			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department.",
+			"serviceAccountMismatch": "The subject does not match its type.",
+			"serviceAccountScope": "An application's role is either for all workspaces or for one workspace.",
+			"outsideCeiling": "The role or workspace is outside the team's authorization ceiling. Pick one inside it, or ask a global administrator to raise the ceiling."
 		},
 		"subjectKinds": {
 			"User": "User",
 			"Team": "Team",
-			"OrgUnit": "Department"
+			"OrgUnit": "Department",
+			"ServiceAccount": "Application"
 		},
 		"group": {
 			"title": "Policies",
@@ -2166,7 +2172,7 @@
 			"createdAt": "Created at",
 			"apiKeyAndDescription": "API key / description",
 			"projectAndDescription": "Project / description",
-			"team": "Team"
+			"application": "Application"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select A Workspace",
@@ -2349,25 +2355,39 @@
 		},
 		"detailsTitle": "API key details",
 		"team": {
-			"tab": "API Keys",
 			"usageTab": "Usage",
-			"hint": "Keys owned by {{team}}. They call models with the team's model access and token pool, and keep working when members leave.",
-			"empty": "This team has no API keys yet.",
-			"models": "Models",
-			"limits": "Limits",
-			"modelCount": "{{count}} models",
-			"allTeamModels": "All team models",
-			"editLimits": "Edit limits",
-			"deleteTitle": "Delete API key {{name}}?",
-			"deleteHint": "Applications using this key can no longer call models. This cannot be undone.",
-			"createTitle": "Create Team API Key",
-			"createHint": "The key belongs to {{team}}, not to you. Copy the secret key after creating it: it is shown only once.",
-			"usageHint": "Token usage of the team: its members' personal keys and the team's keys.",
+			"usageHint": "Token usage of the team: its members' personal keys and its applications' keys.",
 			"usageFailed": "Failed to load the team usage.",
 			"usageEmpty": "No usage in this period.",
 			"totalTokens": "Total tokens",
 			"totalRequests": "Requests",
-			"requests": "Requests"
+			"requests": "Requests",
+			"byApplication": "By application",
+			"byApplicationHint": "Usage of each application's keys, part of the team total.",
+			"application": "Application"
+		},
+		"serviceAccount": {
+			"title": "API Keys",
+			"hint": "Keys of {{name}}. Copy a key's secret when you create it: it is shown only once.",
+			"empty": "This application has no API keys yet.",
+			"models": "Models",
+			"limits": "Limits",
+			"modelCount": "{{count}} models",
+			"allTeamModels": "All allowed models",
+			"editLimits": "Edit limits",
+			"deleteTitle": "Delete API key {{name}}?",
+			"deleteHint": "Programs using this key can no longer call models. This cannot be undone.",
+			"createTitle": "Create Application API Key",
+			"createHint": "The key belongs to {{name}}, not to you. Copy the secret key after creating it: it is shown only once.",
+			"modelsHint": "Listed: the models this application may call in the workspace. An empty list means it holds no role that calls models there yet; the key can be created but works only after a role is granted.",
+			"usageTitle": "Usage",
+			"errors": {
+				"workspace": "Pick an existing workspace.",
+				"noProject": "An application's API key has no project.",
+				"inactive": "Keys can be created only for an enabled application of an active team.",
+				"immutable": "The owner and workspace of a key cannot be changed.",
+				"applicationActor": "An application cannot create API keys."
+			}
 		}
 	},
 	"infrastructure": {
@@ -3001,7 +3021,8 @@
 			"syncedTeamMembersReadOnly": "The members of a team synced from an identity source are read-only. Change the group in the directory, or use a team created in Neutree.",
 			"manualTeamAlwaysActive": "A team created in Neutree is always Active. Delete the team instead.",
 			"teamHasRoleAssignments": "Policies are still granted to this team. Delete those policies first, then delete the team.",
-			"memberGrantExceeds": "This change would give the user the policies of the team or department, and you cannot grant all of them. Ask an administrator who can."
+			"memberGrantExceeds": "This change would give the user the policies of the team or department, and you cannot grant all of them. Ask an administrator who can.",
+			"teamHasApplications": "The team still has applications. Delete them first."
 		},
 		"picker": {
 			"title": "Select Department",
@@ -3290,12 +3311,13 @@
 		"assign-member": "Assign Member",
 		"invoke": "Invoke",
 		"resources": {
-			"team_api_key": "Team API Keys",
-			"team_usage": "Team Usage"
+			"team_usage": "Team Usage",
+			"service_account": "Applications"
 		},
 		"labels": {
 			"modelInvoke": "Models:Invoke (call models with an API key; does not show endpoints)"
-		}
+		},
+		"assign-role": "Assign Role"
 	},
 	"systems": {
 		"title": "Systems"
@@ -3558,5 +3580,83 @@
 		"absent": "Absent",
 		"overAllocation": "Actual usage exceeds allocation",
 		"fp16": "FP16 compute (TFLOPS)"
+	},
+	"service_accounts": {
+		"tab": "Applications",
+		"title": "Applications",
+		"hint": "Applications of {{team}}. Each one calls models with its own API keys and roles, within the team's model access and token pool, and keeps working when members leave.",
+		"empty": "This team has no applications yet.",
+		"create": "Create Application",
+		"createTitle": "Create Application",
+		"createHint": "An application belongs to the team, not to you. It has no permission until a role is granted to it.",
+		"back": "Applications",
+		"disabledHint": "This application is disabled: its API keys cannot call models. Enable it to resume.",
+		"deleteTitle": "Delete application {{name}}?",
+		"deleteHint": "Its role assignments are deleted with it. Delete its API keys first. This cannot be undone.",
+		"fields": {
+			"displayName": "Display name"
+		},
+		"status": {
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		},
+		"actions": {
+			"enable": "Enable",
+			"disable": "Disable"
+		},
+		"validation": {
+			"nameRequired": "Enter a name.",
+			"nameFormat": "Use up to 63 lowercase letters, digits, '-' or '.', starting and ending with a letter or digit."
+		},
+		"placeholders": {
+			"select": "Select an application"
+		},
+		"messages": {
+			"loading": "Loading...",
+			"operationFailed": "The operation failed."
+		},
+		"ceiling": {
+			"title": "Authorization ceiling",
+			"hint": "The roles this team's applications may hold, and the workspaces they may hold them in. A global administrator sets it.",
+			"unreadable": "The ceiling cannot be read.",
+			"roles": "Roles",
+			"workspaces": "Workspaces",
+			"allWorkspaces": "All workspaces",
+			"noRoles": "No role: applications can be granted nothing.",
+			"noWorkspaces": "No workspace",
+			"isDefault": "Default ceiling: model-invoker in all workspaces.",
+			"editTitle": "Edit authorization ceiling",
+			"editHint": "Team admins can grant applications only these roles, in these workspaces.",
+			"effectHint": "Lowering the ceiling takes effect at once: assignments outside it stop counting.",
+			"reset": "Restore default"
+		},
+		"roles": {
+			"title": "Authorization",
+			"hint": "Roles this application holds. An application has no permission until it is granted a role, e.g. model-invoker to call models.",
+			"grant": "Grant role",
+			"grantTitle": "Grant a role",
+			"grantHint": "Only roles and workspaces in the team's authorization ceiling are offered.",
+			"empty": "No role yet: the application's keys cannot call models.",
+			"scope": "Scope",
+			"global": "All workspaces",
+			"inWorkspace": "Workspace {{workspace}}",
+			"outsideCeiling": "Outside the ceiling: not in effect",
+			"revoke": "Revoke",
+			"revokeTitle": "Revoke role {{role}}?",
+			"revokeHint": "The application loses the permissions of this role at once."
+		},
+		"errors": {
+			"teamHasApplications": "The team still has applications. Delete them first.",
+			"keyHasNoProject": "An application's API key has no project.",
+			"inactive": "The application is disabled or its team is inactive. Enable it first.",
+			"immutable": "The team of an application and the owner or workspace of a key cannot be changed.",
+			"hasKeys": "The application still has API keys. Delete them first; a deleted key is removed after a short while.",
+			"applicationActor": "An application cannot create applications or API keys.",
+			"subjectMismatch": "The subject does not match its type.",
+			"scope": "An application's role is either for all workspaces or for one workspace.",
+			"outsideCeiling": "The role or workspace is outside the team's authorization ceiling. Pick one inside it, or ask a global administrator to raise the ceiling.",
+			"ceilingUnknown": "The ceiling names a role or workspace that does not exist.",
+			"nameTaken": "The name is already taken in this team."
+		}
 	}
 }

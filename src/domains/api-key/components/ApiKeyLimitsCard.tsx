@@ -52,7 +52,7 @@ export const ApiKeyLimitsCard = ({
   projectId,
   displayName,
   description,
-  teamId,
+  serviceAccountId,
   onSaved,
 }: {
   apiKeyId: string;
@@ -60,8 +60,8 @@ export const ApiKeyLimitsCard = ({
   projectId: string | null;
   displayName: string;
   description: string;
-  /** Set for a Team key, which has no project. */
-  teamId?: number;
+  /** Set for an application's key, which has no project. */
+  serviceAccountId?: string;
   onSaved?: () => unknown;
 }) => {
   const { t } = useTranslation();
@@ -255,7 +255,7 @@ export const ApiKeyLimitsCard = ({
             >
               <Textarea />
             </FormFieldGroup>
-            {teamId === undefined && (
+            {serviceAccountId === undefined && (
               <FormFieldGroup
                 {...form}
                 name="project_id"
@@ -470,7 +470,7 @@ export const ApiKeyLimitsCard = ({
             <ApiKeyPolicyFields
               form={form}
               workspace={workspace}
-              teamId={teamId}
+              serviceAccountId={serviceAccountId}
             />
             <div className="flex justify-end gap-2">
               {/* Discards the edits and goes back to what is stored — the form

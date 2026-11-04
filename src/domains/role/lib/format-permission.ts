@@ -7,7 +7,7 @@ type Translate = ReturnType<typeof useTranslation>["t"];
 // Read" sounds like calling models, not reading the policy.
 const RESOURCE_LABEL_KEYS: Record<string, string> = {
   group_policy: "group_policies.permissionTitle",
-  team_api_key: "permissions.resources.team_api_key",
+  service_account: "permissions.resources.service_account",
   team_usage: "permissions.resources.team_usage",
 };
 

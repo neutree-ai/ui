@@ -5,8 +5,7 @@ import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerfor
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
-import { useTeams } from "@/domains/organization/hooks/use-organization";
-import { displayName } from "@/domains/organization/lib/org-tree";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountField";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -17,15 +16,13 @@ export const ApiKeysShow = () => {
     query: { data, isLoading, refetch },
   } = useShow();
   const record = data?.data as ApiKey | undefined;
-  const teamId = record?.team_id ?? undefined;
-  const teams = useTeams(teamId !== undefined);
-  const team = teams.data?.data.find((candidate) => candidate.id === teamId);
+  const serviceAccountId = record?.service_account_id ?? undefined;
   const {
     data: projects,
     isLoading: isProjectLoading,
     error: projectError,
   } = useApiKeyProjects(
-    teamId === undefined
+    serviceAccountId === undefined
       ? (record?.metadata.workspace ?? undefined)
       : undefined,
   );
@@ -59,9 +56,9 @@ export const ApiKeysShow = () => {
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
                 {record.status?.usage ?? <EmptyValue />}
               </ShowPage.Meta>
-              {teamId !== undefined ? (
-                <ShowPage.Meta label={t("api_keys.fields.team")}>
-                  {team ? displayName(team.metadata) : `#${teamId}`}
+              {serviceAccountId !== undefined ? (
+                <ShowPage.Meta label={t("api_keys.fields.application")}>
+                  <ServiceAccountLabel id={serviceAccountId} />
                 </ShowPage.Meta>
               ) : (
                 <ShowPage.Meta label={t("api_keys.fields.project")}>
@@ -96,7 +93,7 @@ export const ApiKeysShow = () => {
               projectId={record.spec.project_id ?? null}
               displayName={record.metadata.display_name || record.metadata.name}
               description={record.spec.description ?? ""}
-              teamId={teamId}
+              serviceAccountId={serviceAccountId}
               onSaved={refetch}
             />
           </div>

@@ -1,16 +1,25 @@
 import { type ReactNode, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamApiKeys } from "@/domains/api-key/components/TeamApiKeys";
-import { TeamUsage } from "@/domains/api-key/components/TeamUsage";
+import { ServiceAccountApiKeys } from "@/domains/api-key/components/ServiceAccountApiKeys";
+import {
+  ServiceAccountUsage,
+  TeamUsage,
+} from "@/domains/api-key/components/TeamUsage";
 import { TeamTokenPool } from "@/domains/group-policy/components/TeamTokenPool";
-import { displayName } from "@/domains/organization/lib/org-tree";
 import type { Team } from "@/domains/organization/types";
-import { useHasTeamPermission } from "@/foundation/hooks/use-has-permission";
+import {
+  accountLabel,
+  TeamServiceAccounts,
+} from "@/domains/service-account/components/TeamServiceAccounts";
+import {
+  useHasGlobalPermission,
+  useHasTeamPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-type TeamTab = "members" | "api-keys" | "usage";
+type TeamTab = "members" | "applications" | "usage";
 
-/** A Team's members, API keys and usage, each tab shown to whoever may read it. */
+/** A Team's members, applications and usage, each tab shown to whoever may read it. */
 export function TeamDetailTabs({
   team,
   members,
@@ -20,23 +29,28 @@ export function TeamDetailTabs({
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TeamTab>("members");
-  const canReadKeys =
-    useHasTeamPermission("team_api_key:read", team.id).allowed === true;
-  const canCreateKeys =
-    useHasTeamPermission("team_api_key:create", team.id).allowed === true;
-  const canUpdateKeys =
-    useHasTeamPermission("team_api_key:update", team.id).allowed === true;
-  const canDeleteKeys =
-    useHasTeamPermission("team_api_key:delete", team.id).allowed === true;
+  const canRead =
+    useHasTeamPermission("service_account:read", team.id).allowed === true;
+  const canCreate =
+    useHasTeamPermission("service_account:create", team.id).allowed === true;
+  const canUpdate =
+    useHasTeamPermission("service_account:update", team.id).allowed === true;
+  const canDelete =
+    useHasTeamPermission("service_account:delete", team.id).allowed === true;
+  const canAssign =
+    useHasTeamPermission("service_account:assign-role", team.id).allowed ===
+    true;
   const canReadUsage =
     useHasTeamPermission("team_usage:read", team.id).allowed === true;
+  const canEditCeiling =
+    useHasGlobalPermission("role_assignment:create").allowed === true;
 
   const current =
-    (tab === "api-keys" && !canReadKeys) || (tab === "usage" && !canReadUsage)
+    (tab === "applications" && !canRead) || (tab === "usage" && !canReadUsage)
       ? "members"
       : tab;
 
-  if (!canReadKeys && !canReadUsage) return <>{members}</>;
+  if (!canRead && !canReadUsage) return <>{members}</>;
 
   return (
     <Tabs value={current} onValueChange={(next) => setTab(next as TeamTab)}>
@@ -44,9 +58,9 @@ export function TeamDetailTabs({
         <TabsTrigger value="members" data-testid="team-tab-members">
           {t("organization.members.title")}
         </TabsTrigger>
-        {canReadKeys && (
-          <TabsTrigger value="api-keys" data-testid="team-tab-api-keys">
-            {t("api_keys.team.tab")}
+        {canRead && (
+          <TabsTrigger value="applications" data-testid="team-tab-applications">
+            {t("service_accounts.tab")}
           </TabsTrigger>
         )}
         {canReadUsage && (
@@ -58,14 +72,37 @@ export function TeamDetailTabs({
       <TabsContent value="members" className="mt-0">
         {members}
       </TabsContent>
-      {canReadKeys && (
-        <TabsContent value="api-keys" className="mt-0">
-          <TeamApiKeys
+      {canRead && (
+        <TabsContent value="applications" className="mt-0">
+          <TeamServiceAccounts
+            key={team.id}
             teamId={team.id}
-            teamName={displayName(team.metadata)}
-            canCreate={canCreateKeys}
-            canUpdate={canUpdateKeys}
-            canDelete={canDeleteKeys}
+            teamName={team.metadata.display_name || team.metadata.name}
+            permissions={{
+              canCreate,
+              canUpdate,
+              canDelete,
+              canAssign,
+              canEditCeiling,
+            }}
+            renderKeys={(account) => (
+              <ServiceAccountApiKeys
+                serviceAccountId={account.id}
+                serviceAccountName={accountLabel(account)}
+                canCreate={canCreate && !account.spec?.disabled}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+              />
+            )}
+            // Usage by application needs team_usage:read on the Team.
+            renderUsage={(account) =>
+              canReadUsage ? (
+                <ServiceAccountUsage
+                  teamName={team.metadata.name}
+                  serviceAccountId={account.id}
+                />
+              ) : null
+            }
           />
         </TabsContent>
       )}

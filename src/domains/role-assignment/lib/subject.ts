@@ -21,9 +21,9 @@ export const subjectFields = (
   current: SubjectFields,
 ): Required<SubjectFields> => {
   const same = subjectKindOf(current) === kind;
-  if (kind === "User") {
+  if (kind === "User" || kind === "ServiceAccount") {
     return {
-      subject_kind: "User",
+      subject_kind: kind,
       subject_name: null,
       user_id: same ? (current.user_id ?? "") : "",
     };
@@ -38,16 +38,19 @@ export const subjectFields = (
 /**
  * The subject kinds the caller may pick. A delegated administrator cannot
  * grant to a Team (10297): a Team crosses departments. Teams are offered only
- * to a caller who can list them.
+ * to a caller who can list them, applications only to one who can pick them.
  */
 export const availableSubjectKinds = ({
   delegated,
   canReadTeams,
+  canPickServiceAccounts = false,
 }: {
   delegated: boolean;
   canReadTeams: boolean;
+  canPickServiceAccounts?: boolean;
 }): RoleAssignmentSubjectKind[] => [
   "User",
   ...(!delegated && canReadTeams ? (["Team"] as const) : []),
   "OrgUnit",
+  ...(canPickServiceAccounts ? (["ServiceAccount"] as const) : []),
 ];

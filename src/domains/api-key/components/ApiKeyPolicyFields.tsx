@@ -26,8 +26,8 @@ type ApiKeyPolicyFieldsProps = {
   form: UseFormReturn<any>;
   // Workspace whose available models populate the allowed-models dropdown.
   workspace: string;
-  // Set for a Team key: the models that Team may call.
-  teamId?: number;
+  // Set for an application's key: the models that application may call.
+  serviceAccountId?: string;
 };
 
 // API-key limits editor: allowed models (each with an optional per-model token
@@ -41,10 +41,10 @@ type ApiKeyPolicyFieldsProps = {
 export const ApiKeyPolicyFields = ({
   form,
   workspace,
-  teamId,
+  serviceAccountId,
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
-  const modelOptions = useInvokableModels(workspace, teamId);
+  const modelOptions = useInvokableModels(workspace, serviceAccountId);
   const sourceByValue = useMemo(
     () => new Map(modelOptions.map((o) => [o.value, o.source])),
     [modelOptions],
@@ -108,6 +108,14 @@ export const ApiKeyPolicyFields = ({
         <p className="text-xs text-muted-foreground">
           {t("api_keys.limits.allowedModelsHint")}
         </p>
+        {serviceAccountId !== undefined && (
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="service-account-models-hint"
+          >
+            {t("api_keys.serviceAccount.modelsHint")}
+          </p>
+        )}
         <FormField
           control={form.control}
           name="models"

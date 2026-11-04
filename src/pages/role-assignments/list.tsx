@@ -3,6 +3,7 @@ import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountField";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -60,6 +61,7 @@ const useRoleAssignmentColumns = () => {
             spec={row.original.spec}
             renderTeam={(name) => <TeamLabel name={name} />}
             renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+            renderServiceAccount={(id) => <ServiceAccountLabel id={id} />}
           />
         )}
       />

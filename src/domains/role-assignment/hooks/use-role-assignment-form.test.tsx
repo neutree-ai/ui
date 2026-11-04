@@ -28,6 +28,8 @@ vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
     query: { data: { data: [] }, isLoading: false },
   }),
+  useList: () => ({ data: { data: [] }, isLoading: false }),
+  useCustom: () => ({ data: undefined, isLoading: false }),
 }));
 
 vi.mock("@/foundation/hooks/use-license", () => ({

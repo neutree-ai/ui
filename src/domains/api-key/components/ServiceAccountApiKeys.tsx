@@ -30,34 +30,36 @@ import {
   rateSummary,
   useApiKeyDisable,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
+import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
-type TeamApiKeysProps = {
-  teamId: number;
-  teamName: string;
+type ServiceAccountApiKeysProps = {
+  serviceAccountId: string;
+  serviceAccountName: string;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
 };
 
 /**
- * The API keys a Team owns. They call models with the Team's model access and
- * token pool, and keep working when their creator leaves the Team.
+ * The API keys of an application. They call models with the application's
+ * roles and its Team's model access and token pool, and keep working when
+ * their creator leaves the Team.
  */
-export function TeamApiKeys({
-  teamId,
-  teamName,
+export function ServiceAccountApiKeys({
+  serviceAccountId,
+  serviceAccountName,
   canCreate,
   canUpdate,
   canDelete,
-}: TeamApiKeysProps) {
+}: ServiceAccountApiKeysProps) {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
   const [session, setSession] = useState(0);
@@ -72,7 +74,9 @@ export function TeamApiKeys({
   const query = useList<ApiKey>({
     resource: "api_keys",
     pagination: { mode: "off" },
-    filters: [{ field: "team_id", operator: "eq", value: teamId }],
+    filters: [
+      { field: "service_account_id", operator: "eq", value: serviceAccountId },
+    ],
   });
   const keys = (query.data?.data ?? [])
     .filter((key) => !key.metadata?.deletion_timestamp)
@@ -93,7 +97,11 @@ export function TeamApiKeys({
       await refresh();
     } catch (cause) {
       setError(
-        apiKeyActionErrorMessage(cause, t("api_keys.messages.operationFailed")),
+        serviceAccountKeyErrorMessage(
+          t,
+          cause,
+          t("api_keys.messages.operationFailed"),
+        ),
       );
     } finally {
       setPending(false);
@@ -124,8 +132,8 @@ export function TeamApiKeys({
   const modelSummary = (key: ApiKey) => {
     const models = key.spec.limits?.allowed_models ?? [];
     return models.length
-      ? t("api_keys.team.modelCount", { count: models.length })
-      : t("api_keys.team.allTeamModels");
+      ? t("api_keys.serviceAccount.modelCount", { count: models.length })
+      : t("api_keys.serviceAccount.allTeamModels");
   };
 
   const quotaSummary = (key: ApiKey) => {
@@ -142,10 +150,14 @@ export function TeamApiKeys({
   };
 
   return (
-    <div className="space-y-3" data-testid="team-api-keys">
+    <ShowPage.Section
+      title={t("api_keys.serviceAccount.title")}
+      data-testid="sa-api-keys"
+      contentClassName="space-y-3"
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {t("api_keys.team.hint", { team: teamName })}
+          {t("api_keys.serviceAccount.hint", { name: serviceAccountName })}
         </p>
         {canCreate && (
           <Button
@@ -154,7 +166,7 @@ export function TeamApiKeys({
               setSession((value) => value + 1);
               setCreating(true);
             }}
-            data-testid="team-api-key-create"
+            data-testid="sa-api-key-create"
           >
             <Plus className="mr-1 h-4 w-4" />
             {t("api_keys.create")}
@@ -168,24 +180,25 @@ export function TeamApiKeys({
         </div>
       ) : query.error ? (
         <EmptyState variant="inline" className="text-destructive">
-          {apiKeyActionErrorMessage(
+          {serviceAccountKeyErrorMessage(
+            t,
             query.error,
             t("api_keys.messages.operationFailed"),
           )}
         </EmptyState>
       ) : !keys.length ? (
-        <EmptyState variant="inline" data-testid="team-api-keys-empty">
-          {t("api_keys.team.empty")}
+        <EmptyState variant="inline" data-testid="sa-api-keys-empty">
+          {t("api_keys.serviceAccount.empty")}
         </EmptyState>
       ) : (
-        <Table data-testid="team-api-key-table">
+        <Table data-testid="sa-api-key-table">
           <TableHeader>
             <TableRow>
               <TableHead>{t("common.fields.name")}</TableHead>
               <TableHead>{t("api_keys.fields.workspace")}</TableHead>
               <TableHead>{t("api_keys.fields.status")}</TableHead>
-              <TableHead>{t("api_keys.team.models")}</TableHead>
-              <TableHead>{t("api_keys.team.limits")}</TableHead>
+              <TableHead>{t("api_keys.serviceAccount.models")}</TableHead>
+              <TableHead>{t("api_keys.serviceAccount.limits")}</TableHead>
               <TableHead>{t("api_keys.fields.createdAt")}</TableHead>
               <TableHead />
             </TableRow>
@@ -194,7 +207,7 @@ export function TeamApiKeys({
             {keys.map((key) => {
               const disabled = !!key.spec.limits?.disabled;
               return (
-                <TableRow key={key.id} data-testid={`team-api-key-${key.id}`}>
+                <TableRow key={key.id} data-testid={`sa-api-key-${key.id}`}>
                   <TableCell>
                     <div className="font-medium">
                       {key.metadata.display_name || key.metadata.name}
@@ -229,8 +242,8 @@ export function TeamApiKeys({
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7"
-                            title={t("api_keys.team.editLimits")}
-                            aria-label={t("api_keys.team.editLimits")}
+                            title={t("api_keys.serviceAccount.editLimits")}
+                            aria-label={t("api_keys.serviceAccount.editLimits")}
                             onClick={() =>
                               show("api_keys", key.metadata.name, "push", {
                                 workspace: key.metadata.workspace,
@@ -254,7 +267,7 @@ export function TeamApiKeys({
                                 ? t("api_keys.limits.enable")
                                 : t("api_keys.limits.disable")
                             }
-                            data-testid={`team-api-key-toggle-${key.id}`}
+                            data-testid={`sa-api-key-toggle-${key.id}`}
                             onClick={() =>
                               run(() =>
                                 disabled ? enable(key.id) : disable(key.id),
@@ -275,11 +288,11 @@ export function TeamApiKeys({
                           onOpenChange={(next) =>
                             setDeleting(next ? key : undefined)
                           }
-                          title={t("api_keys.team.deleteTitle", {
+                          title={t("api_keys.serviceAccount.deleteTitle", {
                             name:
                               key.metadata.display_name || key.metadata.name,
                           })}
-                          description={t("api_keys.team.deleteHint")}
+                          description={t("api_keys.serviceAccount.deleteHint")}
                           okText={t("buttons.delete")}
                           cancelText={t("buttons.cancel")}
                           okButtonVariant="destructive"
@@ -292,7 +305,7 @@ export function TeamApiKeys({
                             className="h-7 w-7 text-destructive"
                             title={t("buttons.delete")}
                             aria-label={t("buttons.delete")}
-                            data-testid={`team-api-key-delete-${key.id}`}
+                            data-testid={`sa-api-key-delete-${key.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -308,7 +321,7 @@ export function TeamApiKeys({
       )}
 
       {error && (
-        <Alert variant="destructive" data-testid="team-api-key-error">
+        <Alert variant="destructive" data-testid="sa-api-key-error">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -316,19 +329,23 @@ export function TeamApiKeys({
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t("api_keys.team.createTitle")}</DialogTitle>
+            <DialogTitle>
+              {t("api_keys.serviceAccount.createTitle")}
+            </DialogTitle>
             <DialogDescription>
-              {t("api_keys.team.createHint", { team: teamName })}
+              {t("api_keys.serviceAccount.createHint", {
+                name: serviceAccountName,
+              })}
             </DialogDescription>
           </DialogHeader>
           <CreateApiKeyForm
             key={session}
-            teamId={teamId}
+            serviceAccountId={serviceAccountId}
             onClose={() => setCreating(false)}
             onCreated={refresh}
           />
         </DialogContent>
       </Dialog>
-    </div>
+    </ShowPage.Section>
   );
 }

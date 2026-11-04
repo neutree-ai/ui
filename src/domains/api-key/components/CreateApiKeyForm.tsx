@@ -17,7 +17,10 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import {
+  apiKeyActionErrorMessage,
+  serviceAccountKeyErrorMessage,
+} from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -40,14 +43,14 @@ export const CreateApiKeyForm = ({
   onClose,
   initialWorkspace = "",
   initialProjectId = "",
-  teamId,
+  serviceAccountId,
   onCreated,
 }: {
   onClose?: () => void;
   initialWorkspace?: string;
   initialProjectId?: string;
-  /** Creates a key owned by this Team, which has no project. */
-  teamId?: number;
+  /** Creates a key of this application, which has no project. */
+  serviceAccountId?: string;
   onCreated?: () => void | Promise<void>;
 }) => {
   const { t } = useTranslation();
@@ -82,7 +85,7 @@ export const CreateApiKeyForm = ({
   const { current: currentWorkspace } = useWorkspace();
   const workspaceNames = workspaces.length
     ? workspaces.map((workspace) => workspace.metadata.name)
-    : teamId !== undefined
+    : serviceAccountId !== undefined
       ? [
           currentWorkspace && currentWorkspace !== ALL_WORKSPACES
             ? currentWorkspace
@@ -111,7 +114,7 @@ export const CreateApiKeyForm = ({
     try {
       const limits = buildApiKeyLimits(formValue as ApiKeyPolicyFormValues);
       const { data } = await mutateAsync(
-        teamId === undefined
+        serviceAccountId === undefined
           ? {
               url: "/rpc/create_api_key",
               method: "post",
@@ -128,10 +131,10 @@ export const CreateApiKeyForm = ({
               errorNotification: false,
             }
           : {
-              url: "/rpc/create_team_api_key",
+              url: "/rpc/create_service_account_api_key",
               method: "post",
               values: {
-                p_team_id: teamId,
+                p_service_account_id: serviceAccountId,
                 p_workspace: formValue.workspace,
                 p_display_name: formValue.name,
                 p_description: formValue.description,
@@ -149,7 +152,13 @@ export const CreateApiKeyForm = ({
       setApiKey(data as ApiKey);
     } catch (cause) {
       setSubmitError(
-        apiKeyActionErrorMessage(cause, t("api_keys.messages.createFailed")),
+        serviceAccountId === undefined
+          ? apiKeyActionErrorMessage(cause, t("api_keys.messages.createFailed"))
+          : serviceAccountKeyErrorMessage(
+              t,
+              cause,
+              t("api_keys.messages.createFailed"),
+            ),
       );
     }
   };
@@ -226,7 +235,7 @@ export const CreateApiKeyForm = ({
             }))}
           />
         </FormFieldGroup>
-        {teamId === undefined && (
+        {serviceAccountId === undefined && (
           <FormFieldGroup
             {...form}
             name="project_id"
@@ -271,7 +280,7 @@ export const CreateApiKeyForm = ({
         <ApiKeyPolicyFields
           form={form}
           workspace={selectedWorkspace}
-          teamId={teamId}
+          serviceAccountId={serviceAccountId}
         />
 
         {submitError && (

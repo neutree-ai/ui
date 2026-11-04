@@ -1,6 +1,6 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
-type RolePreset = "admin" | "workspace_user" | "team-admin";
+type RolePreset = "admin" | "workspace_user" | "team-admin" | "model-invoker";
 
 export interface RoleSpec {
   preset_key: RolePreset | null;
@@ -82,10 +82,11 @@ export const ALL_PERMISSIONS = [
   "org_unit:usage-read",
   "team:read",
   "team:assign-member",
-  "team_api_key:read",
-  "team_api_key:create",
-  "team_api_key:update",
-  "team_api_key:delete",
+  "service_account:read",
+  "service_account:create",
+  "service_account:update",
+  "service_account:delete",
+  "service_account:assign-role",
   "team_usage:read",
   "group_policy:read",
   "group_policy:create",

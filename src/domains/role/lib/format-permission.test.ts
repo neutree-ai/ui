@@ -23,8 +23,8 @@ describe("formatPermission", () => {
   });
 
   it("labels the Team-level resources", () => {
-    expect(formatPermission(t, "team_api_key:create")).toBe(
-      "permissions.resources.team_api_key:permissions.create",
+    expect(formatPermission(t, "service_account:create")).toBe(
+      "permissions.resources.service_account:permissions.create",
     );
   });
 });

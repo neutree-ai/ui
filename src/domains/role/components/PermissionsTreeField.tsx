@@ -58,6 +58,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   "trace-read": <Activity className="h-4 w-4" />,
   "usage-read": <Gauge className="h-4 w-4" />,
   "assign-member": <UserPlus className="h-4 w-4" />,
+  "assign-role": <ShieldCheck className="h-4 w-4" />,
   invoke: <Zap className="h-4 w-4" />,
 };
 
@@ -79,7 +80,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   identity_source: <ShieldCheck className="h-5 w-5" />,
   org_unit: <Network className="h-5 w-5" />,
   team: <UsersRound className="h-5 w-5" />,
-  team_api_key: <KeyRound className="h-5 w-5" />,
+  service_account: <KeyRound className="h-5 w-5" />,
   team_usage: <Gauge className="h-5 w-5" />,
 };
 

@@ -63,11 +63,11 @@ describe("CreateApiKeyForm", () => {
     });
   });
 
-  it("creates a Team key without a project", async () => {
+  it("creates an application key without a project", async () => {
     render(
       <CreateApiKeyForm
         onClose={vi.fn()}
-        teamId={7}
+        serviceAccountId="sa-7"
         initialWorkspace="default"
       />,
     );
@@ -84,9 +84,9 @@ describe("CreateApiKeyForm", () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: "/rpc/create_team_api_key",
+          url: "/rpc/create_service_account_api_key",
           values: expect.objectContaining({
-            p_team_id: 7,
+            p_service_account_id: "sa-7",
             p_workspace: "default",
             p_display_name: "app-key",
           }),

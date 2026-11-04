@@ -577,11 +577,11 @@ export function invokableModelOptions(
 
 // The models an API key may be limited to, from list_invokable_models: it
 // needs model:invoke only, so a user who cannot read endpoints still gets a
-// list. With teamId, the models of that Team's keys. Falls back to the endpoint
+// list. With serviceAccountId, what that application may call. Falls back to the endpoint
 // lists for a personal key when the RPC is unavailable.
 export function useInvokableModels(
   workspace: string | undefined,
-  teamId?: number,
+  serviceAccountId?: string,
 ): WorkspaceModelOption[] {
   const enabled = Boolean(workspace) && workspace !== ALL_WORKSPACES;
   const query = useCustom<InvokableModelRow[]>({
@@ -590,7 +590,9 @@ export function useInvokableModels(
     config: {
       payload: {
         p_workspace: workspace,
-        ...(teamId === undefined ? {} : { p_team_id: teamId }),
+        ...(serviceAccountId === undefined
+          ? {}
+          : { p_service_account_id: serviceAccountId }),
       },
     },
     queryOptions: { enabled, retry: false },
@@ -604,8 +606,8 @@ export function useInvokableModels(
   return useMemo(() => {
     if (!enabled || !workspace) return [];
     if (rows) return invokableModelOptions(rows, known, workspace);
-    return failed && teamId === undefined ? known : [];
-  }, [enabled, workspace, rows, known, failed, teamId]);
+    return failed && serviceAccountId === undefined ? known : [];
+  }, [enabled, workspace, rows, known, failed, serviceAccountId]);
 }
 
 // Per-model serving info: whether the model is served internally / externally
