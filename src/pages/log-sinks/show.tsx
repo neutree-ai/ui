@@ -8,6 +8,8 @@ import { formatEventCount } from "@/domains/log-sink/lib/log-sink-display";
 import {
   bytesToGib,
   isLogSinkEnabled,
+  S3_DEFAULT_COMPRESSION,
+  S3_DEFAULT_FORCE_PATH_STYLE,
   S3_DEFAULT_KEY_PREFIX,
   toAuthType,
 } from "@/domains/log-sink/lib/log-sink-form";
@@ -41,6 +43,18 @@ export const LogSinksShow = () => {
   const s3 = record.spec?.s3;
   const authType = toAuthType(vl?.auth?.type);
   const maxSize = record.spec?.buffer?.max_size;
+  /** `label` as stored, or marked as the default when the API omits it. */
+  const withDefault = (stored: unknown, label: string) =>
+    stored == null
+      ? t("log_sinks.values.defaultSuffix", { value: label })
+      : label;
+  const bufferRow = (
+    <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
+      {maxSize
+        ? t("log_sinks.values.bufferGib", { value: bytesToGib(maxSize) })
+        : t("log_sinks.values.bufferDefault")}
+    </ShowPage.Row>
+  );
   const extraFields = Object.entries(vl?.extra_fields ?? {});
   const lastTest = record.status?.last_connection_test;
 
@@ -94,20 +108,22 @@ export const LogSinksShow = () => {
                   </span>
                 </ShowPage.Row>
                 <ShowPage.Row title={t("log_sinks.fields.addressing")}>
-                  {s3?.force_path_style === false
-                    ? t("log_sinks.values.virtualHosted")
-                    : s3?.force_path_style
-                      ? t("log_sinks.values.pathStyle")
-                      : t("log_sinks.values.defaultSuffix", {
-                          value: t("log_sinks.values.pathStyle"),
-                        })}
+                  {withDefault(
+                    s3?.force_path_style,
+                    t(
+                      (s3?.force_path_style ?? S3_DEFAULT_FORCE_PATH_STYLE)
+                        ? "log_sinks.values.pathStyle"
+                        : "log_sinks.values.virtualHosted",
+                    ),
+                  )}
                 </ShowPage.Row>
                 <ShowPage.Row title={t("log_sinks.fields.compression")}>
-                  {s3?.compression
-                    ? t(`log_sinks.compressions.${s3.compression}`)
-                    : t("log_sinks.values.defaultSuffix", {
-                        value: t("log_sinks.compressions.gzip"),
-                      })}
+                  {withDefault(
+                    s3?.compression,
+                    t(
+                      `log_sinks.compressions.${s3?.compression ?? S3_DEFAULT_COMPRESSION}`,
+                    ),
+                  )}
                 </ShowPage.Row>
                 <ShowPage.Row title={t("log_sinks.fields.flushInterval")}>
                   {s3?.flush_interval_seconds
@@ -116,13 +132,7 @@ export const LogSinksShow = () => {
                       })
                     : t("log_sinks.values.flushIntervalDefault")}
                 </ShowPage.Row>
-                <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
-                  {maxSize
-                    ? t("log_sinks.values.bufferGib", {
-                        value: bytesToGib(maxSize),
-                      })
-                    : t("log_sinks.values.bufferDefault")}
-                </ShowPage.Row>
+                {bufferRow}
               </>
             ) : (
               <>
@@ -154,13 +164,7 @@ export const LogSinksShow = () => {
                       })
                     : t("log_sinks.values.timeoutDefault")}
                 </ShowPage.Row>
-                <ShowPage.Row title={t("log_sinks.fields.bufferSizeShort")}>
-                  {maxSize
-                    ? t("log_sinks.values.bufferGib", {
-                        value: bytesToGib(maxSize),
-                      })
-                    : t("log_sinks.values.bufferDefault")}
-                </ShowPage.Row>
+                {bufferRow}
                 <div className="lg:col-span-4">
                   <ShowPage.Row title={t("log_sinks.fields.extraFields")}>
                     {extraFields.length ? (

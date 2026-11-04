@@ -14,6 +14,8 @@ const MIN_BUFFER_BYTES = 268435488;
 
 export const S3_DEFAULT_KEY_PREFIX = "traces/%Y/%m/%d/";
 export const S3_DEFAULT_FLUSH_INTERVAL_SECONDS = 300;
+export const S3_DEFAULT_FORCE_PATH_STYLE = true;
+export const S3_DEFAULT_COMPRESSION = "gzip";
 const S3_MAX_FLUSH_INTERVAL_SECONDS = 86400;
 const S3_MAX_KEY_PREFIX_LENGTH = 512;
 
@@ -74,8 +76,8 @@ export const emptyLogSinkFormValues = (): LogSinkFormValues => ({
       region: "",
       bucket: "",
       key_prefix: "",
-      force_path_style: true,
-      compression: "gzip",
+      force_path_style: S3_DEFAULT_FORCE_PATH_STYLE,
+      compression: S3_DEFAULT_COMPRESSION,
       flush_interval_seconds: "",
       auth: { access_key_id: "", secret_access_key: "" },
     },
@@ -101,7 +103,7 @@ export const toAuthType = (type: string | undefined): LogSinkAuthType =>
   type === "basic" || type === "bearer" ? type : "none";
 
 const toCompression = (value: string | undefined): S3Compression =>
-  value === "zstd" || value === "none" ? value : "gzip";
+  value === "zstd" || value === "none" ? value : S3_DEFAULT_COMPRESSION;
 
 export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
   const base = emptyLogSinkFormValues();
@@ -136,7 +138,7 @@ export function toLogSinkFormValues(record: LogSink): LogSinkFormValues {
         region: s3?.region ?? "",
         bucket: s3?.bucket ?? "",
         key_prefix: s3?.key_prefix ?? "",
-        force_path_style: s3?.force_path_style ?? true,
+        force_path_style: s3?.force_path_style ?? S3_DEFAULT_FORCE_PATH_STYLE,
         compression: toCompression(s3?.compression),
         flush_interval_seconds: s3?.flush_interval_seconds
           ? String(s3.flush_interval_seconds)
@@ -158,8 +160,12 @@ function toS3SinkSpec(form: LogSinkFormValues["spec"]["s3"]): S3SinkSpec {
   };
   if (form.endpoint.trim()) s3.endpoint = form.endpoint.trim();
   if (form.key_prefix) s3.key_prefix = form.key_prefix;
-  if (!form.force_path_style) s3.force_path_style = false;
-  if (form.compression !== "gzip") s3.compression = form.compression;
+  if (form.force_path_style !== S3_DEFAULT_FORCE_PATH_STYLE) {
+    s3.force_path_style = form.force_path_style;
+  }
+  if (form.compression !== S3_DEFAULT_COMPRESSION) {
+    s3.compression = form.compression;
+  }
   const flush = Number(form.flush_interval_seconds.trim() || 0);
   if (flush) s3.flush_interval_seconds = flush;
 
@@ -210,18 +216,10 @@ function toVictoriaLogsSinkSpec(
 /** The whole spec: PATCH replaces it, so every kept value must be sent. */
 export function toLogSinkSpec(values: LogSinkFormValues): LogSinkSpec {
   // Only the chosen type's settings are sent (the server drops the other's).
-  const spec: LogSinkSpec =
-    values.spec.type === "s3"
-      ? {
-          type: "s3",
-          enabled: values.spec.enabled,
-          s3: toS3SinkSpec(values.spec.s3),
-        }
-      : {
-          type: "victorialogs",
-          enabled: values.spec.enabled,
-          victorialogs: toVictoriaLogsSinkSpec(values.spec.victorialogs),
-        };
+  const { type, enabled } = values.spec;
+  const spec: LogSinkSpec = { type, enabled };
+  if (type === "s3") spec.s3 = toS3SinkSpec(values.spec.s3);
+  else spec.victorialogs = toVictoriaLogsSinkSpec(values.spec.victorialogs);
   const maxSize = gibToBytes(values.spec.buffer.max_size_gib);
   if (maxSize !== undefined) spec.buffer = { max_size: maxSize };
   return spec;
@@ -250,9 +248,8 @@ export const NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
 
 type UrlError = "required" | "invalid" | "scheme" | "host" | "queryOrFragment";
 
-export function validateSinkUrl(url: string): UrlError | undefined {
-  const value = url.trim();
-  if (!value) return "required";
+/** An http(s) URL with a host, or why the value is not one. */
+function parseHttpUrl(value: string): URL | "scheme" | "invalid" | "host" {
   if (!/^https?:\/\//i.test(value)) return "scheme";
   let parsed: URL;
   try {
@@ -260,7 +257,14 @@ export function validateSinkUrl(url: string): UrlError | undefined {
   } catch {
     return "invalid";
   }
-  if (!parsed.host) return "host";
+  return parsed.host ? parsed : "host";
+}
+
+export function validateSinkUrl(url: string): UrlError | undefined {
+  const value = url.trim();
+  if (!value) return "required";
+  const parsed = parseHttpUrl(value);
+  if (typeof parsed === "string") return parsed;
   if (parsed.search || parsed.hash) return "queryOrFragment";
   return undefined;
 }
@@ -271,14 +275,8 @@ type S3EndpointError = "scheme" | "invalid" | "host" | "extraParts";
 export function validateS3Endpoint(url: string): S3EndpointError | undefined {
   const value = url.trim();
   if (!value) return undefined;
-  if (!/^https?:\/\//i.test(value)) return "scheme";
-  let parsed: URL;
-  try {
-    parsed = new URL(value);
-  } catch {
-    return "invalid";
-  }
-  if (!parsed.host) return "host";
+  const parsed = parseHttpUrl(value);
+  if (typeof parsed === "string") return parsed;
   if (parsed.search || parsed.hash || parsed.username || parsed.password) {
     return "extraParts";
   }
@@ -298,10 +296,9 @@ export function validateKeyPrefix(prefix: string): KeyPrefixError | undefined {
 }
 
 export function validateFlushInterval(value: string): "invalid" | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  if (!/^\d+$/.test(trimmed)) return "invalid";
-  const seconds = Number(trimmed);
+  if (!value.trim()) return undefined;
+  if (validateTimeoutSeconds(value)) return "invalid";
+  const seconds = Number(value.trim());
   return seconds >= 1 && seconds <= S3_MAX_FLUSH_INTERVAL_SECONDS
     ? undefined
     : "invalid";

@@ -8,7 +8,7 @@ export const formatEventCount = (value: number | null | undefined): string =>
   countFormatter.format(value ?? 0);
 
 /**
- * The list's Destination cell (data.md, "UI facts added for s3"):
+ * The list's Destination cell:
  * victorialogs → its URL; s3 → s3://<bucket>/<prefix or default>, plus the
  * endpoint's host when one is set.
  */
