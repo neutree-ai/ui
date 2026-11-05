@@ -1,4 +1,10 @@
-import { ArrowUpRight, CircleAlert, CircleCheck, Copy } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  Copy,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -863,6 +869,7 @@ function GpuDetailsSheet({
     (allocation) =>
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
+  const { sorted, hidden } = splitGpuEndpointAllocations(assigned);
   const colorByEndpoint = assignAllocationColors(
     assigned.map((allocation) => allocation.endpoint),
   );
@@ -871,35 +878,33 @@ function GpuDetailsSheet({
     tflopsOverrides,
     device.peakFP16TFLOPS,
   );
+  const colorOf = (allocation: EndpointGpuAllocation) =>
+    colorByEndpoint[allocation.endpoint] ??
+    allocationColor(allocation.endpoint);
+  const keyOf = (allocation: EndpointGpuAllocation) =>
+    `${allocation.workspace}:${allocation.endpoint}`;
+
+  // One Endpoint at a time, and only one: the bar establishes the relationship
+  // between allocations, the list opens one object. A single Endpoint opens by
+  // default because there is nothing to disambiguate; several start collapsed.
+  // The choice is scoped to the device so opening another GPU never inherits it.
+  const [selection, setSelection] = useState<{
+    device: string;
+    key: string | null;
+  } | null>(null);
+  const singleEndpointKey = sorted.length === 1 ? keyOf(sorted[0]) : null;
+  const selectedKey =
+    selection?.device === device.uuid ? selection.key : singleEndpointKey;
+  const toggle = (key: string) =>
+    setSelection({
+      device: device.uuid,
+      key: selectedKey === key ? null : key,
+    });
+
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
-  const hardwareFields = [
-    ...(readings.hardware.architecture ||
-    readings.hardware.cuda_capability ||
-    readings.hardware.cuda_driver_version
-      ? [
-          "architecture",
-          "cuda_capability",
-          "cuda_driver_version",
-          "nvlink",
-          "nvswitch",
-        ]
-      : []),
-    ...extraHardwareFields
-      .filter((field) => readings.hardware[field.key] != null)
-      .map((field) => field.key),
-    "driver_version",
-    "pcie_bus_id",
-    "pcie_generation",
-    "pcie_width",
-    "numa_node",
-  ];
-  const hardwareLabel = (key: string) => {
+  const hardwareValue = (key: string) => {
     const value = readings.hardware[key];
-    const extraField = extraHardwareFields.find((field) => field.key === key);
-    if (extraField?.values) {
-      return extraField.values[value] ? t(extraField.values[value]) : "—";
-    }
     if (["nvlink", "nvswitch"].includes(key)) {
       return value === "1"
         ? t("observations.present")
@@ -907,265 +912,413 @@ function GpuDetailsSheet({
           ? t("observations.absent")
           : "—";
     }
+    if (key === "pcie_generation") return value ? `Gen ${value}` : "—";
+    if (key === "pcie_width") return value ? `x${value}` : "—";
     return label(value);
   };
-  // A wall of em dashes reads as a broken panel, not as "the exporter did not
-  // report this". Render what exists and summarise the rest in one line.
-  const reportedHardwareFields = hardwareFields.filter(
-    (key) => hardwareLabel(key) !== "—",
-  );
-  const unreportedHardwareLabels = hardwareFields
-    .filter((key) => hardwareLabel(key) === "—")
-    .map((key) =>
-      t(
-        extraHardwareFields.find((field) => field.key === key)?.label ??
-          `observations.hardwareFields.${key}`,
-      ),
+  const baseHardwareFields = [
+    "architecture",
+    "cuda_capability",
+    "cuda_driver_version",
+    "nvlink",
+    "nvswitch",
+    "pcie_bus_id",
+    "pcie_generation",
+    "pcie_width",
+    "numa_node",
+  ];
+  const hardwareFields = [
+    ...baseHardwareFields,
+    ...extraHardwareFields.map((field) => field.key),
+  ];
+  const hardwareLabel = (key: string) =>
+    t(
+      extraHardwareFields.find((field) => field.key === key)?.label ??
+        `observations.hardwareFields.${key}`,
     );
+  const reportedCount = hardwareFields.filter(
+    (key) => hardwareValue(key) !== "—",
+  ).length;
+
   const physical = readings.total;
   const reserved = device.allocatedMiB;
   const actual = readings.actual;
   const hasRuntimeMetric = Boolean(
     readings.utilization || readings.temperature || readings.power,
   );
+  const sampleTime = [
+    readings.utilization,
+    readings.temperature,
+    readings.power,
+  ]
+    .filter(Boolean)
+    .map((sample) => sample?.observed_at ?? 0)
+    .reduce((latest, value) => Math.max(latest, value), 0);
+  const ageLabel = (seconds: number) => {
+    if (seconds < 60) return t("observations.ageSeconds", { count: seconds });
+    if (seconds < 3600)
+      return t("observations.ageMinutes", { count: Math.floor(seconds / 60) });
+    return t("observations.ageHours", { count: Math.floor(seconds / 3600) });
+  };
+  const updatedAge =
+    sampleTime > 0
+      ? ageLabel(Math.max(0, Math.floor(Date.now() / 1000) - sampleTime))
+      : null;
+  const estimatedTflops =
+    nominalTflops != null && readings.utilization
+      ? nominalTflops * readings.utilization.value
+      : null;
+  const replicaCount = assigned.length;
+  const showIndex = hidden.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>
-            {t("clusters.fields.gpuNumber")} {device.index} ·{" "}
-            {device.product || <EmptyValue />}
+      <SheetContent className="w-full overflow-y-auto sm:max-w-[680px]">
+        <SheetHeader className="space-y-1.5">
+          <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            {t("observations.deviceEyebrow")}
+          </p>
+          <SheetTitle className="flex flex-wrap items-center gap-2">
+            <span className="rounded border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)] px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+              {t("clusters.fields.gpuNumber")} {device.index}
+            </span>
+            <span className="break-all">
+              {device.product || <EmptyValue />}
+            </span>
           </SheetTitle>
-          <SheetDescription className="break-all">
-            {device.node}
+          <SheetDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <DeviceHealth device={device} />
+            <span className="break-all">{device.node}</span>
+            <span aria-hidden className="text-muted-foreground">
+              ·
+            </span>
+            <span className="text-muted-foreground">
+              {t("observations.uuid")}{" "}
+              <span className="select-all font-mono text-foreground">
+                {device.uuid}
+              </span>
+            </span>
+            <CopyUuidButton device={device} />
           </SheetDescription>
         </SheetHeader>
-        <div className="mt-6 space-y-6">
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">
-              {t("observations.uuid")}
-            </p>
-            <p className="select-all break-all font-mono text-xs">
-              {device.uuid}
-            </p>
-          </div>
-          <section className="space-y-3">
-            <h3 className="font-medium">{t("observations.memorySection")}</h3>
-            <dl className="grid grid-cols-3 gap-3 rounded-md bg-muted/50 p-3 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("observations.physicalCapacity")}
-                </dt>
-                <dd className="tabular-nums">
-                  {physical != null ? `${gibValue(physical)} GiB` : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("observations.requestedCapacity")}
-                </dt>
-                <dd className="tabular-nums">
-                  {reserved != null ? `${gibValue(reserved)} GiB` : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t("observations.actualUsage")}
-                </dt>
-                <dd className="tabular-nums">
-                  {actual != null ? `${gibValue(actual)} GiB` : "—"}
-                </dd>
-              </div>
-            </dl>
-            <div className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}>
-              <div className="absolute inset-0 overflow-hidden rounded-full">
-                {reserved != null && reserved > 0 && (
-                  <div
-                    className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30"
-                    style={{ width: `${ratio(reserved, physical)}%` }}
-                  />
-                )}
-                {actual != null && (
-                  <div
-                    className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]"
-                    style={{ width: `${ratio(actual, physical)}%` }}
-                  />
-                )}
-              </div>
-            </div>
-            {reserved != null && reserved > 0 && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-40" />
-                  {t("observations.requestedCapacity")}
+
+        <div className="mt-5 space-y-4">
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+            <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
+              <h3 className="text-sm font-medium">
+                {t("observations.liveResourceState")}
+              </h3>
+              {updatedAge && (
+                <span className="text-[11px] whitespace-nowrap text-muted-foreground">
+                  {t("observations.updatedAgo", { age: updatedAge })}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-sm bg-[var(--nt-chart-series-1)]" />
-                  {t("observations.actualUsage")}
-                </span>
-              </div>
-            )}
-            {reserved === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {t("observations.notAllocated")}
-              </p>
-            ) : (
-              actual == null && (
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.noMeasurement")}
-                </p>
-              )
-            )}
-          </section>
-          <section className="space-y-3">
-            <h3 className="font-medium">{t("observations.runtimeMetrics")}</h3>
-            {hasRuntimeMetric ? (
-              <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.utilization")}
-                  </p>
-                  {readings.utilization ? (
-                    `${(readings.utilization.value * 100).toFixed(0)}%`
-                  ) : (
-                    <EmptyValue />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.deviceTemperature")}
-                  </p>
-                  {readings.temperature ? (
-                    `${readings.temperature.value.toFixed(0)} °C`
-                  ) : (
-                    <EmptyValue />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.devicePower")}
-                  </p>
-                  {readings.power ? (
-                    `${readings.power.value.toFixed(0)} W`
-                  ) : (
-                    <EmptyValue />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.fp16Nominal")}
-                  </p>
-                  <span className="tabular-nums">
-                    {nominalTflops != null
-                      ? `${nominalTflops.toFixed(1)} TFLOPS`
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {t("observations.status.no_data")}
-              </p>
-            )}
-          </section>
-          <section>
-            <h3 className="mb-3 font-medium">{t("observations.hardware")}</h3>
-            {reportedHardwareFields.length > 0 && (
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                {reportedHardwareFields.map((key) => (
-                  <div key={key}>
-                    <dt className="text-xs text-muted-foreground">
-                      {t(
-                        extraHardwareFields.find((field) => field.key === key)
-                          ?.label ?? `observations.hardwareFields.${key}`,
-                      )}
-                    </dt>
-                    <dd className="break-all">{hardwareLabel(key)}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-            {unreportedHardwareLabels.length > 0 && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                {t("observations.unreportedFields", {
-                  fields: unreportedHardwareLabels.join(", "),
-                })}
-              </p>
-            )}
-          </section>
-          <section>
-            <h3 className="font-medium">{t("observations.assignments")}</h3>
-            {device.coreUnits != null && reserved != null && reserved > 0 && (
-              <p className="mt-1 mb-3 text-xs text-muted-foreground">
-                {t("observations.computeShareAllocated")} {device.coreUnits}%
-              </p>
-            )}
-            <div className="space-y-3">
-              {assigned.map((allocation, index) => {
-                const measurement = reading(
-                  samples,
-                  "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                  device.node,
-                  device.uuid,
-                  allocation,
-                );
-                return (
-                  <div
-                    key={`${allocation.endpoint}:${allocation.replica}:${allocation.instance}:${allocation.vdevice ?? index}`}
-                    className="rounded-md border p-3 text-sm"
-                  >
-                    <div className="flex items-start gap-2">
-                      <span
-                        aria-hidden
-                        className="mt-1.5 size-2 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor:
-                            colorByEndpoint[allocation.endpoint] ??
-                            allocationColor(allocation.endpoint),
-                        }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          className="font-medium text-primary hover:underline"
-                          to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
-                        >
-                          {allocation.endpoint}
-                        </Link>
-                        <p className="break-all text-xs text-muted-foreground">
-                          {allocation.model || <EmptyValue />}
-                        </p>
-                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                          {allocation.replica || allocation.instance || (
-                            <EmptyValue />
-                          )}
-                        </p>
-                        <p className="mt-2 text-xs">
-                          {t("observations.actual")}{" "}
-                          {gib(
-                            measurement ? measurement.value / 1024 ** 2 : null,
-                          )}{" "}
-                          · {t("observations.reservedLower")}{" "}
-                          {gib(allocation.memoryMiB)}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t("observations.modelWeights")}{" "}
-                          {gib(allocation.modelWeightsMiB)} ·{" "}
-                          {t("observations.l0KvCache")}{" "}
-                          {gib(allocation.kvCacheCapacityMiB)}
-                        </p>
-                      </div>
+              )}
+            </header>
+            <div className="space-y-3 px-3 py-3">
+              {hasRuntimeMetric ? (
+                <>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        {t("observations.utilization")}
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums">
+                        {readings.utilization ? (
+                          `${(readings.utilization.value * 100).toFixed(0)}%`
+                        ) : (
+                          <EmptyValue />
+                        )}
+                      </span>
                     </div>
+                    <MetricBar
+                      size="sm"
+                      series="cyan"
+                      value={
+                        readings.utilization
+                          ? readings.utilization.value * 100
+                          : null
+                      }
+                      track={readings.utilization ? "outlined" : "unavailable"}
+                      aria-label={t("observations.utilization")}
+                    />
                   </div>
-                );
-              })}
-              {assigned.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {t("observations.noAssignments")}
+                  <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                    <div>
+                      <dt className="text-[11px] text-muted-foreground">
+                        {t("observations.vramActualOfTotal")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {gibValue(actual)}{" "}
+                        <span className="text-muted-foreground">
+                          / {gibValue(physical)} GiB
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] text-muted-foreground">
+                        {t("observations.acceleratorCore")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {device.coreUnits != null
+                          ? `${device.coreUnits}%`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] text-muted-foreground">
+                        {t("observations.deviceTemperature")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {readings.temperature
+                          ? `${readings.temperature.value.toFixed(0)} °C`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] text-muted-foreground">
+                        {t("observations.devicePower")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {readings.power
+                          ? `${readings.power.value.toFixed(0)} W`
+                          : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("observations.fp16Estimate")}
+                    </p>
+                    <p className="text-sm tabular-nums">
+                      {estimatedTflops != null
+                        ? estimatedTflops.toFixed(1)
+                        : "—"}{" "}
+                      / {nominalTflops != null ? nominalTflops.toFixed(1) : "—"}{" "}
+                      {t("observations.tflopsPeak")}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t("observations.status.no_data")}
                 </p>
               )}
             </div>
           </section>
+
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+            <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
+              <h3 className="text-sm font-medium">
+                {t("observations.vramAllocation")}
+              </h3>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {gibValue(reserved)} / {gibValue(physical)} GiB
+              </span>
+            </header>
+            <div className="space-y-3 px-3 py-3">
+              <InventoryAllocationBar
+                device={device}
+                allocations={assigned}
+                samples={samples}
+                cardUsedMiB={readings.actual}
+                total={readings.total}
+              />
+              {sorted.length > 0 && (
+                <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span
+                      aria-hidden
+                      className="size-1.5 rounded-full bg-[var(--nt-chart-series-1)]"
+                    />
+                    {t("observations.endpointCount", { count: sorted.length })}
+                  </span>
+                  <span>
+                    {t("observations.reservedTotal", { memory: gib(reserved) })}
+                  </span>
+                </p>
+              )}
+              <ul className="space-y-1">
+                {sorted.map((allocation) => {
+                  const key = keyOf(allocation);
+                  const isOpen = selectedKey === key;
+                  const index =
+                    sorted.findIndex((item) => keyOf(item) === key) + 1;
+                  return (
+                    <li
+                      key={key}
+                      className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
+                    >
+                      <div className="flex items-center gap-2 px-2 py-2">
+                        <button
+                          type="button"
+                          aria-expanded={isOpen}
+                          aria-label={t(
+                            isOpen
+                              ? "observations.collapseAllocation"
+                              : "observations.expandAllocation",
+                            { endpoint: allocation.endpoint },
+                          )}
+                          onClick={() => toggle(key)}
+                          className="rounded p-0.5 text-muted-foreground outline-none hover:bg-[var(--nt-fill-neutral-trans-3)] focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
+                        >
+                          <ChevronRight
+                            aria-hidden
+                            className={cn(
+                              "size-3.5 transition-transform",
+                              isOpen && "rotate-90",
+                            )}
+                          />
+                        </button>
+                        <span
+                          aria-hidden
+                          className="flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold text-white"
+                          style={{ backgroundColor: colorOf(allocation) }}
+                        >
+                          {showIndex ? index : ""}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            className="block truncate text-sm font-medium text-primary hover:underline"
+                            to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
+                          >
+                            {allocation.endpoint}
+                          </Link>
+                          <p className="truncate text-[11px] text-muted-foreground">
+                            {allocation.model || <EmptyValue />} ·{" "}
+                            {allocation.workspace}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[11px] whitespace-nowrap tabular-nums text-muted-foreground">
+                          {t("observations.reservedAmount", {
+                            memory: gib(allocation.memoryMiB),
+                          })}
+                        </span>
+                      </div>
+                      {isOpen && (
+                        <div className="space-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
+                          <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                            <div>
+                              <dt className="text-[11px] text-muted-foreground">
+                                {t("observations.workspaceLabel")}
+                              </dt>
+                              <dd className="break-all">
+                                {allocation.workspace}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[11px] text-muted-foreground">
+                                {t("observations.replicaLabel")}
+                              </dt>
+                              <dd className="tabular-nums">
+                                {allocation.allocations.length}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[11px] text-muted-foreground">
+                                {t("observations.instanceLabel")}
+                              </dt>
+                              <dd className="break-all">
+                                {allocation.allocations[0]?.instance || "—"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[11px] text-muted-foreground">
+                                {t("observations.vgpuLabel")}
+                              </dt>
+                              <dd className="break-all">
+                                {allocation.allocations[0]?.vdevice ??
+                                  t("observations.fullCard")}
+                              </dd>
+                            </div>
+                          </dl>
+                          {allocation.allocations.map((item) => {
+                            const measurement = reading(
+                              samples,
+                              "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                              item.node,
+                              item.uuid,
+                              item,
+                            );
+                            const usedForReplica = measurement
+                              ? measurement.value / 1024 ** 2
+                              : null;
+                            const percent =
+                              usedForReplica != null && item.memoryMiB > 0
+                                ? Math.min(
+                                    100,
+                                    (usedForReplica / item.memoryMiB) * 100,
+                                  )
+                                : null;
+                            return (
+                              <div
+                                key={`${item.replica}:${item.instance}`}
+                                className="space-y-1"
+                              >
+                                <p className="flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="truncate font-mono text-muted-foreground">
+                                    {item.replica || item.instance || "—"}
+                                  </span>
+                                  <span className="whitespace-nowrap tabular-nums">
+                                    {t("observations.actual")}{" "}
+                                    {gib(usedForReplica)} /{" "}
+                                    {gib(item.memoryMiB)}
+                                    {percent != null &&
+                                      ` · ${percent.toFixed(0)}%`}
+                                  </span>
+                                </p>
+                                <AllocationBreakdown
+                                  replica={item}
+                                  actual={usedForReplica}
+                                  reserved={item.memoryMiB}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {sorted.length === 0 && reserved != null && reserved > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {t("observations.endpointAllocationUnavailable")}
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+            <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
+              <h3 className="text-sm font-medium">
+                {t("observations.hardware")}
+              </h3>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {t("observations.hardwareReported", {
+                  reported: reportedCount,
+                  total: hardwareFields.length,
+                })}
+              </span>
+            </header>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 py-3 text-sm sm:grid-cols-3">
+              {hardwareFields.map((key) => (
+                <div key={key} className="min-w-0">
+                  <dt className="text-[11px] text-muted-foreground">
+                    {hardwareLabel(key)}
+                  </dt>
+                  <dd className="break-all">{hardwareValue(key)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+            <span>
+              {t("observations.endpointCount", { count: sorted.length })} ·{" "}
+              {t("observations.replicaAllocations", { count: replicaCount })}
+            </span>
+            <span className="font-mono">{device.uuid}</span>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

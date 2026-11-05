@@ -99,14 +99,14 @@ describe("GPU observation row", () => {
             { endpoint: "instance", replica: "pod" },
           ),
           sample("neutree_node_accelerator_example_info", 1, {
-            driver_version: "extension-driver",
+            architecture: "extension-arch",
           }),
           sample("neutree_node_accelerator_hardware_info", 1, {
-            driver_version: "generic-driver",
+            architecture: "generic-arch",
           }),
           sample("neutree_node_accelerator_example_info", 1, {
             node: "other",
-            driver_version: "wrong-node",
+            architecture: "wrong-node",
           }),
         ],
       }),
@@ -127,7 +127,7 @@ describe("GPU observation row", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog.textContent).toContain("gpu");
     expect(dialog.textContent).toContain("model");
-    within(dialog).getByText("extension-driver");
+    within(dialog).getByText("extension-arch");
     expect(within(dialog).queryByText("wrong-node")).toBeNull();
   });
 
@@ -283,24 +283,30 @@ describe("GPU observation row", () => {
       screen.getByRole("button", { name: "observations.detailsForGpu:0" }),
     );
 
-  it("shows physical capacity instead of a zero-over-zero ratio", () => {
+  it("shows an idle card as real zeros, not as a missing measurement", () => {
     render(
       card({
         allocations: [],
         device: { ...device, allocatedMiB: 0 },
+        samples: [
+          sample("neutree_accelerator_utilization_ratio", 0),
+          sample("neutree_accelerator_memory_total_bytes", 15360 * 1024 ** 2),
+          sample("neutree_accelerator_memory_used_bytes", 0),
+        ],
       }),
     );
 
     openDetails();
     const dialog = screen.getByRole("dialog");
 
-    within(dialog).getByText("observations.physicalCapacity");
+    within(dialog).getByText("observations.vramActualOfTotal");
+    expect(dialog.textContent).toContain("0.0");
     expect(dialog.textContent).toContain("15.0 GiB");
-    within(dialog).getByText("observations.notAllocated");
-    expect(dialog.textContent).not.toContain("0.0 GiB / 0.0 GiB");
+    expect(dialog.textContent).toContain("0%");
+    expect(dialog.textContent).not.toContain("observations.status.no_data");
   });
 
-  it("renders only reported hardware fields and summarises the rest once", () => {
+  it("keeps the nine hardware fields stable and counts what was reported", () => {
     render(
       card({
         samples: [
@@ -316,30 +322,62 @@ describe("GPU observation row", () => {
     const dialog = screen.getByRole("dialog");
 
     within(dialog).getByText("Hopper");
-    within(dialog).getByText("5");
-    // The unreported fields collapse into one line instead of a wall of dashes.
-    screen.getByText(/observations\.unreportedFields/);
-    expect(
-      within(dialog).queryByText("observations.hardwareFields.numa_node"),
-    ).toBeNull();
-    expect(
-      within(dialog).queryByText("observations.hardwareFields.pcie_bus_id"),
-    ).toBeNull();
+    within(dialog).getByText("Gen 5");
+    // An unreported field keeps its slot: the grid must not reflow per device.
+    within(dialog).getByText("observations.hardwareFields.numa_node");
+    expect(dialog.textContent).toContain("observations.hardwareReported");
+    expect(within(dialog).getAllByText("—").length).toBeGreaterThan(0);
   });
 
-  it("shows nominal FP16 compute without a fabricated running value", () => {
+  it("derives the FP16 estimate from utilisation and labels it as an estimate", () => {
     render(
       card({
-        device: { ...device, peakFP16TFLOPS: 989 },
-        samples: [sample("neutree_accelerator_utilization_ratio", 0)],
+        device: { ...device, peakFP16TFLOPS: 100 },
+        samples: [sample("neutree_accelerator_utilization_ratio", 0.5)],
       }),
     );
 
     openDetails();
     const dialog = screen.getByRole("dialog");
 
-    within(dialog).getByText("observations.fp16Nominal");
-    expect(dialog.textContent).toMatch(/\d+\.\d+ TFLOPS/);
-    expect(dialog.textContent).not.toMatch(/\d+\.\d+ \/ \d+\.\d+ TFLOPS/);
+    within(dialog).getByText("observations.fp16Estimate");
+    // 50% of a 100 TFLOPS peak.
+    expect(dialog.textContent).toContain("50.0");
+    expect(dialog.textContent).toContain("100.0");
+    expect(dialog.textContent).toContain("observations.tflopsPeak");
+  });
+
+  it("keeps one Endpoint allocation expanded at a time", () => {
+    const other = {
+      ...allocation,
+      endpoint: "instance-2",
+      model: "model-2",
+      replica: "pod-2",
+      instance: "pod-2",
+    };
+    render(card({ allocations: [allocation, other] }));
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    const expandedCount = () =>
+      dialog.querySelectorAll('[aria-expanded="true"]').length;
+
+    // Several Endpoints start collapsed; there is nothing to disambiguate for one.
+    expect(expandedCount()).toBe(0);
+
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "observations.expandAllocation:instance",
+      }),
+    );
+    expect(expandedCount()).toBe(1);
+    expect(dialog.textContent).toContain("observations.modelWeights 2.0 GiB");
+
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "observations.expandAllocation:instance-2",
+      }),
+    );
+    expect(expandedCount()).toBe(1);
   });
 });
