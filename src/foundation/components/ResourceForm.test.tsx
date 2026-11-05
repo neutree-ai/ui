@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { FieldValues } from "react-hook-form";
-import { useForm } from "react-hook-form";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import type { ReactNode } from "react";
+import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
 import { FormFieldGroup } from "./FormFieldGroup";
@@ -13,6 +19,14 @@ vi.mock("@refinedev/core", () => ({
   useResource: () => ({ action: "edit" }),
   useRouterType: () => "browser",
   useSaveButton: () => ({ label: "Save" }),
+}));
+
+vi.mock("@/foundation/lib/i18n", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 type TestValues = {
@@ -28,7 +42,35 @@ const variablesSchema = {
   enable_prefix_cache: { type: "boolean" },
 } as unknown as Schema;
 
-function TestForm({ onFinish }: { onFinish: (values: TestValues) => void }) {
+function TestForm({
+  onFinish,
+  submitBlocked = false,
+  blockedSubmitMode,
+  onBlockedSubmit,
+  onInvalid,
+  onSubmitError,
+  footerLeadingActions,
+  footerActions,
+  hideSubmit,
+  cancelHref,
+  contentWidth,
+  submitHint,
+  showCancel,
+}: {
+  onFinish: (values: TestValues) => void | Promise<void>;
+  submitBlocked?: boolean;
+  blockedSubmitMode?: "disabled" | "report";
+  onBlockedSubmit?: () => void;
+  onInvalid?: (errors: Record<string, unknown>) => void;
+  onSubmitError?: (error: unknown) => void;
+  footerLeadingActions?: ReactNode;
+  footerActions?: ReactNode;
+  hideSubmit?: boolean;
+  cancelHref?: string;
+  contentWidth?: "default" | "wide";
+  submitHint?: string;
+  showCancel?: boolean;
+}) {
   const methods = useForm<TestValues>({
     defaultValues: { name: "initial" },
   });
@@ -43,8 +85,25 @@ function TestForm({ onFinish }: { onFinish: (values: TestValues) => void }) {
   } as unknown as Parameters<typeof ResourceForm<TestValues>>[0];
 
   return (
-    <ResourceForm {...formProps} hideCancel>
-      <input data-testid="name-input" {...methods.register("name")} />
+    <ResourceForm
+      {...formProps}
+      hideCancel={cancelHref ? false : !showCancel}
+      submitBlocked={submitBlocked}
+      blockedSubmitMode={blockedSubmitMode}
+      onBlockedSubmit={onBlockedSubmit}
+      onInvalid={onInvalid}
+      onSubmitError={onSubmitError}
+      footerLeadingActions={footerLeadingActions}
+      footerActions={footerActions}
+      hideSubmit={hideSubmit}
+      cancelHref={cancelHref}
+      contentWidth={contentWidth}
+      submitHint={submitHint}
+    >
+      <input
+        data-testid="name-input"
+        {...methods.register("name", { required: "Name is required" })}
+      />
     </ResourceForm>
   );
 }
@@ -114,6 +173,25 @@ function OptionFieldsForm({
   );
 }
 
+function AccessoryField() {
+  const methods = useForm<FieldValues>({
+    defaultValues: { name: "initial" },
+  });
+
+  return (
+    <FormProvider {...methods}>
+      <FormFieldGroup
+        {...methods}
+        name="name"
+        label="Name"
+        labelAccessory={<span>Required for deployment</span>}
+      >
+        <input />
+      </FormFieldGroup>
+    </FormProvider>
+  );
+}
+
 describe("ResourceForm", () => {
   it("submits the handleSubmit payload instead of reading getValues again", async () => {
     const onFinish = vi.fn();
@@ -128,6 +206,104 @@ describe("ResourceForm", () => {
       expect(onFinish).toHaveBeenCalledWith({ name: "fresh" });
     });
     expect(onFinish).not.toHaveBeenCalledWith({ name: "stale" });
+  });
+
+  it("reports a blocked submit while keeping the button actionable", () => {
+    const onFinish = vi.fn();
+    const onBlockedSubmit = vi.fn();
+    render(
+      <TestForm
+        onFinish={onFinish}
+        submitBlocked
+        blockedSubmitMode="report"
+        onBlockedSubmit={onBlockedSubmit}
+      />,
+    );
+
+    const button = screen.getByTestId("form-submit");
+    expect(button.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(button);
+
+    expect(onBlockedSubmit).toHaveBeenCalledOnce();
+    expect(onFinish).not.toHaveBeenCalled();
+  });
+
+  it("reports validation errors when handleSubmit rejects the form", async () => {
+    const onFinish = vi.fn();
+    const onInvalid = vi.fn();
+    render(<TestForm onFinish={onFinish} onInvalid={onInvalid} />);
+
+    fireEvent.change(screen.getByTestId("name-input"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByTestId("form-submit"));
+
+    await waitFor(() => expect(onInvalid).toHaveBeenCalledOnce());
+    expect(onInvalid.mock.calls[0][0]).toHaveProperty("name");
+    expect(onFinish).not.toHaveBeenCalled();
+  });
+
+  it("reports rejected submissions back to the owning form", async () => {
+    const failure = new Error("server rejected the deployment");
+    const onSubmitError = vi.fn();
+    render(
+      <TestForm
+        onFinish={vi.fn().mockRejectedValue(failure)}
+        onSubmitError={onSubmitError}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("form-submit"));
+
+    await waitFor(() => expect(onSubmitError).toHaveBeenCalledWith(failure));
+  });
+
+  it("keeps wizard navigation in the shared action bar", () => {
+    render(
+      <TestForm
+        onFinish={vi.fn()}
+        footerLeadingActions={<button type="button">Previous</button>}
+        footerActions={<button type="button">Next</button>}
+      />,
+    );
+
+    const actionBar = screen.getByTestId("form-submit").parentElement;
+    expect(actionBar?.textContent).toContain("Previous");
+    expect(actionBar?.textContent).toContain("Next");
+    expect(actionBar?.textContent).toContain("Save");
+  });
+
+  it("renders the standard cancel action when a form has nowhere to return", () => {
+    render(<TestForm onFinish={vi.fn()} showCancel />);
+
+    screen.getByRole("button", { name: "buttons.cancel" });
+  });
+
+  it("renders an accessible hint beside the primary submit action", () => {
+    render(
+      <TestForm
+        onFinish={vi.fn()}
+        submitHint="This will redeploy the endpoint."
+      />,
+    );
+
+    screen.getByRole("button", {
+      name: "This will redeploy the endpoint.",
+    });
+  });
+
+  it("can hand the primary action to wizard navigation", () => {
+    render(<TestForm onFinish={vi.fn()} hideSubmit />);
+
+    expect(screen.queryByTestId("form-submit")).toBeNull();
+  });
+
+  it("can send Cancel to an explicit route", () => {
+    render(<TestForm onFinish={vi.fn()} cancelHref="#/design-lab/endpoints" />);
+
+    expect(screen.getByTestId("form-cancel").getAttribute("href")).toBe(
+      "#/design-lab/endpoints",
+    );
   });
 
   it("flushes pending variable rows before submitting", async () => {
@@ -250,5 +426,15 @@ describe("ResourceForm", () => {
 
     expect(leftToIme).toBe(true);
     expect(onFinish).not.toHaveBeenCalled();
+  });
+});
+
+describe("FormFieldGroup", () => {
+  it("keeps a label accessory attached to the field label", () => {
+    render(<AccessoryField />);
+
+    const field = screen.getByTestId("field-name");
+    within(field).getByText("Name");
+    within(field).getByText("Required for deployment");
   });
 });

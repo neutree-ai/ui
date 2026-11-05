@@ -5,16 +5,19 @@ import {
   type FormEventHandler,
   type FormHTMLAttributes,
   type PropsWithChildren,
+  type ReactNode,
   useMemo,
   useRef,
 } from "react";
-import type { FieldValues } from "react-hook-form";
+import type { FieldErrors, FieldValues } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
 import { SaveButton } from "@/foundation/components/SaveButton";
 import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import { useOnBack } from "@/foundation/hooks/use-on-back";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import { InfoHint } from "./InfoHint";
 import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 
 type NativeFormProps = Omit<
@@ -49,6 +52,24 @@ type FormProps<
     // the endpoint form blocks deploy while a requested resource exceeds
     // cluster capacity — so no upward effect/context plumbing is needed.
     submitBlocked?: boolean;
+    // Blocked forms normally disable the submit button. A wizard still needs
+    // the click as a validation attempt so it can explain and navigate to the
+    // problem instead of leaving the button inert.
+    blockedSubmitMode?: "disabled" | "report";
+    onBlockedSubmit?: () => void;
+    onInvalid?: (errors: FieldErrors<TVariables>) => void;
+    onSubmitError?: (error: unknown) => void;
+    /** Hide the submit action when navigation owns the next step. */
+    hideSubmit?: boolean;
+    /** Route Cancel to a stable destination instead of browser history. */
+    cancelHref?: string;
+    submitLabel?: string;
+    /** Explanation shown beside the primary submit action. */
+    submitHint?: string;
+    footerLeadingActions?: ReactNode;
+    footerActions?: ReactNode;
+    /** Let dense operational wizards use the available desktop width. */
+    contentWidth?: "default" | "wide";
   };
 
 const formActionButtonClassName = "h-8 min-w-[88px] px-3 py-1";
@@ -67,6 +88,17 @@ export const ResourceForm = <
   saveButtonProps,
   title,
   submitBlocked = false,
+  blockedSubmitMode = "disabled",
+  onBlockedSubmit,
+  onInvalid,
+  onSubmitError,
+  hideSubmit = false,
+  cancelHref,
+  submitLabel,
+  submitHint,
+  footerLeadingActions,
+  footerActions,
+  contentWidth = "default",
   ...props
 }: FormProps<
   TQueryFnData,
@@ -103,6 +135,7 @@ export const ResourceForm = <
   const onSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     if (submitBlocked) {
       event.preventDefault();
+      onBlockedSubmit?.();
       return;
     }
     for (const handler of beforeSubmitHandlers.current) {
@@ -111,9 +144,14 @@ export const ResourceForm = <
         return;
       }
     }
-    props.handleSubmit((data: TVariables) => {
-      props.refineCore.onFinish(data).then();
-    })(event);
+    props.handleSubmit(
+      (data: TVariables) => {
+        Promise.resolve(props.refineCore.onFinish(data)).catch((error) => {
+          onSubmitError?.(error);
+        });
+      },
+      (errors) => onInvalid?.(errors),
+    )(event);
   };
 
   return (
@@ -125,7 +163,12 @@ export const ResourceForm = <
           onKeyDown={onKeyDown}
           data-testid="form"
         >
-          <div className="mx-auto w-full max-w-[1280px]">
+          <div
+            className={cn(
+              "mx-auto w-full",
+              contentWidth === "wide" ? "max-w-[1680px]" : "max-w-[1280px]",
+            )}
+          >
             {title && (
               <div className="mb-4">
                 <h1 className="text-2xl font-semibold leading-8 text-foreground">
@@ -136,27 +179,56 @@ export const ResourceForm = <
 
             <div className="space-y-4">{props.children}</div>
 
-            <div className="sticky -bottom-2 z-10 mt-5 flex justify-end gap-x-3 border-t bg-background/90 px-1 py-4 backdrop-blur">
-              {!props.hideCancel && (
-                <Button
-                  type="button"
-                  onClick={onBack}
-                  disabled={props.refineCore.formLoading}
-                  variant="outline"
-                  className={formActionButtonClassName}
-                  data-testid="form-cancel"
-                >
-                  {t("buttons.cancel")}
-                </Button>
+            <div className="sticky -bottom-2 z-10 mt-5 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t bg-background/90 px-1 py-4 backdrop-blur">
+              {footerLeadingActions && (
+                <div className="mr-auto flex items-center gap-3">
+                  {footerLeadingActions}
+                </div>
               )}
+              {!props.hideCancel &&
+                (cancelHref ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className={formActionButtonClassName}
+                  >
+                    <a href={cancelHref} data-testid="form-cancel">
+                      {t("buttons.cancel")}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={onBack}
+                    disabled={props.refineCore.formLoading}
+                    variant="outline"
+                    className={formActionButtonClassName}
+                    data-testid="form-cancel"
+                  >
+                    {t("buttons.cancel")}
+                  </Button>
+                ))}
 
-              <SaveButton
-                type="submit"
-                loading={props.refineCore.formLoading}
-                disabled={submitBlocked}
-                className={formActionButtonClassName}
-                data-testid="form-submit"
-              />
+              {footerActions}
+
+              {!hideSubmit && (
+                <>
+                  <SaveButton
+                    type="submit"
+                    loading={props.refineCore.formLoading}
+                    disabled={submitBlocked && blockedSubmitMode === "disabled"}
+                    className={formActionButtonClassName}
+                    data-testid="form-submit"
+                  >
+                    {submitLabel}
+                  </SaveButton>
+                  {submitHint && (
+                    <span className="-ml-2 flex shrink-0 items-center">
+                      <InfoHint label={submitHint} />
+                    </span>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </form>

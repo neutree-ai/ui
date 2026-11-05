@@ -500,6 +500,16 @@ export function transformEndpointValues(spec: {
  */
 export function validateEndpointValues(
   spec: {
+    cluster?: string | null;
+    model?: {
+      registry?: string | null;
+      name?: string | null;
+      task?: string | null;
+    } | null;
+    engine?: {
+      engine?: string | null;
+      version?: string | null;
+    } | null;
     replicas?: { num?: number } | null;
     deployment_options?: { scheduler?: { type?: string } | null } | null;
     resources?: {
@@ -540,6 +550,12 @@ export function validateEndpointValues(
      */
     clusterType?: "ssh" | "kubernetes";
     /**
+     * The allocation mode the user is currently editing. Virtual-card mode
+     * requires an explicit per-card memory request; leaving it blank must not
+     * silently turn the same card count into a full-card request.
+     */
+    allocationMode?: "full" | "vgpu";
+    /**
      * Whether the form hides the model fields because the engine needs no
      * `spec.model` (see `engineNeedsModelSpec`). The model checks below then
      * have no field to point at: a catalog written for such an engine may
@@ -552,8 +568,30 @@ export function validateEndpointValues(
   t: (key: string, options?: Record<string, unknown>) => string,
 ): Record<string, { type: string; message: string }> {
   const errors: Record<string, { type: string; message: string }> = {};
+  const requiredMessage = t("common.validation.required");
+  const addRequiredError = (path: string, value: unknown) => {
+    if (
+      value == null ||
+      (typeof value === "string" && value.trim().length === 0)
+    ) {
+      errors[path] = { type: "manual", message: requiredMessage };
+    }
+  };
 
-  if (spec.replicas?.num != null && spec.replicas.num < 1) {
+  addRequiredError("spec.cluster", spec.cluster);
+  addRequiredError("spec.engine.engine", spec.engine?.engine);
+  addRequiredError("spec.engine.version", spec.engine?.version);
+  if (!context.hidesModelFields) {
+    addRequiredError("spec.model.registry", spec.model?.registry);
+    addRequiredError("spec.model.name", spec.model?.name);
+    addRequiredError("spec.model.task", spec.model?.task);
+  }
+  if (spec.replicas?.num == null) {
+    errors["spec.replicas.num"] = {
+      type: "manual",
+      message: requiredMessage,
+    };
+  } else if (spec.replicas.num < 1) {
     errors["spec.replicas.num"] = {
       type: "manual",
       message: t("endpoints.messages.replicasMustBeAtLeastOne"),
@@ -569,6 +607,12 @@ export function validateEndpointValues(
 
   const accelerator = spec.resources?.accelerator;
   const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
+  if (!hasAccelerator) {
+    errors["spec.resources.accelerator"] = {
+      type: "manual",
+      message: requiredMessage,
+    };
+  }
   if (hasAccelerator && context.clusterType) {
     const gpuRaw = spec.resources?.gpu;
     if (gpuRaw !== undefined && gpuRaw !== null && gpuRaw !== "") {
@@ -596,6 +640,17 @@ export function validateEndpointValues(
   );
 
   if (
+    context.allocationMode === "vgpu" &&
+    hasAccelerator &&
+    memoryMiB === undefined
+  ) {
+    errors["spec.resources.accelerator.virtualization.memory_mib"] = {
+      type: "manual",
+      message: requiredMessage,
+    };
+  }
+
+  if (
     memoryMiB !== undefined &&
     (!Number.isFinite(memoryMiB) || memoryMiB <= 0)
   ) {
@@ -618,6 +673,18 @@ export function validateEndpointValues(
   // A catalog written elsewhere names the registry its author had. The picker
   // renders an unknown value as an empty box rather than as the name it holds,
   // so without this the field looks unfilled and the deploy fails server-side.
+  if (
+    context.action === "create" &&
+    !context.hidesModelFields &&
+    context.currentModelName &&
+    !context.currentRegistry
+  ) {
+    errors["spec.model.registry"] = {
+      type: "manual",
+      message: t("common.validation.required"),
+    };
+  }
+
   if (
     context.action === "create" &&
     !context.hidesModelFields &&

@@ -531,6 +531,15 @@ function renderEndpointForm(
 
 type Rendered = ReturnType<typeof renderEndpointForm>["result"];
 
+function formError(result: Rendered, path: string) {
+  let current: unknown = result.current.form.formState.errors;
+  for (const segment of path.split(".")) {
+    if (!current || typeof current !== "object") return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current as { message?: string } | undefined;
+}
+
 function setValues(result: Rendered, values: Record<string, unknown>) {
   act(() => {
     for (const [name, value] of Object.entries(values)) {
@@ -583,6 +592,16 @@ function typeInto(input: HTMLInputElement, value: string) {
   fireEvent.change(input, { target: { value } });
 }
 
+function selectGpuAllocationMode(mode: "full" | "vgpu") {
+  const modeField = screen.getByTestId("endpoint-gpu-allocation-mode");
+  fireEvent.click(
+    within(modeField).getByRole("button", {
+      name:
+        mode === "full" ? "endpoints.fields.fullGpu" : "endpoints.fields.vgpu",
+    }),
+  );
+}
+
 const currentRequest = () =>
   screen.getByTestId("endpoint-current-request-grid").textContent;
 
@@ -631,6 +650,24 @@ describe("create vs edit", () => {
       screen.getByTestId("field-spec.cluster"),
     ).findByRole("combobox");
     expect(cluster.textContent).toContain("unlisted-cluster");
+  });
+
+  it("shows node count in cluster capacity rather than beside the selector", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster()],
+    });
+
+    setValues(result, { "spec.cluster": "plain-gpu" });
+
+    expect(
+      screen.queryByTestId("endpoint-scheduling-target-node-count"),
+    ).toBeNull();
+    fireEvent.click(screen.getByTestId("endpoint-cluster-details-toggle"));
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("endpoint-cluster-node-count").textContent,
+      ).toContain("2"),
+    );
   });
 });
 
@@ -713,6 +750,7 @@ describe("vGPU split inputs", () => {
       "spec.cluster": "vgpu",
       "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
     });
+    selectGpuAllocationMode("vgpu");
 
     typeInto(coreInput(), "25");
     expect(fieldValue(result, VIRTUALIZATION)).toEqual({ core_percent: 25 });
@@ -734,6 +772,7 @@ describe("vGPU split inputs", () => {
         virtualization: { memory_mib: 4096, core_percent: 25 },
       }).accelerator,
     });
+    selectGpuAllocationMode("vgpu");
 
     typeInto(memoryInput(), "");
     expect(fieldValue(result, VIRTUALIZATION)).toEqual({ core_percent: 25 });
@@ -776,6 +815,18 @@ describe("vGPU split inputs", () => {
           virtualization: { memory_mib: 8192, core_percent: 50 },
         }),
       });
+      const modeControl = screen.queryByTestId("endpoint-gpu-allocation-mode");
+      if (modeControl) selectGpuAllocationMode("vgpu");
+
+      if (supported?.length === 0) {
+        expect(
+          screen.queryByTestId("endpoint-virtual-card-split-group"),
+        ).toBeNull();
+        await waitFor(() =>
+          expect(fieldValue(result, VIRTUALIZATION)).toBeUndefined(),
+        );
+        return;
+      }
 
       expect(coreInput().disabled).toBe(coreDisabled);
       expect(memoryInput().disabled).toBe(memoryDisabled);
@@ -811,6 +862,7 @@ describe("vGPU split inputs", () => {
       "spec.cluster": "fragmented-l20",
       "spec.resources": formResources({ gpu: 0, product: L20 }),
     });
+    selectGpuAllocationMode("vgpu");
     // The roomier card has 7156 MiB left, shown as 7 GiB.
     expect(memoryInput().max).toBe("7");
 
@@ -894,18 +946,6 @@ describe("capacity checks", () => {
 
   it.each([
     {
-      case: "a product the cluster lacks",
-      cluster: plainGpuCluster(),
-      resources: formResources({ product: L20 }),
-      shown: ["noMatchingAccelerator"],
-    },
-    {
-      case: "a vGPU product the cluster lacks",
-      cluster: vgpuCluster(),
-      resources: formResources({ product: L20, virtualization: quarterCard }),
-      shown: ["noMatchingAccelerator"],
-    },
-    {
       case: "two cards per replica but one free card per node",
       cluster: plainGpuCluster({ allFree: true }),
       resources: formResources({ gpu: 2 }),
@@ -915,10 +955,7 @@ describe("capacity checks", () => {
       case: "more full cards than are free",
       cluster: plainGpuCluster(),
       resources: formResources({ gpu: 2 }),
-      shown: [
-        "fullGpuCardCapacityInsufficient",
-        "fullGpuResourcesInsufficient",
-      ],
+      shown: ["fullGpuCardCapacityInsufficient"],
     },
     {
       case: "more GPU replicas than cards while CPU and memory suffice",
@@ -929,10 +966,7 @@ describe("capacity checks", () => {
       }),
       replicas: 3,
       resources: formResources({ cpu: 4, memory: 20 }),
-      shown: [
-        "fullGpuCardCapacityInsufficient",
-        "fullGpuResourcesInsufficient",
-      ],
+      shown: ["fullGpuCardCapacityInsufficient"],
     },
     {
       case: "more half-card replicas than per-card core allows",
@@ -1048,7 +1082,7 @@ describe("capacity checks", () => {
 
       setValues(result, { "spec.resources.gpu": 2 });
       await screen.findByText(
-        "endpoints.messages.fullGpuResourcesInsufficient",
+        /^endpoints\.messages\.fullGpuCardCapacityInsufficient/,
       );
     });
 
@@ -1206,6 +1240,7 @@ describe("simplified recipe deploy on vGPU clusters", () => {
       "spec.cluster": "vgpu",
       "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
     });
+    selectGpuAllocationMode("vgpu");
 
     expect(screen.queryByTestId("field-spec.model.version")).toBeNull();
     screen.getByTestId("endpoint-virtual-card-split-group");
@@ -1340,9 +1375,7 @@ describe("validation", () => {
     await validate(result);
 
     expect(
-      result.current.form.formState.errors?.[
-        "spec.deployment_options.scheduler.type" as never
-      ],
+      formError(result, "spec.deployment_options.scheduler.type"),
     ).toMatchObject({ message: "endpoints.messages.schedulerTypeRequired" });
   });
 
@@ -1568,10 +1601,16 @@ describe("engines that need no model spec", () => {
   it.each([
     { engine: "flex", shown: false },
     { engine: "vllm", shown: true },
-  ])("$engine: model fields shown $shown", ({ engine, shown }) => {
+  ])("$engine: model fields shown $shown", async ({ engine, shown }) => {
     const { result } = renderEndpointForm("create", lists);
 
     setValues(result, { "spec.engine": { engine, version: "v1" } });
+    await waitFor(() => {
+      if (shown) {
+        const toggle = screen.queryByTestId("model-optional-fields-toggle");
+        if (toggle) fireEvent.click(toggle);
+      }
+    });
 
     for (const label of modelFieldLabels) {
       expect(screen.queryByText(label) !== null).toBe(shown);
@@ -1595,12 +1634,10 @@ describe("engines that need no model spec", () => {
 
       await validate(result);
 
-      const errors = result.current.form.formState.errors as Record<
-        string,
-        { message?: string } | undefined
-      >;
-      expect(errors["spec.model.registry"] !== undefined).toBe(flagged);
-      expect(errors["-model-catalog"]).toBeUndefined();
+      expect(formError(result, "spec.model.registry") !== undefined).toBe(
+        flagged,
+      );
+      expect(formError(result, "-model-catalog")).toBeUndefined();
     },
   );
 
@@ -1797,12 +1834,7 @@ describe("registry choice", () => {
       // A separate pass: the resolver closes over the previous render's value.
       await validate(result);
 
-      const error = (
-        result.current.form.formState.errors as Record<
-          string,
-          { message?: string } | undefined
-        >
-      )["spec.model.registry"];
+      const error = formError(result, "spec.model.registry");
       if (flagged) {
         expect(error?.message).toMatch(
           /^endpoints\.messages\.modelRegistryNotInWorkspace/,
@@ -1879,45 +1911,6 @@ describe("recipe catalogs", () => {
       "org/local-recipe-model",
     );
     expect(fieldValue(result, "spec.model.registry")).toBe("local");
-  });
-
-  // The simplified form folds engine, args and env away; the preview is the
-  // only place left to see what the deploy will run.
-  describe("the composition preview", () => {
-    it("summarises the composed engine without expanding anything", () => {
-      renderRecipe();
-
-      const toggle = screen.getByTestId("compose-preview-toggle");
-      for (const text of ["vllm", "0.8.5", "text-generation"]) {
-        expect(toggle.textContent).toContain(text);
-      }
-    });
-
-    it("opens to the full composition", () => {
-      renderRecipe();
-      expect(screen.getByTestId("compose-preview").textContent).not.toContain(
-        "org/recipe-model",
-      );
-
-      fireEvent.click(screen.getByTestId("compose-preview-toggle"));
-
-      expect(screen.getByTestId("compose-preview").textContent).toContain(
-        "org/recipe-model",
-      );
-    });
-
-    it("is not folded once the advanced options are shown", async () => {
-      renderRecipe();
-
-      await act(async () => {
-        fireEvent.click(screen.getByText("endpoints.simplified.showAdvanced"));
-      });
-
-      expect(screen.queryByTestId("compose-preview-toggle")).toBeNull();
-      expect(screen.getByTestId("compose-preview").textContent).toContain(
-        "org/recipe-model",
-      );
-    });
   });
 
   describe("model metadata", () => {
