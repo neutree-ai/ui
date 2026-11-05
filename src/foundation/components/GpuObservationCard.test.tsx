@@ -137,7 +137,9 @@ describe("GPU observation row", () => {
     screen.getByText("observations.noMeasurement");
     const row = screen.getByTestId("gpu-allocation-row");
     expect(row.textContent).toContain("—");
-    expect(row.textContent).toContain("observations.allocatedUnused —");
+    // "Unused" is reserved minus actual, so with no measurement there is no
+    // number to print — the line is omitted rather than shown as a dash.
+    expect(row.textContent).not.toContain("observations.allocatedUnused");
   });
 
   it("keeps a truncated product name reachable from the keyboard", async () => {

@@ -69,7 +69,7 @@ type Props = {
 const INVENTORY_GRID =
   "grid min-w-[860px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(190px,1.3fr)_76px] items-center gap-3 px-4";
 const ALLOCATION_GRID =
-  "grid min-w-[820px] grid-cols-[minmax(150px,1.1fr)_130px_minmax(190px,1.2fr)_120px_90px_76px] items-center gap-3 px-4";
+  "grid min-w-[720px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px_76px] items-center gap-3 px-4";
 const GPU_BAR_TRACK_CLASS =
   "relative rounded-full border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]";
 
@@ -113,7 +113,6 @@ export function GpuObservationTableHeader({
       : [
           t("observations.deviceAndHealth"),
           t("observations.vramInUse"),
-          t("observations.memoryBreakdown"),
           t("observations.utilization"),
           t("observations.computeShare"),
           "",
@@ -798,7 +797,7 @@ function CompositionSegments({
   );
 }
 
-function AllocationMemory({
+function AllocationVram({
   device,
   replica,
   actual,
@@ -813,9 +812,17 @@ function AllocationMemory({
   const reserved = device.allocatedMiB;
   const hasComposition =
     replica?.modelWeightsMiB != null && replica.kvCacheCapacityMiB != null;
+  const share =
+    actual != null && reserved != null && reserved > 0
+      ? Math.min(100, (actual / reserved) * 100)
+      : null;
+  const unused =
+    actual != null && reserved != null ? Math.max(0, reserved - actual) : null;
 
   return (
-    <div className="min-w-0 space-y-2">
+    <div className="min-w-0 space-y-1.5">
+      {/* One bar, one set of numbers: the composition is drawn inside the same
+          measured bar it belongs to, instead of a second chart beside it. */}
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="whitespace-nowrap font-semibold tabular-nums text-foreground">
           {gibValue(actual)}
@@ -824,11 +831,13 @@ function AllocationMemory({
             / {gibValue(reserved)} GiB
           </span>
         </span>
-        {actual == null && (
-          <span className="truncate text-[11px] text-muted-foreground">
-            {t("observations.noMeasurement")}
-          </span>
-        )}
+        <span className="shrink-0 truncate text-[11px] text-muted-foreground">
+          {share != null
+            ? t("observations.actualOfReserved", {
+                percent: Math.round(share),
+              })
+            : t("observations.noMeasurement")}
+        </span>
       </div>
       <div className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}>
         <div className="absolute inset-0 overflow-hidden rounded-full">
@@ -851,52 +860,18 @@ function AllocationMemory({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function AllocationBreakdown({
-  replica,
-  actual,
-  reserved,
-}: {
-  replica?: GpuAllocation;
-  actual: number | null;
-  reserved: number | null;
-}) {
-  const { t } = useTranslation();
-  const unused =
-    actual != null && reserved != null ? Math.max(0, reserved - actual) : null;
-
-  return (
-    <div className="min-w-0 space-y-1">
-      <p className="break-words text-[11px] leading-4 text-muted-foreground">
-        {t("observations.modelWeights")} {gib(replica?.modelWeightsMiB)} ·{" "}
-        {t("observations.l0KvCache")} {gib(replica?.kvCacheCapacityMiB)}
-      </p>
-      <p className="text-[11px] leading-4 text-muted-foreground">
-        {t("observations.allocatedUnused")} {gib(unused)}
-      </p>
-      <div className={cn("h-2", GPU_BAR_TRACK_CLASS)}>
-        <div className="absolute inset-0 flex overflow-hidden rounded-full">
-          <span
-            className="h-full bg-[var(--nt-chart-series-1)]"
-            style={{
-              width: `${reserved ? ratio(replica?.modelWeightsMiB, reserved) : 0}%`,
-            }}
-          />
-          <span
-            className="h-full bg-[var(--nt-chart-series-3)]"
-            style={{
-              width: `${reserved ? ratio(replica?.kvCacheCapacityMiB, reserved) : 0}%`,
-              backgroundImage: KV_STRIPES,
-              // same surface gap as the allocation bar, so a stacked bar reads
-              // as separate blocks in one place and the other
-              boxShadow: "inset 1px 0 0 var(--nt-fill-neutral-white)",
-            }}
-          />
-        </div>
-      </div>
+      {hasComposition && (
+        <p className="break-words text-[11px] leading-4 text-muted-foreground">
+          {t("observations.modelWeights")} {gib(replica.modelWeightsMiB)} ·{" "}
+          {t("observations.l0KvCache")} {gib(replica.kvCacheCapacityMiB)}
+          {unused != null && (
+            <>
+              {" · "}
+              {t("observations.allocatedUnused")} {gib(unused)}
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }
@@ -1724,16 +1699,11 @@ export function GpuObservationCard({
           </>
         ) : (
           <>
-            <AllocationMemory
+            <AllocationVram
               device={device}
               replica={replica}
               actual={readings.actual}
               total={readings.total}
-            />
-            <AllocationBreakdown
-              replica={replica}
-              actual={readings.actual}
-              reserved={device.allocatedMiB}
             />
             <Utilization reading={readings.utilization} />
             <div className="min-w-0 text-xs">
