@@ -82,7 +82,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 const CustomScatterPoint = ({ cx, cy, payload }: any) => {
   return (
     <g>
-      <circle cx={cx} cy={cy} r={8} fill="hsl(var(--primary))" />
+      <circle cx={cx} cy={cy} r={8} fill="var(--nt-chart-cat-1)" />
       <text
         x={cx}
         y={cy}
@@ -285,7 +285,7 @@ export default function EmbeddingPlayground({
                         <Tooltip content={<CustomTooltip />} />
                         <Scatter
                           data={embeddings}
-                          fill="hsl(var(--primary))"
+                          fill="var(--nt-chart-cat-1)"
                           shape={<CustomScatterPoint />}
                         />
                       </ScatterChart>

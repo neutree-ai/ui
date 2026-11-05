@@ -176,7 +176,7 @@
   "src/domains/endpoint/components/ChatPlayground.tsx": "7005639896bc64c67a6c1a4815345723",
   "src/domains/endpoint/components/ChatSidebar.tsx": "188bc062294a45b16a56e7e3b9b24610",
   "src/domains/endpoint/components/DeploymentConfigCard.tsx": "91cc8c988179c5657e0cc51035f26bde",
-  "src/domains/endpoint/components/EmbeddingPlayground.tsx": "1fc239ccfdd889f71daf62d91bd18148",
+  "src/domains/endpoint/components/EmbeddingPlayground.tsx": "33b6a1bfc0a71c993e33b28000d5fd30",
   "src/domains/endpoint/components/EndpointEngine.tsx": "e3a20035501503cb47c8c59fad5982a7",
   "src/domains/endpoint/components/EndpointLogTabs.tsx": "98d8041370e145ea6f0ab5f7231af678",
   "src/domains/endpoint/components/EndpointModel.tsx": "8321a4b30053a4d169ae99516f9a447d",
