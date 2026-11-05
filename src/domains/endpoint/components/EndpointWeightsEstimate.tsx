@@ -36,7 +36,7 @@ import { formatGb } from "@/foundation/recipe/vram";
  * hardware, not about which engine reads the weights.
  */
 
-type EndpointDeclaredWeights = {
+export type EndpointDeclaredWeights = {
   /** Weights per replica, as the catalog states them. Null when it states
    * none. Does not include KV cache — that is computed separately and added
    * back in for the VRAM check. */
@@ -55,7 +55,7 @@ type EndpointDeclaredWeights = {
   };
 };
 
-type EndpointKvCacheInput = {
+export type EndpointKvCacheInput = {
   read: ModelInfoRead;
   engineArgs: EngineCacheArgs;
   /** Controls elsewhere on the form that own the context and concurrency. */

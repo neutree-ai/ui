@@ -49,7 +49,7 @@ import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
-type KVCacheEstimateState =
+export type KVCacheEstimateState =
   | {
       kind: "ready";
       totalGb: number;
