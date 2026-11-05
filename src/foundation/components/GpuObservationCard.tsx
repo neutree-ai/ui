@@ -643,7 +643,9 @@ function InventoryAllocationBar({
                   ) + 1}
                 </span>
               )}
-              {activeAllocation === allocationKey && (
+              {(mode === "select"
+                ? isSelected || activeAllocation === allocationKey
+                : activeAllocation === allocationKey) && (
                 <EndpointSegmentPattern
                   allocation={allocation}
                   color={color}
@@ -653,7 +655,7 @@ function InventoryAllocationBar({
               {isSelected && mode === "select" && (
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 rounded-[inherit] [box-shadow:inset_0_0_0_2px_var(--nt-fill-neutral-white)]"
+                  className="pointer-events-none absolute inset-0 rounded-[inherit] [box-shadow:inset_0_0_0_1px_var(--nt-fill-neutral-white)]"
                 />
               )}
             </button>
@@ -1331,7 +1333,8 @@ function GpuDetailsSheet({
                             {allocation.workspace} ·{" "}
                             {t("observations.replicaLabel")}{" "}
                             {allocation.allocations.length}
-                            {allocation.allocations.every(
+                            {allocation.allocations.length === 1 &&
+                            allocation.allocations.every(
                               (item) => !item.vdevice,
                             )
                               ? ` · ${t("observations.fullCard")}`
@@ -1356,23 +1359,24 @@ function GpuDetailsSheet({
                                       (usedMiB / item.memoryMiB) * 100,
                                     )
                                   : null;
-                              const identity =
-                                item.replica || item.instance || "—";
-                              const extra =
-                                item.instance && item.instance !== item.replica
-                                  ? item.instance
-                                  : null;
+                              // "matrix-many-03-0" under "matrix-many-03" is
+                              // the Endpoint name again; the suffix earns its
+                              // space only when rows must be told apart.
+                              const replicaCount =
+                                allocation.allocations.length;
                               return (
                                 <li
                                   key={`${item.replica}:${item.instance}`}
                                   className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs"
+                                  title={
+                                    item.replica || item.instance || undefined
+                                  }
                                 >
-                                  <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
-                                    {identity}
-                                    {item.vdevice
-                                      ? ` · vGPU ${item.vdevice}`
-                                      : ""}
-                                    {extra ? ` · ${extra}` : ""}
+                                  <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                                    {replicaCount > 1
+                                      ? `${t("observations.replicaLabel")} ${allocation.allocations.indexOf(item) + 1}`
+                                      : null}
+                                    {item.vdevice ? `vGPU ${item.vdevice}` : ""}
                                   </span>
                                   <span className="shrink-0 whitespace-nowrap tabular-nums">
                                     <span className="text-[11px] text-muted-foreground">
@@ -1385,8 +1389,8 @@ function GpuDetailsSheet({
                                       / {gib(item.memoryMiB)}
                                     </span>
                                     {percent != null && (
-                                      <span className="ml-1.5 text-[11px] text-muted-foreground">
-                                        {percent.toFixed(0)}%
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {` · ${percent.toFixed(0)}%`}
                                       </span>
                                     )}
                                   </span>
