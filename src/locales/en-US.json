@@ -2088,7 +2088,7 @@
 		},
 		"descriptions": {
 			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments. Team policies apply to the selected team only.",
-			"scopeTeam": "The role applies to this team only, e.g. team-admin manages the team's API keys and members. Only global administrators can grant it.",
+			"scopeTeam": "The role applies to this team only, e.g. team-admin manages the team's applications and members. Only global administrators can grant it.",
 			"serviceAccount": "Only roles in the application's team ceiling are offered; an application's role is for all workspaces or one workspace."
 		},
 		"options": {
