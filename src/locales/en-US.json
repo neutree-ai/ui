@@ -3627,6 +3627,7 @@
 			"isDefault": "Default ceiling: model-invoker in all workspaces.",
 			"editTitle": "Edit authorization ceiling",
 			"editHint": "Team admins can grant applications only these roles, in these workspaces.",
+			"managementHidden": "Roles that manage access (roles, role assignments, users, identity sources, departments, teams, group policies or applications) are not listed.",
 			"effectHint": "Lowering the ceiling takes effect at once: assignments outside it stop counting.",
 			"reset": "Restore default"
 		},
@@ -3656,6 +3657,7 @@
 			"scope": "An application's role is either for all workspaces or for one workspace.",
 			"outsideCeiling": "The role or workspace is outside the team's authorization ceiling. Pick one inside it, or ask a global administrator to raise the ceiling.",
 			"ceilingUnknown": "The ceiling names a role or workspace that does not exist.",
+			"managementRole": "A role that manages access cannot be in the ceiling: one with role, role assignment, user, identity source, department, team, group policy or application management permissions, or system:admin.",
 			"nameTaken": "The name is already taken in this team."
 		}
 	}

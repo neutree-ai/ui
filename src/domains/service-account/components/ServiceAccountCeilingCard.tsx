@@ -19,6 +19,7 @@ import {
   useServiceAccountCeiling,
   useServiceAccountCeilingWrites,
 } from "@/domains/service-account/hooks/use-service-accounts";
+import { isManagementRole } from "@/domains/service-account/lib/ceiling";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { ServiceAccountCeiling } from "@/domains/service-account/types";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -157,7 +158,10 @@ function CeilingDialog({
   const [workspaces, setWorkspaces] = useState(ceiling.workspaces ?? []);
   const [error, setError] = useState<string>();
 
-  const roleList = useList<{ metadata: Metadata }>({
+  const roleList = useList<{
+    metadata: Metadata;
+    spec?: { permissions?: string[] };
+  }>({
     resource: "roles",
     pagination: { mode: "off" },
   });
@@ -167,7 +171,9 @@ function CeilingDialog({
   });
   const roleNames = [
     ...new Set([
-      ...(roleList.data?.data ?? []).map((role) => role.metadata.name),
+      ...(roleList.data?.data ?? [])
+        .filter((role) => !isManagementRole(role.spec?.permissions))
+        .map((role) => role.metadata.name),
       ...ceiling.roles,
     ]),
   ].sort();
@@ -222,6 +228,9 @@ function CeilingDialog({
                 {role}
               </Label>
             ))}
+            <p className="text-xs text-muted-foreground">
+              {t("service_accounts.ceiling.managementHidden")}
+            </p>
           </fieldset>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">

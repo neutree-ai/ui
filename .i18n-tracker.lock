@@ -591,11 +591,12 @@
   "src/pages/organization/team-detail-tabs.tsx": "e0fff5bc76c29cc7b9f43e3f528bb170",
   "src/domains/api-key/components/ServiceAccountApiKeys.tsx": "6a0649ed42165fb69decd50e690f74e7",
   "src/domains/api-key/lib/usage-summary.ts": "ab8049a322cbc57b6c796e676350c0f7",
-  "src/domains/service-account/components/ServiceAccountCeilingCard.tsx": "393e22a4a4c0bd746da8205394de85fd",
+  "src/domains/service-account/components/ServiceAccountCeilingCard.tsx": "8f40d8e6830fa30a647b32d507712d4b",
   "src/domains/service-account/components/ServiceAccountField.tsx": "44c4f73bdcf16c72152ea377aa53813c",
   "src/domains/service-account/components/ServiceAccountRoles.tsx": "93fdd749cf774fa615816eb33c3e5ff9",
   "src/domains/service-account/components/TeamServiceAccounts.tsx": "6477b9e84af48571ae6effc71812296b",
   "src/domains/service-account/hooks/use-service-accounts.ts": "4dd18ce27ec35c242e0cd40b2c7a7662",
-  "src/domains/service-account/lib/errors.ts": "e05b2610761d1e908916b9f350468a97",
-  "src/domains/service-account/types.ts": "aa9443d13800deae52e63686b9b10d42"
+  "src/domains/service-account/lib/errors.ts": "ffc8694c4783fb0f2372a9bf070d0bc7",
+  "src/domains/service-account/types.ts": "aa9443d13800deae52e63686b9b10d42",
+  "src/domains/service-account/lib/ceiling.ts": "6bdae7b48e0b4991f77f6cb47ab81db2"
 }

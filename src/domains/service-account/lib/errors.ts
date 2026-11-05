@@ -12,6 +12,7 @@ const SERVICE_ACCOUNT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10322": "service_accounts.errors.scope",
   "10323": "service_accounts.errors.outsideCeiling",
   "10324": "service_accounts.errors.ceilingUnknown",
+  "10325": "service_accounts.errors.managementRole",
   "23505": "service_accounts.errors.nameTaken",
 };
 
