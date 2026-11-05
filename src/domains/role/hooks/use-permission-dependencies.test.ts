@@ -14,7 +14,7 @@ const TEST_PERMISSIONS = [
       ["read", "create", "update", "delete"].map((a) => `${resource}:${a}`),
   ),
   ...["read", "create", "update", "delete"].map((a) => `model_registry:${a}`),
-  ...["read", "push", "pull", "delete"].map((a) => `model:${a}`),
+  ...["read", "push", "pull", "delete", "invoke"].map((a) => `model:${a}`),
   ...["read", "usage-read", "create", "update", "delete"].map(
     (a) => `workspace:${a}`,
   ),
@@ -86,6 +86,7 @@ describe("usePermissionDependencies", () => {
       { perm: "model:pull", commits: ["model_registry:read"] },
       { perm: "model:delete", commits: ["model_registry:read"] },
       { perm: "model:read", commits: ["model_registry:read"] },
+      { perm: "model:invoke", commits: ["workspace:read"] },
       { perm: "workspace:usage-read", commits: ["workspace:read"] },
       { perm: "workspace:read", commits: [] },
     ])("$perm -> $commits", ({ perm, commits }) => {
