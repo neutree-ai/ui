@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import { CHART_SERIES_OUTLINE } from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
@@ -128,7 +129,8 @@ const RankingPanel = ({
                 nameKey="name"
                 innerRadius={22}
                 outerRadius={38}
-                stroke="none"
+                stroke={CHART_SERIES_OUTLINE}
+                strokeWidth={1}
                 isAnimationActive={false}
               >
                 {pie.map((_, i) => (

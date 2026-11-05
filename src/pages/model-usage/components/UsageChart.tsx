@@ -18,6 +18,7 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import {
   CHART_CATEGORY_TOKENS,
+  CHART_SERIES_OUTLINE,
   type ChartMark,
   chartCategoryMark,
   chartMarkStyle,
@@ -494,12 +495,22 @@ export const UsageChart = ({
                     Cell paints that category's segment. */}
                 <Bar dataKey="prompt" stackId="day">
                   {dayBars.map((category) => (
-                    <Cell key={category.key} fill={category.promptFill} />
+                    <Cell
+                      key={category.key}
+                      fill={category.promptFill}
+                      stroke={CHART_SERIES_OUTLINE}
+                      strokeWidth={1}
+                    />
                   ))}
                 </Bar>
                 <Bar dataKey="completion" stackId="day" radius={[3, 3, 0, 0]}>
                   {dayBars.map((category) => (
-                    <Cell key={category.key} fill={category.completionFill} />
+                    <Cell
+                      key={category.key}
+                      fill={category.completionFill}
+                      stroke={CHART_SERIES_OUTLINE}
+                      strokeWidth={1}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -521,6 +532,8 @@ export const UsageChart = ({
                       stackId="usage"
                       hide={hidden.has(s.key)}
                       fill={stripeFill(mark)}
+                      stroke={CHART_SERIES_OUTLINE}
+                      strokeWidth={1}
                       radius={
                         s.key === series[series.length - 1]?.key
                           ? [3, 3, 0, 0]

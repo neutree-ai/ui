@@ -13,6 +13,7 @@ import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
+import { CHART_SERIES_OUTLINE } from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const TraceStatsChart = ({
@@ -102,7 +103,12 @@ export const TraceStatsChart = ({
             {/* Single-series volume reads the first categorical step, not the
                 brand primary: data colours and state colours are separate
                 palettes, so a bar never implies an alarm. */}
-            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+            <Bar
+              dataKey="count"
+              radius={[3, 3, 0, 0]}
+              stroke={CHART_SERIES_OUTLINE}
+              strokeWidth={1}
+            >
               {days.map((d) => (
                 <Cell
                   key={d.date}

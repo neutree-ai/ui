@@ -61,6 +61,35 @@ export const CHART_STRIPES_BACKGROUND =
   "linear-gradient(hsl(var(--background) / 0.34), hsl(var(--background) / 0.34)), " +
   "repeating-linear-gradient(135deg, hsl(var(--background) / 0.72) 0 2px, transparent 2px 4px)";
 
+/** Edge colour for a chart fill mark (B2).
+ *
+ * The standard Okabe–Ito fills do not all clear 3:1 on the light card, so the
+ * mark carries a 1px edge instead of a darkened fill: the edge composites to
+ * 3.88:1 against the light card and every fill keeps its colour-blind-safe hue.
+ * In dark mode the fills already clear 3:1 and the edge is a faint rim that only
+ * helps count adjacent segments.
+ */
+export const CHART_SERIES_OUTLINE = "var(--nt-chart-series-outline)";
+
+/** SVG edge for a fill mark: recharts `Bar`/`Cell`/`Pie` take stroke + width. */
+type ChartOutline = { stroke: string; strokeWidth: number };
+
+export function chartMarkOutline(): ChartOutline {
+  return { stroke: CHART_SERIES_OUTLINE, strokeWidth: 1 };
+}
+
+/** DOM edge for a fill mark (segment div, legend swatch): `outline` draws over
+ * the edge without changing the box size, which matters for 6px-tall bars. */
+export function chartOutlineStyle(): {
+  outline: string;
+  outlineOffset: string;
+} {
+  return {
+    outline: `1px solid ${CHART_SERIES_OUTLINE}`,
+    outlineOffset: "0px",
+  };
+}
+
 /** How a mark is painted, independent of the renderer (CSS or SVG). */
 export type ChartPattern = "solid" | "stripes";
 

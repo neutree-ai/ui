@@ -6,12 +6,15 @@ import {
   CHART_CATEGORY_TOKENS,
   CHART_MORE_COLOR,
   CHART_SEQUENTIAL_TOKENS,
+  CHART_SERIES_OUTLINE,
   CHART_STRIPES_BACKGROUND,
   chartCategoryColor,
   chartCategoryMark,
   chartCategoryMarks,
+  chartMarkOutline,
   chartMarkStyle,
   chartMoreMark,
+  chartOutlineStyle,
 } from "./chart-palette";
 
 describe("chartCategoryColor", () => {
@@ -145,6 +148,26 @@ describe("chartMarkStyle", () => {
   });
 });
 
+describe("series outline (B2)", () => {
+  it("reads the outline from a semantic token", () => {
+    expect(CHART_SERIES_OUTLINE).toBe("var(--nt-chart-series-outline)");
+  });
+
+  it("gives SVG fill marks a 1px stroke", () => {
+    expect(chartMarkOutline()).toEqual({
+      stroke: "var(--nt-chart-series-outline)",
+      strokeWidth: 1,
+    });
+  });
+
+  it("gives DOM fill marks a 1px outline that keeps the box size", () => {
+    expect(chartOutlineStyle()).toEqual({
+      outline: "1px solid var(--nt-chart-series-outline)",
+      outlineOffset: "0px",
+    });
+  });
+});
+
 /* ---------- token contract with variables.css ---------- */
 
 const VARIABLES_CSS = readFileSync(
@@ -207,6 +230,16 @@ describe("categorical tokens across themes", () => {
       expect(light.get(name), `${name} (light)`).toBeDefined();
       expect(dark.get(name), `${name} (dark)`).toBeDefined();
     });
+  });
+
+  it("declares the series outline in both themes", () => {
+    const themes: Array<[string, Map<string, string>]> = [
+      ["light", themeTokens(":root")],
+      ["dark", themeTokens(".dark")],
+    ];
+    for (const [theme, tokens] of themes) {
+      expect(tokens.get("--nt-chart-series-outline"), theme).toBeDefined();
+    }
   });
 
   it("keeps the module token list in the same order as the CSS aliases", () => {
