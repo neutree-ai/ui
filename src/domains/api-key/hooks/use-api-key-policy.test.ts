@@ -808,4 +808,23 @@ describe("invokableModelOptions", () => {
       ["external:ep-vendor:gpt-4o", "third-party-public", null],
     ]);
   });
+
+  it("takes the phase from the row, so endpoint reads are not needed", () => {
+    const options = invokableModelOptions(
+      [
+        {
+          model: "deepseek",
+          type: "external",
+          endpoint_name: "ep-vendor",
+          source_label: "third-party-public",
+          phase: "Running",
+        },
+      ],
+      [],
+      "default",
+    );
+    expect(options.map((o) => [o.value, o.phase])).toEqual([
+      ["external:ep-vendor:deepseek", "Running"],
+    ]);
+  });
 });

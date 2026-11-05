@@ -541,9 +541,11 @@ type InvokableModelRow = {
   type: string;
   endpoint_name: string;
   source_label: string | null;
+  // Absent from servers older than the phase column.
+  phase?: string | null;
 };
 
-/** list_invokable_models rows as picker options; phases come from `known`. */
+/** list_invokable_models rows as picker options; `known` fills what a row lacks. */
 export function invokableModelOptions(
   rows: InvokableModelRow[],
   known: WorkspaceModelOption[],
@@ -568,7 +570,7 @@ export function invokableModelOptions(
         type === "internal"
           ? resolveModelSource("internal")
           : (modelSourceFromWorkspaceModelRow(row) ?? seen?.source),
-      phase: seen?.phase ?? null,
+      phase: row.phase ?? seen?.phase ?? null,
       workspace,
     });
   }
