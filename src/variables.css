@@ -115,19 +115,35 @@
 		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
 		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
 		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
-		/* Chart series. Steps from the product style guide chart palette.
-		   Categorical order is fixed and
-		   never cycled. Data series read from these; status tokens
-		   (positive/notice/serious) stay reserved for state, so a healthy metric is
-		   never painted in a warning colour. */
-		--nt-chart-series-1: #0072b2;
-		--nt-chart-series-2: #e69f00;
-		--nt-chart-series-3: #009e73;
-		--nt-chart-series-4: #cc79a7;
-		--nt-chart-series-5: #56b4e9;
-		--nt-chart-series-6: #d55e00;
-		--nt-chart-series-7: #f0e442;
-		--nt-chart-series-8: #8a8f98;
+		/* Chart series. Okabe–Ito categorical palette: the hues guarantee
+		   colour-blind separation and the categorical order is fixed, never
+		   cycled. Data series read these; status tokens (positive/notice/serious)
+		   stay reserved for state, so a healthy metric is never painted in a
+		   warning colour.
+		   The light-theme values are the Okabe–Ito hues darkened just enough to
+		   clear 3:1 non-text contrast against the #f2f5fa card surface
+		   (WCAG 1.4.11). Pure Okabe–Ito yellow is 1.21:1 there and reads as an
+		   empty segment; the dark theme keeps the standard values. The trailing
+		   ratio on each line is the measured contrast on this theme. */
+		--nt-chart-series-1: #0072b2; /* 4.75:1 */
+		--nt-chart-series-2: #b77e00; /* 3.20:1 */
+		--nt-chart-series-3: #009e73; /* 3.13:1 */
+		--nt-chart-series-4: #c572a0; /* 3.06:1 */
+		--nt-chart-series-5: #2f91c5; /* 3.21:1 */
+		--nt-chart-series-6: #bc5200; /* 4.42:1 */
+		--nt-chart-series-7: #605900; /* 6.57:1 */
+		--nt-chart-series-8: #7c8089; /* 3.62:1 */
+		/* Semantic aliases: pages read --nt-chart-cat-*, never the raw series
+		   step, so a category keeps its meaning when the palette is retuned and
+		   the categorical layer can be remapped in one place. */
+		--nt-chart-cat-1: var(--nt-chart-series-1);
+		--nt-chart-cat-2: var(--nt-chart-series-2);
+		--nt-chart-cat-3: var(--nt-chart-series-3);
+		--nt-chart-cat-4: var(--nt-chart-series-4);
+		--nt-chart-cat-5: var(--nt-chart-series-5);
+		--nt-chart-cat-6: var(--nt-chart-series-6);
+		--nt-chart-cat-7: var(--nt-chart-series-7);
+		--nt-chart-cat-8: var(--nt-chart-series-8);
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
@@ -301,20 +317,28 @@
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
 		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(234, 162, 58, 0.18);
-		/* Chart series. Steps from the product style guide chart palette
-		   (chart-blue-blue-5, chart-cyan-cyan-5). Categorical order is fixed and
-		   never cycled. Data series read from these; status tokens
-		   (positive/notice/serious) stay reserved for state, so a healthy metric is
-		   never painted in a warning colour. Validated for CVD separation and
-		   contrast against the bar track in both themes. */
-		--nt-chart-series-1: #0072b2;
-		--nt-chart-series-2: #e69f00;
-		--nt-chart-series-3: #009e73;
-		--nt-chart-series-4: #cc79a7;
-		--nt-chart-series-5: #56b4e9;
-		--nt-chart-series-6: #d55e00;
-		--nt-chart-series-7: #f0e442;
-		--nt-chart-series-8: #d1d5db;
+		/* Chart series. Okabe–Ito categorical palette; every standard step clears
+		   3:1 against the #132033 card surface, so the dark theme keeps them as
+		   authored. Categorical order is fixed and never cycled. Data series read
+		   these; status tokens (positive/notice/serious) stay reserved for state,
+		   so a healthy metric is never painted in a warning colour. */
+		--nt-chart-series-1: #0072b2; /* 3.16:1 */
+		--nt-chart-series-2: #e69f00; /* 7.27:1 */
+		--nt-chart-series-3: #009e73; /* 4.79:1 */
+		--nt-chart-series-4: #cc79a7; /* 5.35:1 */
+		--nt-chart-series-5: #56b4e9; /* 7.10:1 */
+		--nt-chart-series-6: #d55e00; /* 4.24:1 */
+		--nt-chart-series-7: #f0e442; /* 12.39:1 */
+		--nt-chart-series-8: #d1d5db; /* 11.12:1 */
+		/* Semantic aliases, mirroring the light theme. */
+		--nt-chart-cat-1: var(--nt-chart-series-1);
+		--nt-chart-cat-2: var(--nt-chart-series-2);
+		--nt-chart-cat-3: var(--nt-chart-series-3);
+		--nt-chart-cat-4: var(--nt-chart-series-4);
+		--nt-chart-cat-5: var(--nt-chart-series-5);
+		--nt-chart-cat-6: var(--nt-chart-series-6);
+		--nt-chart-cat-7: var(--nt-chart-series-7);
+		--nt-chart-cat-8: var(--nt-chart-series-8);
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;

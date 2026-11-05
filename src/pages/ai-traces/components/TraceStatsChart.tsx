@@ -72,7 +72,7 @@ export const TraceStatsChart = ({
                 <rect
                   width={6}
                   height={6}
-                  fill="hsl(var(--primary))"
+                  fill="var(--nt-chart-cat-1)"
                   fillOpacity={0.2}
                 />
                 <line
@@ -80,7 +80,7 @@ export const TraceStatsChart = ({
                   y1={0}
                   x2={0}
                   y2={6}
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--nt-chart-cat-1)"
                   strokeWidth={3}
                 />
               </pattern>
@@ -99,6 +99,9 @@ export const TraceStatsChart = ({
                 <StatsTooltip requestsLabel={t("ai_traces.stats.requests")} />
               }
             />
+            {/* Single-series volume reads the first categorical step, not the
+                brand primary: data colours and state colours are separate
+                palettes, so a bar never implies an alarm. */}
             <Bar dataKey="count" radius={[3, 3, 0, 0]}>
               {days.map((d) => (
                 <Cell
@@ -106,7 +109,7 @@ export const TraceStatsChart = ({
                   fill={
                     d.date === today
                       ? "url(#trace-stats-today)"
-                      : "hsl(var(--primary))"
+                      : "var(--nt-chart-cat-1)"
                   }
                 />
               ))}
