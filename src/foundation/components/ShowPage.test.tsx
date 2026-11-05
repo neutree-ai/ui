@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("./Table", () => ({
   DeleteAction: () => null,
@@ -24,5 +24,9 @@ describe("ShowPage.Section", () => {
     screen.getByText("GPU placement details");
     screen.getByText("2 replicas / 8 cards");
     screen.getByText("Allocation content");
+    expect(
+      screen.getByRole("heading", { name: "Runtime Allocation" }).parentElement
+        ?.parentElement?.className,
+    ).toContain("items-center");
   });
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   makeGpuDevice,
@@ -51,27 +51,25 @@ describe("NodeResourcesTable", () => {
     );
 
     screen.getByText("Tesla-T4 · 0 in use · 1 total");
-    expect(screen.queryByText("GPU-1")).toBeNull();
     expect(screen.queryByText("GPU-2")).toBeNull();
 
-    screen.getByRole("button", {
-      name: "clusters.fields.gpuNumber 1 clusters.actions.copyUuid",
-    });
-    expect(screen.queryByTitle("GPU-1")).toBeNull();
-    screen.getByText("clusters.options.healthy");
-    expect(screen.queryByText("clusters.options.unhealthy")).toBeNull();
-    screen.getByText("7.5 / 15.0 GiB");
-    screen.getByText("50 / 100");
-    expect(screen.queryByText(/slot/i)).toBeNull();
+    const row = screen.getByTestId("gpu-inventory-row");
+    within(row).getByText("clusters.fields.gpuNumber 1");
+    within(row).getByText("clusters.options.healthy");
+    within(row).getByText("observations.endpointAllocationUnavailable");
+    expect(row.textContent).toContain("7.5");
+    expect(row.textContent).toContain("7.5 / 15.0 GiB");
+    expect(row.textContent).not.toContain("observations.endpoints");
+    expect(
+      within(row).getByRole("button", {
+        name: "clusters.fields.gpuNumber 1 clusters.actions.copyUuid",
+      }),
+    );
 
     fireEvent.click(
       screen.getByRole("button", { name: "node-a localized devices" }),
     );
-    expect(
-      screen.queryByRole("button", {
-        name: "clusters.fields.gpuNumber 1 clusters.actions.copyUuid",
-      }),
-    ).toBeNull();
+    expect(screen.queryByTestId("gpu-inventory-row")).toBeNull();
   });
 
   it("shows each node's L1 KV-Cache usage", () => {
@@ -97,5 +95,68 @@ describe("NodeResourcesTable", () => {
 
     screen.getByText("observations.l1KvCache 12.5 / 32.0 GiB");
     screen.getByText("39%");
+  });
+
+  it("renders the expanded GPU devices as cards when selected", () => {
+    render(
+      <NodeResourcesTable
+        nodeResources={{
+          "node-a": {
+            allocatable: makeResourceInfo(16, 64, {
+              "Tesla-T4": { quantity: 1 },
+            }),
+            available: makeResourceInfo(12, 48, {
+              "Tesla-T4": { quantity: 1 },
+            }),
+            devices: [
+              makeGpuDevice("GPU-1", { memory_mib: 7680, core_units: 50 }),
+            ],
+          },
+        }}
+        acceleratorTypes={["nvidia_gpu"]}
+        gpuView="cards"
+        t={t}
+      />,
+    );
+
+    screen.getByTestId("gpu-inventory-card");
+    expect(screen.queryByTestId("gpu-inventory-row")).toBeNull();
+    expect(screen.queryByTestId("gpu-observation-product")).toBeNull();
+  });
+
+  it("keeps the product visible when devices on one node use different models", () => {
+    render(
+      <NodeResourcesTable
+        nodeResources={{
+          "node-a": {
+            allocatable: makeResourceInfo(16, 64, {
+              "Tesla-T4": { quantity: 1 },
+              "Tesla-A10": { quantity: 1 },
+            }),
+            available: makeResourceInfo(12, 48, {
+              "Tesla-T4": { quantity: 1 },
+              "Tesla-A10": { quantity: 1 },
+            }),
+            devices: [
+              makeGpuDevice(
+                "GPU-1",
+                { memory_mib: 7680, core_units: 50 },
+                { product: "Tesla-T4" },
+              ),
+              makeGpuDevice(
+                "GPU-2",
+                { memory_mib: 7680, core_units: 50 },
+                { product: "Tesla-A10" },
+              ),
+            ],
+          },
+        }}
+        acceleratorTypes={["nvidia_gpu"]}
+        gpuView="cards"
+        t={t}
+      />,
+    );
+
+    expect(screen.getAllByTestId("gpu-observation-product")).toHaveLength(2);
   });
 });

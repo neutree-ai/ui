@@ -96,7 +96,9 @@
 		--nt-effect-menu-shadow-default:
 			0px 12px 40px 0px rgba(45, 58, 86, 0.3),
 			0px 0px 10px 0px rgba(107, 125, 153, 0.18);
-		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(29, 50, 108, 0.6);
+		--nt-effect-tooltip-shadow:
+			0px 4px 12px 0px rgba(29, 50, 108, 0.12),
+			0px 1px 3px 0px rgba(29, 50, 108, 0.08);
 		--nt-outline-hover: 0px 0px 0px 4px rgba(225, 230, 241, 0.6);
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(0, 136, 255, 0.16);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(255, 74, 74, 0.16);
@@ -118,11 +120,14 @@
 		   never cycled. Data series read from these; status tokens
 		   (positive/notice/serious) stay reserved for state, so a healthy metric is
 		   never painted in a warning colour. */
-		--nt-chart-series-1: #008cff;
-		--nt-chart-series-2: #1aacb4;
-		--nt-chart-series-3: #7e41ff;
-		--nt-chart-series-4: #00ba5d;
-		--nt-chart-series-5: #e58a00;
+		--nt-chart-series-1: #0072b2;
+		--nt-chart-series-2: #e69f00;
+		--nt-chart-series-3: #009e73;
+		--nt-chart-series-4: #cc79a7;
+		--nt-chart-series-5: #56b4e9;
+		--nt-chart-series-6: #d55e00;
+		--nt-chart-series-7: #f0e442;
+		--nt-chart-series-8: #8a8f98;
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
@@ -290,7 +295,8 @@
 		--nt-effect-menu-shadow-default:
 			0px 18px 42px 0px rgba(0, 0, 0, 0.48),
 			0px 0px 0px 1px rgba(173, 192, 224, 0.12);
-		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.5);
+		--nt-effect-tooltip-shadow:
+			0px 4px 16px 0px rgba(0, 0, 0, 0.28), 0px 1px 3px 0px rgba(0, 0, 0, 0.18);
 		--nt-outline-hover: 0px 0px 0px 4px rgba(158, 179, 214, 0.14);
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
@@ -301,11 +307,14 @@
 		   (positive/notice/serious) stay reserved for state, so a healthy metric is
 		   never painted in a warning colour. Validated for CVD separation and
 		   contrast against the bar track in both themes. */
-		--nt-chart-series-1: #008cff;
-		--nt-chart-series-2: #1aacb4;
-		--nt-chart-series-3: #9b7cf2;
-		--nt-chart-series-4: #23bf72;
-		--nt-chart-series-5: #eaa23a;
+		--nt-chart-series-1: #0072b2;
+		--nt-chart-series-2: #e69f00;
+		--nt-chart-series-3: #009e73;
+		--nt-chart-series-4: #cc79a7;
+		--nt-chart-series-5: #56b4e9;
+		--nt-chart-series-6: #d55e00;
+		--nt-chart-series-7: #f0e442;
+		--nt-chart-series-8: #d1d5db;
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;

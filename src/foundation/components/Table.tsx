@@ -158,6 +158,7 @@ type TableProps<
 > = Partial<UseTableProps<TData, TError, TData>> & {
   children?: ReactElement<ColumnProps<TData, TError>>[];
   showHeader?: boolean;
+  showColumnVisibility?: boolean;
   enableBatchDelete?: boolean;
   searchField?: string;
   filters?:
@@ -444,13 +445,19 @@ function DataTableToolbar<TData>({
   filters,
   searchField,
   actions,
+  showColumnVisibility,
 }: {
   table: TanStackTable<TData>;
   refineTable?: UseTableReturnType<any, any>;
   filters?: ReactNode;
   searchField?: string;
   actions?: ReactNode;
+  showColumnVisibility: boolean;
 }) {
+  if (!searchField && !filters && !actions && !showColumnVisibility) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-8 items-center justify-between gap-2">
       <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -459,10 +466,12 @@ function DataTableToolbar<TData>({
         )}
         {filters}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        {actions}
-        <DataTableViewOptions table={table} />
-      </div>
+      {(actions || showColumnVisibility) && (
+        <div className="flex shrink-0 items-center gap-2">
+          {actions}
+          {showColumnVisibility && <DataTableViewOptions table={table} />}
+        </div>
+      )}
     </div>
   );
 }
@@ -480,6 +489,7 @@ export function Table<
   showHeader = true,
   enableBatchDelete = false,
   searchField,
+  showColumnVisibility = true,
   columns = [],
   filters,
   ...props
@@ -555,7 +565,8 @@ export function Table<
       ...props.initialState,
     },
     state: {
-      columnVisibility: isLoaded ? columnVisibility : {},
+      columnVisibility:
+        showColumnVisibility && isLoaded ? columnVisibility : {},
       ...props.state,
     },
     onColumnVisibilityChange: (updater) => {
@@ -582,6 +593,7 @@ export function Table<
           table={table}
           refineTable={table}
           searchField={searchField}
+          showColumnVisibility={showColumnVisibility}
           filters={
             typeof filters === "function"
               ? filters({

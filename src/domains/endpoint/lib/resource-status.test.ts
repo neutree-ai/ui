@@ -90,6 +90,8 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 100,
         physicalMemoryMiB: 16384,
         actualMemoryMiB: 12288,
+        modelWeightsMiB: null,
+        kvCacheCapacityMiB: null,
         vdeviceIndex: "1",
       },
       {
@@ -103,6 +105,8 @@ describe("endpoint resource status helpers", () => {
         coreUnits: 50,
         physicalMemoryMiB: null,
         actualMemoryMiB: null,
+        modelWeightsMiB: null,
+        kvCacheCapacityMiB: null,
       },
     ]);
   });
@@ -229,6 +233,8 @@ describe("endpoint resource status helpers", () => {
         deviceCount: 3,
         memoryMiB: 24576,
         coreUnits: 0,
+        modelWeightsMiB: null,
+        kvCacheCapacityMiB: null,
         nodeCount: 2,
         maxNodeDeviceCount: 2,
         nodes: [
@@ -249,6 +255,8 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
+                modelWeightsMiB: null,
+                kvCacheCapacityMiB: null,
               },
               {
                 instanceId: "endpoint-abc",
@@ -261,6 +269,8 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
+                modelWeightsMiB: null,
+                kvCacheCapacityMiB: null,
               },
             ],
           },
@@ -281,6 +291,8 @@ describe("endpoint resource status helpers", () => {
                 coreUnits: 0,
                 physicalMemoryMiB: null,
                 actualMemoryMiB: null,
+                modelWeightsMiB: null,
+                kvCacheCapacityMiB: null,
               },
             ],
           },
