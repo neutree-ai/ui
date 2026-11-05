@@ -103,13 +103,9 @@ describe("ModelInfoFields", () => {
   it("marks a derived field and leaves an auto one unmarked", () => {
     renderWithTooltip(<ModelInfoFields info={parsed} />);
 
-    expect(
-      screen
-        .getByTestId("model-info-head_dim")
-        .querySelector(
-          '[aria-label="model_registries.models.sources.derived"]',
-        ),
-    ).not.toBeNull();
+    screen
+      .getByTestId("model-info-head_dim")
+      .querySelector('[aria-label="model_registries.models.sources.derived"]');
     expect(
       screen
         .getByTestId("model-info-architecture")
