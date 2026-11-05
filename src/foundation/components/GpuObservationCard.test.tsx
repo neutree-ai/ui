@@ -227,6 +227,13 @@ describe("GPU observation row", () => {
     expect(within(bar).getAllByRole("button")).toHaveLength(9);
     within(bar).getByRole("button", { name: /endpoint-8/ });
 
+    // Past eight named Endpoints the bar carries the list's numbers and a
+    // neutral More marker, so colour is never the only identifier.
+    expect(bar.textContent).toContain("+1");
+    for (const index of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      expect(bar.textContent).toContain(String(index));
+    }
+
     const more = within(bar).getByRole("button", {
       name: /observations.moreAllocationsLabel/,
     });

@@ -54,6 +54,10 @@ type Props = {
   variant?: GpuObservationVariant;
   display?: GpuObservationDisplay;
   showProduct?: boolean;
+  /** observationStatus() value for the samples this card renders. */
+  observationStatus?: string;
+  /** Refetch for the samples; when absent no Retry affordance is offered. */
+  onRetry?: () => void;
 };
 
 const INVENTORY_GRID =
@@ -592,6 +596,18 @@ function InventoryAllocationBar({
                   onBlur={() => setActiveAllocation(null)}
                   onClick={() => setActiveAllocation(allocationKey)}
                 >
+                  {hidden.length > 0 && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white tabular-nums"
+                    >
+                      {visible.findIndex(
+                        (item) =>
+                          `${item.workspace}:${item.endpoint}` ===
+                          allocationKey,
+                      ) + 1}
+                    </span>
+                  )}
                   {activeAllocation === allocationKey && (
                     <EndpointSegmentPattern
                       allocation={allocation}
@@ -628,7 +644,14 @@ function InventoryAllocationBar({
                 })}
                 onMouseEnter={() => setActiveAllocation(null)}
                 onFocus={() => setActiveAllocation(null)}
-              />
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none flex h-full items-center justify-center text-[9px] font-semibold text-foreground/70 tabular-nums"
+                >
+                  +{hidden.length}
+                </span>
+              </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-md">
               <p className="font-medium">
@@ -859,6 +882,8 @@ function GpuDetailsSheet({
   allocations,
   replica,
   tflopsOverrides,
+  observationStatus,
+  onRetry,
 }: Props & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -946,6 +971,11 @@ function GpuDetailsSheet({
   const hasRuntimeMetric = Boolean(
     readings.utilization || readings.temperature || readings.power,
   );
+  const isLoading = observationStatus === "loading";
+  const isUnavailable =
+    observationStatus === "unavailable" ||
+    observationStatus === "not_configured" ||
+    observationStatus === "no_data";
   const sampleTime = [
     readings.utilization,
     readings.temperature,
@@ -960,10 +990,17 @@ function GpuDetailsSheet({
       return t("observations.ageMinutes", { count: Math.floor(seconds / 60) });
     return t("observations.ageHours", { count: Math.floor(seconds / 3600) });
   };
-  const updatedAge =
+  const sampleAgeSeconds =
     sampleTime > 0
-      ? ageLabel(Math.max(0, Math.floor(Date.now() / 1000) - sampleTime))
+      ? Math.max(0, Math.floor(Date.now() / 1000) - sampleTime)
       : null;
+  const updatedAge =
+    sampleAgeSeconds != null ? ageLabel(sampleAgeSeconds) : null;
+  // Beyond this the values are history, not state; the spec asks for a visible
+  // marker rather than dropping the readings or passing them off as live.
+  const STALE_AFTER_SECONDS = 2 * 60 * 60;
+  const isStale =
+    sampleAgeSeconds != null && sampleAgeSeconds > STALE_AFTER_SECONDS;
   const estimatedTflops =
     nominalTflops != null && readings.utilization
       ? nominalTflops * readings.utilization.value
@@ -974,7 +1011,7 @@ function GpuDetailsSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-[680px]">
-        <SheetHeader className="space-y-1.5">
+        <SheetHeader className="space-y-1.5 text-left">
           <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
             {t("observations.deviceEyebrow")}
           </p>
@@ -1009,13 +1046,31 @@ function GpuDetailsSheet({
                 {t("observations.liveResourceState")}
               </h3>
               {updatedAge && (
-                <span className="text-[11px] whitespace-nowrap text-muted-foreground">
+                <span className="flex items-center gap-1.5 text-[11px] whitespace-nowrap text-muted-foreground">
                   {t("observations.updatedAgo", { age: updatedAge })}
+                  {isStale && (
+                    <span className="rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] px-1 text-[10px] font-medium">
+                      {t("observations.staleSample")}
+                    </span>
+                  )}
                 </span>
               )}
             </header>
             <div className="space-y-3 px-3 py-3">
-              {hasRuntimeMetric ? (
+              {isLoading ? (
+                <div className="space-y-3" aria-busy="true">
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-[var(--nt-fill-neutral-trans-3)]" />
+                  <div className="h-2 w-full animate-pulse rounded-full bg-[var(--nt-fill-neutral-trans-3)]" />
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[0, 1, 2, 3].map((slot) => (
+                      <div key={slot} className="space-y-1.5">
+                        <div className="h-2 w-2/3 animate-pulse rounded bg-[var(--nt-fill-neutral-trans-3)]" />
+                        <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--nt-fill-neutral-trans-3)]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : hasRuntimeMetric ? (
                 <>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
@@ -1099,9 +1154,27 @@ function GpuDetailsSheet({
                   </div>
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.status.no_data")}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      observationStatus === "unavailable"
+                        ? "observations.status.unavailable"
+                        : observationStatus === "not_configured"
+                          ? "observations.status.not_configured"
+                          : "observations.status.no_data",
+                    )}
+                  </p>
+                  {onRetry && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onRetry}
+                      className="h-7 px-2 text-xs"
+                    >
+                      {t("observations.retry")}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </section>
@@ -1389,6 +1462,8 @@ export function GpuObservationCard({
   variant = "allocation",
   display = "table",
   showProduct = true,
+  observationStatus,
+  onRetry,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -1406,6 +1481,8 @@ export function GpuObservationCard({
       allocations={allocations}
       replica={replica}
       tflopsOverrides={tflopsOverrides}
+      observationStatus={observationStatus}
+      onRetry={onRetry}
     />
   );
 

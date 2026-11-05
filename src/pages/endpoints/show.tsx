@@ -411,6 +411,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       workspace={record.metadata.workspace ?? "default"}
                       modelName={record.spec.model?.name ?? ""}
                       samples={gpuSamples}
+                      observationStatus={observations.status}
+                      onObservationRetry={observations.refetch}
                       tflopsOverrides={parseTflops(
                         clusterData?.data?.[0]?.metadata?.annotations?.[
                           TFLOPS_ANNOTATION

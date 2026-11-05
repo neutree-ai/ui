@@ -38,6 +38,8 @@ type EndpointRuntimeResourcesCardProps = {
   className?: string;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   samples?: AcceleratorSample[];
+  observationStatus?: string;
+  onObservationRetry?: () => void;
   tflopsOverrides?: Record<string, number>;
   endpointName?: string;
   workspace?: string;
@@ -123,14 +125,18 @@ const measuredTotal = (values: Array<number | null>): number | null =>
     ? values.reduce<number>((sum, value) => sum + Number(value), 0)
     : null;
 
+type ObservationHandles = { status?: string; refetch?: () => void };
+
 function ReplicaSummary({
   group,
   samples,
   identity,
+  observations,
 }: {
   group: EndpointReplicaResourceGroup;
   samples: AcceleratorSample[];
   identity: { endpointName: string; workspace: string; modelName: string };
+  observations?: ObservationHandles;
 }) {
   const { t } = useTranslation();
   const devices = group.nodes.flatMap((node) => node.devices);
@@ -291,6 +297,7 @@ function Replica({
   tflopsOverrides,
   identity,
   requestedCorePerCard,
+  observations,
 }: {
   group: EndpointReplicaResourceGroup;
   groupIndex: number;
@@ -302,6 +309,7 @@ function Replica({
   tflopsOverrides: Record<string, number>;
   identity: { endpointName: string; workspace: string; modelName: string };
   requestedCorePerCard?: number;
+  observations?: ObservationHandles;
 }) {
   const { t } = useTranslation();
   const replicaName = group.replicaId || group.instanceId;
@@ -352,7 +360,12 @@ function Replica({
         </span>
       </div>
 
-      <ReplicaSummary group={group} samples={samples} identity={identity} />
+      <ReplicaSummary
+        group={group}
+        samples={samples}
+        identity={identity}
+        observations={observations}
+      />
 
       <div className="overflow-x-auto">
         <div role="table">
@@ -394,6 +407,8 @@ function Replica({
                     allocations={[allocation]}
                     replica={allocation}
                     tflopsOverrides={tflopsOverrides}
+                    observationStatus={observations?.status}
+                    onRetry={observations?.refetch}
                   />
                 );
               })}
@@ -416,6 +431,8 @@ export default function EndpointRuntimeResourcesCard({
   endpointName = "",
   workspace = "default",
   modelName = "",
+  observationStatus,
+  onObservationRetry,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
   const requestedCpu = formatToDecimal(requestedResources?.cpu) ?? (
@@ -455,6 +472,10 @@ export default function EndpointRuntimeResourcesCard({
             tflopsOverrides={tflopsOverrides}
             identity={identity}
             requestedCorePerCard={requestedCorePerCard}
+            observations={{
+              status: observationStatus,
+              refetch: onObservationRetry,
+            }}
           />
         ))}
 

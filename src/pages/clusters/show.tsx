@@ -339,6 +339,8 @@ export const ClustersShow = () => {
                         variant="inventory"
                         display={display}
                         showProduct={showProduct}
+                        observationStatus={observations.status}
+                        onRetry={observations.refetch}
                         device={{
                           node: nodeName,
                           uuid: device.uuid,
