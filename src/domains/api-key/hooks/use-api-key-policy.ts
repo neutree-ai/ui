@@ -579,8 +579,9 @@ export function invokableModelOptions(
 
 // The models an API key may be limited to, from list_invokable_models: it
 // needs model:invoke only, so a user who cannot read endpoints still gets a
-// list. With serviceAccountId, what that application may call. Falls back to the endpoint
-// lists for a personal key when the RPC is unavailable.
+// list. It is what the key's owner may call, group policy included: the caller
+// for a personal key, the application with serviceAccountId. Falls back to the
+// endpoint lists for a personal key when the RPC is unavailable.
 export function useInvokableModels(
   workspace: string | undefined,
   serviceAccountId?: string,
