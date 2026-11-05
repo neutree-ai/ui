@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type AcceleratorSample,
   allocationColor,
+  assignAllocationColors,
   endpointAllocationUsedMiB,
   type GpuAllocation,
   gpuAllocations,
@@ -188,6 +189,45 @@ it("keeps an Endpoint allocation colour stable across GPUs", () => {
   const reordered = allocationColor("endpoint-a");
   expect(reordered).toBe(firstOrder);
   expect(allocationColor("endpoint-b")).toMatch(/^var\(--nt-chart-series-/);
+});
+
+it("gives the Endpoints on one GPU distinguishable colours", () => {
+  // These four all hash to series-1 with the raw palette index.
+  const names = [
+    "matrix-single-full",
+    "matrix-shared-alpha",
+    "matrix-shared-beta",
+    "matrix-multi-alpha",
+    "matrix-multi-beta",
+    "matrix-multi-delta",
+    "matrix-multi-gamma",
+  ];
+
+  const colors = assignAllocationColors(names);
+
+  expect(new Set(names.map((name) => colors[name])).size).toBe(names.length);
+});
+
+it("resolves the same colours whatever order the allocations arrive in", () => {
+  const names = ["gamma", "alpha", "beta", "delta"];
+
+  expect(assignAllocationColors([...names].reverse())).toEqual(
+    assignAllocationColors(names),
+  );
+});
+
+it("keeps the hashed colour for an Endpoint that does not collide", () => {
+  expect(assignAllocationColors(["solo"]).solo).toBe(allocationColor("solo"));
+});
+
+it("reuses palette entries instead of unpainting past the palette size", () => {
+  const names = Array.from({ length: 11 }, (_, index) => `endpoint-${index}`);
+
+  const colors = assignAllocationColors(names);
+
+  for (const name of names) {
+    expect(colors[name]).toMatch(/^var\(--nt-chart-series-\d\)$/);
+  }
 });
 
 it("sums each replica's actual usage for one Endpoint on a shared GPU", () => {

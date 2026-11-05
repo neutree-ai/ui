@@ -244,22 +244,70 @@ export function nodeL1CacheByNode(
   return result;
 }
 
+const PALETTE_SIZE = 8;
 const colors = Array.from(
-  { length: 8 },
+  { length: PALETTE_SIZE },
   (_, index) => `var(--nt-chart-series-${index + 1})`,
 );
 
-/** Keep an Endpoint's identity colour stable across GPUs and pages.
- *
- * The palette has five chart-series tokens, so more than five simultaneous
- * Endpoints reuse colours. Position in a particular GPU's list must not change
- * an Endpoint's colour because the same Endpoint would then jump colours whenever a
- * larger allocation appeared on another card.
- */
-export function allocationColor(name: string): string {
+function allocationColorIndex(name: string): number {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return colors[hash % colors.length];
+  return hash % PALETTE_SIZE;
+}
+
+/** Keep an Endpoint's identity colour stable across GPUs and pages.
+ *
+ * Position in a particular GPU's list must not change an Endpoint's colour,
+ * because the same Endpoint would then jump colours whenever a larger
+ * allocation appeared on another card. The hash alone can collide though — see
+ * assignAllocationColors for the set that has to stay distinguishable.
+ *
+ * Two Endpoints on *different* cards may share a colour, and that is accepted:
+ * the bar exists to separate allocations within one card, and forcing cluster-wide
+ * uniqueness would either exhaust the eight-entry palette or move a name every
+ * time an unrelated Endpoint appeared elsewhere.
+ */
+export function allocationColor(name: string): string {
+  return colors[allocationColorIndex(name)];
+}
+
+/** Colours for the Endpoints sharing one GPU: distinguishable first, stable second.
+ *
+ * A pure hash is not enough. Names from the same family land on the same entry
+ * ("matrix-multi-beta" and "matrix-multi-delta" both hash to series-1), and two
+ * segments of one colour in a stacked bar cannot be told apart — which is what
+ * the bar is for. Here the hashed colour is only the first choice; on collision
+ * the Endpoint walks to the next free entry, so a name moves only when it has to.
+ *
+ * The input is sorted before assignment, so the same set of Endpoints always
+ * resolves to the same mapping whatever order the allocations arrive in; a card
+ * with fewer Endpoints never changes another card's colours beyond its own
+ * collisions. With more Endpoints than palette entries the extras reuse colours
+ * rather than going unpainted.
+ */
+export function assignAllocationColors(
+  names: readonly string[],
+): Record<string, string> {
+  const unique = [...new Set(names)].sort();
+  const taken = new Set<number>();
+  const result: Record<string, string> = {};
+
+  for (const name of unique) {
+    const preferred = allocationColorIndex(name);
+    let index = preferred;
+    for (let step = 0; step < PALETTE_SIZE; step += 1) {
+      const candidate = (preferred + step) % PALETTE_SIZE;
+      if (!taken.has(candidate)) {
+        index = candidate;
+        break;
+      }
+    }
+    taken.add(index);
+    result[name] = colors[index];
+  }
+
+  return result;
 }
 
 type ObservationStatusValue =

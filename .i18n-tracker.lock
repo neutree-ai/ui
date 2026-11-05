@@ -479,7 +479,7 @@
   "src/pages/identity-sources/show.tsx": "2e4fe4ee85ba6a3e9b1f6d7d5e66f894",
   "src/domains/model-catalog/lib/advanced-parameters.ts": "f85dce83b2bb701b3949c829555f8c59",
   "src/foundation/lib/accelerator-extra-info.ts": "8593b9fb11ef0b10e6f87f9a004108a1",
-  "src/foundation/lib/accelerator-observations.ts": "ba859aca249a4808accdc3c7a49d827f",
+  "src/foundation/lib/accelerator-observations.ts": "1cbbccc50e84a4093119b7e6eadc95b4",
   "src/foundation/lib/accelerator-tflops.ts": "87083d4682910f93cb2e4ca09fc7d161",
   "src/foundation/hooks/use-accelerator-observations.ts": "f965c5ca2b7d36dbf86814fcf53cf354",
   "src/foundation/components/GpuObservationCard.tsx": "b9dd9fd2fbca150d574fc9e2a0b208b1",
