@@ -404,7 +404,7 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "2254836f70966103fd9c82e8abc56f3e",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/pages/model-usage/components/UsageChart.tsx": "96587002a169ebf66fc1cceed6326736",
+  "src/pages/model-usage/components/UsageChart.tsx": "5ea88ad57fe591df1ee43521874e51ea",
   "src/pages/model-usage/lib/usage-series.ts": "1e91a8c738600220a8aac4af25e86bfe",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
@@ -505,5 +505,6 @@
   "src/domains/endpoint/components/EndpointDeploymentSummary.tsx": "49f1975b0ee00adc862c866cca3b4fd4",
   "src/domains/endpoint/components/EndpointDeploymentWizard.tsx": "051b77ef661a780cce9366c78d494241",
   "src/domains/endpoint/components/EndpointResolvedModelEditor.tsx": "a39c3834d24b55c2ba895e43aef0d4b8",
-  "src/domains/endpoint/components/ModelOptionalFields.tsx": "5970abd037ebc1409219878a9231bc05"
+  "src/domains/endpoint/components/ModelOptionalFields.tsx": "5970abd037ebc1409219878a9231bc05",
+  "src/foundation/lib/chart-palette.ts": "697be24add5f2ebea0f97b73cdc35935"
 }

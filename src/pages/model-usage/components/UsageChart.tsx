@@ -16,6 +16,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
+import {
+  CHART_CATEGORY_TOKENS,
+  type ChartMark,
+  chartCategoryMark,
+  chartMarkStyle,
+  chartMoreMark,
+} from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import {
@@ -25,35 +32,64 @@ import {
 
 const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
 
-// Distinct colors for the charted series. Series are capped at TOP_K + 1 by the
-// fold, so with TOP_K = 8 the palette below is never cycled.
-const SERIES_COLORS = [
-  "hsl(217 91% 60%)",
-  "hsl(142 71% 45%)",
-  "hsl(38 92% 50%)",
-  "hsl(271 81% 56%)",
-  "hsl(0 84% 60%)",
-  "hsl(199 89% 48%)",
-  "hsl(330 81% 60%)",
-  "hsl(160 84% 39%)",
-  "hsl(48 96% 53%)",
-  "hsl(240 5% 50%)",
-];
-const OTHER_COLOR = "hsl(240 5% 50%)";
+// SVG marks cannot paint a CSS background-image, so the palette's stripe pass is
+// drawn as an SVG <pattern> per categorical step. The numbered pass belongs to
+// DOM renderers (the GPU bar shows the segment number); a chart with more than
+// sixteen categories would look the same either way, so it collapses to the
+// neutral "more" mark rather than pretending to be distinguishable.
+const MAX_SVG_MARKS = 16;
+const STRIPE_PATTERN_PREFIX = "usage-chart-stripes";
+const SOFT_STRIPE_PATTERN_PREFIX = "usage-chart-stripes-soft";
 
-// A series' identity color — used by both charts, so the key that is blue in
-// the trend is blue in the single-day bars too. "Other" is always neutral.
-function seriesColor(series: UsageSeries[], key: string): string {
-  const index = series.findIndex((s) => s.key === key);
-  if (key === OTHER_SERIES_KEY || index < 0) return OTHER_COLOR;
-  return SERIES_COLORS[index % SERIES_COLORS.length];
-}
+const stripeFill = (mark: ChartMark, soft = false) =>
+  mark.pattern === "stripes" && !mark.isMore
+    ? `url(#${soft ? SOFT_STRIPE_PATTERN_PREFIX : STRIPE_PATTERN_PREFIX}-${
+        mark.paletteIndex + 1
+      })`
+    : mark.color;
 
 // Prompt vs completion are two parts of one metric, so they share the series
 // hue two steps apart: the base step reads as "prompt", the softened step as
 // "completion". Mixing toward the card color keeps it legible in both themes.
 const soften = (color: string) =>
   `color-mix(in srgb, ${color} 45%, var(--nt-fill-neutral-white))`;
+
+/** Stripe pass for the SVG charts, one pattern per categorical step. */
+const StripePatterns = ({ soft = false }: { soft?: boolean }) => (
+  <defs>
+    {CHART_CATEGORY_TOKENS.map((token, index) => (
+      <pattern
+        key={token}
+        id={`${soft ? SOFT_STRIPE_PATTERN_PREFIX : STRIPE_PATTERN_PREFIX}-${
+          index + 1
+        }`}
+        width={6}
+        height={6}
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)"
+      >
+        <rect width={6} height={6} fill={soft ? soften(token) : token} />
+        <line
+          x1={0}
+          y1={0}
+          x2={0}
+          y2={6}
+          stroke="var(--nt-fill-neutral-white)"
+          strokeWidth={2}
+        />
+      </pattern>
+    ))}
+  </defs>
+);
+
+// One series' identity mark — used by both charts, so the key that is blue in the
+// trend is blue in the single-day bars too. "Other" is always the neutral mark.
+function seriesMark(series: UsageSeries[], key: string): ChartMark {
+  const index = series.findIndex((s) => s.key === key);
+  if (key === OTHER_SERIES_KEY || index < 0) return chartMoreMark();
+  if (index >= MAX_SVG_MARKS) return chartMoreMark();
+  return chartCategoryMark(index);
+}
 
 // The category axis has no ellipsis of its own — a long key name would run into
 // its neighbours, so shorten it and leave the full name to the tooltip.
@@ -80,8 +116,10 @@ const trendCursor = (chartType: "line" | "bar") =>
 
 type DayCategory = UsageSeries & {
   label: string;
-  promptColor: string;
-  completionColor: string;
+  promptFill: string;
+  completionFill: string;
+  promptMark: ChartMark;
+  completionMark: ChartMark;
 };
 
 type TooltipPayload = {
@@ -176,7 +214,7 @@ export const DayTooltip = ({
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <span
           className="inline-block size-2 shrink-0 rounded-sm"
-          style={{ backgroundColor: category.promptColor }}
+          style={chartMarkStyle(category.promptMark)}
         />
         <span>{t("model_usage.promptTokens")}</span>
         <span className="ml-auto font-mono text-foreground">
@@ -186,7 +224,7 @@ export const DayTooltip = ({
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <span
           className="inline-block size-2 shrink-0 rounded-sm"
-          style={{ backgroundColor: category.completionColor }}
+          style={chartMarkStyle(category.completionMark)}
         />
         <span>{t("model_usage.completionTokens")}</span>
         <span className="ml-auto font-mono text-foreground">
@@ -239,7 +277,11 @@ export const UsageChart = ({
   const dayBars: DayCategory[] = useMemo(
     () =>
       dayCategories.map((category) => {
-        const color = seriesColor(series, category.key);
+        const promptMark = seriesMark(series, category.key);
+        const completionMark = {
+          ...promptMark,
+          color: soften(promptMark.color),
+        };
         return {
           ...category,
           label:
@@ -248,11 +290,24 @@ export const UsageChart = ({
                   n: category.hiddenCount ?? 0,
                 })
               : shortLabel(category.name),
-          promptColor: color,
-          completionColor: soften(color),
+          promptFill: stripeFill(promptMark),
+          completionFill: stripeFill(completionMark, true),
+          promptMark,
+          completionMark,
         };
       }),
     [dayCategories, series, t],
+  );
+
+  const dayBarsHaveStripes = dayBars.some((category) =>
+    category.promptFill.startsWith("url("),
+  );
+  const trendMarks = useMemo(
+    () => new Map(series.map((s) => [s.key, seriesMark(series, s.key)])),
+    [series],
+  );
+  const trendHasStripes = [...trendMarks.values()].some(
+    (mark) => mark.pattern === "stripes",
   );
 
   const title = isSingleDay
@@ -406,6 +461,12 @@ export const UsageChart = ({
           <ResponsiveContainer width="100%" height="100%">
             {isSingleDay ? (
               <BarChart data={dayBars} margin={CHART_MARGIN}>
+                {dayBarsHaveStripes ? (
+                  <>
+                    <StripePatterns />
+                    <StripePatterns soft />
+                  </>
+                ) : null}
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -433,12 +494,12 @@ export const UsageChart = ({
                     Cell paints that category's segment. */}
                 <Bar dataKey="prompt" stackId="day">
                   {dayBars.map((category) => (
-                    <Cell key={category.key} fill={category.promptColor} />
+                    <Cell key={category.key} fill={category.promptFill} />
                   ))}
                 </Bar>
                 <Bar dataKey="completion" stackId="day" radius={[3, 3, 0, 0]}>
                   {dayBars.map((category) => (
-                    <Cell key={category.key} fill={category.completionColor} />
+                    <Cell key={category.key} fill={category.completionFill} />
                   ))}
                 </Bar>
               </BarChart>
@@ -448,22 +509,26 @@ export const UsageChart = ({
                 margin={CHART_MARGIN}
                 onClick={handleChartClick}
               >
+                {trendHasStripes ? <StripePatterns /> : null}
                 {trendAxes}
-                {series.map((s) => (
-                  <Bar
-                    key={s.key}
-                    dataKey={s.key}
-                    name={s.name}
-                    stackId="usage"
-                    hide={hidden.has(s.key)}
-                    fill={seriesColor(series, s.key)}
-                    radius={
-                      s.key === series[series.length - 1]?.key
-                        ? [3, 3, 0, 0]
-                        : undefined
-                    }
-                  />
-                ))}
+                {series.map((s) => {
+                  const mark = trendMarks.get(s.key) ?? chartMoreMark();
+                  return (
+                    <Bar
+                      key={s.key}
+                      dataKey={s.key}
+                      name={s.name}
+                      stackId="usage"
+                      hide={hidden.has(s.key)}
+                      fill={stripeFill(mark)}
+                      radius={
+                        s.key === series[series.length - 1]?.key
+                          ? [3, 3, 0, 0]
+                          : undefined
+                      }
+                    />
+                  );
+                })}
               </BarChart>
             ) : (
               <LineChart
@@ -472,20 +537,28 @@ export const UsageChart = ({
                 onClick={handleChartClick}
               >
                 {trendAxes}
-                {series.map((s) => (
-                  <Line
-                    key={s.key}
-                    type="monotone"
-                    dataKey={s.key}
-                    name={s.name}
-                    hide={hidden.has(s.key)}
-                    stroke={seriesColor(series, s.key)}
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                    activeDot={{ r: 4 }}
-                    connectNulls
-                  />
-                ))}
+                {series.map((s) => {
+                  const mark = trendMarks.get(s.key) ?? chartMoreMark();
+                  return (
+                    <Line
+                      key={s.key}
+                      type="monotone"
+                      dataKey={s.key}
+                      name={s.name}
+                      hide={hidden.has(s.key)}
+                      stroke={mark.color}
+                      // A dashed stroke is the line-renderer's stripe pass: a
+                      // repeated colour stays visually distinct from its twin.
+                      strokeDasharray={
+                        mark.pattern === "stripes" ? "4 2" : undefined
+                      }
+                      strokeWidth={2}
+                      dot={{ r: 2 }}
+                      activeDot={{ r: 4 }}
+                      connectNulls
+                    />
+                  );
+                })}
               </LineChart>
             )}
           </ResponsiveContainer>
