@@ -5,6 +5,7 @@ import {
   CHART_CATEGORY_COUNT,
   CHART_CATEGORY_TOKENS,
   CHART_MORE_COLOR,
+  CHART_SEQUENTIAL_TOKENS,
   CHART_STRIPES_BACKGROUND,
   chartCategoryColor,
   chartCategoryMark,
@@ -192,6 +193,19 @@ describe("categorical tokens across themes", () => {
       expect(dark.get(name), `${name} (dark)`).toBe(
         `var(--nt-chart-series-${index + 1})`,
       );
+    });
+  });
+
+  it("declares the sequential ramp in both themes, in magnitude order", () => {
+    const light = themeTokens(":root");
+    const dark = themeTokens(".dark");
+
+    expect(CHART_SEQUENTIAL_TOKENS).toHaveLength(5);
+    CHART_SEQUENTIAL_TOKENS.forEach((token, index) => {
+      const name = `--nt-chart-seq-${index + 1}`;
+      expect(token).toBe(`var(${name})`);
+      expect(light.get(name), `${name} (light)`).toBeDefined();
+      expect(dark.get(name), `${name} (dark)`).toBeDefined();
     });
   });
 

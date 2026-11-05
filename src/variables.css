@@ -144,6 +144,15 @@
 		--nt-chart-cat-6: var(--nt-chart-series-6);
 		--nt-chart-cat-7: var(--nt-chart-series-7);
 		--nt-chart-cat-8: var(--nt-chart-series-8);
+		/* Sequential ramp for magnitude (heatmaps, intensity fills). One blue
+		   hue, steps 2/4/6/8/10 of the style-guide blue ramp: seq-1 sits nearest
+		   the card surface for the lowest magnitude, seq-5 is the strongest, so
+		   "more ink" means "more" in light mode. */
+		--nt-chart-seq-1: #7fd2ff; /* 1.53:1 */
+		--nt-chart-seq-2: #19a3ff; /* 2.49:1 */
+		--nt-chart-seq-3: #0775f2; /* 3.97:1 */
+		--nt-chart-seq-4: #0f53c1; /* 6.35:1 */
+		--nt-chart-seq-5: #05318d; /* 10.50:1 */
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
@@ -339,6 +348,14 @@
 		--nt-chart-cat-6: var(--nt-chart-series-6);
 		--nt-chart-cat-7: var(--nt-chart-series-7);
 		--nt-chart-cat-8: var(--nt-chart-series-8);
+		/* Sequential ramp, mirrored for the dark surface: seq-1 is the dimmest
+		   (near the #132033 card) and seq-5 the brightest, so magnitude still
+		   reads as "more ink" in dark mode. Same five steps as the light ramp. */
+		--nt-chart-seq-1: #05318d; /* 1.43:1 */
+		--nt-chart-seq-2: #0f53c1; /* 2.36:1 */
+		--nt-chart-seq-3: #0775f2; /* 3.77:1 */
+		--nt-chart-seq-4: #19a3ff; /* 6.02:1 */
+		--nt-chart-seq-5: #7fd2ff; /* 9.80:1 */
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;

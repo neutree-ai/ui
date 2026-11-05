@@ -31,6 +31,20 @@ export const CHART_CATEGORY_TOKENS = [
   "var(--nt-chart-cat-8)",
 ] as const;
 
+/**
+ * Sequential tokens for magnitude encoding (heatmaps, intensity fills), ordered
+ * from the lowest to the highest magnitude. Each theme maps the ramp in the
+ * direction that reads as "more ink" on its own surface, so callers only pick a
+ * step; they never flip the ramp themselves.
+ */
+export const CHART_SEQUENTIAL_TOKENS = [
+  "var(--nt-chart-seq-1)",
+  "var(--nt-chart-seq-2)",
+  "var(--nt-chart-seq-3)",
+  "var(--nt-chart-seq-4)",
+  "var(--nt-chart-seq-5)",
+] as const;
+
 /** Neutral mark for a bucket that folds several categories together.
  *
  * The eighth categorical step is the palette's neutral, and "more" must not look

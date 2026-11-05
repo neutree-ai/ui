@@ -506,5 +506,5 @@
   "src/domains/endpoint/components/EndpointDeploymentWizard.tsx": "051b77ef661a780cce9366c78d494241",
   "src/domains/endpoint/components/EndpointResolvedModelEditor.tsx": "a39c3834d24b55c2ba895e43aef0d4b8",
   "src/domains/endpoint/components/ModelOptionalFields.tsx": "5970abd037ebc1409219878a9231bc05",
-  "src/foundation/lib/chart-palette.ts": "697be24add5f2ebea0f97b73cdc35935"
+  "src/foundation/lib/chart-palette.ts": "3c0efda871e6bf59c0af7c04bf7fc732"
 }
