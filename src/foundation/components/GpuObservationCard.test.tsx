@@ -277,4 +277,69 @@ describe("GPU observation row", () => {
     ).toBeNull();
     expect(within(cardElement).queryByText("clusters.options.free")).toBeNull();
   });
+
+  const openDetails = () =>
+    fireEvent.click(
+      screen.getByRole("button", { name: "observations.detailsForGpu:0" }),
+    );
+
+  it("shows physical capacity instead of a zero-over-zero ratio", () => {
+    render(
+      card({
+        allocations: [],
+        device: { ...device, allocatedMiB: 0 },
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+
+    within(dialog).getByText("observations.physicalCapacity");
+    expect(dialog.textContent).toContain("15.0 GiB");
+    within(dialog).getByText("observations.notAllocated");
+    expect(dialog.textContent).not.toContain("0.0 GiB / 0.0 GiB");
+  });
+
+  it("renders only reported hardware fields and summarises the rest once", () => {
+    render(
+      card({
+        samples: [
+          sample("neutree_node_accelerator_hardware_info", 1, {
+            architecture: "Hopper",
+            pcie_generation: "5",
+          }),
+        ],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+
+    within(dialog).getByText("Hopper");
+    within(dialog).getByText("5");
+    // The unreported fields collapse into one line instead of a wall of dashes.
+    screen.getByText(/observations\.unreportedFields/);
+    expect(
+      within(dialog).queryByText("observations.hardwareFields.numa_node"),
+    ).toBeNull();
+    expect(
+      within(dialog).queryByText("observations.hardwareFields.pcie_bus_id"),
+    ).toBeNull();
+  });
+
+  it("shows nominal FP16 compute without a fabricated running value", () => {
+    render(
+      card({
+        device: { ...device, peakFP16TFLOPS: 989 },
+        samples: [sample("neutree_accelerator_utilization_ratio", 0)],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+
+    within(dialog).getByText("observations.fp16Nominal");
+    expect(dialog.textContent).toMatch(/\d+\.\d+ TFLOPS/);
+    expect(dialog.textContent).not.toMatch(/\d+\.\d+ \/ \d+\.\d+ TFLOPS/);
+  });
 });

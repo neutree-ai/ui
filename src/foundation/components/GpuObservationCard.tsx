@@ -23,6 +23,7 @@ import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
   allocationColor,
+  assignAllocationColors,
   deviceHardwareInfo,
   type EndpointGpuAllocation,
   endpointAllocationUsedMiB,
@@ -503,6 +504,11 @@ function InventoryAllocationBar({
     device.allocatedMiB ??
     visible.reduce((sum, allocation) => sum + allocation.memoryMiB, 0) +
       hiddenMemoryMiB;
+  // Colours are resolved over every Endpoint on this GPU (hidden ones included)
+  // so the bar, the tooltip and the details sheet always agree on a name's colour.
+  const colorByEndpoint = assignAllocationColors(
+    allocations.map((allocation) => allocation.endpoint),
+  );
 
   if (device.allocatedMiB == null) {
     return (
@@ -554,7 +560,9 @@ function InventoryAllocationBar({
       <div className="absolute inset-0 flex overflow-hidden rounded-full">
         {visible.map((allocation) => {
           const allocationKey = `${allocation.workspace}:${allocation.endpoint}`;
-          const color = allocationColor(allocation.endpoint);
+          const color =
+            colorByEndpoint[allocation.endpoint] ??
+            allocationColor(allocation.endpoint);
           const actualUsedMiB = endpointAllocationUsedMiB(
             samples,
             allocation,
@@ -855,6 +863,9 @@ function GpuDetailsSheet({
     (allocation) =>
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
+  const colorByEndpoint = assignAllocationColors(
+    assigned.map((allocation) => allocation.endpoint),
+  );
   const nominalTflops = peakTflops(
     device.product,
     tflopsOverrides,
@@ -898,6 +909,25 @@ function GpuDetailsSheet({
     }
     return label(value);
   };
+  // A wall of em dashes reads as a broken panel, not as "the exporter did not
+  // report this". Render what exists and summarise the rest in one line.
+  const reportedHardwareFields = hardwareFields.filter(
+    (key) => hardwareLabel(key) !== "—",
+  );
+  const unreportedHardwareLabels = hardwareFields
+    .filter((key) => hardwareLabel(key) === "—")
+    .map((key) =>
+      t(
+        extraHardwareFields.find((field) => field.key === key)?.label ??
+          `observations.hardwareFields.${key}`,
+      ),
+    );
+  const physical = readings.total;
+  const reserved = device.allocatedMiB;
+  const actual = readings.actual;
+  const hasRuntimeMetric = Boolean(
+    readings.utilization || readings.temperature || readings.power,
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -921,93 +951,156 @@ function GpuDetailsSheet({
             </p>
           </div>
           <section className="space-y-3">
-            <h3 className="font-medium">
-              {t(
-                replica
-                  ? "observations.replicaUsage"
-                  : "observations.deviceUsage",
-              )}
-            </h3>
-            <AllocationMemory
-              device={device}
-              replica={replica}
-              actual={readings.actual}
-              total={readings.total}
-            />
-            <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
+            <h3 className="font-medium">{t("observations.memorySection")}</h3>
+            <dl className="grid grid-cols-3 gap-3 rounded-md bg-muted/50 p-3 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.utilization")}
-                </p>
-                {readings.utilization ? (
-                  `${(readings.utilization.value * 100).toFixed(0)}%`
-                ) : (
-                  <EmptyValue />
-                )}
+                <dt className="text-xs text-muted-foreground">
+                  {t("observations.physicalCapacity")}
+                </dt>
+                <dd className="tabular-nums">
+                  {physical != null ? `${gibValue(physical)} GiB` : "—"}
+                </dd>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.computeShare")}
-                </p>
-                {device.coreUnits != null ? (
-                  `${device.coreUnits}%`
-                ) : (
-                  <EmptyValue />
-                )}
+                <dt className="text-xs text-muted-foreground">
+                  {t("observations.requestedCapacity")}
+                </dt>
+                <dd className="tabular-nums">
+                  {reserved != null ? `${gibValue(reserved)} GiB` : "—"}
+                </dd>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.deviceTemperature")}
-                </p>
-                {readings.temperature ? (
-                  `${readings.temperature.value.toFixed(0)} °C`
-                ) : (
-                  <EmptyValue />
-                )}
+                <dt className="text-xs text-muted-foreground">
+                  {t("observations.actualUsage")}
+                </dt>
+                <dd className="tabular-nums">
+                  {actual != null ? `${gibValue(actual)} GiB` : "—"}
+                </dd>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.devicePower")}
-                </p>
-                {readings.power ? (
-                  `${readings.power.value.toFixed(0)} W`
-                ) : (
-                  <EmptyValue />
+            </dl>
+            <div className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}>
+              <div className="absolute inset-0 overflow-hidden rounded-full">
+                {reserved != null && reserved > 0 && (
+                  <div
+                    className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30"
+                    style={{ width: `${ratio(reserved, physical)}%` }}
+                  />
                 )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.fp16")}
-                </p>
-                <span className="tabular-nums">
-                  {nominalTflops != null && readings.utilization
-                    ? (nominalTflops * readings.utilization.value).toFixed(1)
-                    : "—"}{" "}
-                  / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS
-                </span>
+                {actual != null && (
+                  <div
+                    className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]"
+                    style={{ width: `${ratio(actual, physical)}%` }}
+                  />
+                )}
               </div>
             </div>
+            {reserved != null && reserved > 0 && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-40" />
+                  {t("observations.requestedCapacity")}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-sm bg-[var(--nt-chart-series-1)]" />
+                  {t("observations.actualUsage")}
+                </span>
+              </div>
+            )}
+            {reserved === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {t("observations.notAllocated")}
+              </p>
+            ) : (
+              actual == null && (
+                <p className="text-xs text-muted-foreground">
+                  {t("observations.noMeasurement")}
+                </p>
+              )
+            )}
+          </section>
+          <section className="space-y-3">
+            <h3 className="font-medium">{t("observations.runtimeMetrics")}</h3>
+            {hasRuntimeMetric ? (
+              <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.utilization")}
+                  </p>
+                  {readings.utilization ? (
+                    `${(readings.utilization.value * 100).toFixed(0)}%`
+                  ) : (
+                    <EmptyValue />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.deviceTemperature")}
+                  </p>
+                  {readings.temperature ? (
+                    `${readings.temperature.value.toFixed(0)} °C`
+                  ) : (
+                    <EmptyValue />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.devicePower")}
+                  </p>
+                  {readings.power ? (
+                    `${readings.power.value.toFixed(0)} W`
+                  ) : (
+                    <EmptyValue />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {t("observations.fp16Nominal")}
+                  </p>
+                  <span className="tabular-nums">
+                    {nominalTflops != null
+                      ? `${nominalTflops.toFixed(1)} TFLOPS`
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {t("observations.status.no_data")}
+              </p>
+            )}
           </section>
           <section>
             <h3 className="mb-3 font-medium">{t("observations.hardware")}</h3>
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              {hardwareFields.map((key) => (
-                <div key={key}>
-                  <dt className="text-xs text-muted-foreground">
-                    {t(
-                      extraHardwareFields.find((field) => field.key === key)
-                        ?.label ?? `observations.hardwareFields.${key}`,
-                    )}
-                  </dt>
-                  <dd className="break-all">{hardwareLabel(key)}</dd>
-                </div>
-              ))}
-            </dl>
+            {reportedHardwareFields.length > 0 && (
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                {reportedHardwareFields.map((key) => (
+                  <div key={key}>
+                    <dt className="text-xs text-muted-foreground">
+                      {t(
+                        extraHardwareFields.find((field) => field.key === key)
+                          ?.label ?? `observations.hardwareFields.${key}`,
+                      )}
+                    </dt>
+                    <dd className="break-all">{hardwareLabel(key)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {unreportedHardwareLabels.length > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("observations.unreportedFields", {
+                  fields: unreportedHardwareLabels.join(", "),
+                })}
+              </p>
+            )}
           </section>
           <section>
-            <h3 className="mb-3 font-medium">
-              {t("observations.assignments")}
-            </h3>
+            <h3 className="font-medium">{t("observations.assignments")}</h3>
+            {device.coreUnits != null && reserved != null && reserved > 0 && (
+              <p className="mt-1 mb-3 text-xs text-muted-foreground">
+                {t("observations.computeShareAllocated")} {device.coreUnits}%
+              </p>
+            )}
             <div className="space-y-3">
               {assigned.map((allocation, index) => {
                 const measurement = reading(
@@ -1022,32 +1115,47 @@ function GpuDetailsSheet({
                     key={`${allocation.endpoint}:${allocation.replica}:${allocation.instance}:${allocation.vdevice ?? index}`}
                     className="rounded-md border p-3 text-sm"
                   >
-                    <Link
-                      className="font-medium text-primary hover:underline"
-                      to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
-                    >
-                      {allocation.endpoint}
-                    </Link>
-                    <p className="break-all text-xs text-muted-foreground">
-                      {allocation.model || <EmptyValue />}
-                    </p>
-                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                      {allocation.replica || allocation.instance || (
-                        <EmptyValue />
-                      )}
-                    </p>
-                    <p className="mt-2 text-xs">
-                      {t("observations.actual")}{" "}
-                      {gib(measurement ? measurement.value / 1024 ** 2 : null)}{" "}
-                      · {t("observations.reservedLower")}{" "}
-                      {gib(allocation.memoryMiB)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t("observations.modelWeights")}{" "}
-                      {gib(allocation.modelWeightsMiB)} ·{" "}
-                      {t("observations.l0KvCache")}{" "}
-                      {gib(allocation.kvCacheCapacityMiB)}
-                    </p>
+                    <div className="flex items-start gap-2">
+                      <span
+                        aria-hidden
+                        className="mt-1.5 size-2 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor:
+                            colorByEndpoint[allocation.endpoint] ??
+                            allocationColor(allocation.endpoint),
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          className="font-medium text-primary hover:underline"
+                          to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
+                        >
+                          {allocation.endpoint}
+                        </Link>
+                        <p className="break-all text-xs text-muted-foreground">
+                          {allocation.model || <EmptyValue />}
+                        </p>
+                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          {allocation.replica || allocation.instance || (
+                            <EmptyValue />
+                          )}
+                        </p>
+                        <p className="mt-2 text-xs">
+                          {t("observations.actual")}{" "}
+                          {gib(
+                            measurement ? measurement.value / 1024 ** 2 : null,
+                          )}{" "}
+                          · {t("observations.reservedLower")}{" "}
+                          {gib(allocation.memoryMiB)}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("observations.modelWeights")}{" "}
+                          {gib(allocation.modelWeightsMiB)} ·{" "}
+                          {t("observations.l0KvCache")}{" "}
+                          {gib(allocation.kvCacheCapacityMiB)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
