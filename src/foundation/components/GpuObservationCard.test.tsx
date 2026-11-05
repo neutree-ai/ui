@@ -360,6 +360,46 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).toContain("observations.tflopsPeak");
   });
 
+  it("expands the matching card when a bar segment is clicked", () => {
+    const other = {
+      ...allocation,
+      endpoint: "instance-2",
+      model: "model-2",
+      replica: "pod-2",
+      instance: "pod-2",
+    };
+    render(card({ allocations: [allocation, other] }));
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(0);
+
+    // The bar is a control inside the sheet: no hover layer, a click selects.
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /^instance, 15\.0 GiB/ }),
+    );
+    expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(1);
+    within(dialog).getByRole("link", {
+      name: "observations.openEndpoint:instance",
+    });
+  });
+
+  it("keeps the row name plain and offers one deliberate way out", () => {
+    render(card({}));
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    const openLink = within(dialog).getByRole("link", {
+      name: "observations.openEndpoint:instance",
+    });
+
+    expect(openLink.getAttribute("href")).toBe(
+      "/default/endpoints/show/instance",
+    );
+    // The name itself must not be a link: the row also expands on click.
+    expect(within(dialog).queryByRole("link", { name: "instance" })).toBeNull();
+  });
+
   it("keeps one Endpoint allocation expanded at a time", () => {
     const other = {
       ...allocation,
@@ -384,7 +424,9 @@ describe("GPU observation row", () => {
       }),
     );
     expect(expandedCount()).toBe(1);
-    expect(dialog.textContent).toContain("observations.modelWeights 2.0 GiB");
+    // The expanded card carries its own legend instead of a duplicated bar.
+    expect(dialog.textContent).toContain("observations.modelWeights");
+    expect(dialog.textContent).toContain("2.0 GiB");
 
     fireEvent.click(
       within(dialog).getByRole("button", {

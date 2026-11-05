@@ -5,7 +5,7 @@ import {
   CircleCheck,
   Copy,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -517,12 +517,19 @@ function InventoryAllocationBar({
   samples,
   cardUsedMiB,
   total,
+  mode = "preview",
+  selectedKey = null,
+  onSelect,
 }: {
   device: ObservedGpu;
   allocations: GpuAllocation[];
   samples: AcceleratorSample[];
   cardUsedMiB: number | null;
   total: number | null;
+  /** "preview" keeps the hover layer; "select" makes each segment a control. */
+  mode?: "preview" | "select";
+  selectedKey?: string | null;
+  onSelect?: (key: string) => void;
 }) {
   const { t } = useTranslation();
   const [activeAllocation, setActiveAllocation] = useState<string | null>(null);
@@ -597,47 +604,69 @@ function InventoryAllocationBar({
             allocations.length,
             cardUsedMiB,
           );
+          const isSelected = selectedKey === allocationKey;
+          const button = (
+            <button
+              type="button"
+              aria-pressed={mode === "select" ? isSelected : undefined}
+              className={cn(
+                "relative h-full shrink-0 overflow-hidden border-0 p-0 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--nt-stroke-outstanding-base)] focus-visible:outline-offset-1",
+                mode === "select" && "cursor-pointer",
+              )}
+              style={{
+                width: `${allocationWidth(allocation)}%`,
+                backgroundColor: color,
+                // The gap belongs between two colours, not around the bar:
+                // the first segment's left edge is the track itself.
+                ...(segmentIndex > 0 ? chartOutlineStyle() : {}),
+              }}
+              aria-label={`${allocation.endpoint}, ${gib(allocation.memoryMiB)} ${t("observations.reservedLower")}`}
+              onMouseEnter={() => setActiveAllocation(allocationKey)}
+              onMouseLeave={() => setActiveAllocation(null)}
+              onFocus={() => setActiveAllocation(allocationKey)}
+              onBlur={() => setActiveAllocation(null)}
+              onClick={() => {
+                if (mode === "select") {
+                  onSelect?.(allocationKey);
+                  return;
+                }
+                setActiveAllocation(allocationKey);
+              }}
+            >
+              {hidden.length > 0 && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white tabular-nums"
+                >
+                  {visible.findIndex(
+                    (item) =>
+                      `${item.workspace}:${item.endpoint}` === allocationKey,
+                  ) + 1}
+                </span>
+              )}
+              {activeAllocation === allocationKey && (
+                <EndpointSegmentPattern
+                  allocation={allocation}
+                  color={color}
+                  actualUsedMiB={actualUsedMiB}
+                />
+              )}
+              {isSelected && mode === "select" && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-[inherit] [box-shadow:inset_0_0_0_2px_var(--nt-fill-neutral-white)]"
+                />
+              )}
+            </button>
+          );
+
+          if (mode === "select") {
+            return <Fragment key={allocationKey}>{button}</Fragment>;
+          }
+
           return (
             <HoverCard key={allocationKey} openDelay={120} closeDelay={80}>
-              <HoverCardTrigger asChild>
-                <button
-                  type="button"
-                  className="relative h-full shrink-0 overflow-hidden border-0 p-0 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--nt-stroke-outstanding-base)] focus-visible:outline-offset-1"
-                  style={{
-                    width: `${allocationWidth(allocation)}%`,
-                    backgroundColor: color,
-                    // The gap belongs between two colours, not around the bar:
-                    // the first segment's left edge is the track itself.
-                    ...(segmentIndex > 0 ? chartOutlineStyle() : {}),
-                  }}
-                  aria-label={`${allocation.endpoint}, ${gib(allocation.memoryMiB)} ${t("observations.reservedLower")}`}
-                  onMouseEnter={() => setActiveAllocation(allocationKey)}
-                  onMouseLeave={() => setActiveAllocation(null)}
-                  onFocus={() => setActiveAllocation(allocationKey)}
-                  onBlur={() => setActiveAllocation(null)}
-                  onClick={() => setActiveAllocation(allocationKey)}
-                >
-                  {hidden.length > 0 && (
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white tabular-nums"
-                    >
-                      {visible.findIndex(
-                        (item) =>
-                          `${item.workspace}:${item.endpoint}` ===
-                          allocationKey,
-                      ) + 1}
-                    </span>
-                  )}
-                  {activeAllocation === allocationKey && (
-                    <EndpointSegmentPattern
-                      allocation={allocation}
-                      color={color}
-                      actualUsedMiB={actualUsedMiB}
-                    />
-                  )}
-                </button>
-              </HoverCardTrigger>
+              <HoverCardTrigger asChild>{button}</HoverCardTrigger>
               <EndpointAllocationTooltip
                 allocation={allocation}
                 color={color}
@@ -1223,6 +1252,9 @@ function GpuDetailsSheet({
                 samples={samples}
                 cardUsedMiB={readings.actual}
                 total={readings.total}
+                mode="select"
+                selectedKey={selectedKey}
+                onSelect={(key) => toggle(key)}
               />
               {sorted.length > 0 && (
                 <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -1238,18 +1270,51 @@ function GpuDetailsSheet({
                   </span>
                 </p>
               )}
-              <ul className="space-y-1">
+              {/* Cards sit flush: a divider separates rows inside one surface
+                  instead of each row floating as its own bordered block. */}
+              <ul className="divide-y divide-[var(--nt-stroke-neutral-trans-2)] overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
                 {sorted.map((allocation) => {
                   const key = keyOf(allocation);
                   const isOpen = selectedKey === key;
                   const index =
                     sorted.findIndex((item) => keyOf(item) === key) + 1;
+                  const color = colorOf(allocation);
+                  const endpointUsed = reading(
+                    samples,
+                    "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                    allocation.allocations[0]?.node ?? device.node,
+                    allocation.allocations[0]?.uuid ?? device.uuid,
+                    {
+                      ...allocation.allocations[0],
+                      endpoint: allocation.endpoint,
+                      workspace: allocation.workspace,
+                    } as GpuAllocation,
+                  );
+                  const endpointActual = endpointUsed
+                    ? endpointUsed.value / 1024 ** 2
+                    : null;
+                  const endpointPercent =
+                    endpointActual != null && allocation.memoryMiB > 0
+                      ? Math.min(
+                          100,
+                          (endpointActual / allocation.memoryMiB) * 100,
+                        )
+                      : null;
+                  const otherMiB =
+                    allocation.modelWeightsMiB != null &&
+                    allocation.kvCacheCapacityMiB != null
+                      ? Math.max(
+                          0,
+                          allocation.memoryMiB -
+                            allocation.modelWeightsMiB -
+                            allocation.kvCacheCapacityMiB,
+                        )
+                      : null;
+                  const endpointHref = `/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`;
+
                   return (
-                    <li
-                      key={key}
-                      className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]"
-                    >
-                      <div className="flex items-center gap-2 px-2 py-2">
+                    <li key={key} className="bg-[var(--nt-fill-neutral-white)]">
+                      <div className="flex items-center gap-2 px-3 py-2.5">
                         <button
                           type="button"
                           aria-expanded={isOpen}
@@ -1273,17 +1338,14 @@ function GpuDetailsSheet({
                         <span
                           aria-hidden
                           className="flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold text-white"
-                          style={{ backgroundColor: colorOf(allocation) }}
+                          style={{ backgroundColor: color }}
                         >
                           {showIndex ? index : ""}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <Link
-                            className="block truncate text-sm font-medium text-primary hover:underline"
-                            to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
-                          >
+                          <p className="truncate text-sm font-medium">
                             {allocation.endpoint}
-                          </Link>
+                          </p>
                           <p className="truncate text-[11px] text-muted-foreground">
                             {allocation.model || <EmptyValue />} ·{" "}
                             {allocation.workspace}
@@ -1294,85 +1356,119 @@ function GpuDetailsSheet({
                             memory: gib(allocation.memoryMiB),
                           })}
                         </span>
+                        {/* The name is not a link: a stray click on a row that
+                            also expands must not navigate. The arrow is the
+                            single, deliberate way out. */}
+                        <Link
+                          to={endpointHref}
+                          aria-label={t("observations.openEndpoint", {
+                            endpoint: allocation.endpoint,
+                          })}
+                          className="shrink-0 rounded p-0.5 text-muted-foreground outline-none hover:text-primary focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
+                        >
+                          <ArrowUpRight aria-hidden className="size-3.5" />
+                        </Link>
                       </div>
                       {isOpen && (
-                        <div className="space-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
-                          <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                            <div>
-                              <dt className="text-[11px] text-muted-foreground">
-                                {t("observations.workspaceLabel")}
-                              </dt>
-                              <dd className="break-all">
-                                {allocation.workspace}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[11px] text-muted-foreground">
-                                {t("observations.replicaLabel")}
-                              </dt>
-                              <dd className="tabular-nums">
-                                {allocation.allocations.length}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[11px] text-muted-foreground">
-                                {t("observations.instanceLabel")}
-                              </dt>
-                              <dd className="break-all">
-                                {allocation.allocations[0]?.instance || "—"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[11px] text-muted-foreground">
-                                {t("observations.vgpuLabel")}
-                              </dt>
-                              <dd className="break-all">
-                                {allocation.allocations[0]?.vdevice ??
-                                  t("observations.fullCard")}
-                              </dd>
-                            </div>
-                          </dl>
+                        <div className="space-y-2.5 border-t border-[var(--nt-stroke-neutral-trans-2)] px-3 py-3">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">
+                                {t("observations.actual")}
+                              </span>{" "}
+                              <strong className="tabular-nums">
+                                {gib(endpointActual)}
+                              </strong>
+                              <span className="text-muted-foreground">
+                                {" "}
+                                / {gib(allocation.memoryMiB)}
+                              </span>
+                              {endpointPercent != null && (
+                                <span className="ml-2 text-[11px] text-muted-foreground">
+                                  {t("observations.actualOfReserved", {
+                                    percent: Math.round(endpointPercent),
+                                  })}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {t("observations.replicaLabel")}{" "}
+                              {allocation.allocations.length} ·{" "}
+                              {allocation.workspace} ·{" "}
+                              {allocation.allocations[0]?.vdevice ??
+                                t("observations.fullCard")}
+                            </p>
+                          </div>
+                          {/* The legend of this row: the same swatches the bar
+                              and the tooltip use, so a colour stays explainable
+                              where it is opened. */}
+                          <ul className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
+                            <li className="flex min-w-0 items-center gap-1.5">
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-3 shrink-0 rounded-sm"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="truncate text-[11px] text-muted-foreground">
+                                {t("observations.modelWeights")}
+                              </span>
+                              <strong className="ml-auto whitespace-nowrap tabular-nums">
+                                {gib(allocation.modelWeightsMiB)}
+                              </strong>
+                            </li>
+                            <li className="flex min-w-0 items-center gap-1.5">
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-3 shrink-0 rounded-sm"
+                                style={{
+                                  backgroundColor: color,
+                                  backgroundImage: KV_STRIPES,
+                                }}
+                              />
+                              <span className="truncate text-[11px] text-muted-foreground">
+                                {t("observations.l0KvCache")}
+                              </span>
+                              <strong className="ml-auto whitespace-nowrap tabular-nums">
+                                {gib(allocation.kvCacheCapacityMiB)}
+                              </strong>
+                            </li>
+                            <li className="flex min-w-0 items-center gap-1.5">
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-3 shrink-0 rounded-sm bg-[var(--nt-fill-neutral-trans-5)]"
+                              />
+                              <span className="truncate text-[11px] text-muted-foreground">
+                                {t("observations.otherReservation")}
+                              </span>
+                              <strong className="ml-auto whitespace-nowrap tabular-nums">
+                                {gib(otherMiB)}
+                              </strong>
+                            </li>
+                          </ul>
                           {allocation.allocations.map((item) => {
-                            const measurement = reading(
+                            const used = reading(
                               samples,
                               "neutree_endpoint_replica_accelerator_memory_used_bytes",
                               item.node,
                               item.uuid,
                               item,
                             );
-                            const usedForReplica = measurement
-                              ? measurement.value / 1024 ** 2
+                            const usedMiB = used
+                              ? used.value / 1024 ** 2
                               : null;
-                            const percent =
-                              usedForReplica != null && item.memoryMiB > 0
-                                ? Math.min(
-                                    100,
-                                    (usedForReplica / item.memoryMiB) * 100,
-                                  )
-                                : null;
                             return (
-                              <div
+                              <p
                                 key={`${item.replica}:${item.instance}`}
-                                className="space-y-1"
+                                className="flex items-center justify-between gap-2 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2 text-[11px]"
                               >
-                                <p className="flex items-center justify-between gap-2 text-[11px]">
-                                  <span className="truncate font-mono text-muted-foreground">
-                                    {item.replica || item.instance || "—"}
-                                  </span>
-                                  <span className="whitespace-nowrap tabular-nums">
-                                    {t("observations.actual")}{" "}
-                                    {gib(usedForReplica)} /{" "}
-                                    {gib(item.memoryMiB)}
-                                    {percent != null &&
-                                      ` · ${percent.toFixed(0)}%`}
-                                  </span>
-                                </p>
-                                <AllocationBreakdown
-                                  replica={item}
-                                  actual={usedForReplica}
-                                  reserved={item.memoryMiB}
-                                />
-                              </div>
+                                <span className="truncate font-mono text-muted-foreground">
+                                  {item.replica || item.instance || "—"}
+                                </span>
+                                <span className="whitespace-nowrap tabular-nums">
+                                  {t("observations.actual")} {gib(usedMiB)} /{" "}
+                                  {gib(item.memoryMiB)}
+                                </span>
+                              </p>
                             );
                           })}
                         </div>

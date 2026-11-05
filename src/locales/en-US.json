@@ -2949,6 +2949,7 @@
 		"instanceLabel": "Instance",
 		"vgpuLabel": "vGPU",
 		"fullCard": "Full card",
+		"openEndpoint": "Open {{endpoint}} endpoint",
 		"replicaAllocations_one": "{{count}} replica allocation",
 		"replicaAllocations_other": "{{count}} replica allocations",
 		"replicaAllocations": "{{count}} replica allocations",
