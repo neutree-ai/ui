@@ -2943,7 +2943,6 @@
 		"reservedTotal": "Reserved {{memory}}",
 		"expandAllocation": "Expand {{endpoint}} allocation",
 		"collapseAllocation": "Collapse {{endpoint}} allocation",
-		"workspaceLabel": "Workspace",
 		"replicaLabel": "Replica",
 		"instanceLabel": "Instance",
 		"vgpuLabel": "vGPU",

@@ -1323,23 +1323,11 @@ function GpuDetailsSheet({
                         </Link>
                       </div>
                       {isOpen && (
-                        <div className="space-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] px-3 py-2.5">
+                        <div className="space-y-1.5 border-t border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] px-3 py-2">
                           {/* One place for each number. The row above already
                               says how much is reserved, so this block names the
                               object and then gives each replica its own
                               actual / reserved — never the total twice. */}
-                          <p className="text-[11px] text-muted-foreground">
-                            {t("observations.workspaceLabel")}{" "}
-                            {allocation.workspace} ·{" "}
-                            {t("observations.replicaLabel")}{" "}
-                            {allocation.allocations.length}
-                            {allocation.allocations.length === 1 &&
-                            allocation.allocations.every(
-                              (item) => !item.vdevice,
-                            )
-                              ? ` · ${t("observations.fullCard")}`
-                              : ""}
-                          </p>
                           <ul className="space-y-1">
                             {allocation.allocations.map((item) => {
                               const used = reading(
@@ -1375,13 +1363,14 @@ function GpuDetailsSheet({
                                   <span className="min-w-0 truncate text-[11px] text-muted-foreground">
                                     {replicaCount > 1
                                       ? `${t("observations.replicaLabel")} ${allocation.allocations.indexOf(item) + 1}`
-                                      : null}
-                                    {item.vdevice ? `vGPU ${item.vdevice}` : ""}
+                                      : t("observations.actual")}
+                                    {item.vdevice
+                                      ? ` · vGPU ${item.vdevice}`
+                                      : replicaCount === 1
+                                        ? ` · ${t("observations.fullCard")}`
+                                        : ""}
                                   </span>
                                   <span className="shrink-0 whitespace-nowrap tabular-nums">
-                                    <span className="text-[11px] text-muted-foreground">
-                                      {t("observations.actual")}
-                                    </span>{" "}
                                     <strong className="font-semibold">
                                       {gib(usedMiB)}
                                     </strong>{" "}
