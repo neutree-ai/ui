@@ -124,6 +124,8 @@ const HINTS = {
     "Chart colours must come from a token, not from a literal value:",
     "  categorical series   var(--nt-chart-cat-1) … var(--nt-chart-cat-8)",
     "  magnitude / ramp     var(--nt-chart-seq-1) … var(--nt-chart-seq-5)",
+    "  single-series brand   CHART_BRAND (a lone series may wear --primary)",
+    "  verdict (pass/watch/fail) chartVerdictColor() — status dimensions only",
     "  neutral “more”       chartMoreMark() from src/foundation/lib/chart-palette.ts",
     "If a token is missing for the role, add it to src/variables.css instead of",
     "pasting a hex value here.",
@@ -586,6 +588,24 @@ function checkPalette() {
     outlineByTheme.set(theme, separator ? { value: separator } : null);
 
     const palette = [];
+    // Non-categorical roles must exist in every theme just like the families
+    // they alias; a missing one silently renders as transparent.
+    for (const roleToken of [
+      "--nt-chart-brand",
+      "--nt-chart-pass",
+      "--nt-chart-watch",
+      "--nt-chart-fail",
+    ]) {
+      if (!declarations.has(roleToken)) {
+        violations.push({
+          file: VARIABLES_FILE,
+          line: 1,
+          text: `${theme}: ${roleToken} is not declared`,
+          rule: "alias",
+        });
+      }
+    }
+
     for (let index = 1; index <= CATEGORIES; index += 1) {
       const seriesName = `--nt-chart-series-${index}`;
       const catName = `--nt-chart-cat-${index}`;

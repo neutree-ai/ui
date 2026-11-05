@@ -45,6 +45,36 @@ export const CHART_SEQUENTIAL_TOKENS = [
   "var(--nt-chart-seq-5)",
 ] as const;
 
+/**
+ * Roles that are not categories.
+ *
+ * Most charts encode *which* thing (categorical) or *how much* (sequential).
+ * Two more roles exist and must not be confused with either:
+ *
+ * - brand: a single-series chart has no neighbouring hue to collide with, so
+ *   the series may carry the product's own primary instead of a category slot.
+ *   The moment a second series appears, switch to the categorical tokens —
+ *   brand then reads as chrome, not as data.
+ * - verdict: the charted dimension *is* a judgement (pass / watch / fail, a
+ *   success-vs-error split). These alias the semantic status families so the
+ *   chart inherits the product's status colours instead of picking its own red.
+ *   Never use them for an arbitrary category: that is how a category colour
+ *   starts lying about health.
+ */
+export const CHART_BRAND = "var(--nt-chart-brand)";
+
+type ChartVerdict = "pass" | "watch" | "fail";
+
+const CHART_VERDICT_TOKENS: Record<ChartVerdict, string> = {
+  pass: "var(--nt-chart-pass)",
+  watch: "var(--nt-chart-watch)",
+  fail: "var(--nt-chart-fail)",
+};
+
+export function chartVerdictColor(verdict: ChartVerdict): string {
+  return CHART_VERDICT_TOKENS[verdict];
+}
+
 /** Neutral mark for a bucket that folds several categories together.
  *
  * The eighth categorical step is the palette's neutral, and "more" must not look

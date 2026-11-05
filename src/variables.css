@@ -155,6 +155,13 @@
 		   hue, steps 2/4/6/8/10 of the style-guide blue ramp: seq-1 sits nearest
 		   the card surface for the lowest magnitude, seq-5 is the strongest, so
 		   "more ink" means "more" in light mode. */
+		/* Chart roles that are not categories: a single series may wear the
+		   product's primary, and a status dimension borrows the semantic families
+		   instead of inventing its own red or green. */
+		--nt-chart-brand: hsl(var(--primary));
+		--nt-chart-pass: var(--nt-fill-positive-base);
+		--nt-chart-watch: var(--nt-fill-outstanding-base);
+		--nt-chart-fail: var(--nt-fill-serious-base);
 		--nt-chart-seq-1: #7fd2ff; /* 1.53:1 */
 		--nt-chart-seq-2: #19a3ff; /* 2.49:1 */
 		--nt-chart-seq-3: #0775f2; /* 3.97:1 */
@@ -360,6 +367,13 @@
 		/* Sequential ramp, mirrored for the dark surface: seq-1 is the dimmest
 		   (near the #132033 card) and seq-5 the brightest, so magnitude still
 		   reads as "more ink" in dark mode. Same five steps as the light ramp. */
+		/* Chart roles that are not categories: a single series may wear the
+		   product's primary, and a status dimension borrows the semantic families
+		   instead of inventing its own red or green. */
+		--nt-chart-brand: hsl(var(--primary));
+		--nt-chart-pass: var(--nt-fill-positive-base);
+		--nt-chart-watch: var(--nt-fill-outstanding-base);
+		--nt-chart-fail: var(--nt-fill-serious-base);
 		--nt-chart-seq-1: #05318d; /* 1.43:1 */
 		--nt-chart-seq-2: #0f53c1; /* 2.36:1 */
 		--nt-chart-seq-3: #0775f2; /* 3.77:1 */

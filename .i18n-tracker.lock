@@ -176,7 +176,7 @@
   "src/domains/endpoint/components/ChatPlayground.tsx": "7005639896bc64c67a6c1a4815345723",
   "src/domains/endpoint/components/ChatSidebar.tsx": "188bc062294a45b16a56e7e3b9b24610",
   "src/domains/endpoint/components/DeploymentConfigCard.tsx": "91cc8c988179c5657e0cc51035f26bde",
-  "src/domains/endpoint/components/EmbeddingPlayground.tsx": "33b6a1bfc0a71c993e33b28000d5fd30",
+  "src/domains/endpoint/components/EmbeddingPlayground.tsx": "ff8212615dee072f9f6d9b98dda2b2d0",
   "src/domains/endpoint/components/EndpointEngine.tsx": "e3a20035501503cb47c8c59fad5982a7",
   "src/domains/endpoint/components/EndpointLogTabs.tsx": "98d8041370e145ea6f0ab5f7231af678",
   "src/domains/endpoint/components/EndpointModel.tsx": "8321a4b30053a4d169ae99516f9a447d",
@@ -278,7 +278,7 @@
   "src/domains/external-endpoint/hooks/use-test-connectivity.ts": "3518ba31f791c430b2afe655cc2d2c08",
   "src/pages/ai-traces/list.tsx": "eaebf4686fe23054bd453d0b630a645b",
   "src/pages/ai-traces/components/TraceDetailDrawer.tsx": "589952e145823c249cbf7c0b20f6c661",
-  "src/pages/ai-traces/components/TraceStatsChart.tsx": "96eea54f2c2827dc170c61d3f72cd84d",
+  "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "29e85301b89a62100b34c46124d329ce",
   "src/pages/model-usage/list.tsx": "3c35502aa4485da3a942b55584da9bd2",
@@ -506,5 +506,5 @@
   "src/domains/endpoint/components/EndpointDeploymentWizard.tsx": "051b77ef661a780cce9366c78d494241",
   "src/domains/endpoint/components/EndpointResolvedModelEditor.tsx": "a39c3834d24b55c2ba895e43aef0d4b8",
   "src/domains/endpoint/components/ModelOptionalFields.tsx": "5970abd037ebc1409219878a9231bc05",
-  "src/foundation/lib/chart-palette.ts": "28e917755377cda43fd433d290be6dc1"
+  "src/foundation/lib/chart-palette.ts": "0b79ae0369521e4516c0058b497af8f8"
 }

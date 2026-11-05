@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  CHART_BRAND,
   CHART_CATEGORY_COUNT,
   CHART_CATEGORY_TOKENS,
   CHART_MORE_COLOR,
@@ -15,6 +16,7 @@ import {
   chartMarkStyle,
   chartMoreMark,
   chartOutlineStyle,
+  chartVerdictColor,
 } from "./chart-palette";
 
 describe("chartCategoryColor", () => {
@@ -145,6 +147,25 @@ describe("chartMarkStyle", () => {
     expect(chartMarkStyle(chartMoreMark())).toEqual({
       backgroundColor: CHART_MORE_COLOR,
     });
+  });
+});
+
+describe("roles that are not categories", () => {
+  it("lets a lone series wear the product primary", () => {
+    expect(CHART_BRAND).toBe("var(--nt-chart-brand)");
+  });
+
+  it("maps verdicts onto the semantic families", () => {
+    expect(chartVerdictColor("pass")).toBe("var(--nt-chart-pass)");
+    expect(chartVerdictColor("watch")).toBe("var(--nt-chart-watch)");
+    expect(chartVerdictColor("fail")).toBe("var(--nt-chart-fail)");
+  });
+
+  it("keeps verdict colours out of the categorical slots", () => {
+    for (const verdict of ["pass", "watch", "fail"] as const) {
+      expect(CHART_CATEGORY_TOKENS).not.toContain(chartVerdictColor(verdict));
+      expect(CHART_CATEGORY_TOKENS).not.toContain(CHART_BRAND);
+    }
   });
 });
 

@@ -13,7 +13,10 @@ import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
-import { CHART_SERIES_SEPARATOR } from "@/foundation/lib/chart-palette";
+import {
+  CHART_BRAND,
+  CHART_SERIES_SEPARATOR,
+} from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const TraceStatsChart = ({
@@ -73,7 +76,7 @@ export const TraceStatsChart = ({
                 <rect
                   width={6}
                   height={6}
-                  fill="var(--nt-chart-cat-1)"
+                  fill={CHART_BRAND}
                   fillOpacity={0.2}
                 />
                 <line
@@ -81,7 +84,7 @@ export const TraceStatsChart = ({
                   y1={0}
                   x2={0}
                   y2={6}
-                  stroke="var(--nt-chart-cat-1)"
+                  stroke={CHART_BRAND}
                   strokeWidth={3}
                 />
               </pattern>
@@ -100,9 +103,10 @@ export const TraceStatsChart = ({
                 <StatsTooltip requestsLabel={t("ai_traces.stats.requests")} />
               }
             />
-            {/* Single-series volume reads the first categorical step, not the
-                brand primary: data colours and state colours are separate
-                palettes, so a bar never implies an alarm. */}
+            {/* One series of request volume: there is no neighbouring hue to
+                collide with, so it can wear the product primary instead of a
+                category slot. A second series here would move to the
+                categorical tokens. */}
             <Bar
               dataKey="count"
               radius={[3, 3, 0, 0]}
@@ -113,9 +117,7 @@ export const TraceStatsChart = ({
                 <Cell
                   key={d.date}
                   fill={
-                    d.date === today
-                      ? "url(#trace-stats-today)"
-                      : "var(--nt-chart-cat-1)"
+                    d.date === today ? "url(#trace-stats-today)" : CHART_BRAND
                   }
                 />
               ))}

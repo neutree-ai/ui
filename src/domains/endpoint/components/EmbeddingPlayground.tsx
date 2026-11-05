@@ -27,6 +27,7 @@ import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-mod
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { clientPostgrest } from "@/foundation/lib/api";
+import { CHART_BRAND } from "@/foundation/lib/chart-palette";
 
 const INITIAL_DOCUMENTS = [
   {
@@ -82,7 +83,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 const CustomScatterPoint = ({ cx, cy, payload }: any) => {
   return (
     <g>
-      <circle cx={cx} cy={cy} r={8} fill="var(--nt-chart-cat-1)" />
+      <circle cx={cx} cy={cy} r={8} fill={CHART_BRAND} />
       <text
         x={cx}
         y={cy}
@@ -285,7 +286,7 @@ export default function EmbeddingPlayground({
                         <Tooltip content={<CustomTooltip />} />
                         <Scatter
                           data={embeddings}
-                          fill="var(--nt-chart-cat-1)"
+                          fill={CHART_BRAND}
                           shape={<CustomScatterPoint />}
                         />
                       </ScatterChart>
