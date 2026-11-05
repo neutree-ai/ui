@@ -39,6 +39,7 @@ import {
   splitGpuEndpointAllocations,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
+import { chartOutlineStyle } from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
@@ -588,6 +589,7 @@ function InventoryAllocationBar({
                   style={{
                     width: `${allocationWidth(allocation)}%`,
                     backgroundColor: color,
+                    ...chartOutlineStyle(),
                   }}
                   aria-label={`${allocation.endpoint}, ${gib(allocation.memoryMiB)} ${t("observations.reservedLower")}`}
                   onMouseEnter={() => setActiveAllocation(allocationKey)}
