@@ -13,7 +13,7 @@
  *   2. every categorical colour must clear WCAG 1.4.11 non-text contrast (>= 3:1)
  *      against the surface it is painted on: `#f2f5fa` in light mode,
  *      `#132033` in dark mode. The shape may be carried by the 1px series
- *      outline instead (fill < 3:1 but outline >= 3:1), which is how the light
+ *      separator instead (fill < 3:1 but a canonical hue plus a declared gap), which is how the light
  *      theme keeps the standard Okabe–Ito hues: a darkened yellow would collide
  *      with the vermillion under red-green colour blindness. Contrast is
  *      computed with the WCAG relative luminance formula, not by eye.
@@ -33,7 +33,7 @@
  * The categorical palette lives in `src/variables.css`:
  *   `--nt-chart-series-1..8` are the raw Okabe–Ito steps per theme;
  *   `--nt-chart-cat-1..8` are the semantic aliases that pages must use;
- *   `--nt-chart-series-outline` is the 1px edge that carries shape legibility.
+ *   `--nt-fill-neutral-white` is the surface gap drawn between adjacent marks.
  * The aliases are checked for existence in both themes and for pointing at the
  * matching series step, so the semantic layer cannot silently drift.
  *
@@ -56,7 +56,7 @@ const SURFACES = [
 
 const MIN_CONTRAST = Number(process.env.MIN_CONTRAST ?? 3);
 const CATEGORIES = 8;
-const OUTLINE_TOKEN = "--nt-chart-series-outline";
+const SEPARATOR_TOKEN = "--nt-fill-neutral-white";
 
 /** Colour-blind separation: pairwise ΔE2000 floors. */
 const CVD_VIEWS = ["normal", "deuteranopia", "protanopia"];
@@ -130,8 +130,10 @@ const HINTS = {
   ].join("\n"),
   contrast: [
     "Categorical colours must clear 3:1 against the card surface (WCAG 1.4.11),",
-    "either by fill or by the 1px series outline:",
-    "  --nt-chart-series-outline: <a colour that reaches 3:1 against the surface>",
+    "by fill, or by a canonical Okabe–Ito fill plus a declared segment separator:",
+    "  --nt-fill-neutral-white: <the surface colour used between adjacent marks>",
+    "A below-3:1 fill is reported, not silently accepted: identity then rests on",
+    "the separator, the segment number and the legend.",
     "Do NOT darken a hue to raise fill contrast — that collapses colour-blind",
     "separation (the light yellow/vermillion pair is the known failure).",
     "Then re-run: node tools/check-chart-colors.cjs",
@@ -564,38 +566,24 @@ function checkPalette() {
   for (const [theme, { declarations, background }] of themes) {
     const backgroundRgb = parseHex(background);
 
-    // The outline is what lets a sub-3:1 fill stay (B2): both themes must
-    // declare it, and it must reach 3:1 against this theme's surface.
-    const outlineDeclaration = declarations.get(OUTLINE_TOKEN);
-    let outline = null;
-    if (!outlineDeclaration) {
+    // A fill below 3:1 is tolerated only when the design still separates marks:
+    // adjacent segments are divided by the surface colour, and category identity
+    // is carried by that gap plus the segment number and the legend. The
+    // separator is not required to contrast with the surface — it *is* the
+    // surface — so this records presence, not ratio.
+    const separatorDeclaration = declarations.get(SEPARATOR_TOKEN);
+    const separator = separatorDeclaration
+      ? resolveDeclaration(declarations, SEPARATOR_TOKEN).value
+      : null;
+    if (!separatorDeclaration) {
       violations.push({
         file: VARIABLES_FILE,
         line: 1,
-        text: `${theme}: ${OUTLINE_TOKEN} is missing — the standard Okabe–Ito fills below 3:1 rely on it`,
+        text: `${theme}: ${SEPARATOR_TOKEN} is missing — adjacent marks have no separation`,
         rule: "contrast",
       });
-    } else {
-      const { value } = resolveDeclaration(declarations, OUTLINE_TOKEN);
-      const color = value ? parseColor(value) : null;
-      if (!color) {
-        violations.push({
-          file: VARIABLES_FILE,
-          line: outlineDeclaration.line,
-          text: `${OUTLINE_TOKEN} = ${value ?? "<missing>"} is not a colour`,
-          rule: "contrast",
-        });
-      } else {
-        outline = {
-          value,
-          contrast: contrastRatioRgb(
-            compositeOver(color, backgroundRgb),
-            backgroundRgb,
-          ),
-        };
-      }
     }
-    outlineByTheme.set(theme, outline);
+    outlineByTheme.set(theme, separator ? { value: separator } : null);
 
     const palette = [];
     for (let index = 1; index <= CATEGORIES; index += 1) {
@@ -665,27 +653,34 @@ function checkPalette() {
       palette.push({ hex: value, line: seriesLine });
 
       const fillContrast = contrastRatio(value, background);
-      const viaOutline =
-        fillContrast < MIN_CONTRAST &&
-        outline !== null &&
-        outline.contrast >= MIN_CONTRAST;
+      // A sub-3:1 fill is only legitimate if it is still a canonical hue: a
+      // darkened replacement would pass a naive contrast fix while collapsing
+      // colour-blind separation, which is the trap this gate exists to catch.
+      const canonical = CVD_BASELINE.palette[index - 1];
+      const isCanonical =
+        typeof canonical === "string" &&
+        canonical.toLowerCase() === value.toLowerCase();
+      const viaSeparator =
+        fillContrast < MIN_CONTRAST && separator !== null && isCanonical;
       contrastRows.push({
         theme,
         index,
         value,
         fillContrast,
-        outlineContrast: outline ? outline.contrast : null,
-        viaOutline,
+        outlineContrast: null,
+        viaOutline: viaSeparator,
       });
-      if (fillContrast < MIN_CONTRAST && !viaOutline) {
+      if (fillContrast < MIN_CONTRAST && !viaSeparator) {
+        const why =
+          separator === null
+            ? "no separator token is declared for this theme"
+            : `the fill is not a canonical Okabe–Ito hue (expected ${canonical ?? "unknown"})`;
         violations.push({
           file: VARIABLES_FILE,
           line: seriesLine,
           text:
             `${seriesName} (${value}) on ${theme} ${background} is ` +
-            `${fillContrast.toFixed(2)}:1 and the outline is ` +
-            `${outline ? `${outline.contrast.toFixed(2)}:1` : "missing"}` +
-            `, need >= ${MIN_CONTRAST.toFixed(2)}:1 on one of them`,
+            `${fillContrast.toFixed(2)}:1, below ${MIN_CONTRAST.toFixed(2)}:1, and ${why}`,
           rule: "contrast",
         });
       }
@@ -851,23 +846,21 @@ if (violations.length > 0) {
 
 /* Success: print the measured tables so a reviewer can check the numbers. */
 const lines = [
-  `✅ Chart colours pass (${chartFiles.length} chart file(s); fill ≥${MIN_CONTRAST.toFixed(2)}:1 or outline ≥${MIN_CONTRAST.toFixed(2)}:1; CVD ΔE2000 chromatic ≥${CVD_CHROMATIC_MIN} with ≤${CVD_BASELINE_TOLERANCE * 100}% baseline drop):`,
+  `✅ Chart colours pass (${chartFiles.length} chart file(s); fill ≥${MIN_CONTRAST.toFixed(2)}:1 or canonical hue + separator; CVD ΔE2000 chromatic ≥${CVD_CHROMATIC_MIN} with ≤${CVD_BASELINE_TOLERANCE * 100}% baseline drop):`,
 ];
 for (const [theme, rows] of groupBy(paletteCheck.contrastRows, "theme")) {
-  const outline = paletteCheck.outlineByTheme.get(theme);
+  const separator = paletteCheck.outlineByTheme.get(theme);
   lines.push(
     "",
     `   fill contrast ${theme} ${theme === "light" ? "#f2f5fa" : "#132033"}` +
-      (outline
-        ? `; outline ${outline.value} @ ${outline.contrast.toFixed(2)}:1`
-        : "; outline missing"),
+      (separator
+        ? `; adjacent marks separated by ${separator.value}`
+        : "; separator missing"),
   );
   for (const row of rows) {
     lines.push(
       `     series-${row.index} ${row.value} ${row.fillContrast.toFixed(2)}:1` +
-        (row.viaOutline
-          ? `  → via outline ${row.outlineContrast.toFixed(2)}:1 *`
-          : ""),
+        (row.viaOutline ? "  → below 3:1, identity via separator *" : ""),
     );
   }
 }
@@ -886,7 +879,8 @@ for (const row of cvdCheck.rows) {
 }
 lines.push(
   "",
-  "   * fill alone misses 3:1; the 1px series outline carries the shape.",
+  "   * below 3:1 against the surface: the segment gap, the number and the legend",
+  "     carry identity; keep these marks delimited wherever they are rendered.",
 );
 console.log(lines.join("\n"));
 

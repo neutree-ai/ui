@@ -140,7 +140,6 @@
 		   composites to 3.88:1 against #f2f5fa, so the mark's shape never depends
 		   on fill contrast alone. Dark fills already clear 3:1, so the dark edge
 		   is only a faint rim that keeps adjacent segments countable. */
-		--nt-chart-series-outline: rgba(17, 24, 39, 0.55);
 		/* Semantic aliases: pages read --nt-chart-cat-*, never the raw series
 		   step, so a category keeps its meaning when the palette is retuned and
 		   the categorical layer can be remapped in one place. */
@@ -349,7 +348,6 @@
 		--nt-chart-series-8: #d1d5db; /* 11.12:1 */
 		/* Series outline. Every fill clears 3:1 here, so the edge is a faint rim
 		   for segment counting rather than a contrast requirement. */
-		--nt-chart-series-outline: rgba(173, 192, 224, 0.24);
 		/* Semantic aliases, mirroring the light theme. */
 		--nt-chart-cat-1: var(--nt-chart-series-1);
 		--nt-chart-cat-2: var(--nt-chart-series-2);

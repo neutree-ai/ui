@@ -69,24 +69,25 @@ export const CHART_STRIPES_BACKGROUND =
  * In dark mode the fills already clear 3:1 and the edge is a faint rim that only
  * helps count adjacent segments.
  */
-export const CHART_SERIES_OUTLINE = "var(--nt-chart-series-outline)";
+/** The gap between two adjacent marks: the surface colour, so segments read as
+ * separate blocks rather than as one bar with dark rings. It flips with the
+ * theme because it is the card fill, not a fixed white. */
+export const CHART_SERIES_SEPARATOR = "var(--nt-fill-neutral-white)";
 
 /** SVG edge for a fill mark: recharts `Bar`/`Cell`/`Pie` take stroke + width. */
 type ChartOutline = { stroke: string; strokeWidth: number };
 
 export function chartMarkOutline(): ChartOutline {
-  return { stroke: CHART_SERIES_OUTLINE, strokeWidth: 1 };
+  return { stroke: CHART_SERIES_SEPARATOR, strokeWidth: 1 };
 }
 
 /** DOM edge for a fill mark (segment div, legend swatch): `outline` draws over
  * the edge without changing the box size, which matters for 6px-tall bars. */
 export function chartOutlineStyle(): {
-  outline: string;
-  outlineOffset: string;
+  boxShadow: string;
 } {
   return {
-    outline: `1px solid ${CHART_SERIES_OUTLINE}`,
-    outlineOffset: "0px",
+    boxShadow: `inset 1px 0 0 ${CHART_SERIES_SEPARATOR}`,
   };
 }
 

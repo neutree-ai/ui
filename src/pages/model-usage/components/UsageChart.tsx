@@ -18,7 +18,7 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import {
   CHART_CATEGORY_TOKENS,
-  CHART_SERIES_OUTLINE,
+  CHART_SERIES_SEPARATOR,
   type ChartMark,
   chartCategoryMark,
   chartMarkStyle,
@@ -498,7 +498,7 @@ export const UsageChart = ({
                     <Cell
                       key={category.key}
                       fill={category.promptFill}
-                      stroke={CHART_SERIES_OUTLINE}
+                      stroke={CHART_SERIES_SEPARATOR}
                       strokeWidth={1}
                     />
                   ))}
@@ -508,7 +508,7 @@ export const UsageChart = ({
                     <Cell
                       key={category.key}
                       fill={category.completionFill}
-                      stroke={CHART_SERIES_OUTLINE}
+                      stroke={CHART_SERIES_SEPARATOR}
                       strokeWidth={1}
                     />
                   ))}
@@ -532,7 +532,7 @@ export const UsageChart = ({
                       stackId="usage"
                       hide={hidden.has(s.key)}
                       fill={stripeFill(mark)}
-                      stroke={CHART_SERIES_OUTLINE}
+                      stroke={CHART_SERIES_SEPARATOR}
                       strokeWidth={1}
                       radius={
                         s.key === series[series.length - 1]?.key

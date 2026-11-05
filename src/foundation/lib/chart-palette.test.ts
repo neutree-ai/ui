@@ -6,7 +6,7 @@ import {
   CHART_CATEGORY_TOKENS,
   CHART_MORE_COLOR,
   CHART_SEQUENTIAL_TOKENS,
-  CHART_SERIES_OUTLINE,
+  CHART_SERIES_SEPARATOR,
   CHART_STRIPES_BACKGROUND,
   chartCategoryColor,
   chartCategoryMark,
@@ -148,22 +148,21 @@ describe("chartMarkStyle", () => {
   });
 });
 
-describe("series outline (B2)", () => {
-  it("reads the outline from a semantic token", () => {
-    expect(CHART_SERIES_OUTLINE).toBe("var(--nt-chart-series-outline)");
+describe("segment separator (B2)", () => {
+  it("separates marks with the surface colour, not a ring", () => {
+    expect(CHART_SERIES_SEPARATOR).toBe("var(--nt-fill-neutral-white)");
   });
 
-  it("gives SVG fill marks a 1px stroke", () => {
+  it("gives SVG fill marks a 1px separator stroke", () => {
     expect(chartMarkOutline()).toEqual({
-      stroke: "var(--nt-chart-series-outline)",
+      stroke: "var(--nt-fill-neutral-white)",
       strokeWidth: 1,
     });
   });
 
-  it("gives DOM fill marks a 1px outline that keeps the box size", () => {
+  it("draws a DOM separator without changing the box size", () => {
     expect(chartOutlineStyle()).toEqual({
-      outline: "1px solid var(--nt-chart-series-outline)",
-      outlineOffset: "0px",
+      boxShadow: "inset 1px 0 0 var(--nt-fill-neutral-white)",
     });
   });
 });
@@ -232,13 +231,13 @@ describe("categorical tokens across themes", () => {
     });
   });
 
-  it("declares the series outline in both themes", () => {
+  it("declares the separator surface in both themes", () => {
     const themes: Array<[string, Map<string, string>]> = [
       ["light", themeTokens(":root")],
       ["dark", themeTokens(".dark")],
     ];
     for (const [theme, tokens] of themes) {
-      expect(tokens.get("--nt-chart-series-outline"), theme).toBeDefined();
+      expect(tokens.get("--nt-fill-neutral-white"), theme).toBeDefined();
     }
   });
 

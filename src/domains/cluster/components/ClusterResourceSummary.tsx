@@ -120,7 +120,7 @@ const UsageMetric = ({
       </div>
       {discrete ? (
         <div
-          className="mt-3 grid h-1.5 gap-px"
+          className="mt-3 grid h-1.5 gap-px bg-[var(--nt-fill-neutral-white)]"
           style={{
             gridTemplateColumns: `repeat(${Math.round(total)}, minmax(0, 1fr))`,
           }}

@@ -569,7 +569,7 @@ function InventoryAllocationBar({
       className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}
     >
       <div className="absolute inset-0 flex overflow-hidden rounded-full">
-        {visible.map((allocation) => {
+        {visible.map((allocation, segmentIndex) => {
           const allocationKey = `${allocation.workspace}:${allocation.endpoint}`;
           const color =
             colorByEndpoint[allocation.endpoint] ??
@@ -589,7 +589,9 @@ function InventoryAllocationBar({
                   style={{
                     width: `${allocationWidth(allocation)}%`,
                     backgroundColor: color,
-                    ...chartOutlineStyle(),
+                    // The gap belongs between two colours, not around the bar:
+                    // the first segment's left edge is the track itself.
+                    ...(segmentIndex > 0 ? chartOutlineStyle() : {}),
                   }}
                   aria-label={`${allocation.endpoint}, ${gib(allocation.memoryMiB)} ${t("observations.reservedLower")}`}
                   onMouseEnter={() => setActiveAllocation(allocationKey)}
@@ -838,6 +840,9 @@ function AllocationBreakdown({
             style={{
               width: `${reserved ? ratio(replica?.kvCacheCapacityMiB, reserved) : 0}%`,
               backgroundImage: KV_STRIPES,
+              // same surface gap as the allocation bar, so a stacked bar reads
+              // as separate blocks in one place and the other
+              boxShadow: "inset 1px 0 0 var(--nt-fill-neutral-white)",
             }}
           />
         </div>

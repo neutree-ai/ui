@@ -13,7 +13,7 @@ import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
-import { CHART_SERIES_OUTLINE } from "@/foundation/lib/chart-palette";
+import { CHART_SERIES_SEPARATOR } from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const TraceStatsChart = ({
@@ -106,7 +106,7 @@ export const TraceStatsChart = ({
             <Bar
               dataKey="count"
               radius={[3, 3, 0, 0]}
-              stroke={CHART_SERIES_OUTLINE}
+              stroke={CHART_SERIES_SEPARATOR}
               strokeWidth={1}
             >
               {days.map((d) => (

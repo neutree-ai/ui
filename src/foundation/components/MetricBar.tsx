@@ -44,31 +44,28 @@ const shapeClasses = {
  * class names, so deriving one from the other with a `[&>div]:` prefix would
  * leave every variant unbuilt. */
 
-// Every fill mark carries the series outline: the standard Okabe–Ito fills do
-// not all clear 3:1 on the light card, so the 1px edge is what makes the shape
-// readable. `outline` is used over `border` because it never changes the box
-// size, which matters for the 6px-tall bar.
-const FILL_OUTLINE =
-  "[outline:1px_solid_var(--nt-chart-series-outline)] [outline-offset:0px]";
-const BAR_FILL_OUTLINE =
-  "[&>div]:[outline:1px_solid_var(--nt-chart-series-outline)] [&>div]:[outline-offset:0px]";
+// Adjacent segments are separated by the surface colour, not outlined: a ring
+// around every block turns a meter into stacked boxes, and on a 6px bar the ring
+// eats most of the fill. The inset shadow draws the gap without changing the box.
+const SEGMENT_GAP =
+  "[&>div+div]:[box-shadow:inset_1px_0_0_var(--nt-fill-neutral-white)]";
 
 export const METRIC_BAR_SERIES_FILL_CLASSES: Record<MetricBarSeries, string> = {
-  blue: `bg-[var(--nt-chart-series-1)] ${FILL_OUTLINE}`,
-  cyan: `bg-[var(--nt-chart-series-2)] ${FILL_OUTLINE}`,
-  purple: `bg-[var(--nt-chart-series-3)] ${FILL_OUTLINE}`,
-  green: `bg-[var(--nt-chart-series-4)] ${FILL_OUTLINE}`,
-  amber: `bg-[var(--nt-chart-series-5)] ${FILL_OUTLINE}`,
-  neutral: `bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)] ${FILL_OUTLINE}`,
+  blue: `bg-[var(--nt-chart-series-1)] `,
+  cyan: `bg-[var(--nt-chart-series-2)] `,
+  purple: `bg-[var(--nt-chart-series-3)] `,
+  green: `bg-[var(--nt-chart-series-4)] `,
+  amber: `bg-[var(--nt-chart-series-5)] `,
+  neutral: `bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)] `,
 };
 
 const seriesClasses: Record<MetricBarSeries, string> = {
-  blue: `[&>div]:bg-[var(--nt-chart-series-1)] ${BAR_FILL_OUTLINE}`,
-  cyan: `[&>div]:bg-[var(--nt-chart-series-2)] ${BAR_FILL_OUTLINE}`,
-  purple: `[&>div]:bg-[var(--nt-chart-series-3)] ${BAR_FILL_OUTLINE}`,
-  green: `[&>div]:bg-[var(--nt-chart-series-4)] ${BAR_FILL_OUTLINE}`,
-  amber: `[&>div]:bg-[var(--nt-chart-series-5)] ${BAR_FILL_OUTLINE}`,
-  neutral: `[&>div]:bg-[var(--nt-fill-neutral-trans-7)] dark:[&>div]:bg-[var(--nt-fill-neutral-trans-5)] ${BAR_FILL_OUTLINE}`,
+  blue: `[&>div]:bg-[var(--nt-chart-series-1)] ${SEGMENT_GAP}`,
+  cyan: `[&>div]:bg-[var(--nt-chart-series-2)] ${SEGMENT_GAP}`,
+  purple: `[&>div]:bg-[var(--nt-chart-series-3)] ${SEGMENT_GAP}`,
+  green: `[&>div]:bg-[var(--nt-chart-series-4)] ${SEGMENT_GAP}`,
+  amber: `[&>div]:bg-[var(--nt-chart-series-5)] ${SEGMENT_GAP}`,
+  neutral: `[&>div]:bg-[var(--nt-fill-neutral-trans-7)] dark:[&>div]:bg-[var(--nt-fill-neutral-trans-5)] ${SEGMENT_GAP}`,
 };
 
 const trackClasses = {
