@@ -993,9 +993,6 @@ function GpuDetailsSheet({
       extraHardwareFields.find((field) => field.key === key)?.label ??
         `observations.hardwareFields.${key}`,
     );
-  const reportedCount = hardwareFields.filter(
-    (key) => hardwareValue(key) !== "—",
-  ).length;
 
   const physical = readings.total;
   const reserved = device.allocatedMiB;
@@ -1072,7 +1069,7 @@ function GpuDetailsSheet({
         </SheetHeader>
 
         <div className="mt-5 space-y-4">
-          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
             <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
               <h3 className="text-sm font-medium">
                 {t("observations.liveResourceState")}
@@ -1211,7 +1208,7 @@ function GpuDetailsSheet({
             </div>
           </section>
 
-          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
             <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
               <h3 className="text-sm font-medium">
                 {t("observations.vramAllocation")}
@@ -1254,27 +1251,6 @@ function GpuDetailsSheet({
                   const index =
                     sorted.findIndex((item) => keyOf(item) === key) + 1;
                   const color = colorOf(allocation);
-                  const endpointUsed = reading(
-                    samples,
-                    "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                    allocation.allocations[0]?.node ?? device.node,
-                    allocation.allocations[0]?.uuid ?? device.uuid,
-                    {
-                      ...allocation.allocations[0],
-                      endpoint: allocation.endpoint,
-                      workspace: allocation.workspace,
-                    } as GpuAllocation,
-                  );
-                  const endpointActual = endpointUsed
-                    ? endpointUsed.value / 1024 ** 2
-                    : null;
-                  const endpointPercent =
-                    endpointActual != null && allocation.memoryMiB > 0
-                      ? Math.min(
-                          100,
-                          (endpointActual / allocation.memoryMiB) * 100,
-                        )
-                      : null;
                   const otherMiB =
                     allocation.modelWeightsMiB != null &&
                     allocation.kvCacheCapacityMiB != null
@@ -1345,39 +1321,83 @@ function GpuDetailsSheet({
                         </Link>
                       </div>
                       {isOpen && (
-                        <div className="space-y-2.5 border-t border-[var(--nt-stroke-neutral-trans-2)] px-3 py-3">
-                          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">
-                                {t("observations.actual")}
-                              </span>{" "}
-                              <strong className="tabular-nums">
-                                {gib(endpointActual)}
-                              </strong>
-                              <span className="text-muted-foreground">
-                                {" "}
-                                / {gib(allocation.memoryMiB)}
-                              </span>
-                              {endpointPercent != null && (
-                                <span className="ml-2 text-[11px] text-muted-foreground">
-                                  {t("observations.actualOfReserved", {
-                                    percent: Math.round(endpointPercent),
-                                  })}
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {t("observations.replicaLabel")}{" "}
-                              {allocation.allocations.length} ·{" "}
-                              {allocation.workspace} ·{" "}
-                              {allocation.allocations[0]?.vdevice ??
-                                t("observations.fullCard")}
-                            </p>
-                          </div>
+                        <div className="space-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] px-3 py-2.5">
+                          {/* One place for each number. The row above already
+                              says how much is reserved, so this block names the
+                              object and then gives each replica its own
+                              actual / reserved — never the total twice. */}
+                          <p className="text-[11px] text-muted-foreground">
+                            {t("observations.workspaceLabel")}{" "}
+                            {allocation.workspace} ·{" "}
+                            {t("observations.replicaLabel")}{" "}
+                            {allocation.allocations.length}
+                            {allocation.allocations.every(
+                              (item) => !item.vdevice,
+                            )
+                              ? ` · ${t("observations.fullCard")}`
+                              : ""}
+                          </p>
+                          <ul className="space-y-1">
+                            {allocation.allocations.map((item) => {
+                              const used = reading(
+                                samples,
+                                "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                                item.node,
+                                item.uuid,
+                                item,
+                              );
+                              const usedMiB = used
+                                ? used.value / 1024 ** 2
+                                : null;
+                              const percent =
+                                usedMiB != null && item.memoryMiB > 0
+                                  ? Math.min(
+                                      100,
+                                      (usedMiB / item.memoryMiB) * 100,
+                                    )
+                                  : null;
+                              const identity =
+                                item.replica || item.instance || "—";
+                              const extra =
+                                item.instance && item.instance !== item.replica
+                                  ? item.instance
+                                  : null;
+                              return (
+                                <li
+                                  key={`${item.replica}:${item.instance}`}
+                                  className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs"
+                                >
+                                  <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
+                                    {identity}
+                                    {item.vdevice
+                                      ? ` · vGPU ${item.vdevice}`
+                                      : ""}
+                                    {extra ? ` · ${extra}` : ""}
+                                  </span>
+                                  <span className="shrink-0 whitespace-nowrap tabular-nums">
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {t("observations.actual")}
+                                    </span>{" "}
+                                    <strong className="font-semibold">
+                                      {gib(usedMiB)}
+                                    </strong>{" "}
+                                    <span className="text-muted-foreground">
+                                      / {gib(item.memoryMiB)}
+                                    </span>
+                                    {percent != null && (
+                                      <span className="ml-1.5 text-[11px] text-muted-foreground">
+                                        {percent.toFixed(0)}%
+                                      </span>
+                                    )}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
                           {/* The legend of this row: the same swatches the bar
-                              and the tooltip use, so a colour stays explainable
-                              where it is opened. */}
-                          <ul className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
+                              uses, so the composition is explainable where the
+                              row is opened. */}
+                          <ul className="grid grid-cols-1 gap-x-4 gap-y-1 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2 text-xs sm:grid-cols-3">
                             <li className="flex min-w-0 items-center gap-1.5">
                               <span
                                 aria-hidden
@@ -1420,32 +1440,6 @@ function GpuDetailsSheet({
                               </strong>
                             </li>
                           </ul>
-                          {allocation.allocations.map((item) => {
-                            const used = reading(
-                              samples,
-                              "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                              item.node,
-                              item.uuid,
-                              item,
-                            );
-                            const usedMiB = used
-                              ? used.value / 1024 ** 2
-                              : null;
-                            return (
-                              <p
-                                key={`${item.replica}:${item.instance}`}
-                                className="flex items-center justify-between gap-2 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2 text-[11px]"
-                              >
-                                <span className="truncate font-mono text-muted-foreground">
-                                  {item.replica || item.instance || "—"}
-                                </span>
-                                <span className="whitespace-nowrap tabular-nums">
-                                  {t("observations.actual")} {gib(usedMiB)} /{" "}
-                                  {gib(item.memoryMiB)}
-                                </span>
-                              </p>
-                            );
-                          })}
                         </div>
                       )}
                     </li>
@@ -1460,17 +1454,11 @@ function GpuDetailsSheet({
             </div>
           </section>
 
-          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+          <section className="rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]">
             <header className="flex items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
               <h3 className="text-sm font-medium">
                 {t("observations.hardware")}
               </h3>
-              <span className="text-[11px] tabular-nums text-muted-foreground">
-                {t("observations.hardwareReported", {
-                  reported: reportedCount,
-                  total: hardwareFields.length,
-                })}
-              </span>
             </header>
             <dl className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 py-3 text-sm sm:grid-cols-3">
               {hardwareFields.map((key) => (

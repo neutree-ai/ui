@@ -2941,7 +2941,6 @@
 		"endpointCount": "{{count}} Endpoints",
 		"reservedAmount": "{{memory}} reserved",
 		"reservedTotal": "Reserved {{memory}}",
-		"hardwareReported": "{{reported}} / {{total}} reported",
 		"expandAllocation": "Expand {{endpoint}} allocation",
 		"collapseAllocation": "Collapse {{endpoint}} allocation",
 		"workspaceLabel": "Workspace",

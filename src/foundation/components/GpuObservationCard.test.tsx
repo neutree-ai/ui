@@ -321,7 +321,7 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).not.toContain("observations.status.no_data");
   });
 
-  it("keeps the nine hardware fields stable and counts what was reported", () => {
+  it("keeps the nine hardware fields stable and leaves missing ones empty", () => {
     render(
       card({
         samples: [
@@ -340,7 +340,8 @@ describe("GPU observation row", () => {
     within(dialog).getByText("Gen 5");
     // An unreported field keeps its slot: the grid must not reflow per device.
     within(dialog).getByText("observations.hardwareFields.numa_node");
-    expect(dialog.textContent).toContain("observations.hardwareReported");
+    // No reported counter: the fixed grid shows the gaps itself.
+    expect(dialog.textContent).not.toContain("observations.hardwareReported");
     expect(within(dialog).getAllByText("—").length).toBeGreaterThan(0);
   });
 
