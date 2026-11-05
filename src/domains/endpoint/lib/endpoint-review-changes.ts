@@ -1,6 +1,6 @@
 import type { Endpoint } from "@/domains/endpoint/types";
 
-export type EndpointReviewChange = {
+type EndpointReviewChange = {
   step: number;
   label: string;
   before: unknown;

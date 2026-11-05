@@ -375,7 +375,7 @@
   "src/domains/model-registry/lib/provisioning.ts": "2aedc935197cf24ee0264bbaceac802f",
   "src/foundation/lib/kv-cache.ts": "ece671374e16c9db6a62fd96f870c74d",
   "src/foundation/lib/model-info-read.ts": "b9d8f811da92aec9acbc3842a2436d0e",
-  "src/domains/endpoint/components/KVCacheEstimate.tsx": "b45cbc02a62d8a06b3f2850d418ede31",
+  "src/domains/endpoint/components/KVCacheEstimate.tsx": "0d1eb5ba57181b8b27233264b2d5babb",
   "src/domains/endpoint/lib/engine-cache-args.ts": "c5d778e0a48e9ecce84b9f77b425fa44",
   "src/domains/cluster/components/ClusterResourceSummary.tsx": "e80fba279b441302d0f23df28df2cf61",
   "src/foundation/components/MetricBar.tsx": "14987b20b2ebed5a2e4e248b87aea06e",
@@ -396,7 +396,7 @@
   "src/foundation/lib/image-reference.ts": "8200f52a33e48a24b0d355fb856ff946",
   "src/foundation/components/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346",
   "src/domains/model-registry/components/ModelDetailDrawer.tsx": "8b98362e1c079082afdd76231d80c139",
-  "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "43eb0771774a85ee7113c7dc9a667e71",
+  "src/domains/endpoint/components/EndpointWeightsEstimate.tsx": "e378b8aa0c29f4e63d98de9e0ef0a0cd",
   "src/domains/model-catalog/components/CatalogYamlEditor.tsx": "7c9121c272cb7f89243af2c2ec3bd090",
   "src/foundation/components/InfoHint.tsx": "8e904dedae4bc761cc4c7bcbad2705ba",
   "src/foundation/lib/model-info-display.ts": "5fbbf46d0c5708e51ce35f46c75c5e38",
@@ -516,5 +516,5 @@
   "src/foundation/components/Disclosure.tsx": "832be5539563aff071cc242bc59bb5ee",
   "src/foundation/components/KeyValueList.tsx": "917bebfe767085732b0134f47b6f9ea2",
   "src/domains/endpoint/lib/cache-manager-status.ts": "8e3992f628b6c7c383e86fc4021b54c3",
-  "src/domains/endpoint/lib/endpoint-review-changes.ts": "34d564206ecebb792dde684cb5401d13"
+  "src/domains/endpoint/lib/endpoint-review-changes.ts": "87e90a3848421319c8fa70bc426125c4"
 }
