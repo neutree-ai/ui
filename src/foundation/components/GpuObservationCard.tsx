@@ -9,6 +9,11 @@ import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -331,10 +336,22 @@ function EndpointAllocationTooltip({
   );
 
   return (
-    <TooltipContent className="w-[300px] max-w-[calc(100vw-32px)] p-3">
+    <HoverCardContent
+      side="top"
+      className="w-[300px] max-w-[calc(100vw-32px)] p-3"
+      data-testid="endpoint-allocation-preview"
+    >
       <div className="min-w-0">
+        {/* The name is the way into the object: the same link the sheet's list
+            offers, so a tooltip is not a dead end. An inline anchor keeps its
+            hit box on the text; a block one collapses here. */}
         <p className="break-all text-sm font-semibold leading-5">
-          {allocation.endpoint}
+          <Link
+            to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
+            className="text-primary hover:underline focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
+          >
+            {allocation.endpoint}
+          </Link>
         </p>
         <p className="mt-0.5 break-all text-[11px] leading-4 text-muted-foreground">
           {allocation.model || <EmptyValue />}
@@ -394,7 +411,7 @@ function EndpointAllocationTooltip({
           </div>
         </div>
       </div>
-    </TooltipContent>
+    </HoverCardContent>
   );
 }
 
@@ -581,8 +598,8 @@ function InventoryAllocationBar({
             cardUsedMiB,
           );
           return (
-            <Tooltip key={allocationKey}>
-              <TooltipTrigger asChild>
+            <HoverCard key={allocationKey} openDelay={120} closeDelay={80}>
+              <HoverCardTrigger asChild>
                 <button
                   type="button"
                   className="relative h-full shrink-0 overflow-hidden border-0 p-0 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--nt-stroke-outstanding-base)] focus-visible:outline-offset-1"
@@ -620,18 +637,18 @@ function InventoryAllocationBar({
                     />
                   )}
                 </button>
-              </TooltipTrigger>
+              </HoverCardTrigger>
               <EndpointAllocationTooltip
                 allocation={allocation}
                 color={color}
                 actualUsedMiB={actualUsedMiB}
               />
-            </Tooltip>
+            </HoverCard>
           );
         })}
         {hidden.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <HoverCard openDelay={120} closeDelay={80}>
+            <HoverCardTrigger asChild>
               <button
                 type="button"
                 className="h-full shrink-0 border-0 bg-[var(--nt-fill-neutral-trans-7)] p-0 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--nt-stroke-outstanding-base)] focus-visible:outline-offset-1"
@@ -656,8 +673,12 @@ function InventoryAllocationBar({
                   +{hidden.length}
                 </span>
               </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-md">
+            </HoverCardTrigger>
+            <HoverCardContent
+              side="top"
+              className="max-w-md"
+              data-testid="gpu-more-preview"
+            >
               <p className="font-medium">
                 {t("observations.moreAllocations", { count: hidden.length })}
               </p>
@@ -682,8 +703,8 @@ function InventoryAllocationBar({
                   </div>
                 ))}
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </HoverCardContent>
+          </HoverCard>
         )}
       </div>
     </div>

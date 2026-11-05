@@ -185,7 +185,13 @@ describe("GPU observation row", () => {
     screen.getByTestId("endpoint-segment-remaining-pattern");
     screen.getByTestId("endpoint-segment-actual-marker");
 
-    const tooltip = await screen.findByRole("tooltip");
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    // The name is a way into the object, not just a label.
+    expect(
+      within(tooltip)
+        .getByRole("link", { name: "instance" })
+        .getAttribute("href"),
+    ).toBe("/default/endpoints/show/instance");
     expect(tooltip.textContent).toContain("instance");
     expect(tooltip.textContent).toContain("observations.modelWeights");
     expect(tooltip.textContent).toContain("2.0 GiB");
@@ -239,7 +245,7 @@ describe("GPU observation row", () => {
     });
     fireEvent.focus(more);
 
-    const tooltip = await screen.findByRole("tooltip");
+    const tooltip = await screen.findByTestId("gpu-more-preview");
     expect(tooltip.textContent).toContain("endpoint-9");
     expect(tooltip.textContent).toContain("1.0 GiB");
   });
