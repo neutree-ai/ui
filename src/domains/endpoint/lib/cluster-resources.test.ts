@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FULL_T4,
   makeGpuDevice,
   makeNodeResources,
   makeResourceInfo,
@@ -123,6 +124,48 @@ describe("parseClusterResources", () => {
         total: 4,
       },
     ]);
+  });
+
+  it("prefers physical device counts when aggregate accelerator counts disagree", () => {
+    const h100 = (uuid: string, overrides = {}) =>
+      makeGpuDevice(uuid, FULL_T4, { product: "H100", ...overrides });
+    const resourceInfo: ClusterResourceInfo = {
+      allocatable: makeResourceInfo(100, 256, {
+        H100: { quantity: 4 },
+        L40S: { quantity: 4 },
+      }),
+      available: makeResourceInfo(80, 200, {
+        H100: { quantity: 2 },
+        L40S: { quantity: 3 },
+      }),
+      node_resources: {
+        "gpu-node-a": makeNodeResources({
+          devices: [
+            h100("h100-free"),
+            h100("h100-partial", {
+              available: { memory_mib: 1, core_units: 50 },
+            }),
+            h100("h100-unhealthy", { health: false }),
+          ],
+        }),
+        "gpu-node-b": makeNodeResources({
+          devices: [makeGpuDevice("l40s-free", FULL_T4, { product: "L40S" })],
+        }),
+      },
+    };
+
+    const result = parseClusterResources(resourceInfo, mockTranslate);
+    const counts = Object.fromEntries(
+      result.acceleratorOptions.map((option) => [
+        option.product,
+        { available: option.available, total: option.total },
+      ]),
+    );
+
+    expect(counts).toEqual({
+      H100: { available: 1, total: 3 },
+      L40S: { available: 1, total: 1 },
+    });
   });
 
   it("omits unknown accelerator memory totals instead of setting undefined", () => {

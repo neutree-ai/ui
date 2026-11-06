@@ -5,6 +5,7 @@ import {
   estimateKvCache,
   type KvCacheEstimate,
   type KvCacheFactor,
+  unreportedFactorKeys,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
@@ -337,6 +338,35 @@ describe("estimateKvCache", () => {
         bytesPerElement: 2,
       }),
     ).toMatchObject({ ok: false, reason: "missing-fields" });
+  });
+});
+
+describe("unreportedFactorKeys", () => {
+  it("lists each unstated value once, sum and min terms included", () => {
+    const value = (key: string, source: "unstated" | "auto") =>
+      ({ kind: "value", key, value: 1, source }) as const;
+    const estimate = {
+      components: [
+        {
+          factors: [
+            value("num_hidden_layers", "unstated"),
+            value("head_dim", "auto"),
+            {
+              kind: "sum",
+              key: "width",
+              value: 2,
+              terms: [value("sliding_window", "unstated")],
+            },
+          ],
+        },
+        { factors: [value("num_hidden_layers", "unstated")] },
+      ],
+    } as unknown as KvCacheEstimate;
+
+    expect(unreportedFactorKeys(estimate)).toEqual([
+      "num_hidden_layers",
+      "sliding_window",
+    ]);
   });
 });
 

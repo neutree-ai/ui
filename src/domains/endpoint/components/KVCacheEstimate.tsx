@@ -2,15 +2,19 @@ import {
   type ReactNode,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -41,10 +45,27 @@ import {
   type KvCacheResult,
   type KvCacheSource,
   type LinearStateCheckpointPolicy,
+  unreportedFactorKeys as listUnreportedFactorKeys,
+  NOTED_KV_CACHE_SOURCES,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";
+
+export type KVCacheEstimateState =
+  | {
+      kind: "ready";
+      totalGb: number;
+      tokensPerSequence: number | null;
+      sequences: number | null;
+      precision: KvCachePrecisionId | "";
+      family: string;
+    }
+  | {
+      kind: "unavailable";
+      reason: string;
+      missingFields?: string[];
+    };
 
 /**
  * KV cache size for the selected model, shown with the formula it came from.
@@ -127,28 +148,23 @@ const percent = new Intl.NumberFormat("en", {
 const bytesOf = (id: KvCachePrecisionId | ""): number | null =>
   KV_CACHE_PRECISIONS.find((precision) => precision.id === id)?.bytes ?? null;
 
-/** Provenance worth marking. "auto" is the ordinary case and "input" is visibly
- * the user's own entry; tagging either would only add noise to every factor. */
-const SourceTag = ({ source }: { source: KvCacheSource }) => {
+/** Provenance is an annotation on a factor, not another factor. Keeping it
+ * outside the split tag and at caption weight preserves the distinction without
+ * making every row read as three equally important values. */
+const SourceNote = ({ source }: { source: KvCacheSource }) => {
   const { t } = useTranslation();
 
-  if (
-    source !== "derived" &&
-    source !== "manual" &&
-    source !== "unstated" &&
-    source !== "deployment"
-  ) {
+  if (!NOTED_KV_CACHE_SOURCES.has(source)) {
     return null;
   }
 
   return (
-    <Badge
-      variant="outline"
-      className="ml-1 px-1 py-0 text-[10px] font-normal"
+    <span
+      className="text-[10px] font-normal text-muted-foreground/75"
       title={t(`endpoints.kvCache.sourceHints.${source}`)}
     >
-      {t(`endpoints.kvCache.sources.${source}`)}
-    </Badge>
+      ({t(`endpoints.kvCache.sources.${source}`)})
+    </span>
   );
 };
 
@@ -162,16 +178,25 @@ const FactorTerm = ({
   source: KvCacheSource;
 }) => {
   const { t } = useTranslation();
+  const sourceHint =
+    source === "unstated"
+      ? t(`endpoints.kvCache.sourceHints.${source}`)
+      : undefined;
 
   return (
-    <span className="whitespace-nowrap">
-      <span className="text-muted-foreground">
-        {t(`endpoints.kvCache.factors.${factorKey}`)}
-      </span>{" "}
-      <span className="font-medium tabular-nums">
-        {groupedNumber.format(value)}
+    <span
+      className="inline-flex items-center gap-1 whitespace-nowrap font-mono text-[11px] leading-4"
+      title={sourceHint}
+    >
+      <span className="inline-flex overflow-hidden rounded-[var(--nt-radius-checkbox)] border bg-background">
+        <span className="inline-flex items-center bg-[var(--nt-fill-neutral-opaque-1)] px-1.5 py-1 text-muted-foreground">
+          {t(`endpoints.kvCache.factors.${factorKey}`)}
+        </span>
+        <span className="inline-flex items-center border-l bg-background px-1.5 py-1 font-medium tabular-nums text-foreground">
+          {groupedNumber.format(value)}
+        </span>
       </span>
-      <SourceTag source={source} />
+      <SourceNote source={source} />
     </span>
   );
 };
@@ -181,13 +206,17 @@ const Factor = ({ factor }: { factor: KvCacheFactor }) => {
 
   if (factor.kind === "sum" || factor.kind === "min") {
     return (
-      <span className="whitespace-nowrap">
-        {factor.kind === "min" ? "min" : null}
-        {"("}
+      <span className="inline-flex min-w-0 flex-wrap items-center gap-1 font-mono text-[11px] leading-4">
+        {factor.kind === "min" ? (
+          <span className="font-medium text-muted-foreground">min</span>
+        ) : null}
+        <span className="text-muted-foreground">(</span>
         {factor.terms.map((term, index) => (
-          <span key={term.key}>
+          <span key={term.key} className="inline-flex items-center gap-1">
             {index > 0 ? (
-              <span className="mx-1">{factor.kind === "min" ? "," : "+"}</span>
+              <span className="text-muted-foreground">
+                {factor.kind === "min" ? "," : "+"}
+              </span>
             ) : null}
             <FactorTerm
               factorKey={term.key}
@@ -196,9 +225,12 @@ const Factor = ({ factor }: { factor: KvCacheFactor }) => {
             />
           </span>
         ))}
-        {")"}{" "}
-        <span className="text-muted-foreground">
-          = {groupedNumber.format(factor.value)}
+        <span className="text-muted-foreground">)</span>
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <span className="text-muted-foreground">=</span>
+          <span className="rounded-[var(--nt-radius-checkbox)] border bg-muted/35 px-1.5 py-1 font-medium tabular-nums">
+            {groupedNumber.format(factor.value)}
+          </span>
         </span>
       </span>
     );
@@ -343,10 +375,10 @@ const ComponentRow = ({
 
   return (
     <div
-      className="rounded border border-transparent px-1 py-0.5 hover:border-border"
+      className="border-t pt-3 first:border-t-0 first:pt-0"
       data-testid={`kv-cache-component-${component.key}`}
     >
-      <div className="flex flex-wrap items-baseline gap-x-2 text-xs">
+      <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-medium">
           {t(`endpoints.kvCache.components.${component.key}`)}
         </span>
@@ -363,17 +395,23 @@ const ComponentRow = ({
           </span>
         )}
       </div>
-      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         {component.factors.map((factor, index) => (
-          <span key={factor.key} className="flex items-center gap-2">
+          <span
+            key={factor.key}
+            className="inline-flex min-w-0 items-baseline gap-1.5 font-mono text-[11px]"
+          >
             {index > 0 ? (
               <span className="text-muted-foreground">×</span>
             ) : null}
             <Factor factor={factor} />
           </span>
         ))}
-        <span className="text-muted-foreground">
-          ÷ {groupedNumber.format(BYTES_PER_GB)}
+        <span className="inline-flex items-center gap-1.5 font-mono text-[11px]">
+          <span className="text-muted-foreground">÷</span>
+          <span className="rounded-[var(--nt-radius-checkbox)] border bg-muted/35 px-1.5 py-1 font-medium tabular-nums">
+            {groupedNumber.format(BYTES_PER_GB)}
+          </span>
         </span>
       </div>
     </div>
@@ -546,6 +584,15 @@ const CountField = ({
 }) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const showsSource =
+    NOTED_KV_CACHE_SOURCES.has(field.source) || field.source === "unstated";
+  const sourceHint = showsSource
+    ? t(`endpoints.kvCache.sourceHints.${field.source}`)
+    : null;
+  const ownerHint = ownedBy
+    ? t("endpoints.kvCache.ownedBy", { control: ownedBy })
+    : null;
+  const hint = [sourceHint, ownerHint].filter(Boolean).join(" ");
   // Where to put the caret once this render's reformat lands — set in the
   // change handler, from the digit it followed rather than a character
   // index, and applied after the DOM has the new (possibly longer or
@@ -574,10 +621,7 @@ const CountField = ({
       <div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {label}
-          <SourceTag source={field.source} />
-          <InfoHint
-            label={t("endpoints.kvCache.ownedBy", { control: ownedBy })}
-          />
+          {hint && <InfoHint label={hint} />}
         </div>
         <div
           className="mt-1 flex h-9 items-center font-medium tabular-nums"
@@ -592,10 +636,10 @@ const CountField = ({
 
   return (
     <div>
-      <label className="text-xs text-muted-foreground" htmlFor={id}>
-        {label}
-        <SourceTag source={field.source} />
-      </label>
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <label htmlFor={id}>{label}</label>
+        {hint && <InfoHint label={hint} />}
+      </div>
       <Input
         ref={inputRef}
         id={id}
@@ -625,7 +669,8 @@ export const KVCacheEstimate = ({
   read,
   engineArgs = NO_ENGINE_CACHE_ARGS,
   controls = NO_ENGINE_CACHE_ARG_CONTROLS,
-  onEstimate,
+  stackFields = false,
+  onStateChange,
 }: {
   read: ModelInfoRead;
   /** What this deployment's engine args say about context and concurrency.
@@ -641,22 +686,31 @@ export const KVCacheEstimate = ({
    * what-if the deployment does not follow.
    */
   controls?: EngineCacheArgControls;
+  /** The estimator is often placed in a narrow persistent rail. Stacking its
+   * fields keeps them readable instead of squeezing three columns into it. */
+  stackFields?: boolean;
   /**
-   * Reports the panel's current total (in GB), or null while it cannot compute
-   * one — a caller combining this with a declared weights figure needs the
-   * number, not just the rendering of it. Fires on every recompute, including
-   * unmount (via the effect cleanup path a caller may wire up), so a stale
-   * total never lingers once this panel stops mounting.
+   * Reports what the panel currently works out to — the total and the inputs
+   * behind it, or why there is none — as it recomputes. A caller combining it
+   * with a declared weights figure needs the number, not just the rendering of
+   * it; while no model is selected or the read is not ready it is unavailable.
    */
-  onEstimate?: (gb: number | null) => void;
+  onStateChange?: (state: KVCacheEstimateState) => void;
 }) => {
+  // Why the checkpoint cannot be estimated from, or null once it has been read;
+  // the ready path's state comes from the Estimator, which knows the result.
+  const unavailableReason =
+    read.state === "ready"
+      ? null
+      : read.state === "unread"
+        ? `unread-${read.reason}`
+        : read.state;
+
   useEffect(() => {
-    if (read.state !== "ready") {
-      onEstimate?.(null);
+    if (unavailableReason !== null) {
+      onStateChange?.({ kind: "unavailable", reason: unavailableReason });
     }
-    // Only the non-ready paths are handled here — the ready path's total comes
-    // from the Estimator itself, which knows the actual computed result.
-  }, [read.state, onEstimate]);
+  }, [unavailableReason, onStateChange]);
 
   if (read.state === "none") {
     return null;
@@ -664,9 +718,7 @@ export const KVCacheEstimate = ({
 
   if (read.state !== "ready") {
     return (
-      <Panel
-        state={read.state === "unread" ? `unread-${read.reason}` : read.state}
-      >
+      <Panel state={unavailableReason ?? read.state}>
         <div
           className="text-sm text-muted-foreground"
           data-testid="kv-cache-notice"
@@ -682,7 +734,8 @@ export const KVCacheEstimate = ({
       info={read.info}
       engineArgs={engineArgs}
       controls={controls}
-      onEstimate={onEstimate}
+      stackFields={stackFields}
+      onStateChange={onStateChange}
     />
   );
 };
@@ -751,12 +804,14 @@ const Estimator = ({
   info,
   engineArgs,
   controls,
-  onEstimate,
+  stackFields,
+  onStateChange,
 }: {
   info: ModelInfo;
   engineArgs: EngineCacheArgs;
   controls: EngineCacheArgControls;
-  onEstimate?: (gb: number | null) => void;
+  stackFields: boolean;
+  onStateChange?: (state: KVCacheEstimateState) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -811,87 +866,142 @@ const Estimator = ({
   const indexes = hasIndexer(info);
   const drafts = hasDraftModules(info);
 
-  const checkpointPolicy: LinearStateCheckpointPolicy =
-    checkpointInterval.trim() === ""
-      ? { kind: "prompt-end" }
-      : { kind: "fixed-interval", tokens: parseCount(checkpointInterval) };
+  const tokensSource = tokensField.source;
+  const sequencesSource = sequencesField.source;
+  const result = useMemo(() => {
+    const checkpointPolicy: LinearStateCheckpointPolicy =
+      checkpointInterval.trim() === ""
+        ? { kind: "prompt-end" }
+        : { kind: "fixed-interval", tokens: parseCount(checkpointInterval) };
 
-  const result = estimateKvCache({
+    return estimateKvCache({
+      info,
+      tokensPerSequence: parseCount(tokens),
+      sequences: parseCount(sequences),
+      tokensSource,
+      sequencesSource,
+      bytesPerElement: bytesOf(precision),
+      recurrentStateBytesPerElement: bytesOf(recurrentPrecision),
+      indexerBytesPerElement: bytesOf(indexerPrecision),
+      checkpointPolicy,
+      includeLinearState,
+      includeDraftKvCache,
+    });
+  }, [
     info,
-    tokensPerSequence: parseCount(tokens),
-    sequences: parseCount(sequences),
-    tokensSource: tokensField.source,
-    sequencesSource: sequencesField.source,
-    bytesPerElement: bytesOf(precision),
-    recurrentStateBytesPerElement: bytesOf(recurrentPrecision),
-    indexerBytesPerElement: bytesOf(indexerPrecision),
-    checkpointPolicy,
+    tokens,
+    sequences,
+    tokensSource,
+    sequencesSource,
+    precision,
+    recurrentPrecision,
+    indexerPrecision,
+    checkpointInterval,
     includeLinearState,
     includeDraftKvCache,
-  });
+  ]);
+  const unreportedFactorKeys = result.ok
+    ? listUnreportedFactorKeys(result)
+    : [];
+  const unreportedFactorLabels = unreportedFactorKeys
+    .map((key) => t(`endpoints.kvCache.factors.${key}`))
+    .join(", ");
 
-  const resultGb = result.ok ? result.totalGb : null;
   useEffect(() => {
-    onEstimate?.(resultGb);
-  }, [resultGb, onEstimate]);
+    onStateChange?.(
+      result.ok
+        ? {
+            kind: "ready",
+            totalGb: result.totalGb,
+            tokensPerSequence: parseCount(tokens),
+            sequences: parseCount(sequences),
+            precision,
+            family: result.family,
+          }
+        : {
+            kind: "unavailable",
+            reason: result.reason,
+            missingFields: result.missingFields,
+          },
+    );
+  }, [onStateChange, precision, result, sequences, tokens]);
+
+  // Missing checkpoint architecture cannot be repaired through these inputs:
+  // offering them beside a refusal makes the panel look broken and invites the
+  // reader to keep changing values that cannot affect the answer.
+  const inputsAffectResult = result.ok || result.reason === "invalid-input";
 
   return (
     <Panel state={result.ok ? result.family : result.reason}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <CountField
-          id="kv-cache-tokens"
-          label={t(
-            "endpoints.kvCache.tokensPerSequence",
-            "Tokens per sequence",
-          )}
-          field={tokensField}
-          value={tokens}
-          ownedBy={controls.context}
-        />
-        <CountField
-          id="kv-cache-sequences"
-          label={t("endpoints.kvCache.sequences", "Concurrent sequences")}
-          field={sequencesField}
-          value={sequences}
-          ownedBy={controls.concurrency}
-        />
-        <div>
-          <label
-            className="text-xs text-muted-foreground"
-            htmlFor="kv-cache-precision"
-          >
-            {t("endpoints.kvCache.precision", "KV precision")}
-          </label>
-          <Select
-            value={precision}
-            onValueChange={(value) => setPrecision(value as KvCachePrecisionId)}
-          >
-            <SelectTrigger
-              id="kv-cache-precision"
-              className="mt-1"
-              data-testid="kv-cache-precision"
-            >
-              <SelectValue
-                placeholder={t(
-                  "endpoints.kvCache.precisionPlaceholder",
-                  "Select a precision",
-                )}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {KV_CACHE_PRECISIONS.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  {t(`endpoints.kvCache.precisions.${option.id}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {linear || indexes || drafts ? (
+      {inputsAffectResult && (
         <div
-          className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"
+          className={
+            stackFields
+              ? "grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2"
+              : "grid grid-cols-1 gap-3 sm:grid-cols-3"
+          }
+        >
+          <CountField
+            id="kv-cache-tokens"
+            label={t(
+              "endpoints.kvCache.tokensPerSequence",
+              "Tokens per sequence",
+            )}
+            field={tokensField}
+            value={tokens}
+            ownedBy={controls.context}
+          />
+          <CountField
+            id="kv-cache-sequences"
+            label={t("endpoints.kvCache.sequences", "Concurrent sequences")}
+            field={sequencesField}
+            value={sequences}
+            ownedBy={controls.concurrency}
+          />
+          <div>
+            <label
+              className="text-xs text-muted-foreground"
+              htmlFor="kv-cache-precision"
+            >
+              {t("endpoints.kvCache.precision", "KV precision")}
+            </label>
+            <Select
+              value={precision}
+              onValueChange={(value) =>
+                setPrecision(value as KvCachePrecisionId)
+              }
+            >
+              <SelectTrigger
+                id="kv-cache-precision"
+                className="mt-1"
+                data-testid="kv-cache-precision"
+              >
+                <SelectValue
+                  placeholder={t(
+                    "endpoints.kvCache.precisionPlaceholder",
+                    "Select a precision",
+                  )}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {KV_CACHE_PRECISIONS.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {t(`endpoints.kvCache.precisions.${option.id}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {inputsAffectResult && (linear || indexes || drafts) ? (
+        <div
+          className={
+            stackFields
+              ? "mt-3 grid grid-cols-1 gap-3"
+              : "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"
+          }
           data-testid="kv-cache-policy-inputs"
         >
           {linear ? (
@@ -952,7 +1062,7 @@ const Estimator = ({
         </div>
       ) : null}
 
-      {linear || drafts ? (
+      {inputsAffectResult && (linear || drafts) ? (
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
           {linear ? (
             <Toggle
@@ -1007,40 +1117,51 @@ const Estimator = ({
               />
             </span>
           </div>
-          {/* The multiplied-out formula is behind a disclosure, not a hover
-              bubble. It is several rows of factors carrying their own
-              provenance — too much for a tooltip to hold legibly — and it is
-              reference material a reader opens when they want to check the
-              arithmetic, not something they need in order to act. A disclosure
-              also comes with the keyboard and touch affordances for free,
-              which a hover-only tooltip would not.
-
-              What stays visible is the result, not the reasoning behind it.
-              A refusal stays visible in full for the opposite reason: it is
-              what the reader has to act on. */}
-          <Collapsible open={showFormula} onOpenChange={setShowFormula}>
-            <CollapsibleTrigger
-              className="rounded text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              data-testid="kv-cache-formula-toggle"
-            >
-              {t(
-                showFormula
-                  ? "endpoints.kvCache.hideFormula"
-                  : "endpoints.kvCache.showFormula",
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-1 space-y-1" data-testid="kv-cache-components">
-                {result.components.map((component) => (
-                  <ComponentRow
-                    key={component.key}
-                    component={component}
-                    totalBytes={result.totalBytes}
-                  />
-                ))}
+          <Dialog open={showFormula} onOpenChange={setShowFormula}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto px-0 text-xs font-normal text-muted-foreground hover:bg-transparent"
+                data-testid="kv-cache-formula-toggle"
+              >
+                {t("endpoints.kvCache.showFormula")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-3xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>{t("endpoints.kvCache.formulaTitle")}</DialogTitle>
+                <DialogDescription>
+                  {t("endpoints.kvCache.formulaDescription")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="min-h-0 overflow-y-auto pr-1">
+                {unreportedFactorKeys.length > 0 && (
+                  <div className="mb-4 rounded-md bg-muted/50 px-3 py-2.5 text-xs">
+                    <p className="text-foreground">
+                      {t("endpoints.kvCache.sourceUnreported", {
+                        count: unreportedFactorKeys.length,
+                        fields: unreportedFactorLabels,
+                      })}
+                    </p>
+                  </div>
+                )}
+                <div
+                  className="grid gap-4 text-xs"
+                  data-testid="kv-cache-components"
+                >
+                  {result.components.map((component) => (
+                    <ComponentRow
+                      key={component.key}
+                      component={component}
+                      totalBytes={result.totalBytes}
+                    />
+                  ))}
+                </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            </DialogContent>
+          </Dialog>
         </div>
       ) : (
         <div

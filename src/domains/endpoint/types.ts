@@ -85,6 +85,7 @@ export type EndpointClusterRef = {
     accelerator_virtualization?: { enabled?: boolean } | null;
   };
   status: {
+    cache?: EndpointClusterCacheStatus | null;
     ready_nodes?: number;
     desired_nodes?: number;
     resource_info?: ClusterResourceInfo | null;
@@ -113,6 +114,45 @@ export type EndpointEngineRef = {
 export type EndpointEngineVersionRef = {
   version: string;
   values_schema?: Record<string, unknown>;
+  supported_tasks?: string[];
+  images?: Record<
+    string,
+    {
+      image_name?: string;
+      tag?: string;
+    }
+  >;
+};
+
+type EndpointClusterCacheCondition = {
+  type: string;
+  status: string;
+  reason?: string;
+  message?: string;
+};
+
+type EndpointClusterCacheDetails = {
+  current?: {
+    enabled?: boolean;
+    version?: string;
+    l1_size_gib?: number;
+    target_nodes?: string[];
+  };
+  nodes?: Array<{
+    name?: string;
+    runtime?: string;
+    cache?: string;
+    capacity_bytes?: number;
+  }>;
+  [key: string]: unknown;
+};
+
+export type EndpointClusterCacheStatus = {
+  provider?: string;
+  phase?: string;
+  error_message?: string | null;
+  conditions?: EndpointClusterCacheCondition[];
+  details?: EndpointClusterCacheDetails | null;
 };
 
 /** Minimal model catalog shape needed by endpoint form */

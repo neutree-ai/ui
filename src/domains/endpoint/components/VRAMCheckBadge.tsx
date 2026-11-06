@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { checkVRAM, formatGb } from "@/foundation/recipe/vram";
 
@@ -13,7 +13,7 @@ type Props = {
 // picked cluster accelerator × count. The accelerator model itself is never
 // rendered — only the memory comparison matters here, and echoing a product
 // name invites misreading recipe-declared reference hardware as the user's
-// actual environment (NEU-499). Renders one of:
+// actual environment. Renders one of:
 //   ✓ Sufficient VRAM: {total} GB available, {req} GB required
 //   ⚠ Insufficient VRAM: {total} GB available, {req} GB required
 //   ℹ Requires ≥ {req} GB VRAM   — no trustworthy accelerator data yet; show
@@ -40,11 +40,13 @@ export const VRAMCheckBadge = ({
       <div
         data-testid="vram-check-badge"
         data-state="required-only"
-        className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm border-border text-muted-foreground"
+        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t py-3"
       >
-        <Info className="size-4" />
-        <span>
-          {t("endpoints.recipe.vramRequiredOnly", "Requires ≥ {{gb}} GB VRAM", {
+        <span className="text-sm text-muted-foreground">
+          {t("endpoints.recipe.vramRequiredLabel", "Required VRAM")}
+        </span>
+        <span className="text-lg font-semibold tabular-nums text-foreground">
+          {t("endpoints.recipe.vramRequiredValue", "≥ {{gb}} GB", {
             gb: formatGb(requiredGb),
           })}
         </span>

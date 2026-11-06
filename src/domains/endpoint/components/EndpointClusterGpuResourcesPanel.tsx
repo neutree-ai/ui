@@ -1,64 +1,71 @@
-import { CircleAlert, CircleCheck, Copy, Cpu } from "lucide-react";
+import {
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Copy,
+  Cpu,
+  Server,
+} from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
+import {
+  MetricBar,
+  type MetricBarSeries,
+} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
   buildNodePhysicalGpuResourceRows,
+  type DevicePoolUsage,
+  GPU_CELL_CLASS,
+  GPU_GRID_CELL_CLASS,
+  GPU_GRID_CLASS,
+  GPU_GRID_FRAME_CLASS,
+  GPU_GRID_STYLE,
+  GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
-  getFractionalGpuCoreRequirement,
 } from "@/foundation/lib/gpu-device-resources";
 import { cn } from "@/foundation/lib/utils";
 import type {
   ClusterResourceInfo,
-  DeviceResource,
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
+import {
+  type EndpointResourceRequestContext,
+  isDeviceUsableForRequest,
+} from "../lib/gpu-usability";
 
 type SelectedAccelerator = {
   type?: string | null;
   product?: string | null;
 };
 
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
 type EndpointClusterGpuResourcesPanelProps = {
   resourceInfo: ClusterResourceInfo | null | undefined;
   schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   currentCluster?: string | null;
+  nodeCount?: number | null;
   selectedAccelerator?: SelectedAccelerator | null;
   virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-};
-
-type EndpointResourceRequestContext = {
-  allocationMode: "full" | "fractional" | "vgpu";
-  gpuPerReplica?: number | null;
-  cpuPerReplica?: number | null;
-  memoryPerReplica?: number | null;
-  requestedFullGpuCards: number;
-  fullGpuCardCapacity: number;
-  fullGpuCapacityExceeded: boolean;
-  requestedVirtualCards: number;
-  totalVirtualCardCapacity: number;
-  requestedVgpuMemoryMiB: number;
-  availableVgpuMemoryMiB: number;
-  requestedVgpuCoreUnits: number;
-  availableVgpuCoreUnits: number;
-  memoryMiBPerCard?: number | null;
-  coreUnitsPerCard?: number | null;
-  vgpuCapacityExceeded: boolean;
+  inset?: boolean;
+  t: Translate;
 };
 
 const VRAM_VALUE_SCALE = 1 / 1024;
@@ -159,9 +166,9 @@ const sumOptionalNumbers = (values: Array<number | null | undefined>) => {
   return hasValue ? total : null;
 };
 
-const summarizeRows = (
-  rows: ReturnType<typeof buildGpuCardResourceRows>,
-  field: "quantity" | "memory" | "core",
+const summarizeRows = <Field extends string>(
+  rows: ReadonlyArray<Record<Field, DevicePoolUsage>>,
+  field: Field,
 ) => {
   const totals = {
     total: sumOptionalNumbers(rows.map((row) => row[field].total)),
@@ -174,12 +181,6 @@ const summarizeRows = (
     percent: toPercentValue(totals.used, totals.total),
   };
 };
-
-const sumGpuDeviceRowPool = (
-  rows: GpuDeviceResourceRow[],
-  field: "memory" | "core",
-  key: "available" | "total" | "used",
-) => sumOptionalNumbers(rows.map((row) => row[field][key]));
 
 const hasPositiveMetric = (value: number | null | undefined) => {
   const numericValue = Number(value ?? 0);
@@ -215,20 +216,69 @@ const getAcceleratorUsageClasses = (percent: number) =>
         text: "text-[var(--nt-fill-positive-base)]",
       };
 
-const getGpuCardStateClasses = (usable: boolean, healthy: boolean) => {
-  if (!healthy) {
-    return "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-neutral-white)]";
-  }
+type GpuAvailability = "usable" | "allocated" | "unhealthy" | "other-type";
 
-  return usable
-    ? "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-neutral-white)]"
-    : "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-neutral-white)]";
+type UsageClasses = { progress: string; text: string };
+
+/**
+ * How each availability reads on a device card. A usable card's meters take
+ * the usage colour of their own percentage (`meter: null`).
+ */
+const GPU_AVAILABILITY: Record<
+  GpuAvailability,
+  {
+    label: (t: Translate) => string;
+    statusClassName: string;
+    Icon: typeof CircleCheck;
+    meter: UsageClasses | null;
+  }
+> = {
+  usable: {
+    label: (t) => t("clusters.options.usableForRequest"),
+    statusClassName: "text-[var(--nt-text-colorful-positive)]",
+    Icon: CircleCheck,
+    meter: null,
+  },
+  allocated: {
+    label: (t) => t("clusters.options.allocated"),
+    statusClassName: "text-[var(--nt-text-colorful-notice)]",
+    Icon: CircleAlert,
+    meter: {
+      progress:
+        "bg-[var(--nt-fill-notice-light)] [&>div]:bg-[var(--nt-fill-notice-base)]",
+      text: "text-[var(--nt-text-colorful-notice)]",
+    },
+  },
+  unhealthy: {
+    label: (t) => t("clusters.options.unhealthy"),
+    statusClassName: "text-[var(--nt-text-colorful-serious)]",
+    Icon: CircleAlert,
+    meter: {
+      progress:
+        "bg-[var(--nt-fill-serious-light)] [&>div]:bg-[var(--nt-fill-serious-base)]",
+      text: "text-[var(--nt-text-colorful-serious)]",
+    },
+  },
+  "other-type": {
+    label: (t) => t("clusters.options.otherType"),
+    statusClassName: "text-muted-foreground",
+    Icon: CircleAlert,
+    meter: {
+      progress:
+        "bg-[var(--nt-fill-neutral-trans-3)] [&>div]:bg-[var(--nt-text-neutral-quaternary)]",
+      text: "text-muted-foreground",
+    },
+  },
 };
 
-const getSystemUsageClasses = () => ({
-  progress: "bg-primary/15 [&>div]:bg-primary",
-  text: "text-primary",
-});
+const getGpuAvailability = (
+  row: GpuDeviceResourceRow,
+  usable: boolean,
+): GpuAvailability => {
+  if (!row.matchesSelectedAccelerator) return "other-type";
+  if (!row.healthy) return "unhealthy";
+  return usable ? "usable" : "allocated";
+};
 
 type ResourceSummaryMetric = {
   label: string;
@@ -237,7 +287,7 @@ type ResourceSummaryMetric = {
   available: number | null | undefined;
   unit?: string;
   valueScale?: number;
-  variant?: "accelerator" | "system";
+  series: MetricBarSeries;
 };
 
 function ResourceMetricLabel({
@@ -266,173 +316,98 @@ function ResourceMetricLabel({
   );
 }
 
-function ResourceSummaryCard({
+function ResourceMetricCard({
   metric,
   t,
 }: {
   metric: ResourceSummaryMetric;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const percent = toPercentValue(metric.used, metric.total);
-  const acceleratorUsageClasses = getAcceleratorUsageClasses(percent);
-  const usageText = formatUsage(
-    metric.used,
-    metric.total,
-    "",
-    metric.valueScale,
-  );
+  const totalText = formatPoolValue(metric.total, "", metric.valueScale);
+  const usedText = formatPoolValue(metric.used, "", metric.valueScale);
   const freeText = formatPoolValue(metric.available, "", metric.valueScale);
-  const isAccelerator = metric.variant === "accelerator";
-  const usageClasses = isAccelerator
-    ? acceleratorUsageClasses
-    : getSystemUsageClasses();
 
   return (
     <div
-      data-testid="endpoint-resource-summary-card"
-      className="grid min-w-0 gap-2 rounded-lg border bg-background px-2.5 py-2"
+      role="group"
+      aria-label={metric.label}
+      className="grid min-w-0 gap-1.5"
     >
-      <div className="flex min-w-0 items-baseline justify-between gap-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <ResourceMetricLabel
           label={metric.label}
           unit={metric.unit}
           className="text-xs font-semibold"
         />
         <span
-          data-testid="endpoint-resource-summary-percent"
-          className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground"
+          className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground"
+          title={readingTitle(totalText)}
         >
-          {formatPercent(percent)}{" "}
-          {t("clusters.options.used", { defaultValue: "used" }).toLowerCase()}
+          {totalText} {t("clusters.options.total").toLowerCase()}
         </span>
       </div>
-      <Progress
-        data-testid="endpoint-resource-summary-progress"
-        value={percent}
-        className={cn("h-1.5", usageClasses.progress)}
-      />
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 text-xs text-muted-foreground">
-        <span className="min-w-0 truncate" title={readingTitle(usageText)}>
-          {t("clusters.options.used")} {usageText}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <MetricBar
+            value={percent}
+            size="sm"
+            series={metric.series}
+            tabIndex={0}
+            aria-label={`${metric.label}: ${formatPercent(percent)}`}
+            className="focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
+          />
+        </TooltipTrigger>
+        <TooltipContent>{formatPercent(percent)}</TooltipContent>
+      </Tooltip>
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+        <span className="min-w-0 tabular-nums">
+          {t("clusters.options.used")}{" "}
+          <strong
+            className="font-semibold text-foreground"
+            title={readingTitle(usedText)}
+          >
+            {usedText}
+          </strong>
         </span>
-        <strong
-          data-testid="endpoint-resource-summary-free-value"
-          className="shrink-0 font-semibold tabular-nums text-card-foreground"
-          title={
-            typeof freeText === "string"
-              ? `${t("clusters.options.free")} ${freeText}`
-              : undefined
-          }
-        >
-          {t("clusters.options.free")} {freeText}
-        </strong>
+        <span className="shrink-0 tabular-nums" title={readingTitle(freeText)}>
+          <strong className="font-semibold text-foreground">{freeText}</strong>{" "}
+          {t("clusters.options.free").toLowerCase()}
+        </span>
       </div>
     </div>
   );
 }
 
-function ResourceSummaryCardGrid({
+function ResourceMetricGrid({
   items,
   testId,
+  className,
   t,
 }: {
   items: ResourceSummaryMetric[];
   testId: string;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  className?: string;
+  t: Translate;
 }) {
   return (
-    <div
-      data-testid={testId}
-      className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2"
-    >
-      {items.map((metric) => (
-        <ResourceSummaryCard
-          key={`${metric.label}:${metric.unit ?? ""}`}
-          metric={metric}
-          t={t}
-        />
-      ))}
-    </div>
-  );
-}
-
-function NodeResourcePill({
-  metric,
-  t,
-}: {
-  metric: ResourceSummaryMetric;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  const totalText = formatPoolValue(metric.total, "", metric.valueScale);
-  const usedText = formatPoolValue(metric.used, "", metric.valueScale);
-  const freeText = formatPoolValue(metric.available, "", metric.valueScale);
-  const isAccelerator = metric.variant === "accelerator";
-
-  return (
-    <div
-      data-testid="endpoint-node-resource-pill"
-      className={cn(
-        "min-w-0 rounded-lg border px-2 py-1.5",
-        isAccelerator
-          ? "border-primary/30 bg-primary/5"
-          : "border-border bg-muted/20",
-      )}
-    >
-      <ResourceMetricLabel
-        label={metric.label}
-        unit={metric.unit}
-        className="text-xs font-semibold"
-      />
-      <div className="mt-1 grid grid-cols-3 gap-1 text-[11px] leading-tight text-muted-foreground">
-        <span>{t("clusters.options.total")}</span>
-        <span>{t("clusters.options.used")}</span>
-        <span>{t("clusters.options.free")}</span>
-        <strong
-          data-testid="endpoint-node-resource-pill-value"
-          className="truncate font-semibold tabular-nums text-card-foreground"
-          title={readingTitle(totalText)}
-        >
-          {totalText}
-        </strong>
-        <strong
-          data-testid="endpoint-node-resource-pill-value"
-          className="truncate font-semibold tabular-nums text-card-foreground"
-          title={readingTitle(usedText)}
-        >
-          {usedText}
-        </strong>
-        <strong
-          data-testid="endpoint-node-resource-pill-value"
-          className="truncate font-semibold tabular-nums text-card-foreground"
-          title={readingTitle(freeText)}
-        >
-          {freeText}
-        </strong>
+    <TooltipProvider delayDuration={0}>
+      <div
+        data-testid={testId}
+        className={cn(
+          "grid min-w-0 grid-cols-2 gap-x-6 gap-y-4 min-[1920px]:grid-cols-4",
+          className,
+        )}
+      >
+        {items.map((metric) => (
+          <ResourceMetricCard
+            key={`${metric.label}:${metric.unit ?? ""}`}
+            metric={metric}
+            t={t}
+          />
+        ))}
       </div>
-    </div>
-  );
-}
-
-function NodeResourcePillGrid({
-  items,
-  t,
-}: {
-  items: ResourceSummaryMetric[];
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  return (
-    <div
-      data-testid="endpoint-node-resource-metrics"
-      className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(160px,200px))] justify-start gap-2"
-    >
-      {items.map((metric) => (
-        <NodeResourcePill
-          key={`${metric.label}:${metric.unit ?? ""}`}
-          metric={metric}
-          t={t}
-        />
-      ))}
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -441,6 +416,7 @@ function GpuMeterRow({
   used,
   total,
   available,
+  availability,
   unit,
   valueScale = 1,
   t,
@@ -449,12 +425,14 @@ function GpuMeterRow({
   used: number | null | undefined;
   total: number | null | undefined;
   available: number | null | undefined;
+  availability: GpuAvailability;
   unit?: string;
   valueScale?: number;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const percent = toPercentValue(used, total);
-  const acceleratorUsageClasses = getAcceleratorUsageClasses(percent);
+  const usageClasses =
+    GPU_AVAILABILITY[availability].meter ?? getAcceleratorUsageClasses(percent);
   const usageText = formatUsage(used, total, unit, valueScale);
   const freeValue = formatPoolValue(available, unit, valueScale);
   const freeText = (
@@ -468,25 +446,27 @@ function GpuMeterRow({
       : undefined;
 
   return (
-    <div className="grid gap-1.5 rounded-md bg-muted/20 px-2 py-1.5">
+    <div className="grid gap-1">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-foreground">{label}</span>
         <strong
           className={cn(
-            "shrink-0 text-xs font-semibold tabular-nums",
-            acceleratorUsageClasses.text,
+            "shrink-0 font-semibold tabular-nums",
+            GPU_USAGE_TEXT_CLASS,
+            usageClasses.text,
           )}
           title={formatPercent(percent)}
         >
           {formatPercent(percent)}
         </strong>
       </div>
-      <Progress
-        data-testid="endpoint-gpu-resource-progress"
-        value={percent}
-        className={cn("h-1.5", acceleratorUsageClasses.progress)}
-      />
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-xs">
+      <Progress value={percent} className={cn("h-1", usageClasses.progress)} />
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5",
+          GPU_USAGE_TEXT_CLASS,
+        )}
+      >
         <span
           className="min-w-0 break-words tabular-nums text-muted-foreground"
           title={readingTitle(usageText)}
@@ -496,7 +476,7 @@ function GpuMeterRow({
         <strong
           className={cn(
             "shrink-0 font-semibold tabular-nums",
-            acceleratorUsageClasses.text,
+            usageClasses.text,
           )}
           title={freeTitle}
         >
@@ -509,127 +489,96 @@ function GpuMeterRow({
 
 function GpuDeviceCard({
   row,
-  usable,
   copyUuid,
   t,
 }: {
-  row: GpuDeviceResourceRow;
-  usable: boolean;
+  row: UsableGpuDeviceRow;
   copyUuid: (uuid: string) => void;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const productRef = useRef<HTMLSpanElement>(null);
   const productTruncated = useIsTruncated(productRef);
-  const productBadge = (
-    <Badge
-      variant="outline"
-      tabIndex={productTruncated ? 0 : undefined}
-      className="w-fit max-w-full min-w-0 text-xs"
-    >
-      <span ref={productRef} className="min-w-0 truncate">
-        {row.product || <EmptyValue />}
-      </span>
-    </Badge>
-  );
-  const statusText = row.healthy
-    ? usable
-      ? t("clusters.options.usable")
-      : t("clusters.options.allocated")
-    : t("clusters.options.unhealthy");
-  const statusClassName = row.healthy
-    ? usable
-      ? "text-emerald-600"
-      : "text-amber-600"
-    : "text-destructive";
-  const statusIndicator = (
+  const productLabel = (
     <span
+      ref={productRef}
+      tabIndex={productTruncated ? 0 : undefined}
       className={cn(
-        "flex h-5 w-5 shrink-0 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        statusClassName,
+        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
+        productTruncated &&
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
       )}
-      role="img"
-      aria-label={statusText}
-      title={row.healthy ? statusText : undefined}
-      tabIndex={row.healthy ? undefined : 0}
     >
-      {row.healthy && usable ? (
-        <CircleCheck className="h-3.5 w-3.5 text-current" />
-      ) : (
-        <CircleAlert className="h-3.5 w-3.5 text-current" />
-      )}
+      {row.product || <EmptyValue />}
     </span>
   );
+  const availability = getGpuAvailability(row, row.usable);
+  const { Icon, statusClassName } = GPU_AVAILABILITY[availability];
+  // Allocation and usability answer different questions. An allocated card can
+  // still have enough free capacity for this request: keep its "Allocated"
+  // label, but use the positive usable styling so placement remains obvious.
+  const statusText =
+    availability === "usable" && !row.fullFree
+      ? GPU_AVAILABILITY.allocated.label(t)
+      : GPU_AVAILABILITY[availability].label(t);
 
   return (
     <div
       data-testid="endpoint-gpu-device-card"
       className={cn(
-        "grid gap-2 rounded-lg border bg-background p-2",
-        getGpuCardStateClasses(usable, row.healthy),
+        GPU_CELL_CLASS,
+        GPU_GRID_CELL_CLASS,
+        "grid gap-2",
+        availability === "other-type" && "opacity-50",
       )}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="whitespace-nowrap text-sm font-semibold leading-5">
+            {t("clusters.fields.gpuNumber")} {row.gpuNumber}
+          </span>
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size="icon"
             title={t("clusters.actions.copyUuid")}
             aria-label={`${t("clusters.fields.gpuNumber")} ${row.gpuNumber} ${t("clusters.actions.copyUuid")}`}
-            className="-ml-2 h-7 min-w-0 justify-start px-2 text-xs"
+            className="h-6 w-6 shrink-0 text-muted-foreground"
             onClick={() => copyUuid(row.uuid)}
           >
-            <span className="truncate font-medium tabular-nums">
-              {t("clusters.fields.gpuNumber")} {row.gpuNumber}
-            </span>
-            <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+            <Copy className="h-3.5 w-3.5" />
             <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
           </Button>
         </div>
-        {row.healthy ? (
-          statusIndicator
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>{statusIndicator}</TooltipTrigger>
-            <TooltipContent>{statusText}</TooltipContent>
-          </Tooltip>
-        )}
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-[11px] font-medium",
+            statusClassName,
+          )}
+        >
+          <Icon className="size-3.5" aria-hidden="true" />
+          {statusText}
+        </span>
       </div>
-      {/* The product sits on a row of its own and takes the card's whole width,
-          but only as much of it as the name needs. Sharing the header row kept
-          the badge inside that grid's first column, so a long name was cut off
-          at 172px of the card's 204px while the status icon's column sat empty
-          beside it. `w-fit` is what keeps a short name a compact badge instead
-          of a full-width band; without a width in a grid it would stretch.
-
-          A name that does not fit is truncated rather than wrapped: at one word
-          per line a vendor prefix turns a two-line badge into a taller card,
-          and the card's job is the reading under it. Truncating means the full
-          name has to stay reachable, and a native title is not enough — it never
-          opens for a keyboard user. It hangs off the tooltip the rest of the app
-          uses, with the badge itself as the trigger so hover and focus both
-          reach it, and both belong to the clipped state: a name that fits has
-          nothing to reveal and nothing to focus for. The cursor stays a cursor
-          either way — a question mark is the help affordance, and this is a
-          value. The text needs an element of its own to truncate in, too: an
-          `inline-flex` turns bare text into an anonymous flex item that refuses
-          to shrink below its own width. */}
+      {/* Match the endpoint detail card: the product is a compact line under
+          the device title. A clipped name stays reachable by hover and focus,
+          while a name that fits adds no extra focus target or tooltip. */}
       {productTruncated ? (
         <Tooltip>
-          <TooltipTrigger asChild>{productBadge}</TooltipTrigger>
+          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
           <TooltipContent className="max-w-md break-all">
             {row.product || <EmptyValue />}
           </TooltipContent>
         </Tooltip>
       ) : (
-        productBadge
+        productLabel
       )}
-      <div className="grid gap-2">
+      <div className="grid gap-2.5">
         <GpuMeterRow
           label={t("clusters.fields.memoryUsage")}
           used={row.memory.used}
           total={row.memory.total}
           available={row.memory.available}
+          availability={availability}
           unit=" GiB"
           valueScale={VRAM_VALUE_SCALE}
           t={t}
@@ -639,6 +588,7 @@ function GpuDeviceCard({
           used={row.core.used}
           total={row.core.total}
           available={row.core.available}
+          availability={availability}
           t={t}
         />
       </div>
@@ -650,13 +600,17 @@ function EndpointClusterResourceSummary({
   summaryRows,
   hasGpuResources,
   virtualizationEnabled,
+  nodeCount,
+  gpuCount,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  nodeCount?: number | null;
+  gpuCount: number | null;
+  t: Translate;
 }) {
   const cpuSummary = summarizeResourcePool(
     resourceInfo.allocatable?.cpu,
@@ -666,7 +620,6 @@ function EndpointClusterResourceSummary({
     resourceInfo.allocatable?.memory,
     resourceInfo.available?.memory,
   );
-  const gpuSummary = summarizeRows(summaryRows, "quantity");
   const acceleratorMemorySummary = summarizeRows(summaryRows, "memory");
   const acceleratorCoreSummary = summarizeRows(summaryRows, "core");
   const showDetailedGpuMetrics =
@@ -674,16 +627,6 @@ function EndpointClusterResourceSummary({
     (virtualizationEnabled ||
       hasNodeDeviceResources(resourceInfo.node_resources));
   const items: ResourceSummaryMetric[] = [];
-
-  if (hasGpuResources) {
-    items.push({
-      label: t("endpoints.fields.physicalGpu"),
-      used: gpuSummary.used,
-      total: gpuSummary.total,
-      available: gpuSummary.available,
-      variant: "accelerator",
-    });
-  }
 
   if (showDetailedGpuMetrics) {
     items.push(
@@ -694,14 +637,14 @@ function EndpointClusterResourceSummary({
         available: acceleratorMemorySummary.available,
         unit: " GiB",
         valueScale: VRAM_VALUE_SCALE,
-        variant: "accelerator",
+        series: "blue",
       },
       {
         label: t("clusters.fields.coreUsage"),
         used: acceleratorCoreSummary.used,
         total: acceleratorCoreSummary.total,
         available: acceleratorCoreSummary.available,
-        variant: "accelerator",
+        series: "cyan",
       },
     );
   }
@@ -713,6 +656,7 @@ function EndpointClusterResourceSummary({
       total: cpuSummary.total,
       available: cpuSummary.available,
       unit: " cores",
+      series: "green",
     },
     {
       label: t("common.fields.memory"),
@@ -720,15 +664,37 @@ function EndpointClusterResourceSummary({
       total: memorySummary.total,
       available: memorySummary.available,
       unit: " GiB",
+      series: "purple",
     },
   );
 
   return (
     <div
       data-testid="endpoint-cluster-resource-summary"
-      className="rounded-lg border bg-muted/10 p-2.5"
+      className="border-y py-3"
     >
-      <ResourceSummaryCardGrid
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-xs font-semibold text-foreground">
+          {t("endpoints.sections.clusterCapacity")}
+        </span>
+        <span
+          data-testid="endpoint-cluster-node-count"
+          className="text-xs text-muted-foreground"
+        >
+          {nodeCount == null ? (
+            <EmptyValue />
+          ) : (
+            t("endpoints.clusterDetails.nodeCount", { count: nodeCount })
+          )}
+          <span aria-hidden="true"> · </span>
+          {gpuCount == null ? (
+            <EmptyValue />
+          ) : (
+            t("clusters.gpuInventory.count", { count: gpuCount })
+          )}
+        </span>
+      </div>
+      <ResourceMetricGrid
         items={items}
         testId="endpoint-cluster-resource-metrics"
         t={t}
@@ -737,131 +703,7 @@ function EndpointClusterResourceSummary({
   );
 }
 
-const getFiniteResourceValue = (
-  value: number | null | undefined,
-): number | null =>
-  typeof value === "number" && Number.isFinite(value) ? value : null;
-
-const getDeviceResourceValue = (
-  device: DeviceResource | undefined,
-  field: "memory_mib" | "core_units",
-  fallback: number | null | undefined,
-) =>
-  getFiniteResourceValue(device?.available?.[field]) ??
-  getFiniteResourceValue(fallback) ??
-  0;
-
-const getDeviceAllocatableResourceValue = (
-  device: DeviceResource | undefined,
-  field: "memory_mib" | "core_units",
-  fallback: number | null | undefined,
-) =>
-  getFiniteResourceValue(device?.allocatable?.[field]) ??
-  getFiniteResourceValue(fallback);
-
-const isDeviceFullyAvailable = (
-  device: DeviceResource | undefined,
-  fallback: boolean,
-) => {
-  if (!device) return fallback;
-
-  const availableMemory = getFiniteResourceValue(device.available?.memory_mib);
-  const availableCore = getFiniteResourceValue(device.available?.core_units);
-  const allocatableMemory = getFiniteResourceValue(
-    device.allocatable?.memory_mib,
-  );
-  const allocatableCore = getFiniteResourceValue(
-    device.allocatable?.core_units,
-  );
-
-  return Boolean(
-    device.health &&
-      availableMemory != null &&
-      availableCore != null &&
-      allocatableMemory != null &&
-      allocatableCore != null &&
-      availableMemory >= allocatableMemory &&
-      availableCore >= allocatableCore,
-  );
-};
-
-const isDeviceUsableForRequest = (
-  row: GpuDeviceResourceRow,
-  request: EndpointResourceRequestContext | undefined,
-  schedulingNodeStatus?: NodeResourceStatus,
-) => {
-  if (!request) {
-    return row.healthy && row.matchesSelectedAccelerator && row.fullFree;
-  }
-
-  if (!row.healthy || !row.matchesSelectedAccelerator) {
-    return false;
-  }
-
-  const cpuPerReplica = Number(request.cpuPerReplica || 0);
-  const memoryPerReplica = Number(request.memoryPerReplica || 0);
-  const availableCpu = Number(schedulingNodeStatus?.available?.cpu);
-  const nodeAvailableMemory = Number(schedulingNodeStatus?.available?.memory);
-  if (
-    cpuPerReplica > 0 &&
-    Number.isFinite(availableCpu) &&
-    availableCpu < cpuPerReplica
-  ) {
-    return false;
-  }
-  if (
-    memoryPerReplica > 0 &&
-    Number.isFinite(nodeAvailableMemory) &&
-    nodeAvailableMemory < memoryPerReplica
-  ) {
-    return false;
-  }
-
-  const schedulingDevice = schedulingNodeStatus?.devices?.find(
-    (device) => device.uuid === row.uuid && device.product === row.product,
-  );
-  const availableMemory = getDeviceResourceValue(
-    schedulingDevice,
-    "memory_mib",
-    row.memory.available,
-  );
-  const availableCore = getDeviceResourceValue(
-    schedulingDevice,
-    "core_units",
-    row.core.available,
-  );
-
-  if (request.allocationMode === "full") {
-    return isDeviceFullyAvailable(schedulingDevice, row.fullFree);
-  }
-
-  if (request.allocationMode === "fractional") {
-    const totalCore = getDeviceAllocatableResourceValue(
-      schedulingDevice,
-      "core_units",
-      row.core.total,
-    );
-    const requiredCore = getFractionalGpuCoreRequirement(
-      request.gpuPerReplica,
-      totalCore,
-    );
-
-    return requiredCore != null && availableCore >= requiredCore;
-  }
-
-  const memoryMiBPerCard = Number(request.memoryMiBPerCard || 0);
-  const coreUnitsPerCard = Number(request.coreUnitsPerCard || 0);
-
-  if (memoryMiBPerCard > 0 && availableMemory < memoryMiBPerCard) {
-    return false;
-  }
-
-  if (coreUnitsPerCard > 0 && availableCore < coreUnitsPerCard) {
-    return false;
-  }
-
-  return availableMemory > 0 && (coreUnitsPerCard <= 0 || availableCore > 0);
-};
+type UsableGpuDeviceRow = GpuDeviceResourceRow & { usable: boolean };
 
 const groupNodesWithGpuRows = (
   rows: GpuDeviceResourceRow[],
@@ -871,19 +713,7 @@ const groupNodesWithGpuRows = (
     | null
     | undefined,
   request: EndpointResourceRequestContext | undefined,
-): Array<{
-  availableCore: number | null;
-  availableMemory: number | null;
-  cpuSummary: ReturnType<typeof summarizeResourcePool>;
-  memorySummary: ReturnType<typeof summarizeResourcePool>;
-  nodeName: string;
-  rows: GpuDeviceResourceRow[];
-  totalCore: number | null;
-  totalMemory: number | null;
-  usableCount: number;
-  usedCore: number | null;
-  usedMemory: number | null;
-}> => {
+) => {
   const groups = new Map<string, GpuDeviceResourceRow[]>();
   for (const row of rows) {
     groups.set(row.nodeName, [...(groups.get(row.nodeName) ?? []), row]);
@@ -906,44 +736,30 @@ const groupNodesWithGpuRows = (
   });
 
   return nodeNames.map((nodeName) => {
-    const nodeRows = groups.get(nodeName) ?? [];
     const nodeStatus = nodeResources?.[nodeName];
     const schedulingNodeStatus =
       schedulingNodeResources?.[nodeName] ?? nodeStatus;
-    const cpuSummary = summarizeResourcePool(
-      nodeStatus?.allocatable?.cpu,
-      nodeStatus?.available?.cpu,
+    const nodeRows: UsableGpuDeviceRow[] = (groups.get(nodeName) ?? []).map(
+      (row) => ({
+        ...row,
+        usable: isDeviceUsableForRequest(row, request, schedulingNodeStatus),
+      }),
     );
-    const memorySummary = summarizeResourcePool(
-      nodeStatus?.allocatable?.memory,
-      nodeStatus?.available?.memory,
-    );
-    const availableMemory = sumGpuDeviceRowPool(
-      nodeRows,
-      "memory",
-      "available",
-    );
-    const availableCore = sumGpuDeviceRowPool(nodeRows, "core", "available");
-    const totalMemory = sumGpuDeviceRowPool(nodeRows, "memory", "total");
-    const totalCore = sumGpuDeviceRowPool(nodeRows, "core", "total");
-    const usedMemory = sumGpuDeviceRowPool(nodeRows, "memory", "used");
-    const usedCore = sumGpuDeviceRowPool(nodeRows, "core", "used");
-    const usableCount = nodeRows.filter((row) =>
-      isDeviceUsableForRequest(row, request, schedulingNodeStatus),
-    ).length;
 
     return {
-      availableCore,
-      availableMemory,
-      cpuSummary,
-      memorySummary,
       nodeName,
       rows: nodeRows,
-      totalCore,
-      totalMemory,
-      usableCount,
-      usedCore,
-      usedMemory,
+      usableCount: nodeRows.filter((row) => row.usable).length,
+      cpuSummary: summarizeResourcePool(
+        nodeStatus?.allocatable?.cpu,
+        nodeStatus?.available?.cpu,
+      ),
+      memorySummary: summarizeResourcePool(
+        nodeStatus?.allocatable?.memory,
+        nodeStatus?.available?.memory,
+      ),
+      gpuMemory: summarizeRows(nodeRows, "memory"),
+      gpuCore: summarizeRows(nodeRows, "core"),
     };
   });
 };
@@ -961,7 +777,7 @@ function EndpointNodeResources({
   selectedAccelerator?: SelectedAccelerator | null;
   hasGpuResources: boolean;
   request?: EndpointResourceRequestContext;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const hasNodeDevices = hasNodeDeviceResources(nodeResources);
   const showDetailedGpuDevices = hasGpuResources && hasNodeDevices;
@@ -997,7 +813,7 @@ function EndpointNodeResourceSummaries({
   nodeResources: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   showGpuResources: boolean;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const nodeGroups = useMemo(
     () => buildNodePhysicalGpuResourceRows(nodeResources, selectedAccelerator),
@@ -1009,7 +825,7 @@ function EndpointNodeResourceSummaries({
   }
 
   return (
-    <div data-testid="endpoint-compact-node-resources" className="space-y-2">
+    <div data-testid="endpoint-compact-node-resources" className="divide-y">
       {nodeGroups.map((group) => {
         const items: ResourceSummaryMetric[] = [];
 
@@ -1019,7 +835,7 @@ function EndpointNodeResourceSummaries({
             used: group.quantity.used,
             total: group.quantity.total,
             available: group.quantity.available,
-            variant: "accelerator",
+            series: "amber",
           });
         }
 
@@ -1030,6 +846,7 @@ function EndpointNodeResourceSummaries({
             total: group.cpu.total,
             available: group.cpu.available,
             unit: " cores",
+            series: "green",
           },
           {
             label: t("common.fields.memory"),
@@ -1037,6 +854,7 @@ function EndpointNodeResourceSummaries({
             total: group.memory.total,
             available: group.memory.available,
             unit: " GiB",
+            series: "purple",
           },
         );
 
@@ -1044,19 +862,27 @@ function EndpointNodeResourceSummaries({
           <div
             data-testid="endpoint-compact-node-card"
             key={group.nodeName}
-            className="overflow-hidden rounded-lg border bg-background"
+            className="py-4 first:pt-0 last:pb-0"
           >
-            <div className="grid gap-x-3 gap-y-2 bg-muted/20 p-2.5 lg:grid-cols-[minmax(160px,220px)_minmax(0,1fr)] lg:items-start">
+            <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
+                <span className="grid size-6 shrink-0 place-items-center rounded-md bg-muted/60 text-muted-foreground">
+                  <Server className="size-3.5" aria-hidden="true" />
+                </span>
                 <div
                   data-testid="endpoint-node-resource-name"
-                  className="min-w-0 whitespace-normal break-words text-sm font-medium"
+                  className="min-w-0 whitespace-normal break-words text-sm font-semibold"
                   title={group.nodeName}
                 >
                   {group.nodeName}
                 </div>
               </div>
-              <NodeResourcePillGrid items={items} t={t} />
+              <ResourceMetricGrid
+                items={items}
+                testId="endpoint-node-resource-metrics"
+                className="mt-3"
+                t={t}
+              />
             </div>
           </div>
         );
@@ -1076,7 +902,7 @@ function EndpointVirtualizedNodeGpuResources({
   schedulingNodeResources?: ClusterResourceInfo["node_resources"];
   selectedAccelerator?: SelectedAccelerator | null;
   request?: EndpointResourceRequestContext;
-  t: (key: string, options?: { defaultValue?: string }) => string;
+  t: Translate;
 }) {
   const { copy } = useCopyToClipboard();
   const copyUuid = (uuid: string) =>
@@ -1104,27 +930,30 @@ function EndpointVirtualizedNodeGpuResources({
   }
 
   return (
-    <div data-testid="endpoint-compact-node-resources" className="space-y-2">
+    <div data-testid="endpoint-compact-node-resources" className="divide-y">
       {nodeGroups.map((group) => {
         const items: ResourceSummaryMetric[] = [];
+        const hasRowsMatchingSelection = group.rows.some(
+          (row) => row.matchesSelectedAccelerator,
+        );
 
         if (group.rows.length > 0) {
           items.push(
             {
               label: t("clusters.fields.memoryUsage"),
-              used: group.usedMemory,
-              total: group.totalMemory,
-              available: group.availableMemory,
+              used: group.gpuMemory.used,
+              total: group.gpuMemory.total,
+              available: group.gpuMemory.available,
               unit: " GiB",
               valueScale: VRAM_VALUE_SCALE,
-              variant: "accelerator",
+              series: "blue",
             },
             {
               label: t("clusters.fields.coreUsage"),
-              used: group.usedCore,
-              total: group.totalCore,
-              available: group.availableCore,
-              variant: "accelerator",
+              used: group.gpuCore.used,
+              total: group.gpuCore.total,
+              available: group.gpuCore.available,
+              series: "cyan",
             },
           );
         }
@@ -1136,6 +965,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.cpuSummary.total,
             available: group.cpuSummary.available,
             unit: " cores",
+            series: "green",
           },
           {
             label: t("common.fields.memory"),
@@ -1143,6 +973,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.memorySummary.total,
             available: group.memorySummary.available,
             unit: " GiB",
+            series: "purple",
           },
         );
 
@@ -1150,18 +981,16 @@ function EndpointVirtualizedNodeGpuResources({
           <div
             data-testid="endpoint-compact-node-card"
             key={group.nodeName}
-            className="overflow-hidden rounded-lg border bg-background"
+            className="py-4 first:pt-0 last:pb-0"
           >
-            <div
-              className={cn(
-                "grid gap-x-3 gap-y-2 bg-muted/20 p-2.5 lg:grid-cols-[minmax(160px,220px)_minmax(0,1fr)] lg:items-start",
-                group.rows.length > 0 && "border-b",
-              )}
-            >
+            <div className="min-w-0">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="grid size-6 shrink-0 place-items-center rounded-md bg-muted/60 text-muted-foreground">
+                  <Server className="size-3.5" aria-hidden="true" />
+                </span>
                 <div
                   data-testid="endpoint-node-resource-name"
-                  className="min-w-0 whitespace-normal break-words text-sm font-medium"
+                  className="min-w-0 whitespace-normal break-words text-sm font-semibold"
                   title={group.nodeName}
                 >
                   {group.nodeName}
@@ -1169,7 +998,9 @@ function EndpointVirtualizedNodeGpuResources({
                 {group.rows.length > 0 && (
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                     <Badge variant="outline" className="font-normal">
-                      {group.rows.length} {t("clusters.fields.gpuNumber")}
+                      {t("clusters.gpuInventory.count", {
+                        count: group.rows.length,
+                      })}
                     </Badge>
                     <Badge
                       variant={group.usableCount > 0 ? "secondary" : "outline"}
@@ -1180,38 +1011,51 @@ function EndpointVirtualizedNodeGpuResources({
                           : "bg-amber-50 text-amber-700",
                       )}
                     >
-                      {t("clusters.options.usable")} {group.usableCount}
+                      {t("clusters.options.usableForRequest")}{" "}
+                      {group.usableCount}
                     </Badge>
                   </div>
                 )}
               </div>
-              <NodeResourcePillGrid items={items} t={t} />
+              <ResourceMetricGrid
+                items={items}
+                testId="endpoint-node-resource-metrics"
+                className="mt-3"
+                t={t}
+              />
             </div>
 
             {group.rows.length > 0 && (
-              <div
-                data-testid="endpoint-node-gpu-card-grid"
-                className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),220px))] justify-start gap-2 p-2.5"
+              <Disclosure
+                key={`gpu-details:${hasRowsMatchingSelection ? "matching" : "other"}`}
+                variant="plain"
+                className="mt-2"
+                triggerClassName="w-fit flex-none rounded-md border bg-muted/20 px-2 py-1 text-muted-foreground hover:bg-muted/50"
+                leading={<Cpu className="size-3.5" aria-hidden="true" />}
+                title={
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {t("clusters.fields.gpuDetails")} ({group.rows.length})
+                  </span>
+                }
+                defaultOpen={hasRowsMatchingSelection}
               >
-                {group.rows.map((row) => {
-                  const usable = isDeviceUsableForRequest(
-                    row,
-                    request,
-                    schedulingNodeResources?.[group.nodeName] ??
-                      nodeResources?.[group.nodeName],
-                  );
-
-                  return (
-                    <GpuDeviceCard
-                      key={`${row.nodeName}:${row.uuid}`}
-                      row={row}
-                      usable={usable}
-                      copyUuid={copyUuid}
-                      t={t}
-                    />
-                  );
-                })}
-              </div>
+                <div className={cn("mt-2", GPU_GRID_FRAME_CLASS)}>
+                  <div
+                    data-testid="endpoint-node-gpu-card-grid"
+                    className={GPU_GRID_CLASS}
+                    style={GPU_GRID_STYLE}
+                  >
+                    {group.rows.map((row) => (
+                      <GpuDeviceCard
+                        key={`${row.nodeName}:${row.uuid}`}
+                        row={row}
+                        copyUuid={copyUuid}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </Disclosure>
             )}
           </div>
         );
@@ -1224,12 +1068,15 @@ export function EndpointClusterGpuResourcesPanel({
   resourceInfo,
   schedulingNodeResources,
   currentCluster,
+  nodeCount,
   selectedAccelerator,
   virtualizationEnabled,
   request,
+  inset = true,
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
   const title = t("endpoints.sections.clusterDeviceResources");
+  const [clusterDetailsOpen, setClusterDetailsOpen] = useState(false);
   const rows = useMemo(
     () => buildGpuCardResourceRows(resourceInfo, selectedAccelerator),
     [resourceInfo, selectedAccelerator],
@@ -1241,171 +1088,172 @@ export function EndpointClusterGpuResourcesPanel({
     const matchingRows = rows.filter((row) => row.matchesSelectedAccelerator);
     // A preset accelerator (e.g. from a recipe catalog) may not line up with
     // any cluster-reported product; the summary should still show the
-    // cluster's pool instead of an all-dashes board (NEU-501).
+    // cluster's pool instead of an all-dashes board.
     return matchingRows.length > 0 ? matchingRows : rows;
   }, [rows, selectedAccelerator?.product]);
+  const filteredByAccelerator =
+    Boolean(selectedAccelerator?.product) &&
+    rows.some((row) => row.matchesSelectedAccelerator);
   const hasGpuResources = hasGpuResourceRows(rows);
-  // A catalog-preset accelerator (e.g. "L4") may not exist on the selected
-  // cluster, so the badge only reports cluster-exposed products; summaryRows
-  // already narrows them to the preset-matching ones when a match exists.
-  const gpuTypeProducts = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          summaryRows
-            .map((row) => row.product)
-            .filter((product): product is string => Boolean(product)),
-        ),
-      ).sort((first, second) => first.localeCompare(second)),
-    [summaryRows],
+  const gpuCount = useMemo(
+    () => sumOptionalNumbers(rows.map((row) => row.quantity.total)),
+    [rows],
   );
-  const gpuTypeLabel =
-    gpuTypeProducts.length > 0
-      ? gpuTypeProducts.join(", ")
-      : t("clusters.options.allGpuProducts");
   if (!resourceInfo) {
     return (
       <div className="grid min-h-[220px] grid-rows-[auto_1fr] overflow-hidden">
-        <ClusterResourcesToolbar
-          title={title}
-          currentCluster={currentCluster}
-          showGpuResources={false}
-          gpuTypeLabel={gpuTypeLabel}
-          t={t}
-        />
-        <div className="flex min-h-0 items-center px-3 pb-3 text-sm text-muted-foreground">
-          <div className="rounded-md border bg-muted/20 p-3">
+        <ClusterResourcesToolbar title={title} inset={inset} />
+        <div className={cn("flex min-h-0 items-start", inset && "px-3 pb-3")}>
+          <EmptyState variant="inline" className="w-full text-left">
             {currentCluster
               ? t("endpoints.messages.clusterResourcesUnavailable")
-              : t("endpoints.placeholders.selectCluster")}
-          </div>
+              : t("endpoints.placeholders.clusterResourcesRequiresCluster")}
+          </EmptyState>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="grid min-h-0 grid-rows-[auto_1fr] overflow-hidden xl:max-h-[calc(100vh-2rem)]">
+    <div className="grid min-h-0 grid-rows-[auto_1fr]">
       <ClusterResourcesToolbar
         title={title}
-        currentCluster={currentCluster}
-        showGpuResources={hasGpuResources}
-        gpuTypeLabel={gpuTypeLabel}
+        inset={inset}
+        filteredByAccelerator={filteredByAccelerator}
+        detailsOpen={clusterDetailsOpen}
+        onToggleDetails={() => setClusterDetailsOpen((open) => !open)}
         t={t}
       />
-      <EndpointClusterGpuResourcesInlineContent
-        resourceInfo={resourceInfo}
-        schedulingNodeResources={schedulingNodeResources}
-        selectedAccelerator={selectedAccelerator}
-        hasGpuResources={hasGpuResources}
-        virtualizationEnabled={virtualizationEnabled}
-        summaryRows={summaryRows}
-        request={request}
-        t={t}
-      />
-    </div>
-  );
-}
-
-function ClusterResourcesToolbar({
-  title,
-  currentCluster,
-  showGpuResources,
-  gpuTypeLabel,
-  t,
-}: {
-  title: string;
-  currentCluster?: string | null;
-  showGpuResources: boolean;
-  gpuTypeLabel: string;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  return (
-    <div
-      data-testid="endpoint-cluster-resource-toolbar"
-      className="flex flex-wrap items-start gap-3 px-3.5 pb-2 pt-3"
-    >
-      <Cpu className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-      <div className="grid min-w-0 gap-2">
-        <h3 className="m-0 text-base font-semibold leading-6 text-foreground">
-          {title}
-        </h3>
-        <div
-          data-testid="endpoint-cluster-resource-target-notes"
-          className="flex min-w-0 flex-wrap items-center gap-2"
-        >
-          {currentCluster && (
-            <Badge
-              variant="outline"
-              className="max-w-[220px] gap-1.5 bg-muted/30 px-2.5 py-1 font-normal"
-              title={currentCluster}
-            >
-              <span className="shrink-0 text-muted-foreground">
-                {t("common.fields.cluster")}
-              </span>
-              <span className="min-w-0 truncate font-semibold text-foreground">
-                {currentCluster}
-              </span>
-            </Badge>
-          )}
-          {showGpuResources && (
-            <Badge
-              variant="outline"
-              className="max-w-[260px] gap-1.5 bg-muted/30 px-2.5 py-1 font-normal"
-              title={gpuTypeLabel}
-            >
-              <span className="shrink-0 text-muted-foreground">
-                {t("clusters.fields.gpuType")}
-              </span>
-              <span className="min-w-0 truncate font-semibold text-foreground">
-                {gpuTypeLabel}
-              </span>
-            </Badge>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EndpointClusterGpuResourcesInlineContent({
-  resourceInfo,
-  schedulingNodeResources,
-  selectedAccelerator,
-  hasGpuResources,
-  virtualizationEnabled,
-  summaryRows,
-  request,
-  t,
-}: {
-  resourceInfo: ClusterResourceInfo;
-  schedulingNodeResources?: ClusterResourceInfo["node_resources"];
-  selectedAccelerator?: SelectedAccelerator | null;
-  hasGpuResources: boolean;
-  virtualizationEnabled: boolean;
-  summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
-  request?: EndpointResourceRequestContext;
-  t: (key: string, options?: { defaultValue?: string }) => string;
-}) {
-  return (
-    <div className="min-h-0 overflow-auto px-3 pb-3 pt-1 [scrollbar-gutter:stable_both-edges]">
-      <div
-        data-testid="endpoint-cluster-resource-board"
-        className="grid min-w-[1120px] gap-2.5"
-      >
-        <EndpointClusterResourceSummary
+      {clusterDetailsOpen && (
+        <EndpointClusterGpuResourcesInlineContent
           resourceInfo={resourceInfo}
-          summaryRows={summaryRows}
+          nodeCount={nodeCount}
+          gpuCount={gpuCount}
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
+          summaryRows={summaryRows}
+          inset={inset}
           t={t}
         />
+      )}
+      <div
+        className={cn(
+          "min-h-0",
+          inset && "px-3 pb-3",
+          clusterDetailsOpen && "mt-4",
+        )}
+      >
         <EndpointNodeResources
           nodeResources={resourceInfo.node_resources}
           schedulingNodeResources={schedulingNodeResources}
           selectedAccelerator={selectedAccelerator}
           hasGpuResources={hasGpuResources}
           request={request}
+          t={t}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ClusterResourcesToolbar({
+  title,
+  inset,
+  filteredByAccelerator,
+  detailsOpen,
+  onToggleDetails,
+  t,
+}: {
+  title: string;
+  inset: boolean;
+  filteredByAccelerator?: boolean;
+  detailsOpen?: boolean;
+  onToggleDetails?: () => void;
+  t?: Translate;
+}) {
+  return (
+    <div
+      data-testid="endpoint-cluster-resource-toolbar"
+      className={cn(
+        "flex min-w-0 items-start justify-between gap-3",
+        inset ? "px-3.5 pb-2 pt-3" : "pb-3",
+      )}
+    >
+      <div className="min-w-0">
+        <h3 className="m-0 text-base font-semibold leading-6 text-foreground">
+          {title}
+        </h3>
+        {filteredByAccelerator && t && (
+          <p
+            className="mt-0.5 text-xs leading-4 text-muted-foreground"
+            data-testid="endpoint-cluster-accelerator-scope-hint"
+          >
+            {t("endpoints.messages.selectedAcceleratorResources")}
+          </p>
+        )}
+      </div>
+      {t && onToggleDetails && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="group h-7 shrink-0 gap-1.5 rounded-md px-2 text-xs font-medium"
+          data-testid="endpoint-cluster-details-toggle"
+          aria-expanded={detailsOpen}
+          aria-controls="endpoint-cluster-resource-details"
+          onClick={onToggleDetails}
+        >
+          {detailsOpen
+            ? t("endpoints.actions.hideDetails")
+            : t("endpoints.actions.showDetails")}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform",
+              detailsOpen && "rotate-180",
+            )}
+            aria-hidden="true"
+          />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function EndpointClusterGpuResourcesInlineContent({
+  resourceInfo,
+  nodeCount,
+  gpuCount,
+  hasGpuResources,
+  virtualizationEnabled,
+  summaryRows,
+  inset,
+  t,
+}: {
+  resourceInfo: ClusterResourceInfo;
+  nodeCount?: number | null;
+  gpuCount: number | null;
+  hasGpuResources: boolean;
+  virtualizationEnabled: boolean;
+  summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
+  inset: boolean;
+  t: Translate;
+}) {
+  return (
+    <div
+      id="endpoint-cluster-resource-details"
+      className={cn("min-h-0", inset && "px-3 pb-3")}
+    >
+      <div
+        data-testid="endpoint-cluster-resource-board"
+        className="grid min-w-0 gap-2.5"
+      >
+        <EndpointClusterResourceSummary
+          resourceInfo={resourceInfo}
+          summaryRows={summaryRows}
+          hasGpuResources={hasGpuResources}
+          virtualizationEnabled={virtualizationEnabled}
+          nodeCount={nodeCount}
+          gpuCount={gpuCount}
           t={t}
         />
       </div>

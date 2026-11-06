@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  KVCacheEstimate,
+  type KVCacheEstimateState,
+} from "@/domains/endpoint/components/KVCacheEstimate";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import type {
   EngineCacheArgControls,
@@ -36,11 +39,13 @@ import { formatGb } from "@/foundation/recipe/vram";
  * hardware, not about which engine reads the weights.
  */
 
-type Declared = {
+type EndpointDeclaredWeights = {
   /** Weights per replica, as the catalog states them. Null when it states
    * none. Does not include KV cache — that is computed separately and added
    * back in for the VRAM check. */
   perReplicaGb: number | null;
+  /** Catalog declarations are measured; checkpoint values are calculated. */
+  source?: "catalog" | "checkpoint";
   replicas: number;
   /**
    * What the chosen cluster offers one replica, so the declared figure can be
@@ -53,7 +58,7 @@ type Declared = {
   };
 };
 
-type KvCache = {
+type EndpointKvCacheInput = {
   read: ModelInfoRead;
   engineArgs: EngineCacheArgs;
   /** Controls elsewhere on the form that own the context and concurrency. */
@@ -73,10 +78,12 @@ type KvCache = {
 export const EndpointWeightsEstimate = ({
   declared,
   kvCache,
+  stackKvFields = false,
   onRequiredGbChange,
 }: {
-  declared: Declared | null;
-  kvCache: KvCache | null;
+  declared: EndpointDeclaredWeights | null;
+  kvCache: EndpointKvCacheInput | null;
+  stackKvFields?: boolean;
   /**
    * Reports the combined per-replica requirement (weights + KV cache) as it
    * changes, for callers elsewhere on the form that need the same figure this
@@ -102,6 +109,9 @@ export const EndpointWeightsEstimate = ({
     lastModelKey.current = modelKey;
     if (kvGb !== null) setKvGb(null);
   }
+  const onKvStateChange = useCallback((state: KVCacheEstimateState) => {
+    setKvGb(state.kind === "ready" ? state.totalGb : null);
+  }, []);
 
   const perReplicaGb = declared?.perReplicaGb ?? null;
   // A catalog that states no VRAM figure has nothing this section can show:
@@ -129,7 +139,11 @@ export const EndpointWeightsEstimate = ({
           data-testid="endpoint-declared-weights"
         >
           <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-            {t("endpoints.weights.declared")}
+            {t(
+              declared.source === "checkpoint"
+                ? "endpoints.weights.estimated"
+                : "endpoints.weights.declared",
+            )}
             <InfoHint label={t("endpoints.descriptions.declaredWeights")} />
           </div>
           <div className="space-y-1">
@@ -181,7 +195,8 @@ export const EndpointWeightsEstimate = ({
           read={kvCache.read}
           engineArgs={kvCache.engineArgs}
           controls={kvCache.controls}
-          onEstimate={setKvGb}
+          stackFields={stackKvFields}
+          onStateChange={onKvStateChange}
         />
       )}
     </div>

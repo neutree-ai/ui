@@ -9,6 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
+import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   ExpandableCell,
@@ -24,18 +26,13 @@ type ParameterEntries = Record<string, unknown> | null | undefined;
 type EndpointAdvancedParametersProps = {
   engineParameters: ParameterEntries;
   environmentVariables: ParameterEntries;
+  collapsible?: boolean;
+  framed?: boolean;
 };
 
-const formatParameterValue = (value: unknown) => {
-  if (typeof value === "string") return value;
-  if (value === undefined) return "";
-
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-};
+/** A stated null is shown as written, not as an empty value. */
+const formatParameterValue = (value: unknown) =>
+  value === null ? "null" : formatDisplayValue(value);
 
 /** The value as the reader needs it once the cell has cut it off.
  *
@@ -187,6 +184,8 @@ function ParameterGroup({
 export function EndpointAdvancedParameters({
   engineParameters,
   environmentVariables,
+  collapsible = false,
+  framed = true,
 }: EndpointAdvancedParametersProps) {
   const { t } = useTranslation();
   const hasEngineParameters = Boolean(
@@ -198,24 +197,57 @@ export function EndpointAdvancedParameters({
 
   if (!hasEngineParameters && !hasEnvironmentVariables) return null;
 
-  return (
-    <ShowPage.Section title={t("endpoints.sections.advancedOptions")}>
-      <div className="space-y-5">
-        {hasEngineParameters && engineParameters && (
+  const content = (
+    <div className="space-y-5">
+      {hasEngineParameters && engineParameters && (
+        <ParameterGroup
+          title={t("endpoints.fields.engineVariables")}
+          parameters={engineParameters}
+        />
+      )}
+      {hasEnvironmentVariables && environmentVariables && (
+        <div className={hasEngineParameters ? "border-t pt-4" : undefined}>
           <ParameterGroup
-            title={t("endpoints.fields.engineVariables")}
-            parameters={engineParameters}
+            title={t("endpoints.sections.environmentVariables")}
+            parameters={environmentVariables}
           />
-        )}
-        {hasEnvironmentVariables && environmentVariables && (
-          <div className={hasEngineParameters ? "border-t pt-4" : undefined}>
-            <ParameterGroup
-              title={t("endpoints.sections.environmentVariables")}
-              parameters={environmentVariables}
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (collapsible) {
+    const engineCount = Object.keys(engineParameters ?? {}).length;
+    const environmentCount = Object.keys(environmentVariables ?? {}).length;
+    return (
+      <ShowPage.Section
+        title={t("endpoints.sections.advancedOptions")}
+        framed={framed}
+      >
+        <Disclosure
+          variant="plain"
+          title={
+            <span className="text-muted-foreground">
+              {t("endpoints.wizard.review.variableSummary", {
+                engine: engineCount,
+                environment: environmentCount,
+              })}
+            </span>
+          }
+          contentClassName="pt-4"
+        >
+          {content}
+        </Disclosure>
+      </ShowPage.Section>
+    );
+  }
+
+  return (
+    <ShowPage.Section
+      title={t("endpoints.sections.advancedOptions")}
+      framed={framed}
+    >
+      {content}
     </ShowPage.Section>
   );
 }

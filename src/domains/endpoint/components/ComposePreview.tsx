@@ -1,16 +1,9 @@
-import { ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { cn } from "@/foundation/lib/utils";
 import type { ComposedSpec } from "@/foundation/recipe/types";
+import { KeyValueList } from "./KeyValueList";
 
 type Props = {
   composed: ComposedSpec | null;
@@ -25,18 +18,10 @@ type Props = {
    * result of the ones already made.
    */
   collapsible?: boolean;
-};
-
-const fmt = (v: unknown): string => {
-  if (v === undefined || v === null) return "";
-  if (typeof v === "object") {
-    try {
-      return JSON.stringify(v);
-    } catch {
-      return String(v);
-    }
-  }
-  return String(v);
+  /** Keep object values in one column in the narrow summary rail. */
+  compact?: boolean;
+  /** Match the surface of the surrounding summary or standalone form. */
+  surface?: "card" | "plain";
 };
 
 /**
@@ -45,11 +30,30 @@ const fmt = (v: unknown): string => {
  * It must visually match what the backend would produce — the algorithm is
  * the same on both sides.
  */
-export const ComposePreview = ({ composed, error, collapsible }: Props) => {
+export const ComposePreview = ({
+  composed,
+  error,
+  collapsible,
+  compact = false,
+  surface = "card",
+}: Props) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
 
   if (error) {
+    if (surface === "plain") {
+      return (
+        <div
+          data-testid="compose-preview"
+          data-state="error"
+          className="border-l-2 border-destructive px-3 py-2"
+        >
+          <div className="text-sm font-medium text-destructive">
+            {t("endpoints.recipe.previewError", "Cannot compose")}
+          </div>
+          <div className="mt-1 text-sm font-mono text-destructive">{error}</div>
+        </div>
+      );
+    }
     return (
       <Card
         data-testid="compose-preview"
@@ -93,8 +97,8 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
     .filter(Boolean)
     .join(" · ");
 
-  const body = (
-    <CardContent className="space-y-4">
+  const content = (
+    <>
       <Row label={t("common.fields.engine", "Engine")}>
         {engineLabel ? (
           <span className="font-mono text-sm">{engineLabel}</span>
@@ -132,15 +136,7 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
         {engineArgs.length === 0 ? (
           <EmptyValue />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-            {engineArgs.map(([k, v]) => (
-              <div key={k} data-arg={k} className="font-mono text-xs break-all">
-                <span className="font-medium">{k}</span>
-                <span className="text-muted-foreground">: </span>
-                <span>{fmt(v)}</span>
-              </div>
-            ))}
-          </div>
+          <KeyValueList entries={engineArgs} compact={compact} />
         )}
       </Row>
 
@@ -148,28 +144,24 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
         {env.length === 0 ? (
           <EmptyValue />
         ) : (
-          <div className="space-y-1">
-            {env.map(([k, v]) => (
-              <div
-                key={k}
-                data-env={k}
-                className="flex items-baseline gap-2 text-sm"
-              >
-                <Badge variant="secondary" className="font-mono">
-                  {k}
-                </Badge>
-                <span className="font-mono text-xs text-muted-foreground break-all">
-                  {v}
-                </span>
-              </div>
-            ))}
-          </div>
+          <KeyValueList entries={env} compact={compact} />
         )}
       </Row>
-    </CardContent>
+    </>
   );
 
   if (!collapsible) {
+    if (surface === "plain") {
+      return (
+        <div
+          data-testid="compose-preview"
+          data-state="ok"
+          className="space-y-4"
+        >
+          {content}
+        </div>
+      );
+    }
     return (
       <Card data-testid="compose-preview" data-state="ok" className="mt-2">
         <CardHeader>
@@ -177,34 +169,23 @@ export const ComposePreview = ({ composed, error, collapsible }: Props) => {
             {t("endpoints.recipe.preview", "Composed preview")}
           </CardTitle>
         </CardHeader>
-        {body}
+        <CardContent className="space-y-4">{content}</CardContent>
       </Card>
     );
   }
 
   return (
-    <Card data-testid="compose-preview" data-state="ok" className="mt-2">
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger
-          data-testid="compose-preview-toggle"
-          className="flex w-full items-center gap-2 px-6 py-4 text-left"
-        >
-          <span className="min-w-0 flex-1 truncate text-sm">
-            <span className="font-medium">
-              {t("endpoints.recipe.preview", "Composed preview")}
-            </span>
-            <span className="text-muted-foreground">{` — ${summary}`}</span>
-          </span>
-          <ChevronDown
-            className={cn(
-              "size-4 shrink-0 text-muted-foreground transition-transform",
-              open && "rotate-180",
-            )}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent>{body}</CollapsibleContent>
-      </Collapsible>
-    </Card>
+    <div data-testid="compose-preview" data-state="ok">
+      <Disclosure
+        variant={surface}
+        title={t("endpoints.recipe.preview", "Composed preview")}
+        summary={summary}
+        triggerTestId="compose-preview-toggle"
+        className={surface === "card" ? "mt-2" : undefined}
+      >
+        <div className="space-y-4">{content}</div>
+      </Disclosure>
+    </div>
   );
 };
 

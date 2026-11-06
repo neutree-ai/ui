@@ -271,6 +271,32 @@ export type KvCacheRefusal = {
 export type KvCacheResult = KvCacheEstimate | KvCacheRefusal;
 
 /**
+ * The provenances worth naming beside a value: the ones a reader would not
+ * assume from the checkpoint alone. "unstated" is not among them — it is
+ * summarised once per formula (see unreportedFactorKeys) rather than per value.
+ */
+export const NOTED_KV_CACHE_SOURCES: ReadonlySet<KvCacheSource> = new Set([
+  "derived",
+  "manual",
+  "deployment",
+]);
+
+/** The values a factor is made of: its terms for a sum or min, else itself. */
+const kvCacheFactorValues = (factor: KvCacheFactor): KvCacheValue[] =>
+  factor.kind === "sum" || factor.kind === "min" ? factor.terms : [factor];
+
+/** The distinct, sorted keys of every value in the estimate with no provenance. */
+export const unreportedFactorKeys = (estimate: KvCacheEstimate): string[] =>
+  Array.from(
+    new Set(
+      estimate.components
+        .flatMap((component) => component.factors.flatMap(kvCacheFactorValues))
+        .filter((value) => value.source === "unstated")
+        .map((value) => value.key),
+    ),
+  ).sort();
+
+/**
  * How many linear-attention states a sequence keeps.
  *
  * A recurrent layer's state is one fixed-size object that the engine can either

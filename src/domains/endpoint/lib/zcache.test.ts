@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EndpointClusterRef } from "../types";
-import { endpointCacheDashboard, zcacheSupport } from "./zcache";
+import { endpointCacheDashboard, kvCacheUnavailableReason } from "./zcache";
 
 const node = (name: string, capacity_bytes: number, runtime = "Ready") => ({
   name,
@@ -72,48 +72,117 @@ describe("endpointCacheDashboard", () => {
   });
 });
 
-describe("zcacheSupport", () => {
-  const cluster = (type = "kubernetes", enabled = true) =>
+describe("kvCacheUnavailableReason", () => {
+  const cluster = ({
+    type = "kubernetes",
+    enabled = true,
+    version = "v1",
+  } = {}) =>
     ({
-      spec: { type, cache: { provider: "zcache", options: { enabled } } },
+      spec: {
+        type,
+        cache: { provider: "zcache", options: { enabled, version } },
+      },
     }) as unknown as EndpointClusterRef;
-  const vllm = (version = "v0.31.0") => ({ engine: "vllm", version });
+  const versions = {
+    isLoading: false,
+    isError: false,
+    engineVersions: ["v0.31.0"],
+  };
+  const supported = {
+    cluster: cluster(),
+    acceleratorType: "nvidia_gpu",
+    engine: { engine: "vllm", version: "v0.31.0" },
+    task: "text-generation",
+    manager: { kind: "ready" as const },
+    versions,
+  };
 
-  it.each([
-    { name: "a supported vLLM version", args: {}, expected: "ok" },
-    {
-      name: "an unsupported vLLM version",
-      args: { engine: vllm("v0.24.0") },
-      expected: "incompatible",
-    },
+  it.each<{
+    name: string;
+    args: Partial<Parameters<typeof kvCacheUnavailableReason>[0]>;
+    reason: string | null;
+  }>([
+    { name: "a supported endpoint", args: {}, reason: null },
+    { name: "no task yet", args: { task: undefined }, reason: null },
     {
       name: "an SSH cluster",
-      args: { cluster: cluster("ssh") },
-      expected: "requirements",
+      args: { cluster: cluster({ type: "ssh" }) },
+      reason: "unavailableCluster",
     },
     {
       name: "a cluster without the cache enabled",
-      args: { cluster: cluster("kubernetes", false) },
-      expected: "requirements",
+      args: { cluster: cluster({ enabled: false }) },
+      reason: "unavailableCluster",
+    },
+    {
+      name: "no accelerator",
+      args: { acceleratorType: "" },
+      reason: "unavailableAccelerator",
+    },
+    {
+      name: "a non-NVIDIA accelerator",
+      args: { acceleratorType: "amd_gpu" },
+      reason: "unavailableAcceleratorVendor",
     },
     {
       name: "a non-vLLM engine",
-      args: { engine: { engine: "llama-cpp", version: "v0.31.0" } },
-      expected: "requirements",
+      args: { engine: { engine: "sglang", version: "v0.31.0" } },
+      reason: "unavailableEngine",
     },
     {
       name: "an embedding task",
       args: { task: "text-embedding" },
-      expected: "requirements",
+      reason: "unavailableTask",
     },
-  ])("$name -> $expected", ({ args, expected }) => {
-    expect(
-      zcacheSupport({
-        cluster: cluster(),
-        engine: vllm(),
-        supportedEngineVersions: ["v0.31.0"],
-        ...args,
-      }),
-    ).toBe(expected);
+    {
+      name: "no runtime version",
+      args: { cluster: cluster({ version: "" }) },
+      reason: "unavailableRuntime",
+    },
+    {
+      name: "a loading manager",
+      args: { manager: { kind: "loading" } },
+      reason: "checkingManager",
+    },
+    {
+      name: "an unreported manager",
+      args: { manager: { kind: "not-configured" } },
+      reason: "unavailableManager",
+    },
+    {
+      name: "a reconciling manager",
+      args: { manager: { kind: "pending" } },
+      reason: "managerPending",
+    },
+    {
+      name: "a failed manager",
+      args: { manager: { kind: "unavailable" } },
+      reason: "managerUnavailable",
+    },
+    {
+      name: "a failed version check",
+      args: { versions: { ...versions, isError: true, isLoading: true } },
+      reason: "unavailableRuntimeCheck",
+    },
+    {
+      name: "a loading version check",
+      args: { versions: { ...versions, isLoading: true } },
+      reason: "checkingRuntime",
+    },
+    {
+      name: "a runtime without engine versions",
+      args: { versions: { ...versions, engineVersions: [] } },
+      reason: "noCompatibleEngineVersion",
+    },
+    {
+      name: "an unsupported engine version",
+      args: { engine: { engine: "vllm", version: "v0.24.0" } },
+      reason: "unavailableEngineVersion",
+    },
+  ])("$name -> $reason", ({ args, reason }) => {
+    expect(kvCacheUnavailableReason({ ...supported, ...args })).toBe(
+      reason && `endpoints.kvCacheSettings.${reason}`,
+    );
   });
 });
