@@ -656,7 +656,6 @@
 			"noInstances": "No inference instances use this cache.",
 			"loadFailed": "Could not load the upgrade plan. Refresh and try again.",
 			"confirm": "Confirm upgrade",
-			"incompatible": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
 			"incompatibleTarget": "Incompatible with the target cache version",
 			"phases": {
 				"UpdatingRuntime": "Updating cache runtime",
@@ -1583,6 +1582,7 @@
 			"enable": "KV cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with cache enabled.",
+			"incompatibleRuntime": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",

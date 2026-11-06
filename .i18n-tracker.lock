@@ -450,8 +450,8 @@
   "src/domains/cluster/components/ClusterCacheSection.tsx": "91bdc78e4c7a84cc48cad25518831940",
   "src/domains/cluster/lib/zcache-presentation.ts": "52e676e791d5c8dc4edb0c88b59accef",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
-  "src/domains/endpoint/lib/zcache.ts": "3338c722398967ee5c4d51c2b6d43309",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "d07b41846acc69343b00f3f886c5d3ac",
+  "src/domains/endpoint/lib/zcache.ts": "7d04beb07781918136c24766a622c039",
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "3c7c18b5a05a23f9f90e3951918360fd",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "c8d484c6ed0a8a7c33a960ed4d2479c5",
   "src/pages/auth/SsoCallbackPage.tsx": "936c5937d9c257e1a0c2e56259d907a3",
   "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
@@ -509,7 +509,8 @@
   "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "80c7fc6daf78a587fa07608bcf337460",
   "src/domains/cluster/lib/zcache-dashboard.ts": "022a6c3b0eca23bbe761fb60c5309aec",
   "src/domains/cluster/components/ClusterFlops.tsx": "197c59e62c06e8ff16a24b32093d4dc1",
-  "src/domains/cluster/components/ZCacheUpgrade.tsx": "c2837ee72a23cbdd8871a51a0872efa3",
-  "src/domains/endpoint/hooks/use-cache-versions.ts": "4c2060e400de620068630a9e7fc54727",
-  "src/domains/cluster/hooks/use-cache-versions.ts": "4c2060e400de620068630a9e7fc54727"
+  "src/domains/cluster/components/ZCacheUpgrade.tsx": "651005b58f6aade9e913a90ca381f3b3",
+  "src/foundation/lib/cache-versions.ts": "9cfd55dd9c18f61fce9bbdc66d54b816",
+  "src/foundation/hooks/use-cache-versions.ts": "f057f759120fe8a83727bbc893688792",
+  "src/domains/cluster/lib/zcache-upgrade.ts": "1b673416cd39fd71032964aaa56ea418"
 }
