@@ -1302,13 +1302,24 @@ function GpuDetailsSheet({
                           <p className="truncate text-[11px] text-muted-foreground">
                             {allocation.model || <EmptyValue />} ·{" "}
                             {allocation.workspace}
+                            {allocation.allocations.length > 1
+                              ? ` · ${t("observations.replicaCountLabel", {
+                                  count: allocation.allocations.length,
+                                })}`
+                              : allocation.allocations.every(
+                                    (item) => !item.vdevice,
+                                  )
+                                ? ` · ${t("observations.fullCard")}`
+                                : ""}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[11px] whitespace-nowrap tabular-nums text-muted-foreground">
-                          {t("observations.reservedAmount", {
-                            memory: gib(allocation.memoryMiB),
-                          })}
-                        </span>
+                        {!isOpen && (
+                          <span className="shrink-0 text-[11px] whitespace-nowrap tabular-nums text-muted-foreground">
+                            {t("observations.reservedAmount", {
+                              memory: gib(allocation.memoryMiB),
+                            })}
+                          </span>
+                        )}
                         {/* The name is not a link: a stray click on a row that
                             also expands must not navigate. The arrow is the
                             single, deliberate way out. */}
@@ -1323,116 +1334,211 @@ function GpuDetailsSheet({
                         </Link>
                       </div>
                       {isOpen && (
-                        <div className="space-y-1.5 border-t border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] px-3 py-2">
-                          {/* One place for each number. The row above already
-                              says how much is reserved, so this block names the
-                              object and then gives each replica its own
-                              actual / reserved — never the total twice. */}
-                          <ul className="space-y-1">
-                            {allocation.allocations.map((item) => {
-                              const used = reading(
-                                samples,
-                                "neutree_endpoint_replica_accelerator_memory_used_bytes",
-                                item.node,
-                                item.uuid,
-                                item,
+                        <div className="border-t border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] py-2 pr-3 pl-[44px]">
+                          <div className="grid gap-2">
+                            {(() => {
+                              const rows = allocation.allocations.map(
+                                (item) => {
+                                  const sample = reading(
+                                    samples,
+                                    "neutree_endpoint_replica_accelerator_memory_used_bytes",
+                                    item.node,
+                                    item.uuid,
+                                    item,
+                                  );
+                                  return {
+                                    item,
+                                    usedMiB: sample
+                                      ? sample.value / 1024 ** 2
+                                      : null,
+                                  };
+                                },
                               );
-                              const usedMiB = used
-                                ? used.value / 1024 ** 2
+                              const known = rows.filter(
+                                (row) => row.usedMiB != null,
+                              );
+                              const actualTotal = known.length
+                                ? known.reduce(
+                                    (sum, row) => sum + (row.usedMiB ?? 0),
+                                    0,
+                                  )
                                 : null;
-                              const percent =
-                                usedMiB != null && item.memoryMiB > 0
+                              const share =
+                                actualTotal != null && allocation.memoryMiB > 0
                                   ? Math.min(
                                       100,
-                                      (usedMiB / item.memoryMiB) * 100,
+                                      (actualTotal / allocation.memoryMiB) *
+                                        100,
                                     )
                                   : null;
-                              // "matrix-many-03-0" under "matrix-many-03" is
-                              // the Endpoint name again; the suffix earns its
-                              // space only when rows must be told apart.
-                              const replicaCount =
-                                allocation.allocations.length;
+                              const weights = allocation.modelWeightsMiB;
+                              const kv = allocation.kvCacheCapacityMiB;
+                              const other =
+                                weights != null && kv != null
+                                  ? Math.max(
+                                      0,
+                                      allocation.memoryMiB - weights - kv,
+                                    )
+                                  : null;
+                              const pct = (value: number | null) =>
+                                value != null && allocation.memoryMiB > 0
+                                  ? Math.min(
+                                      100,
+                                      (value / allocation.memoryMiB) * 100,
+                                    )
+                                  : 0;
+
                               return (
-                                <li
-                                  key={`${item.replica}:${item.instance}`}
-                                  className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-xs"
-                                  title={
-                                    item.replica || item.instance || undefined
-                                  }
-                                >
-                                  <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-                                    {replicaCount > 1
-                                      ? `${t("observations.replicaLabel")} ${allocation.allocations.indexOf(item) + 1}`
-                                      : t("observations.actual")}
-                                    {item.vdevice
-                                      ? ` · vGPU ${item.vdevice}`
-                                      : replicaCount === 1
-                                        ? ` · ${t("observations.fullCard")}`
-                                        : ""}
-                                  </span>
-                                  <span className="shrink-0 whitespace-nowrap tabular-nums">
-                                    <strong className="font-semibold">
-                                      {gib(usedMiB)}
-                                    </strong>{" "}
-                                    <span className="text-muted-foreground">
-                                      / {gib(item.memoryMiB)}
-                                    </span>
-                                    {percent != null && (
-                                      <span className="text-[11px] text-muted-foreground">
-                                        {` · ${percent.toFixed(0)}%`}
+                                <>
+                                  {/* usage answers "how full", the bar shows the
+                                      same numbers, the legend names what the bar
+                                      is made of, and only then per-replica
+                                      detail — each fact once, in reading order. */}
+                                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                                    <span className="tabular-nums">
+                                      <strong className="font-semibold">
+                                        {gib(actualTotal)}
+                                      </strong>
+                                      <span className="text-muted-foreground">
+                                        {" "}
+                                        / {gib(allocation.memoryMiB)}
                                       </span>
-                                    )}
-                                  </span>
-                                </li>
+                                    </span>
+                                    <span className="text-[11px] whitespace-nowrap text-muted-foreground tabular-nums">
+                                      {share != null
+                                        ? t("observations.usedShare", {
+                                            percent: Math.round(share),
+                                          })
+                                        : t("observations.noMeasurement")}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}
+                                  >
+                                    <div className="absolute inset-0 flex overflow-hidden rounded-full">
+                                      {weights != null && weights > 0 && (
+                                        <span
+                                          className="h-full"
+                                          style={{
+                                            width: `${pct(weights)}%`,
+                                            backgroundColor: color,
+                                          }}
+                                        />
+                                      )}
+                                      {kv != null && kv > 0 && (
+                                        <span
+                                          className="h-full"
+                                          style={{
+                                            width: `${pct(kv)}%`,
+                                            backgroundColor: color,
+                                            backgroundImage: KV_STRIPES,
+                                          }}
+                                        />
+                                      )}
+                                      {other != null && other > 0 && (
+                                        <span
+                                          className="h-full bg-[var(--nt-fill-neutral-trans-5)]"
+                                          style={{ width: `${pct(other)}%` }}
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-muted-foreground">
+                                    <span className="flex items-center gap-1.5">
+                                      <span
+                                        aria-hidden
+                                        className="h-1.5 w-3 shrink-0 rounded-sm"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                      {t("observations.modelWeights")}
+                                      <strong className="text-xs text-foreground tabular-nums">
+                                        {gib(weights)}
+                                      </strong>
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                      <span
+                                        aria-hidden
+                                        className="h-1.5 w-3 shrink-0 rounded-sm"
+                                        style={{
+                                          backgroundColor: color,
+                                          backgroundImage: KV_STRIPES,
+                                        }}
+                                      />
+                                      {t("observations.l0KvCache")}
+                                      <strong className="text-xs text-foreground tabular-nums">
+                                        {gib(kv)}
+                                      </strong>
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                      <span
+                                        aria-hidden
+                                        className="h-1.5 w-3 shrink-0 rounded-sm bg-[var(--nt-fill-neutral-trans-5)]"
+                                      />
+                                      {t("observations.otherReservation")}
+                                      <strong className="text-xs text-foreground tabular-nums">
+                                        {gib(other)}
+                                      </strong>
+                                    </span>
+                                  </div>
+                                  {rows.length > 1 && (
+                                    <table className="w-full table-fixed border-collapse text-xs">
+                                      <thead>
+                                        <tr className="text-[10px] tracking-wide text-muted-foreground uppercase">
+                                          <th className="w-[34%] pb-1 text-left font-semibold">
+                                            {t("observations.replicaLabel")}
+                                          </th>
+                                          <th className="w-[22%] pb-1 text-right font-semibold">
+                                            {t("observations.actual")}
+                                          </th>
+                                          <th className="w-[22%] pb-1 text-right font-semibold">
+                                            {t(
+                                              "observations.requestedCapacity",
+                                            )}
+                                          </th>
+                                          <th className="w-[22%] pb-1 text-right font-semibold">
+                                            {t("observations.usedColumn")}
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {rows.map(
+                                          ({ item, usedMiB }, index) => (
+                                            <tr
+                                              key={`${item.replica}:${item.instance}`}
+                                            >
+                                              <td className="py-0.5 text-left text-[11px] text-muted-foreground">
+                                                {index + 1}
+                                                {item.vdevice
+                                                  ? ` · vGPU ${item.vdevice}`
+                                                  : ""}
+                                              </td>
+                                              <td className="py-0.5 text-right tabular-nums">
+                                                {gib(usedMiB)}
+                                              </td>
+                                              <td className="py-0.5 text-right tabular-nums">
+                                                {gib(item.memoryMiB)}
+                                              </td>
+                                              <td className="py-0.5 text-right tabular-nums">
+                                                {usedMiB != null &&
+                                                item.memoryMiB > 0
+                                                  ? `${Math.min(
+                                                      100,
+                                                      (usedMiB /
+                                                        item.memoryMiB) *
+                                                        100,
+                                                    ).toFixed(0)}%`
+                                                  : "—"}
+                                              </td>
+                                            </tr>
+                                          ),
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  )}
+                                </>
                               );
-                            })}
-                          </ul>
-                          {/* The legend of this row: the same swatches the bar
-                              uses, so the composition is explainable where the
-                              row is opened. */}
-                          <ul className="grid grid-cols-1 gap-x-4 gap-y-1 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2 text-xs sm:grid-cols-3">
-                            <li className="flex min-w-0 items-center gap-1.5">
-                              <span
-                                aria-hidden
-                                className="h-1.5 w-3 shrink-0 rounded-sm"
-                                style={{ backgroundColor: color }}
-                              />
-                              <span className="truncate text-[11px] text-muted-foreground">
-                                {t("observations.modelWeights")}
-                              </span>
-                              <strong className="ml-auto whitespace-nowrap tabular-nums">
-                                {gib(allocation.modelWeightsMiB)}
-                              </strong>
-                            </li>
-                            <li className="flex min-w-0 items-center gap-1.5">
-                              <span
-                                aria-hidden
-                                className="h-1.5 w-3 shrink-0 rounded-sm"
-                                style={{
-                                  backgroundColor: color,
-                                  backgroundImage: KV_STRIPES,
-                                }}
-                              />
-                              <span className="truncate text-[11px] text-muted-foreground">
-                                {t("observations.l0KvCache")}
-                              </span>
-                              <strong className="ml-auto whitespace-nowrap tabular-nums">
-                                {gib(allocation.kvCacheCapacityMiB)}
-                              </strong>
-                            </li>
-                            <li className="flex min-w-0 items-center gap-1.5">
-                              <span
-                                aria-hidden
-                                className="h-1.5 w-3 shrink-0 rounded-sm bg-[var(--nt-fill-neutral-trans-5)]"
-                              />
-                              <span className="truncate text-[11px] text-muted-foreground">
-                                {t("observations.otherReservation")}
-                              </span>
-                              <strong className="ml-auto whitespace-nowrap tabular-nums">
-                                {gib(otherMiB)}
-                              </strong>
-                            </li>
-                          </ul>
+                            })()}
+                          </div>
                         </div>
                       )}
                     </li>
