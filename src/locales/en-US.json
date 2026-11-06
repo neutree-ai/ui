@@ -599,7 +599,6 @@
 			"saved": "Configuration saved; awaiting application",
 			"retryHint": "Save again to retry this failed configuration.",
 			"reportedCapacity": "L1 configured capacity",
-			"configuredVersion": "Cache service version (configured)",
 			"edit": "Edit configuration",
 			"editDescription": "Change cache capacity and selected nodes.",
 			"currentDetails": "Current configuration diagnostics",
