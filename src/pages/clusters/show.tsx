@@ -1,8 +1,9 @@
 import { useList, useShow, useTranslation } from "@refinedev/core";
-import { useState } from "react";
+import { LayoutGrid, Table2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { useLocalStorage } from "react-use";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
-import { ClusterFlops } from "@/domains/cluster/components/ClusterFlops";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
 import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
@@ -29,13 +30,15 @@ import {
 } from "@/foundation/components/detail-tabs";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { GpuObservationCard } from "@/foundation/components/GpuObservationCard";
+import {
+  GpuObservationCard,
+  type GpuObservationDisplay,
+  ObservationStatus,
+} from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ObservationStatus } from "@/foundation/components/ObservationStatus";
-import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -56,28 +59,16 @@ import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboar
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
-const MONITOR_PANEL_LABELS = {
-  overview: "clusters.monitor.overview",
-  cache: "clusters.monitor.cache",
-} as const;
-
 export const ClustersShow = () => {
-  // Live observations and the polling that feeds them only serve the basic
-  // tab. Polling elsewhere would also rebuild the cache dashboard's node
-  // variables and reload its iframe.
-  const [tab, setTab] = useState("basic");
-  const onBasicTab = tab === "basic";
+  const [searchParams] = useSearchParams();
   const {
     query: { data, isLoading },
-  } = useShow<Cluster>({
-    queryOptions: { refetchInterval: onBasicTab ? 10000 : false },
-  });
+  } = useShow<Cluster>({ queryOptions: { refetchInterval: 10000 } });
   const record = data?.data;
   const observations = useAcceleratorObservations(
     "clusters",
     record?.metadata.workspace,
     record?.metadata.name,
-    onBasicTab,
   );
   const { data: clusterEndpoints } = useList<Endpoint>({
     resource: "endpoints",
@@ -90,24 +81,31 @@ export const ClustersShow = () => {
       },
     ],
     pagination: { mode: "off" },
-    queryOptions: {
-      enabled: !!record?.metadata.name,
-      refetchInterval: onBasicTab ? 15000 : false,
-    },
+    queryOptions: { enabled: !!record?.metadata.name, refetchInterval: 15000 },
   });
   const allocations = gpuAllocations(clusterEndpoints?.data ?? []);
+  // The previous storage key was seeded with the old Table default, so it
+  // cannot distinguish a saved choice from a default. Start a fresh key and
+  // only persist after the user switches, while keeping it shared by cluster.
+  const [storedGpuView, setGpuView] = useLocalStorage<GpuObservationDisplay>(
+    "neutree.cluster.resources.gpu-view.v2",
+  );
+  const gpuView: GpuObservationDisplay =
+    storedGpuView === "table" ? "table" : "cards";
+  const hasGpuDevices =
+    record?.status?.resource_info?.node_resources != null &&
+    Object.values(record.status.resource_info.node_resources).some(
+      (node) => (node.devices?.length ?? 0) > 0,
+    );
 
   const { translate } = useTranslation();
   const { t } = useI18nTranslation();
-  const { grafanaUrl } = useSystemApi();
+  const { grafanaUrl, systemInfo } = useSystemApi();
 
   const metadataColumns = useMetadataColumns({ resource: "endpoints" });
 
   const cacheStatus = zcacheStatus(record);
   const l1ByNode = nodeL1CacheByNode(cacheStatus?.nodes, observations.samples);
-  const tflopsOverrides = parseTflops(
-    record?.metadata.annotations?.[TFLOPS_ANNOTATION],
-  );
   const {
     selectedPanel,
     setSelectedPanel,
@@ -124,23 +122,30 @@ export const ClustersShow = () => {
     return <div>{t("clusters.messages.notFound")}</div>;
   }
 
-  const monitorDashboardProps = !grafanaUrl
-    ? null
-    : selectedPanel === "cache"
-      ? getZCacheDashboardProps(grafanaUrl, {
-          workspace: record.metadata.workspace ?? "default",
-          clusterName: record.metadata.name,
-          status: cacheStatus,
-        })
-      : getClusterSplitDashboardProps(
-          grafanaUrl,
-          "overview",
-          record.metadata.name,
-        );
+  const monitorDashboardProps =
+    grafanaUrl && selectedPanel
+      ? selectedPanel === "cache"
+        ? getZCacheDashboardProps(grafanaUrl, {
+            workspace: record.metadata.workspace ?? "default",
+            clusterName: record.metadata.name,
+            status: cacheStatus,
+          })
+        : getClusterSplitDashboardProps(
+            grafanaUrl,
+            "overview",
+            record.metadata.name,
+          )
+      : null;
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
   const acceleratorVirtualizationEnabled =
     isAcceleratorVirtualizationEnabled(record);
+  const showCacheTab =
+    record.spec.type === "kubernetes" &&
+    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+      true;
+  const initialTab =
+    showCacheTab && searchParams.get("section") === "cache" ? "cache" : "basic";
   return (
     <ClusterUpgradeProvider>
       <ShowPage
@@ -150,11 +155,7 @@ export const ClustersShow = () => {
           <ClusterUpgradeAction cluster={record as Cluster} />
         )}
       >
-        <Tabs
-          value={tab}
-          onValueChange={setTab}
-          className="flex h-full flex-col"
-        >
+        <Tabs defaultValue={initialTab} className="flex h-full flex-col">
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -215,6 +216,11 @@ export const ClustersShow = () => {
             <TabsTrigger value="basic" className={detailTabTriggerClassName}>
               {t("common.tabs.basic")}
             </TabsTrigger>
+            {showCacheTab && (
+              <TabsTrigger value="cache" className={detailTabTriggerClassName}>
+                {t("clusters.cache.title")}
+              </TabsTrigger>
+            )}
             {showMonitorTab && (
               <TabsTrigger
                 value="monitor"
@@ -276,20 +282,12 @@ export const ClustersShow = () => {
                 </div>
               </ShowPage.Section>
             )}
-            {record.spec.type === "kubernetes" && (
-              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
-            )}
             {record.status?.resource_info && (
               <ShowPage.Section title={t("common.fields.resources")}>
                 <ClusterResourceSummary
                   resourceInfo={record.status.resource_info}
                   t={t}
-                >
-                  <ClusterFlops
-                    cluster={record}
-                    samples={observations.samples}
-                  />
-                </ClusterResourceSummary>
+                />
               </ShowPage.Section>
             )}
             {record.status?.resource_info?.node_resources &&
@@ -298,51 +296,87 @@ export const ClustersShow = () => {
                 <ShowPage.Section
                   title={t("clusters.sections.nodes")}
                   actions={
-                    <ResourceUsageLegend
-                      items={[
-                        {
-                          label: t("observations.actualMemory"),
-                          markerClassName:
-                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
-                        },
-                        {
-                          label: t("observations.allocated"),
-                          markerClassName:
-                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
-                        },
-                        {
-                          label: t("clusters.fields.coreUsed"),
-                          markerClassName:
-                            "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-2)]",
-                        },
-                      ]}
-                    />
+                    hasGpuDevices ? (
+                      <SegmentedControl
+                        ariaLabel={t("clusters.fields.gpuView")}
+                        value={gpuView}
+                        items={[
+                          {
+                            value: "table",
+                            label: (
+                              <>
+                                <Table2 className="h-3.5 w-3.5" />
+                                {t("clusters.options.tableView")}
+                              </>
+                            ),
+                          },
+                          {
+                            value: "cards",
+                            label: (
+                              <>
+                                <LayoutGrid className="h-3.5 w-3.5" />
+                                {t("clusters.options.cardView")}
+                              </>
+                            ),
+                          },
+                        ]}
+                        onValueChange={(value) =>
+                          setGpuView(value as GpuObservationDisplay)
+                        }
+                      />
+                    ) : undefined
                   }
                 >
                   <ObservationStatus status={observations.status} />
                   <NodeResourcesTable
-                    renderGpuMemory={(row) => (
+                    renderGpuRow={(
+                      device,
+                      nodeName,
+                      index,
+                      display,
+                      showProduct,
+                    ) => (
                       <GpuObservationCard
+                        key={device.uuid}
+                        variant="inventory"
+                        display={display}
+                        showProduct={showProduct}
+                        observationStatus={observations.status}
+                        onRetry={observations.refetch}
                         device={{
-                          node: row.nodeName,
-                          uuid: row.uuid,
-                          index: row.gpuNumber,
-                          product: row.product,
+                          node: nodeName,
+                          uuid: device.uuid,
+                          index: device.order ?? index + 1,
+                          product: device.product,
                           peakFP16TFLOPS: productPeakTflops(
                             record.status?.resource_info,
-                            row.product,
+                            device.product,
                           ),
-                          totalMiB: row.memory.total,
-                          allocatedMiB: row.memory.used,
-                          healthy: row.healthy,
+                          totalMiB: device.allocatable?.memory_mib ?? null,
+                          allocatedMiB:
+                            device.allocatable?.memory_mib != null &&
+                            device.available?.memory_mib != null
+                              ? Math.max(
+                                  0,
+                                  device.allocatable.memory_mib -
+                                    device.available.memory_mib,
+                                )
+                              : null,
+                          coreUnits: device.allocatable?.core_units,
+                          healthy: device.health,
                         }}
-                        tflopsOverrides={tflopsOverrides}
+                        tflopsOverrides={parseTflops(
+                          record.metadata.annotations?.[TFLOPS_ANNOTATION],
+                        )}
                         samples={observations.samples}
                         allocations={allocations}
                       />
                     )}
                     nodeResources={record.status.resource_info.node_resources}
                     l1CacheByNode={l1ByNode}
+                    samples={observations.samples}
+                    allocations={allocations}
+                    gpuView={gpuView}
                     acceleratorTypes={Object.keys(
                       record.status.resource_info.allocatable
                         ?.accelerator_groups || {},
@@ -466,6 +500,7 @@ export const ClustersShow = () => {
             ) : null}
             <ShowPage.Section title={translate("endpoints.title")}>
               <Table
+                showColumnVisibility={false}
                 refineCoreProps={{
                   resource: "endpoints",
                   filters: {
@@ -515,6 +550,14 @@ export const ClustersShow = () => {
               </Table>
             </ShowPage.Section>
           </TabsContent>
+          {showCacheTab && (
+            <TabsContent
+              value="cache"
+              className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
+            >
+              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
+            </TabsContent>
+          )}
           {showMonitorTab && (
             <TabsContent
               value="monitor"
@@ -528,7 +571,11 @@ export const ClustersShow = () => {
                         ariaLabel={t("common.tabs.monitor")}
                         items={panels.map((panel) => ({
                           value: panel,
-                          label: t(MONITOR_PANEL_LABELS[panel]),
+                          label: t(
+                            panel === "cache"
+                              ? "clusters.monitor.cache"
+                              : "clusters.monitor.overview",
+                          ),
                         }))}
                         value={selectedPanel}
                         onValueChange={setSelectedPanel}
@@ -544,6 +591,7 @@ export const ClustersShow = () => {
                     <GrafanaDashboard
                       {...monitorDashboardProps}
                       className="flex-1"
+                      hideVariables={selectedPanel !== "cache"}
                     />
                   )}
                 </div>

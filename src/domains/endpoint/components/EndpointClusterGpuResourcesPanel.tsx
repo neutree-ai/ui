@@ -720,7 +720,7 @@ function EndpointClusterResourceSummary({
       total: cpuSummary.total,
       available: cpuSummary.available,
       unit: " cores",
-      series: "green",
+      series: "teal",
     },
     {
       label: t("common.fields.memory"),
@@ -728,7 +728,7 @@ function EndpointClusterResourceSummary({
       total: memorySummary.total,
       available: memorySummary.available,
       unit: " GiB",
-      series: "purple",
+      series: "violet",
     },
   );
 
@@ -1050,7 +1050,7 @@ function EndpointNodeResourceSummaries({
             used: group.quantity.used,
             total: group.quantity.total,
             available: group.quantity.available,
-            series: "amber",
+            series: "gold",
           });
         }
 
@@ -1061,7 +1061,7 @@ function EndpointNodeResourceSummaries({
             total: group.cpu.total,
             available: group.cpu.available,
             unit: " cores",
-            series: "green",
+            series: "teal",
           },
           {
             label: t("common.fields.memory"),
@@ -1069,7 +1069,7 @@ function EndpointNodeResourceSummaries({
             total: group.memory.total,
             available: group.memory.available,
             unit: " GiB",
-            series: "purple",
+            series: "violet",
           },
         );
 
@@ -1181,7 +1181,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.cpuSummary.total,
             available: group.cpuSummary.available,
             unit: " cores",
-            series: "green",
+            series: "teal",
           },
           {
             label: t("common.fields.memory"),
@@ -1189,7 +1189,7 @@ function EndpointVirtualizedNodeGpuResources({
             total: group.memorySummary.total,
             available: group.memorySummary.available,
             unit: " GiB",
-            series: "purple",
+            series: "violet",
           },
         );
 

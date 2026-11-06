@@ -1,8 +1,8 @@
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { cn } from "@/foundation/lib/utils";
 
 type FormCardGridProps = {
-  title?: string;
+  title?: ReactNode;
   testId?: string;
   className?: string;
   variant?: "card" | "section";

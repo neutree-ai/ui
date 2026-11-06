@@ -1,14 +1,7 @@
-import { Copy, Layers, Server } from "lucide-react";
+import { Layers, Server } from "lucide-react";
 import type { ReactNode } from "react";
-import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   type EndpointReplicaNodeResourceGroup,
   type EndpointReplicaResourceGroup,
@@ -17,21 +10,18 @@ import {
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ResourceUsageLegend } from "@/foundation/components/ResourceUsageLegend";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
+  GpuObservationCard,
+  GpuObservationTableHeader,
+} from "@/foundation/components/GpuObservationCard";
+import {
+  type AcceleratorSample,
   formatL1CacheUsage,
+  type GpuAllocation,
   type NodeL1CacheUsage,
+  reading,
 } from "@/foundation/lib/accelerator-observations";
-import {
-  GPU_CELL_CLASS,
-  GPU_GRID_CELL_CLASS,
-  GPU_GRID_CLASS,
-  GPU_GRID_FRAME_CLASS,
-  GPU_GRID_STYLE,
-  GPU_USAGE_TEXT_CLASS,
-} from "@/foundation/lib/gpu-device-resources";
+import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type {
@@ -41,18 +31,19 @@ import type {
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import type { EndpointReplicaResourceRow } from "../lib/resource-status";
 
-type RenderDeviceMemory = (
-  device: EndpointReplicaResourceRow,
-  deviceIndex: number,
-) => ReactNode;
-
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory: RenderDeviceMemory;
+  samples?: AcceleratorSample[];
+  observationStatus?: string;
+  onObservationRetry?: () => void;
+  tflopsOverrides?: Record<string, number>;
+  endpointName?: string;
+  workspace?: string;
+  modelName?: string;
 };
 
 const formatInteger = (value: number): ReactNode =>
@@ -80,34 +71,6 @@ const formatAllocatedCardCount = (
       ? "endpoints.fields.allocatedCard"
       : "endpoints.fields.allocatedCards",
   )}`;
-
-// The memory slot always shows the observed card, so the legend explains its
-// layers: the measured fill, the allocated track, and the physical size.
-const Legend = ({
-  t,
-}: {
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) => (
-  <ResourceUsageLegend
-    className="ml-0 text-[11px] leading-4"
-    items={[
-      {
-        label: t("observations.actualMemory"),
-        markerClassName: "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)]",
-      },
-      {
-        label: t("observations.allocated"),
-        markerClassName:
-          "h-2 w-2 rounded-sm bg-[var(--nt-chart-series-1)] opacity-30",
-      },
-      {
-        label: t("observations.physical"),
-        markerClassName:
-          "h-2 w-2 rounded-sm border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]",
-      },
-    ]}
-  />
-);
 
 export function EndpointRuntimeResourcesSummary({
   resources,
@@ -140,38 +103,354 @@ export function EndpointRuntimeResourcesSummary({
   );
 }
 
+const allocationForDevice = (
+  device: EndpointReplicaResourceRow,
+  identity: { endpointName: string; workspace: string; modelName: string },
+): GpuAllocation => ({
+  endpoint: identity.endpointName,
+  workspace: identity.workspace,
+  model: identity.modelName,
+  node: device.nodeId,
+  uuid: device.uuid,
+  replica: device.replicaId,
+  instance: device.instanceId,
+  vdevice: device.vdeviceIndex ?? undefined,
+  memoryMiB: device.memoryMiB,
+  modelWeightsMiB: device.modelWeightsMiB,
+  kvCacheCapacityMiB: device.kvCacheCapacityMiB,
+});
+
+const measuredTotal = (values: Array<number | null>): number | null =>
+  values.length > 0 && values.every((value) => value != null)
+    ? values.reduce<number>((sum, value) => sum + Number(value), 0)
+    : null;
+
+type ObservationHandles = { status?: string; refetch?: () => void };
+
+function ReplicaSummary({
+  group,
+  samples,
+  identity,
+  observations,
+}: {
+  group: EndpointReplicaResourceGroup;
+  samples: AcceleratorSample[];
+  identity: { endpointName: string; workspace: string; modelName: string };
+  observations?: ObservationHandles;
+}) {
+  const { t } = useTranslation();
+  const devices = group.nodes.flatMap((node) => node.devices);
+  const measurements = devices.map((device) => {
+    const allocation = allocationForDevice(device, identity);
+    return reading(
+      samples,
+      "neutree_endpoint_replica_accelerator_memory_used_bytes",
+      device.nodeId,
+      device.uuid,
+      allocation,
+    );
+  });
+  const utilizations = devices.map((device) => {
+    const allocation = allocationForDevice(device, identity);
+    return reading(
+      samples,
+      "neutree_endpoint_replica_accelerator_utilization_ratio",
+      device.nodeId,
+      device.uuid,
+      allocation,
+    );
+  });
+  const actual = measuredTotal(
+    measurements.map((sample) => (sample ? sample.value / 1024 ** 2 : null)),
+  );
+  const utilValues = utilizations.map((sample) => sample?.value ?? null);
+  const allUtilizationsKnown =
+    utilValues.length > 0 && utilValues.every((value) => value != null);
+  const averageUtilization = allUtilizationsKnown
+    ? (utilValues.reduce<number>((sum, value) => sum + Number(value), 0) /
+        utilValues.length) *
+      100
+    : null;
+  const peakUtilization = allUtilizationsKnown
+    ? Math.max(...utilValues.map(Number)) * 100
+    : null;
+  const l0Cache =
+    group.kvCacheCapacityMiB == null
+      ? null
+      : group.kvCacheCapacityMiB * group.deviceCount;
+
+  return (
+    <div className="grid border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-trans-2)] sm:grid-cols-2 xl:grid-cols-4">
+      <SummaryCell
+        label={t("observations.reservedVram")}
+        value={formatMemoryGiB(group.memoryMiB)}
+      />
+      <SummaryCell
+        label={t("observations.vramInUse")}
+        value={
+          actual == null
+            ? "—"
+            : `${formatMemoryGiB(actual)} / ${formatMemoryGiB(group.memoryMiB)}`
+        }
+      />
+      <SummaryCell
+        label={t("observations.utilization")}
+        value={
+          averageUtilization == null ? "—" : `${averageUtilization.toFixed(0)}%`
+        }
+        detail={
+          peakUtilization == null
+            ? null
+            : t("observations.averagePeak", {
+                peak: peakUtilization.toFixed(0),
+              })
+        }
+      />
+      <SummaryCell
+        label={t("observations.l0KvCache")}
+        value={l0Cache == null ? "—" : formatMemoryGiB(l0Cache)}
+        detail={t("observations.acrossGpus", { count: group.deviceCount })}
+      />
+    </div>
+  );
+}
+
+function SummaryCell({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: ReactNode;
+  detail?: ReactNode | null;
+}) {
+  return (
+    <div className="min-w-0 border-b border-r border-[var(--nt-stroke-neutral-trans-2)] px-3.5 py-2.5 last:border-r-0 sm:border-b-0">
+      <div className="text-[11px] leading-4 text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex min-w-0 items-baseline gap-1.5">
+        <strong className="truncate text-sm font-semibold leading-5 tabular-nums">
+          {value}
+        </strong>
+        {detail && (
+          <span className="truncate text-[11px] leading-4 text-muted-foreground">
+            {detail}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NodeSummary({
+  node,
+  l1Cache,
+  requestedCpu,
+  requestedMemory,
+  t,
+}: {
+  node: EndpointReplicaNodeResourceGroup;
+  l1Cache?: NodeL1CacheUsage;
+  requestedCpu: ReactNode;
+  requestedMemory: ReactNode;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-trans-2)] px-4 py-2.5">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
+        <Server aria-hidden="true" className="h-3.5 w-3.5" />
+      </span>
+      <span
+        className="min-w-0 truncate text-sm font-semibold leading-5"
+        title={node.nodeId}
+      >
+        {node.nodeId || <EmptyValue />}
+      </span>
+      <span className="ml-auto text-[11px] leading-4 text-muted-foreground">
+        {t("common.fields.cpu")} {requestedCpu} · {t("common.fields.memory")}{" "}
+        {requestedMemory} GiB
+        {l1Cache && (
+          <>
+            {" · "}
+            {t("observations.l1KvCache")} {formatL1CacheUsage(l1Cache)}
+          </>
+        )}{" "}
+        ·{" "}
+        {formatCount(
+          node.deviceCount,
+          "endpoints.fields.card",
+          "endpoints.fields.cards",
+          t,
+        )}
+      </span>
+    </div>
+  );
+}
+
+function Replica({
+  group,
+  groupIndex,
+  samples,
+  requestedCpu,
+  requestedMemory,
+  clusterResourceInfo,
+  l1CacheByNode,
+  tflopsOverrides,
+  identity,
+  requestedCorePerCard,
+  observations,
+}: {
+  group: EndpointReplicaResourceGroup;
+  groupIndex: number;
+  samples: AcceleratorSample[];
+  requestedCpu: ReactNode;
+  requestedMemory: ReactNode;
+  clusterResourceInfo?: ClusterResourceInfo | null;
+  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+  tflopsOverrides: Record<string, number>;
+  identity: { endpointName: string; workspace: string; modelName: string };
+  requestedCorePerCard?: number;
+  observations?: ObservationHandles;
+}) {
+  const { t } = useTranslation();
+  const replicaName = group.replicaId || group.instanceId;
+
+  return (
+    <section
+      data-testid="runtime-replica"
+      className="min-w-0 overflow-hidden rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)]"
+    >
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--nt-stroke-neutral-trans-2)] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
+            <Layers aria-hidden="true" className="h-4 w-4" />
+          </span>
+          <div className="grid min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 text-xs leading-4 text-muted-foreground">
+              <span>
+                {t("common.fields.replica")} {groupIndex}
+              </span>
+              {group.nodeCount > 1 && (
+                <>
+                  <span>·</span>
+                  <span>
+                    {t("endpoints.fields.crossNodes", {
+                      count: group.nodeCount,
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+            <span
+              className="min-w-0 truncate font-mono text-xs leading-4 text-muted-foreground"
+              title={replicaName || undefined}
+            >
+              {replicaName || <EmptyValue />}
+            </span>
+          </div>
+        </div>
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {formatCount(
+            group.deviceCount,
+            "endpoints.fields.card",
+            "endpoints.fields.cards",
+            t,
+          )}
+          {" · "}
+          {formatMemoryGiB(group.memoryMiB)} {t("endpoints.fields.vgpuMemory")}
+        </span>
+      </div>
+
+      <ReplicaSummary
+        group={group}
+        samples={samples}
+        identity={identity}
+        observations={observations}
+      />
+
+      <div className="overflow-x-auto">
+        <div role="table">
+          <GpuObservationTableHeader variant="allocation" />
+          {group.nodes.map((node) => (
+            <div key={node.nodeId}>
+              <NodeSummary
+                node={node}
+                l1Cache={l1CacheByNode?.[node.nodeId]}
+                requestedCpu={requestedCpu}
+                requestedMemory={requestedMemory}
+                t={t}
+              />
+              {node.devices.map((device, deviceIndex) => {
+                const allocation: GpuAllocation = {
+                  ...allocationForDevice(device, identity),
+                };
+                return (
+                  <GpuObservationCard
+                    key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
+                    variant="allocation"
+                    device={{
+                      node: device.nodeId,
+                      uuid: device.uuid,
+                      index: device.order ?? deviceIndex + 1,
+                      product: device.product,
+                      totalMiB: device.physicalMemoryMiB,
+                      allocatedMiB: device.memoryMiB,
+                      coreUnits:
+                        device.coreUnits > 0
+                          ? device.coreUnits
+                          : requestedCorePerCard,
+                      peakFP16TFLOPS: productPeakTflops(
+                        clusterResourceInfo,
+                        device.product,
+                      ),
+                    }}
+                    samples={samples}
+                    allocations={[allocation]}
+                    replica={allocation}
+                    tflopsOverrides={tflopsOverrides}
+                    observationStatus={observations?.status}
+                    onRetry={observations?.refetch}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function EndpointRuntimeResourcesCard({
   resources,
   requestedResources,
   clusterResourceInfo,
   className,
   l1CacheByNode,
-  renderMemory,
+  samples = [],
+  tflopsOverrides = {},
+  endpointName = "",
+  workspace = "default",
+  modelName = "",
+  observationStatus,
+  onObservationRetry,
 }: EndpointRuntimeResourcesCardProps) {
   const { t } = useTranslation();
-  const { copy } = useCopyToClipboard();
-
   const requestedCpu = formatToDecimal(requestedResources?.cpu) ?? (
     <EmptyValue />
   );
   const requestedMemory = formatToDecimal(requestedResources?.memory) ?? (
     <EmptyValue />
   );
+  const acceleratorResourceType = requestedResources?.accelerator?.type;
   const requestedCorePerCard =
     getVgpuVirtualization(requestedResources?.accelerator)?.core_percent ??
     undefined;
-  const acceleratorResourceType = requestedResources?.accelerator?.type;
-  const acceleratorType = acceleratorResourceType
-    ? t(`clusters.acceleratorTypes.${acceleratorResourceType}`, {
-        defaultValue: acceleratorResourceType,
-      })
-    : null;
-
   const summaryRows = getEndpointResourceSummaryRows(resources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources, {
     clusterResourceInfo,
     acceleratorType: acceleratorResourceType,
   });
+  const identity = { endpointName, workspace, modelName };
 
   if (summaryRows.length === 0 && replicaGroups.length === 0) {
     return null;
@@ -179,26 +458,26 @@ export default function EndpointRuntimeResourcesCard({
 
   return (
     <TooltipProvider>
-      <div className={cn("space-y-4", className)}>
-        {replicaGroups.length > 0 && (
-          <div className="divide-y divide-[var(--nt-stroke-neutral-trans-2)] border border-[var(--nt-stroke-neutral-trans-2)]">
-            {replicaGroups.map((group, groupIndex) => (
-              <Replica
-                key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
-                group={group}
-                l1CacheByNode={l1CacheByNode}
-                renderMemory={renderMemory}
-                groupIndex={groupIndex}
-                requestedCpu={requestedCpu}
-                requestedMemory={requestedMemory}
-                requestedCorePerCard={requestedCorePerCard}
-                acceleratorType={acceleratorType}
-                onCopyUuid={copy}
-                t={t}
-              />
-            ))}
-          </div>
-        )}
+      <div className={cn("space-y-3", className)}>
+        {replicaGroups.map((group, groupIndex) => (
+          <Replica
+            key={`${group.instanceId}:${group.replicaId}:${groupIndex}`}
+            group={group}
+            groupIndex={groupIndex}
+            samples={samples}
+            requestedCpu={requestedCpu}
+            requestedMemory={requestedMemory}
+            clusterResourceInfo={clusterResourceInfo}
+            l1CacheByNode={l1CacheByNode}
+            tflopsOverrides={tflopsOverrides}
+            identity={identity}
+            requestedCorePerCard={requestedCorePerCard}
+            observations={{
+              status: observationStatus,
+              refetch: onObservationRetry,
+            }}
+          />
+        ))}
 
         {replicaGroups.length === 0 && summaryRows.length > 0 && (
           <div className="space-y-2" data-testid="runtime-resource-summary">
@@ -240,282 +519,5 @@ export default function EndpointRuntimeResourcesCard({
         )}
       </div>
     </TooltipProvider>
-  );
-}
-
-function Replica({
-  renderMemory,
-  l1CacheByNode,
-  group,
-  groupIndex,
-  requestedCpu,
-  requestedMemory,
-  requestedCorePerCard,
-  acceleratorType,
-  onCopyUuid,
-  t,
-}: {
-  group: EndpointReplicaResourceGroup;
-  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
-  renderMemory: RenderDeviceMemory;
-  groupIndex: number;
-  requestedCpu: ReactNode;
-  requestedMemory: ReactNode;
-  requestedCorePerCard: number | undefined;
-  acceleratorType: string | null;
-  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) {
-  const replicaName = group.replicaId || group.instanceId;
-  const requestedCoreUnits =
-    requestedCorePerCard != null
-      ? requestedCorePerCard * group.deviceCount
-      : group.coreUnits;
-
-  return (
-    <section data-testid="runtime-replica" className="min-w-0">
-      <div className="sticky top-[-16px] z-10 border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] px-4 py-3">
-        <div className="flex min-w-0 items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] text-muted-foreground">
-              <Layers aria-hidden="true" className="h-4 w-4" />
-            </span>
-            <div className="grid min-w-0 gap-0.5">
-              <div className="flex flex-wrap items-center gap-x-2 text-xs leading-4 text-muted-foreground">
-                <span>
-                  {t("common.fields.replica")} {groupIndex}
-                </span>
-                {group.nodeCount > 1 && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {t("endpoints.fields.crossNodes", {
-                        count: group.nodeCount,
-                      })}
-                    </span>
-                  </>
-                )}
-              </div>
-              <span
-                className="min-w-0 truncate font-mono text-xs font-normal leading-4 text-[var(--nt-text-neutral-tertiary)]"
-                title={replicaName || undefined}
-              >
-                {replicaName || <EmptyValue />}
-              </span>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs text-muted-foreground">
-            <span>
-              {formatCount(
-                group.deviceCount,
-                "endpoints.fields.card",
-                "endpoints.fields.cards",
-                t,
-              )}
-            </span>
-            <span>·</span>
-            <span>
-              {formatMemoryGiB(group.memoryMiB)}{" "}
-              {t("endpoints.fields.vgpuMemory")}
-            </span>
-            <span>·</span>
-            <span>
-              {t("clusters.fields.coreUsage")}{" "}
-              {formatCoreLimit(requestedCoreUnits)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 pb-4 pt-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">
-            {t("endpoints.sections.gpuAllocation")}
-          </span>
-          <Legend t={t} />
-        </div>
-        <div className="mt-3">
-          {group.nodes.map((node) => (
-            <Host
-              key={node.nodeId}
-              node={node}
-              l1Cache={l1CacheByNode?.[node.nodeId]}
-              renderMemory={renderMemory}
-              requestedCpu={requestedCpu}
-              requestedMemory={requestedMemory}
-              acceleratorType={acceleratorType}
-              onCopyUuid={onCopyUuid}
-              t={t}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Host({
-  renderMemory,
-  node,
-  l1Cache,
-  requestedCpu,
-  requestedMemory,
-  acceleratorType,
-  onCopyUuid,
-  t,
-}: {
-  node: EndpointReplicaNodeResourceGroup;
-  l1Cache?: NodeL1CacheUsage;
-  renderMemory: RenderDeviceMemory;
-  requestedCpu: ReactNode;
-  requestedMemory: ReactNode;
-  acceleratorType: string | null;
-  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) {
-  return (
-    <div className="mb-3 last:mb-0">
-      <div data-testid="runtime-host" className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
-            <Server aria-hidden="true" className="h-4 w-4" />
-          </span>
-          <span
-            className="min-w-0 truncate text-sm font-semibold leading-5"
-            title={node.nodeId}
-          >
-            {node.nodeId || <EmptyValue />}
-          </span>
-          <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
-            {t("common.fields.cpu")} {requestedCpu} ·{" "}
-            {t("common.fields.memory")} {requestedMemory} GiB
-            {l1Cache && (
-              <span data-testid="runtime-host-l1-cache">
-                {" · "}
-                {t("observations.l1KvCache")} {formatL1CacheUsage(l1Cache)}
-              </span>
-            )}{" "}
-            ·{" "}
-            {formatCount(
-              node.deviceCount,
-              "endpoints.fields.card",
-              "endpoints.fields.cards",
-              t,
-            )}
-          </span>
-        </div>
-
-        <div className={cn("mt-3", GPU_GRID_FRAME_CLASS)}>
-          <div className={GPU_GRID_CLASS} style={GPU_GRID_STYLE}>
-            {node.devices.map((device, deviceIndex) => (
-              <GpuCell
-                key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
-                device={device}
-                deviceIndex={deviceIndex}
-                acceleratorType={acceleratorType}
-                onCopyUuid={onCopyUuid}
-                t={t}
-                renderMemory={renderMemory}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GpuCell({
-  device,
-  renderMemory,
-  deviceIndex,
-  acceleratorType,
-  onCopyUuid,
-  t,
-}: {
-  renderMemory: RenderDeviceMemory;
-  device: EndpointReplicaResourceGroup["nodes"][number]["devices"][number];
-  deviceIndex: number;
-  acceleratorType: string | null;
-  onCopyUuid: ReturnType<typeof useCopyToClipboard>["copy"];
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) {
-  const productRef = useRef<HTMLSpanElement>(null);
-  const productTruncated = useIsTruncated(productRef);
-  const gpuNumber = device.order ?? deviceIndex + 1;
-  const productLabel = (
-    <span
-      ref={productRef}
-      data-testid="runtime-gpu-product"
-      tabIndex={productTruncated ? 0 : undefined}
-      className={cn(
-        "mt-1 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
-        productTruncated &&
-          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
-      )}
-    >
-      {acceleratorType && <>{acceleratorType} · </>}
-      {device.product || <EmptyValue />}
-    </span>
-  );
-
-  return (
-    <div
-      data-testid="runtime-gpu-cell"
-      className={cn(GPU_CELL_CLASS, GPU_GRID_CELL_CLASS)}
-    >
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1">
-          <span className="whitespace-nowrap text-sm font-semibold leading-5">
-            {t("clusters.fields.gpuNumber")} {gpuNumber}
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            title={t("clusters.actions.copyUuid")}
-            aria-label={`${t("clusters.fields.gpuNumber")} ${gpuNumber} ${t("clusters.actions.copyUuid")}`}
-            className="h-6 w-6 shrink-0 text-muted-foreground"
-            onClick={() =>
-              onCopyUuid(device.uuid, {
-                successMessage: t("clusters.messages.copyUuidSuccess"),
-                errorMessage: t("clusters.messages.copyUuidFailed"),
-              })
-            }
-          >
-            <Copy className="h-3.5 w-3.5" />
-            <span className="sr-only">{t("clusters.actions.copyUuid")}</span>
-          </Button>
-        </div>
-        <div
-          className={cn(
-            "shrink-0 whitespace-nowrap tabular-nums text-muted-foreground",
-            GPU_USAGE_TEXT_CLASS,
-          )}
-        >
-          {t("clusters.fields.coreUsage")} {formatCoreLimit(device.coreUnits)}
-        </div>
-      </div>
-
-      {/* Clipped, the tooltip is the only way to read the name in full, so it
-          has to answer to focus as well as hover. Fitting, it answers neither —
-          a popup repeating the line under the pointer, and a tab stop, is
-          furniture. The cursor stays a cursor either way: a question mark is the
-          help affordance, and this line is a value, not a help topic. */}
-      {productTruncated ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{productLabel}</TooltipTrigger>
-          <TooltipContent>
-            {[acceleratorType, device.product].filter(Boolean).join(" · ") || (
-              <EmptyValue />
-            )}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        productLabel
-      )}
-
-      <div className="mt-2">{renderMemory(device, deviceIndex)}</div>
-    </div>
   );
 }

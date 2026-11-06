@@ -125,7 +125,7 @@ export function EndpointDeploymentSummary({
             )}
             {kvGb != null && knownPerReplicaGb > 0 && (
               <span
-                className={METRIC_BAR_SERIES_FILL_CLASSES.purple}
+                className={METRIC_BAR_SERIES_FILL_CLASSES.violet}
                 style={{ width: `${(kvGb / knownPerReplicaGb) * 100}%` }}
               />
             )}
@@ -146,7 +146,7 @@ export function EndpointDeploymentSummary({
               <span
                 className={cn(
                   "size-2 rounded-sm",
-                  METRIC_BAR_SERIES_FILL_CLASSES.purple,
+                  METRIC_BAR_SERIES_FILL_CLASSES.violet,
                 )}
               />
               {t("endpoints.wizard.summary.kvCache")}{" "}

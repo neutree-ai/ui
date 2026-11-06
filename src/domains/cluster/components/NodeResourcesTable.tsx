@@ -11,16 +11,25 @@ import {
   Table as UITable,
 } from "@/components/ui/table";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { GpuDeviceResourcesView } from "@/foundation/components/GpuDeviceResourcesView";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import {
-  formatL1CacheUsage,
-  type NodeL1CacheUsage,
+  GpuObservationCard,
+  type GpuObservationDisplay,
+  GpuObservationTableHeader,
+} from "@/foundation/components/GpuObservationCard";
+import { MetricBar } from "@/foundation/components/MetricBar";
+import type {
+  AcceleratorSample,
+  GpuAllocation,
+  NodeL1CacheUsage,
 } from "@/foundation/lib/accelerator-observations";
-import type { GpuDeviceResourceRow } from "@/foundation/lib/gpu-device-resources";
+import { formatL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import { compareDevicesByOrderThenUuid } from "@/foundation/lib/device-resource-utils";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
-import type { NodeResourceStatus } from "@/foundation/types/resource-types";
+import type {
+  DeviceResource,
+  NodeResourceStatus,
+} from "@/foundation/types/resource-types";
 import { calcResourceUsage } from "../lib/calc-resource-usage";
 import { getAcceleratorProductQuantities } from "../lib/resource-status";
 import { ResourceProgressBar } from "./ResourceProgressBar";
@@ -62,40 +71,22 @@ const ProductGroupsBreakdown = ({
   );
 };
 
-const NodeL1CacheBar = ({
-  usage,
-  t,
-}: {
-  usage: NodeL1CacheUsage;
-  t: (key: string) => string;
-}) => {
-  const percent =
-    usage.usedGiB != null && usage.capacityGiB > 0
-      ? Math.min(100, Math.max(0, (usage.usedGiB / usage.capacityGiB) * 100))
-      : null;
-  return (
-    <div
-      className="space-y-1 text-xs text-muted-foreground"
-      data-testid="node-l1-cache-bar"
-    >
-      <div className="flex items-center justify-between gap-2 tabular-nums">
-        <span>
-          {t("observations.l1KvCache")} {formatL1CacheUsage(usage)}
-        </span>
-        <span>{percent != null ? `${Math.round(percent)}%` : "—"}</span>
-      </div>
-      <MetricBar size="sm" series="blue" value={percent} track="subtle" />
-    </div>
-  );
-};
-
 interface NodeResourcesTableProps {
   nodeResources: Record<string, NodeResourceStatus>;
   acceleratorTypes: string[];
   t: (key: string, options?: Record<string, unknown>) => string;
   framed?: boolean;
   className?: string;
-  renderGpuMemory?: (row: GpuDeviceResourceRow) => ReactNode;
+  samples?: AcceleratorSample[];
+  allocations?: GpuAllocation[];
+  gpuView?: GpuObservationDisplay;
+  renderGpuRow?: (
+    device: DeviceResource,
+    nodeName: string,
+    index: number,
+    display: GpuObservationDisplay,
+    showProduct: boolean,
+  ) => ReactNode;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }
 
@@ -105,7 +96,10 @@ export const NodeResourcesTable = ({
   t,
   framed = true,
   className,
-  renderGpuMemory,
+  samples = [],
+  allocations = [],
+  gpuView = "table",
+  renderGpuRow,
   l1CacheByNode,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
@@ -183,6 +177,45 @@ export const NodeResourcesTable = ({
               nodeStatus.allocatable?.memory || 0,
               nodeStatus.available?.memory,
             );
+            const sortedDevices = [...(nodeStatus.devices ?? [])].sort(
+              compareDevicesByOrderThenUuid,
+            );
+            const showProduct =
+              new Set(
+                sortedDevices.map((device) => device.product).filter(Boolean),
+              ).size > 1;
+            const gpuRows = sortedDevices.map((device, index) =>
+              renderGpuRow ? (
+                renderGpuRow(device, nodeName, index, gpuView, showProduct)
+              ) : (
+                <GpuObservationCard
+                  key={device.uuid}
+                  variant="inventory"
+                  display={gpuView}
+                  showProduct={showProduct}
+                  device={{
+                    node: nodeName,
+                    uuid: device.uuid,
+                    index: device.order ?? index + 1,
+                    product: device.product,
+                    totalMiB: device.allocatable?.memory_mib ?? null,
+                    allocatedMiB:
+                      device.allocatable?.memory_mib != null &&
+                      device.available?.memory_mib != null
+                        ? Math.max(
+                            0,
+                            device.allocatable.memory_mib -
+                              device.available.memory_mib,
+                          )
+                        : null,
+                    coreUnits: device.allocatable?.core_units,
+                    healthy: device.health,
+                  }}
+                  samples={samples}
+                  allocations={allocations}
+                />
+              ),
+            );
 
             return (
               <Fragment key={nodeName}>
@@ -222,7 +255,7 @@ export const NodeResourcesTable = ({
                       used={cpu.used}
                       total={nodeStatus.allocatable?.cpu || 0}
                       compact
-                      series="green"
+                      series="teal"
                     />
                   </TableCell>
                   <TableCell className="align-top">
@@ -233,11 +266,46 @@ export const NodeResourcesTable = ({
                         total={nodeStatus.allocatable?.memory || 0}
                         unit="GiB"
                         compact
-                        series="purple"
+                        series="violet"
                       />
-                      {l1CacheByNode?.[nodeName] && (
-                        <NodeL1CacheBar usage={l1CacheByNode[nodeName]} t={t} />
-                      )}
+                      {l1CacheByNode?.[nodeName] &&
+                        (() => {
+                          const l1 = l1CacheByNode[nodeName];
+                          const l1Ratio =
+                            l1.usedGiB != null && l1.capacityGiB > 0
+                              ? Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    (l1.usedGiB / l1.capacityGiB) * 100,
+                                  ),
+                                )
+                              : null;
+                          return (
+                            <div
+                              className="space-y-1 text-xs text-muted-foreground"
+                              data-testid="node-l1-cache-bar"
+                            >
+                              <div className="flex items-center justify-between gap-2 tabular-nums">
+                                <span>
+                                  {t("observations.l1KvCache")}{" "}
+                                  {formatL1CacheUsage(l1)}
+                                </span>
+                                <span>
+                                  {l1Ratio != null
+                                    ? `${Math.round(l1Ratio)}%`
+                                    : "—"}
+                                </span>
+                              </div>
+                              <MetricBar
+                                size="sm"
+                                series="blue"
+                                value={l1Ratio}
+                                track="subtle"
+                              />
+                            </div>
+                          );
+                        })()}
                     </div>
                   </TableCell>
                   {acceleratorTypes.map((accType) => {
@@ -270,56 +338,21 @@ export const NodeResourcesTable = ({
                 {isExpanded && hasDevices && (
                   <TableRow>
                     <TableCell colSpan={3 + acceleratorTypes.length}>
-                      <div className="pl-9">
-                        <GpuDeviceResourcesView
-                          renderMemory={renderGpuMemory}
-                          nodeResources={{ [nodeName]: nodeStatus }}
-                          labels={{
-                            title: t("clusters.sections.nodeDevices"),
-                            deviceCount: t("clusters.fields.deviceCount"),
-                            healthyDevices: t("clusters.fields.healthyDevices"),
-                            memoryUsage: t("clusters.fields.memoryUsage"),
-                            coreUsage: t("clusters.fields.coreUsage"),
-                            allProducts: t("clusters.options.allGpuProducts"),
-                            allNodes: t("clusters.options.allNodes"),
-                            allDevices: t("clusters.options.allDevices"),
-                            searchPlaceholder: t(
-                              "clusters.placeholders.searchGpuDevices",
-                            ),
-                            gpuNumber: t("clusters.fields.gpuNumber"),
-                            uuid: t("clusters.fields.deviceUuid"),
-                            status: t("common.fields.status"),
-                            healthy: t("clusters.options.healthy"),
-                            unhealthy: t("clusters.options.unhealthy"),
-                            node: t("clusters.fields.nodeName"),
-                            product: t("common.fields.acceleratorProduct"),
-                            selected: t("clusters.fields.selected"),
-                            usable: t("clusters.options.usable"),
-                            free: t("clusters.options.free"),
-                            allocated: t("clusters.options.allocated"),
-                            resourceScope: t("clusters.fields.resourceScope"),
-                            freeCards: t("clusters.options.freeCards"),
-                            usableForRequest: t(
-                              "clusters.options.usableForRequest",
-                            ),
-                            copyUuid: t("clusters.actions.copyUuid"),
-                            copyUuidSuccess: t(
-                              "clusters.messages.copyUuidSuccess",
-                            ),
-                            copyUuidFailed: t(
-                              "clusters.messages.copyUuidFailed",
-                            ),
-                            remaining: t("clusters.fields.remaining"),
-                            usedSlashTotal: t("clusters.fields.usedSlashTotal"),
-                            empty: t("clusters.messages.noGpuDevices"),
-                          }}
-                          showFilters={false}
-                          showSummary={false}
-                          showNodeColumn={false}
-                          showHeader={false}
-                          variant="grid"
-                        />
-                      </div>
+                      {gpuView === "table" ? (
+                        <div className="overflow-x-auto rounded-md border border-[var(--nt-stroke-neutral-trans-2)]">
+                          <div role="table">
+                            <GpuObservationTableHeader variant="inventory" />
+                            {gpuRows}
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          role="list"
+                          className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]"
+                        >
+                          {gpuRows}
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 )}

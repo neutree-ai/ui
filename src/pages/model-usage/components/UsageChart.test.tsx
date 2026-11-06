@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { chartCategoryMark } from "@/foundation/lib/chart-palette";
 import {
   DayTooltip,
   formatTick,
@@ -118,8 +119,10 @@ describe("DayTooltip", () => {
             payload: {
               ...series("key-1", "Key one", "owned by ops"),
               label: "Key one",
-              promptColor: "blue",
-              completionColor: "lightblue",
+              promptFill: "var(--nt-chart-cat-1)",
+              completionFill: "var(--nt-chart-cat-1)",
+              promptMark: chartCategoryMark(0),
+              completionMark: chartCategoryMark(0),
               prompt: 80,
               completion: 20,
               total: 100,
@@ -146,8 +149,10 @@ describe("DayTooltip", () => {
             payload: {
               ...series("key-2", "Key two"),
               label: "Key two",
-              promptColor: "green",
-              completionColor: "lightgreen",
+              promptFill: "var(--nt-chart-cat-2)",
+              completionFill: "var(--nt-chart-cat-2)",
+              promptMark: chartCategoryMark(1),
+              completionMark: chartCategoryMark(1),
             },
           },
         ]}

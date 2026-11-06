@@ -1,4 +1,5 @@
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import { chartCategoryMark } from "./chart-palette";
 import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
@@ -20,9 +21,21 @@ export type GpuAllocation = {
   replica: string;
   instance: string;
   vdevice?: string;
+  /** Replicas this Endpoint runs in total, across every card. */
+  endpointReplicas?: number;
   memoryMiB: number;
   modelWeightsMiB?: number | null;
   kvCacheCapacityMiB?: number | null;
+};
+
+export type EndpointGpuAllocation = {
+  endpoint: string;
+  workspace: string;
+  model: string;
+  memoryMiB: number;
+  modelWeightsMiB: number | null;
+  kvCacheCapacityMiB: number | null;
+  allocations: GpuAllocation[];
 };
 
 export type ObservedGpu = {
@@ -32,6 +45,7 @@ export type ObservedGpu = {
   product: string;
   totalMiB: number | null;
   allocatedMiB: number | null;
+  coreUnits?: number | null;
   healthy?: boolean;
   peakFP16TFLOPS?: number | null;
 };
@@ -51,9 +65,7 @@ type AllocationEndpoint = {
 };
 type ReplicaStatus = NonNullable<EndpointResourceStatus["replicas"]>[number];
 
-// The identity reading() matches a replica's samples on: endpoint, replica or
-// instance, and vGPU slice.
-export function toGpuAllocation(
+function toGpuAllocation(
   endpoint: AllocationEndpoint,
   replica: ReplicaStatus,
   device: NonNullable<ReplicaStatus["devices"]>[number],
@@ -67,6 +79,7 @@ export function toGpuAllocation(
     replica: replica.replica_id ?? "",
     instance: replica.instance_id,
     vdevice: device.vdevice_index ?? undefined,
+    endpointReplicas: endpoint.status?.resources?.replicas?.length,
     memoryMiB: device.memory_mib,
     modelWeightsMiB: replica.model_weights_mib ?? null,
     kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,
@@ -95,6 +108,73 @@ export function gpuAllocations(
         a.endpoint.localeCompare(b.endpoint) ||
         a.instance.localeCompare(b.instance),
     );
+}
+
+const REPLICA_MEMORY_METRIC =
+  "neutree_endpoint_replica_accelerator_memory_used_bytes";
+const HARDWARE_INFO_METRIC = "neutree_node_accelerator_hardware_info";
+
+// Generic hardware info first, then vendor-specific metrics so the more
+// specific source overrides generic labels.
+export function deviceHardwareInfo(
+  samples: AcceleratorSample[],
+  node: string,
+  uuid: string,
+): Record<string, string> {
+  const extensions = [
+    ...new Set(
+      samples
+        .map((sample) => sample.metric)
+        .filter(
+          (metric) =>
+            /^neutree_node_accelerator_.+_info$/.test(metric) &&
+            metric !== HARDWARE_INFO_METRIC,
+        ),
+    ),
+  ].sort();
+  return Object.assign(
+    {},
+    ...[HARDWARE_INFO_METRIC, ...extensions].map(
+      (metric) => reading(samples, metric, node, uuid)?.labels ?? {},
+    ),
+  );
+}
+
+function allocationUsedMiB(
+  samples: AcceleratorSample[],
+  allocation: GpuAllocation,
+  allocationsOnCard: number,
+  cardUsedMiB: number | null,
+): number | null {
+  const measured = reading(
+    samples,
+    REPLICA_MEMORY_METRIC,
+    allocation.node,
+    allocation.uuid,
+    allocation,
+  );
+  if (measured) return measured.value / 1024 ** 2;
+  return allocationsOnCard === 1 ? cardUsedMiB : null;
+}
+
+export function endpointAllocationUsedMiB(
+  samples: AcceleratorSample[],
+  allocation: EndpointGpuAllocation,
+  allocationsOnCard: number,
+  cardUsedMiB: number | null,
+): number | null {
+  let total = 0;
+  for (const replicaAllocation of allocation.allocations) {
+    const usedMiB = allocationUsedMiB(
+      samples,
+      replicaAllocation,
+      allocationsOnCard,
+      cardUsedMiB,
+    );
+    if (usedMiB == null) return null;
+    total += usedMiB;
+  }
+  return total;
 }
 
 // Never add duplicate scrape targets or attribute a whole shared card to a replica.
@@ -133,71 +213,6 @@ export function reading(
   return matching.sort((a, b) => b.observed_at - a.observed_at)[0];
 }
 
-const REPLICA_MEMORY_METRIC =
-  "neutree_endpoint_replica_accelerator_memory_used_bytes";
-const HARDWARE_INFO_METRIC = "neutree_node_accelerator_hardware_info";
-
-// The generic hardware info first, then each vendor or extension info metric in
-// name order, so a more specific source overrides the generic labels.
-export function deviceHardwareInfo(
-  samples: AcceleratorSample[],
-  node: string,
-  uuid: string,
-): Record<string, string> {
-  const extensions = [
-    ...new Set(
-      samples
-        .map((sample) => sample.metric)
-        .filter(
-          (metric) =>
-            /^neutree_node_accelerator_.+_info$/.test(metric) &&
-            metric !== HARDWARE_INFO_METRIC,
-        ),
-    ),
-  ].sort();
-  return Object.assign(
-    {},
-    ...[HARDWARE_INFO_METRIC, ...extensions].map(
-      (metric) => reading(samples, metric, node, uuid)?.labels ?? {},
-    ),
-  );
-}
-
-export function hasAllocationReading(
-  samples: AcceleratorSample[],
-  allocation: GpuAllocation,
-): boolean {
-  return Boolean(
-    reading(
-      samples,
-      REPLICA_MEMORY_METRIC,
-      allocation.node,
-      allocation.uuid,
-      allocation,
-    ),
-  );
-}
-
-// A replica's own measurement when there is one. A card with a single
-// allocation attributes the whole-card measurement to it; a shared card has no
-// way to split it, so the usage stays unknown.
-export function allocationUsedMiB(
-  samples: AcceleratorSample[],
-  allocation: GpuAllocation,
-  allocationsOnCard: number,
-  cardUsedMiB: number | null,
-): number | null {
-  const measured = reading(
-    samples,
-    REPLICA_MEMORY_METRIC,
-    allocation.node,
-    allocation.uuid,
-    allocation,
-  );
-  if (measured) return measured.value / 1024 ** 2;
-  return allocationsOnCard === 1 ? cardUsedMiB : null;
-}
-
 export function nodeReading(
   samples: AcceleratorSample[],
   metric: string,
@@ -233,16 +248,14 @@ export function nodeL1CacheByNode(
   return result;
 }
 
-const colors = [
-  "var(--nt-chart-series-1)",
-  "var(--nt-chart-series-4)",
-  "var(--nt-chart-series-5)",
-];
-export function allocationColor(name: string, position = 0): string {
-  if (position === 0) return colors[0];
-  let hash = 0;
-  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return colors[1 + ((hash + position - 1) % (colors.length - 1))];
+/** Use the same categorical sequence on every GPU card.
+ *
+ * The visible allocation order is already stable within a card. Assigning by
+ * position keeps parallel GPU bars readable as the same sequence instead of
+ * giving each card a different hash-derived rainbow.
+ */
+export function allocationColor(index: number): string {
+  return chartCategoryMark(index).color;
 }
 
 type ObservationStatusValue =
@@ -252,9 +265,6 @@ type ObservationStatusValue =
   | "ok"
   | "no_data";
 
-// The status line shared by every observation query: a failed request first,
-// then loading, then a backend without a query service, then whether any value
-// came back.
 export function observationStatus(
   failed: boolean,
   loading: boolean,
@@ -269,4 +279,61 @@ export function observationStatus(
 
 export function formatL1CacheUsage(usage: NodeL1CacheUsage): string {
   return `${formatToDecimal(usage.usedGiB, 1) ?? "—"} / ${formatToDecimal(usage.capacityGiB, 1)} GiB`;
+}
+
+const sumKnown = (
+  allocations: GpuAllocation[],
+  field: "modelWeightsMiB" | "kvCacheCapacityMiB",
+): number | null => {
+  let total = 0;
+  for (const allocation of allocations) {
+    const value = allocation[field];
+    if (value == null) return null;
+    total += value;
+  }
+  return total;
+};
+
+/** Group replica/device allocations by Endpoint for one GPU. */
+export function groupGpuAllocationsByEndpoint(
+  allocations: GpuAllocation[],
+): EndpointGpuAllocation[] {
+  const groups = new Map<string, GpuAllocation[]>();
+  for (const allocation of allocations) {
+    const key = `${allocation.workspace}\u0000${allocation.endpoint}`;
+    groups.set(key, [...(groups.get(key) ?? []), allocation]);
+  }
+
+  return [...groups.values()]
+    .map((items) => ({
+      endpoint: items[0].endpoint,
+      workspace: items[0].workspace,
+      model: items[0].model,
+      memoryMiB: items.reduce((total, item) => total + item.memoryMiB, 0),
+      modelWeightsMiB: sumKnown(items, "modelWeightsMiB"),
+      kvCacheCapacityMiB: sumKnown(items, "kvCacheCapacityMiB"),
+      allocations: items,
+    }))
+    .sort(
+      (left, right) =>
+        right.memoryMiB - left.memoryMiB ||
+        left.endpoint.localeCompare(right.endpoint),
+    );
+}
+
+const GPU_ALLOCATION_VISIBLE_LIMIT = 8;
+
+export function splitGpuEndpointAllocations(
+  allocations: GpuAllocation[],
+  limit = GPU_ALLOCATION_VISIBLE_LIMIT,
+) {
+  const sorted = groupGpuAllocationsByEndpoint(allocations);
+  return {
+    sorted,
+    visible: sorted.slice(0, limit),
+    hidden: sorted.slice(limit),
+    hiddenMemoryMiB: sorted
+      .slice(limit)
+      .reduce((total, allocation) => total + allocation.memoryMiB, 0),
+  };
 }

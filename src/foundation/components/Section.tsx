@@ -10,7 +10,7 @@ import { cn } from "@/foundation/lib/utils";
  * 16px in an `h2`.
  */
 const sectionHeaderClassName =
-  "flex flex-wrap items-start justify-between gap-4";
+  "flex flex-wrap items-center justify-between gap-4";
 const sectionTitleClassName =
   "text-base font-semibold leading-6 text-foreground";
 const sectionDescriptionClassName =

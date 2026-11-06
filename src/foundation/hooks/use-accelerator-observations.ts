@@ -20,7 +20,8 @@ export function useAcceleratorObservations(
     },
   });
   // A disabled query keeps its last cached result; it is not shown.
-  if (!enabled) return { samples: [], status: "no_data" as const };
+  if (!enabled)
+    return { samples: [], status: "no_data" as const, refetch: () => {} };
   const samples = query.error ? [] : (query.data?.data.samples ?? []);
   return {
     samples,
@@ -30,5 +31,8 @@ export function useAcceleratorObservations(
       query.data?.data.status,
       samples.length > 0,
     ),
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

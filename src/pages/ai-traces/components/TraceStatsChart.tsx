@@ -13,6 +13,10 @@ import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
+import {
+  CHART_BRAND,
+  CHART_SERIES_SEPARATOR,
+} from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const TraceStatsChart = ({
@@ -72,7 +76,7 @@ export const TraceStatsChart = ({
                 <rect
                   width={6}
                   height={6}
-                  fill="hsl(var(--primary))"
+                  fill={CHART_BRAND}
                   fillOpacity={0.2}
                 />
                 <line
@@ -80,7 +84,7 @@ export const TraceStatsChart = ({
                   y1={0}
                   x2={0}
                   y2={6}
-                  stroke="hsl(var(--primary))"
+                  stroke={CHART_BRAND}
                   strokeWidth={3}
                 />
               </pattern>
@@ -99,14 +103,21 @@ export const TraceStatsChart = ({
                 <StatsTooltip requestsLabel={t("ai_traces.stats.requests")} />
               }
             />
-            <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+            {/* One series of request volume: there is no neighbouring hue to
+                collide with, so it can wear the product primary instead of a
+                category slot. A second series here would move to the
+                categorical tokens. */}
+            <Bar
+              dataKey="count"
+              radius={[3, 3, 0, 0]}
+              stroke={CHART_SERIES_SEPARATOR}
+              strokeWidth={1}
+            >
               {days.map((d) => (
                 <Cell
                   key={d.date}
                   fill={
-                    d.date === today
-                      ? "url(#trace-stats-today)"
-                      : "hsl(var(--primary))"
+                    d.date === today ? "url(#trace-stats-today)" : CHART_BRAND
                   }
                 />
               ))}

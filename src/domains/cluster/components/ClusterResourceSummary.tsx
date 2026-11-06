@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   type AcceleratorProductResourceRow,
   getAcceleratorProductResourceRows,
@@ -121,7 +120,7 @@ const UsageMetric = ({
       </div>
       {discrete ? (
         <div
-          className="mt-3 grid h-1.5 gap-px"
+          className="mt-3 grid h-1.5 gap-px bg-[var(--nt-fill-neutral-white)]"
           style={{
             gridTemplateColumns: `repeat(${Math.round(total)}, minmax(0, 1fr))`,
           }}
@@ -174,10 +173,8 @@ const UsageMetric = ({
 export function ClusterResourceSummary({
   resourceInfo,
   t,
-  children,
 }: {
   resourceInfo: ClusterResourceInfo;
-  children?: ReactNode;
   t: Translate;
 }) {
   const allocatable = resourceInfo.allocatable;
@@ -232,7 +229,7 @@ export function ClusterResourceSummary({
           total={allocatable.cpu}
           available={resourceInfo.available?.cpu}
           unit="cores"
-          series="green"
+          series="teal"
           t={t}
         />
         <UsageMetric
@@ -240,7 +237,7 @@ export function ClusterResourceSummary({
           total={allocatable.memory}
           available={resourceInfo.available?.memory}
           unit="GiB"
-          series="purple"
+          series="violet"
           t={t}
         />
       </div>
@@ -257,7 +254,7 @@ export function ClusterResourceSummary({
               available={availableCards}
               unit="cards"
               discrete={useDiscreteCardMeter}
-              series="amber"
+              series="gold"
               t={t}
             />
             {vram.total != null && (
@@ -286,7 +283,6 @@ export function ClusterResourceSummary({
           </div>
         </div>
       )}
-      {children}
     </div>
   );
 }

@@ -238,12 +238,32 @@ describe("EndpointsShow", () => {
     );
   });
 
-  it("shows cache status when the platform supports ZCache", () => {
-    systemApiState.clusterCacheProviders = ["zcache"];
+  it("shows cache status when the Endpoint's cluster can use ZCache", () => {
+    useListMock.mockReturnValue({
+      data: {
+        data: [
+          {
+            spec: {
+              type: "kubernetes",
+              cache: { provider: "zcache", options: { enabled: false } },
+            },
+            status: { resource_info: clusterResourceInfo },
+          },
+        ],
+      },
+    });
 
     render(<EndpointsShow />);
 
     screen.getByTestId("endpoint-kv-cache-summary");
+  });
+
+  it("hides cache status when neither the Endpoint nor its cluster can use ZCache", () => {
+    systemApiState.clusterCacheProviders = ["zcache"];
+
+    render(<EndpointsShow />);
+
+    expect(screen.queryByTestId("endpoint-kv-cache-summary")).toBeNull();
   });
   it.each(["Paused", "Deleted"])(
     "hides retained runtime allocations once the endpoint is %s",
