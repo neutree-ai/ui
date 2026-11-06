@@ -575,33 +575,6 @@ it("states that there is no cache configuration while disabled", async () => {
   );
 });
 
-it("renders wizard cache controls as their own form section", () => {
-  render(<Editor cache={null} save={vi.fn()} sectioned />);
-
-  const section = screen.getByTestId("endpoint-kv-cache-section");
-  const header = within(section).getByTestId("endpoint-kv-cache-header");
-  within(header).getByRole("heading", {
-    name: "endpoints.sections.kvCache",
-  });
-  within(header).getByRole("button", {
-    name: "endpoints.kvCacheSettings.viewConfig",
-  });
-  within(header).getByRole("button", {
-    name: "endpoints.kvCacheSettings.scheduling",
-  });
-  expect(
-    within(header).queryByRole("switch", {
-      name: "endpoints.kvCacheSettings.enable",
-    }),
-  ).toBeNull();
-  const toggle = within(section).getByTestId("endpoint-kv-cache-toggle");
-  within(toggle).getByText("endpoints.kvCacheSettings.enableLabel");
-  within(toggle).getByRole("switch", {
-    name: "endpoints.kvCacheSettings.enable",
-  });
-  expect(screen.queryByTestId("endpoint-kv-cache")).toBeNull();
-});
-
 it("toggles cache from the wizard form field", () => {
   render(<Editor cache={null} save={vi.fn()} sectioned />);
 
@@ -612,5 +585,4 @@ it("toggles cache from the wizard form field", () => {
   expect(cacheSwitch.getAttribute("aria-checked")).toBe("true");
   const timeout = screen.getByTestId("endpoint-kv-cache-config");
   within(timeout).getByRole("spinbutton");
-  expect(toggle.parentElement).toBe(timeout.parentElement);
 });

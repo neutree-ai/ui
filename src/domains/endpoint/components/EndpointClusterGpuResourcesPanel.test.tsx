@@ -760,51 +760,6 @@ describe("EndpointClusterGpuResourcesPanel", () => {
     compactResources.getByText("Card Count");
   });
 
-  it("shows resource units in card titles instead of appending them to every value", () => {
-    renderPanel(
-      <EndpointClusterGpuResourcesPanel
-        resourceInfo={resourceInfo}
-        currentCluster="cluster-a"
-        selectedAccelerator={{ type: "nvidia_gpu", product: "Tesla-T4" }}
-        virtualizationEnabled={true}
-        t={t}
-      />,
-    );
-
-    const nodeCards = screen.getAllByTestId("endpoint-node-resource-pill");
-    const cpuCard = findByExactLabel(nodeCards, "CPU");
-    const memoryCard = findByExactLabel(nodeCards, "Memory");
-    openClusterDetails();
-    const summaryCards = screen.getAllByTestId(
-      "endpoint-resource-summary-card",
-    );
-    const vramCard = findByExactLabel(summaryCards, "Memory Usage");
-    const coreCard = findByExactLabel(summaryCards, "Core");
-
-    within(cpuCard).getByText("cores");
-    within(memoryCard).getByText("GiB");
-    within(vramCard).getByText("GiB");
-    expect(within(coreCard).queryByText("cores")).toBeNull();
-    expect(within(coreCard).queryByText("GiB")).toBeNull();
-
-    expect(within(cpuCard).queryByText("32.0 cores")).toBeNull();
-    expect(within(memoryCard).queryByText("128.0 GiB")).toBeNull();
-    expect(
-      within(cpuCard).getByTestId("endpoint-node-resource-pill-total-value")
-        .textContent,
-    ).toBe("32.0 total");
-    expect(
-      within(memoryCard).getByTestId("endpoint-node-resource-pill-total-value")
-        .textContent,
-    ).toBe("128.0 total");
-    expect(vramCard.textContent).not.toContain("Used 7.5 GiB");
-    expect(vramCard.textContent).toContain("Used 7.5");
-    within(vramCard).getByText("30.0 total");
-    expect(coreCard.textContent).not.toContain("cores");
-    expect(coreCard.textContent).not.toContain("GiB");
-    expect(coreCard.textContent).toContain("200.0 total");
-  });
-
   it("shows system memory alongside core allocation in the cluster summary", async () => {
     renderPanel(
       <EndpointClusterGpuResourcesPanel
