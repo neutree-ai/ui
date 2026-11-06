@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  KVCacheEstimate,
+  type KVCacheEstimateState,
+} from "@/domains/endpoint/components/KVCacheEstimate";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
 import type {
   EngineCacheArgControls,
@@ -106,6 +109,9 @@ export const EndpointWeightsEstimate = ({
     lastModelKey.current = modelKey;
     if (kvGb !== null) setKvGb(null);
   }
+  const onKvStateChange = useCallback((state: KVCacheEstimateState) => {
+    setKvGb(state.kind === "ready" ? state.totalGb : null);
+  }, []);
 
   const perReplicaGb = declared?.perReplicaGb ?? null;
   // A catalog that states no VRAM figure has nothing this section can show:
@@ -190,7 +196,7 @@ export const EndpointWeightsEstimate = ({
           engineArgs={kvCache.engineArgs}
           controls={kvCache.controls}
           stackFields={stackKvFields}
-          onEstimate={setKvGb}
+          onStateChange={onKvStateChange}
         />
       )}
     </div>

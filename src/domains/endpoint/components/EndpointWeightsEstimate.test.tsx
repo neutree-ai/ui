@@ -4,16 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/domains/endpoint/components/KVCacheEstimate", () => ({
   KVCacheEstimate: ({
-    onEstimate,
+    onStateChange,
   }: {
-    onEstimate?: (gb: number | null) => void;
+    onStateChange?: (state: { kind: "ready"; totalGb: number }) => void;
   }) => {
     // Stands in for the real panel's own effect, which reports its current
     // total upward as it recomputes — fixed here so the combined-requirement
     // math above it is testable without the real estimator's inputs.
     useEffect(() => {
-      onEstimate?.(10);
-    }, [onEstimate]);
+      onStateChange?.({ kind: "ready", totalGb: 10 });
+    }, [onStateChange]);
     return <div data-testid="kv-cache-estimate" />;
   },
 }));

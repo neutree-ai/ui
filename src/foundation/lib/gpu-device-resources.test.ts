@@ -17,6 +17,7 @@ import {
   calculateVgpuCardCapacity,
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
+  countPhysicalDevicesByProduct,
   filterGpuDeviceResourceRows,
   sumMatchingDeviceAvailableResources,
 } from "./gpu-device-resources";
@@ -1769,6 +1770,26 @@ describe("gpu device resource helpers", () => {
       matchingDeviceCount: 2,
       totalCards: 1,
     });
+  });
+});
+
+describe("countPhysicalDevicesByProduct", () => {
+  it("counts every device per product across nodes, healthy or not", () => {
+    const counts = countPhysicalDevicesByProduct({
+      "node-a": makeNodeResources({
+        devices: [
+          makeGpuDevice("free"),
+          makeGpuDevice("partial", { memory_mib: 1, core_units: 1 }),
+          makeGpuDevice("unhealthy", null, { health: false }),
+        ],
+      }),
+      "node-b": makeNodeResources({
+        devices: [makeGpuDevice("l40s", FULL_T4, { product: "L40S" })],
+      }),
+      "node-c": makeNodeResources(),
+    });
+
+    expect(Object.fromEntries(counts)).toEqual({ "Tesla-T4": 3, L40S: 1 });
   });
 });
 

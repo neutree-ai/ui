@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FULL_T4,
   makeGpuDevice,
   makeNodeResources,
   makeResourceInfo,
@@ -126,92 +127,30 @@ describe("parseClusterResources", () => {
   });
 
   it("prefers physical device counts when aggregate accelerator counts disagree", () => {
+    const h100 = (uuid: string, overrides = {}) =>
+      makeGpuDevice(uuid, FULL_T4, { product: "H100", ...overrides });
     const resourceInfo: ClusterResourceInfo = {
-      allocatable: {
-        cpu: 100,
-        memory: 256,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 8,
-            product_groups: null,
-            products: {
-              H100: { quantity: 4 },
-              L40S: { quantity: 4 },
-            },
-          },
-        },
-      },
-      available: {
-        cpu: 80,
-        memory: 200,
-        accelerator_groups: {
-          nvidia_gpu: {
-            quantity: 5,
-            product_groups: null,
-            products: {
-              H100: { quantity: 2 },
-              L40S: { quantity: 3 },
-            },
-          },
-        },
-      },
+      allocatable: makeResourceInfo(100, 256, {
+        H100: { quantity: 4 },
+        L40S: { quantity: 4 },
+      }),
+      available: makeResourceInfo(80, 200, {
+        H100: { quantity: 2 },
+        L40S: { quantity: 3 },
+      }),
       node_resources: {
-        "gpu-node-a": {
-          allocatable: {
-            cpu: 32,
-            memory: 128,
-            accelerator_groups: null,
-          },
-          available: {
-            cpu: 24,
-            memory: 96,
-            accelerator_groups: null,
-          },
+        "gpu-node-a": makeNodeResources({
           devices: [
-            {
-              uuid: "h100-free",
-              product: "H100",
-              health: true,
-              allocatable: { memory_mib: 81920, core_units: 100 },
-              available: { memory_mib: 81920, core_units: 100 },
-            },
-            {
-              uuid: "h100-partial",
-              product: "H100",
-              health: true,
-              allocatable: { memory_mib: 81920, core_units: 100 },
-              available: { memory_mib: 40960, core_units: 50 },
-            },
-            {
-              uuid: "h100-unhealthy",
-              product: "H100",
-              health: false,
-              allocatable: { memory_mib: 81920, core_units: 100 },
-              available: { memory_mib: 0, core_units: 0 },
-            },
+            h100("h100-free"),
+            h100("h100-partial", {
+              available: { memory_mib: 1, core_units: 50 },
+            }),
+            h100("h100-unhealthy", { health: false }),
           ],
-        },
-        "gpu-node-b": {
-          allocatable: {
-            cpu: 32,
-            memory: 128,
-            accelerator_groups: null,
-          },
-          available: {
-            cpu: 32,
-            memory: 128,
-            accelerator_groups: null,
-          },
-          devices: [
-            {
-              uuid: "l40s-free",
-              product: "L40S",
-              health: true,
-              allocatable: { memory_mib: 49152, core_units: 100 },
-              available: { memory_mib: 49152, core_units: 100 },
-            },
-          ],
-        },
+        }),
+        "gpu-node-b": makeNodeResources({
+          devices: [makeGpuDevice("l40s-free", FULL_T4, { product: "L40S" })],
+        }),
       },
     };
 

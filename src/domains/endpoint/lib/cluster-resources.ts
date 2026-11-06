@@ -1,4 +1,7 @@
-import { countFullCardAvailableDevicesByProduct } from "@/foundation/lib/gpu-device-resources";
+import {
+  countFullCardAvailableDevicesByProduct,
+  countPhysicalDevicesByProduct,
+} from "@/foundation/lib/gpu-device-resources";
 import type {
   AcceleratorProductResources,
   ClusterResourceInfo,
@@ -126,22 +129,6 @@ const getProductMemoryTotalMiB = (
   }
 
   return undefined;
-};
-
-const countPhysicalDevicesByProduct = (
-  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
-) => {
-  const result = new Map<string, number>();
-
-  for (const node of Object.values(nodeResources ?? {})) {
-    for (const device of node.devices ?? []) {
-      if (device.product) {
-        result.set(device.product, (result.get(device.product) ?? 0) + 1);
-      }
-    }
-  }
-
-  return result;
 };
 
 /**

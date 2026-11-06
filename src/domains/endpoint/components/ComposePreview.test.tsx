@@ -1,13 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { ComposedSpec } from "@/foundation/recipe/types";
 import { ComposePreview } from "./ComposePreview";
-
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
-  }),
-}));
 
 const composed = {
   model: {
@@ -35,17 +29,15 @@ describe("ComposePreview", () => {
   it("renders the endpoint configuration directly in the summary rail", () => {
     render(<ComposePreview composed={composed} compact surface="plain" />);
 
-    const preview = screen.getByTestId("compose-preview");
-    expect(preview.getAttribute("data-state")).toBe("ok");
-    screen.getByText("Engine");
+    expect(
+      screen.getByTestId("compose-preview").getAttribute("data-state"),
+    ).toBe("ok");
+    screen.getByText("common.fields.engine");
     expect(screen.queryByTestId("compose-preview-toggle")).toBeNull();
-    expect(
-      preview.querySelector('[data-key-value-entry="max_model_len"]')
-        ?.textContent,
-    ).toBe("max_model_len: 262144");
-    expect(
-      preview.querySelector('[data-key-value-entry="TOKEN"]')?.textContent,
-    ).toBe("TOKEN: secret");
+    screen.getByText("max_model_len");
+    screen.getByText("262144");
+    screen.getByText("TOKEN");
+    screen.getByText("secret");
   });
 
   it.each(["card", "plain"] as const)(
@@ -78,7 +70,7 @@ describe("ComposePreview", () => {
     expect(
       screen.getByTestId("compose-preview").getAttribute("data-state"),
     ).toBe("ok");
-    screen.getByText("Engine");
+    screen.getByText("common.fields.engine");
   });
 
   it("renders a collapsible summary when requested", () => {

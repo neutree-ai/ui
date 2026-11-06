@@ -1,3 +1,4 @@
+import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
 import { cn } from "@/foundation/lib/utils";
 
 type KeyValueListProps = {
@@ -14,30 +15,14 @@ export function KeyValueList({ entries, compact = false }: KeyValueListProps) {
       )}
     >
       {entries.map(([key, value]) => (
-        <div
-          key={key}
-          data-key-value-entry={key}
-          className="min-w-0 break-all font-mono text-xs"
-        >
+        <div key={key} className="min-w-0 break-all font-mono text-xs">
           <dt className="inline font-medium">{key}</dt>
           <dd className="inline">
             <span className="text-muted-foreground">: </span>
-            {formatValue(value)}
+            {formatDisplayValue(value)}
           </dd>
         </div>
       ))}
     </dl>
   );
 }
-
-const formatValue = (value: unknown): string => {
-  if (value === undefined || value === null) return "";
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-};

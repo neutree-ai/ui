@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
 import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
@@ -29,16 +30,9 @@ type EndpointAdvancedParametersProps = {
   framed?: boolean;
 };
 
-const formatParameterValue = (value: unknown) => {
-  if (typeof value === "string") return value;
-  if (value === undefined) return "";
-
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-};
+/** A stated null is shown as written, not as an empty value. */
+const formatParameterValue = (value: unknown) =>
+  value === null ? "null" : formatDisplayValue(value);
 
 /** The value as the reader needs it once the cell has cut it off.
  *

@@ -1,4 +1,5 @@
 import type { Endpoint } from "@/domains/endpoint/types";
+import { formatDisplayValue } from "./display-value";
 
 type EndpointReviewChange = {
   step: number;
@@ -168,7 +169,5 @@ export function formatEndpointReviewValue(
       .filter(Boolean)
       .join(" · ");
   }
-  if (value == null || value === "") return "";
-  if (typeof value === "object") return JSON.stringify(canonicalValue(value));
-  return String(value);
+  return formatDisplayValue(canonicalValue(value));
 }

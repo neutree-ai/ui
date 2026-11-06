@@ -702,14 +702,12 @@ export type Database = {
         last_sync_at: string | null;
       };
       cluster_spec: {
-        cache: Json | null;
         type: string | null;
         config: Json | null;
         image_registry: string | null;
         version: string | null;
       };
       cluster_status: {
-        cache: Json | null;
         phase: string | null;
         image: string | null;
         dashboard_url: string | null;
@@ -722,33 +720,11 @@ export type Database = {
         initialized: boolean | null;
         node_provision_status: string | null;
       };
-      cluster_cache_spec: {
-        provider: string | null;
-        options: Json | null;
-      };
-      cluster_cache_status: {
-        provider: string | null;
-        details: Json | null;
-        phase: string | null;
-        error_message: string | null;
-        conditions: Json | null;
-      };
       endpoint_engine_spec: {
         engine: string | null;
         version: string | null;
       };
-      endpoint_kv_cache_spec: {
-        provider: string | null;
-        options: Json | null;
-      };
-      endpoint_kv_cache_status: {
-        provider: string | null;
-        details: Json | null;
-      };
       endpoint_spec: {
-        kv_cache:
-          | Database["api"]["CompositeTypes"]["endpoint_kv_cache_spec"]
-          | null;
         cluster: string | null;
         model: Database["api"]["CompositeTypes"]["model_spec"] | null;
         engine:
@@ -760,9 +736,6 @@ export type Database = {
         variables: Json | null;
       };
       endpoint_status: {
-        kv_cache:
-          | Database["api"]["CompositeTypes"]["endpoint_kv_cache_status"]
-          | null;
         phase: string | null;
         service_url: string | null;
         last_transition_time: string | null;
@@ -789,16 +762,9 @@ export type Database = {
         last_transition_time: string | null;
         error_message: string | null;
       };
-      engine_image: {
-        image_name: string | null;
-        tag: string | null;
-      };
       engine_version: {
         version: string | null;
         values_schema: Json | null;
-        supported_tasks: string[] | null;
-        images: Json | null;
-        capabilities: Json | null;
       };
       image_registry_spec: {
         url: string | null;

@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { KeyValueList } from "@/foundation/components/KeyValueList";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ComposedSpec } from "@/foundation/recipe/types";
+import { KeyValueList } from "./KeyValueList";
 
 type Props = {
   composed: ComposedSpec | null;
@@ -175,17 +175,17 @@ export const ComposePreview = ({
   }
 
   return (
-    <Disclosure
-      variant={surface}
-      title={t("endpoints.recipe.preview", "Composed preview")}
-      summary={summary}
-      testId="compose-preview"
-      dataState="ok"
-      triggerTestId="compose-preview-toggle"
-      className={surface === "card" ? "mt-2" : undefined}
-    >
-      <div className="space-y-4">{content}</div>
-    </Disclosure>
+    <div data-testid="compose-preview" data-state="ok">
+      <Disclosure
+        variant={surface}
+        title={t("endpoints.recipe.preview", "Composed preview")}
+        summary={summary}
+        triggerTestId="compose-preview-toggle"
+        className={surface === "card" ? "mt-2" : undefined}
+      >
+        <div className="space-y-4">{content}</div>
+      </Disclosure>
+    </div>
   );
 };
 

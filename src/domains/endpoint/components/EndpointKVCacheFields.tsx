@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   LoaderCircle,
+  type LucideIcon,
   Settings2,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,16 +19,59 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useCacheVersions } from "@/domains/endpoint/hooks/use-cache-versions";
-import { readEndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
-import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import {
+  type EndpointCacheManagerStatus,
+  readEndpointCacheManagerStatus,
+} from "@/domains/endpoint/lib/cache-manager-status";
+import {
+  endpointZCacheOptions,
+  kvCacheUnavailableReason,
+} from "@/domains/endpoint/lib/zcache";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
+import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointClusterRef } from "../types";
+
+const CACHE_MANAGER_DISPLAY: Record<
+  EndpointCacheManagerStatus["kind"],
+  { icon: LucideIcon; key: string; tone: string; spin: boolean }
+> = {
+  ready: {
+    icon: CheckCircle2,
+    key: "endpoints.kvCacheSettings.managerReady",
+    tone: "text-[var(--nt-text-colorful-positive)]",
+    spin: false,
+  },
+  loading: {
+    icon: LoaderCircle,
+    key: "endpoints.kvCacheSettings.managerLoading",
+    tone: "text-[var(--nt-text-colorful-notice)]",
+    spin: true,
+  },
+  pending: {
+    icon: LoaderCircle,
+    key: "endpoints.kvCacheSettings.managerPending",
+    tone: "text-[var(--nt-text-colorful-notice)]",
+    spin: true,
+  },
+  unavailable: {
+    icon: AlertTriangle,
+    key: "endpoints.kvCacheSettings.managerUnavailable",
+    tone: "text-destructive",
+    spin: false,
+  },
+  "not-configured": {
+    icon: AlertCircle,
+    key: "endpoints.kvCacheSettings.managerNotConfigured",
+    tone: "text-destructive",
+    spin: false,
+  },
+};
 
 export function EndpointKVCacheFields({
   form,
@@ -48,72 +92,41 @@ export function EndpointKVCacheFields({
 }) {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
-  const versions = useCacheVersions(
+  const hasZCache =
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-      true,
+    true;
+  const zcacheOptions = endpointZCacheOptions(cluster);
+  const versions = useCacheVersions(
+    hasZCache &&
+      cluster?.spec.type === "kubernetes" &&
+      zcacheOptions?.enabled === true,
   );
   const [configOpen, setConfigOpen] = useState(false);
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const task = form.watch("spec.model.task");
-  const runtimeVersion = endpointZCacheOptions(cluster)?.version;
-  const availableEngineVersions =
-    versions.data?.data.find((v) => v.version === runtimeVersion)
-      ?.engine_versions ?? [];
-  const compatible = availableEngineVersions.includes(engine?.version);
   const cacheManager = readEndpointCacheManagerStatus(
     cluster,
     cacheStatusLoading,
   );
-  const managerReady = cacheManager.kind === "ready";
-  const unavailableReason = (() => {
-    if (
-      cluster?.spec.type !== "kubernetes" ||
-      !endpointZCacheOptions(cluster)?.enabled
-    ) {
-      return "endpoints.kvCacheSettings.unavailableCluster";
-    }
-    if (!acceleratorType) {
-      return "endpoints.kvCacheSettings.unavailableAccelerator";
-    }
-    if (!acceleratorType.toLowerCase().includes("nvidia")) {
-      return "endpoints.kvCacheSettings.unavailableAcceleratorVendor";
-    }
-    if (engine?.engine !== "vllm") {
-      return "endpoints.kvCacheSettings.unavailableEngine";
-    }
-    if (task && task !== "text-generation") {
-      return "endpoints.kvCacheSettings.unavailableTask";
-    }
-    if (!runtimeVersion) {
-      return "endpoints.kvCacheSettings.unavailableRuntime";
-    }
-    if (cacheManager.kind === "loading") {
-      return "endpoints.kvCacheSettings.checkingManager";
-    }
-    if (cacheManager.kind === "not-configured") {
-      return "endpoints.kvCacheSettings.unavailableManager";
-    }
-    if (!managerReady) {
-      return cacheManager.kind === "pending"
-        ? "endpoints.kvCacheSettings.managerPending"
-        : "endpoints.kvCacheSettings.managerUnavailable";
-    }
-    if (versions.isError) {
-      return "endpoints.kvCacheSettings.unavailableRuntimeCheck";
-    }
-    if (versions.isLoading) {
-      return "endpoints.kvCacheSettings.checkingRuntime";
-    }
-    if (availableEngineVersions.length > 0 && !compatible) {
-      return "endpoints.kvCacheSettings.unavailableEngineVersion";
-    }
-    if (availableEngineVersions.length === 0) {
-      return "endpoints.kvCacheSettings.noCompatibleEngineVersion";
-    }
-    return null;
-  })();
+  const phaseValues =
+    "phase" in cacheManager ? { phase: cacheManager.phase } : {};
+  const unavailableReason = kvCacheUnavailableReason({
+    cluster,
+    acceleratorType,
+    engine,
+    task,
+    manager: cacheManager,
+    versions: {
+      isLoading: versions.isLoading,
+      isError: versions.isError,
+      engineVersions: engineVersionsFor(
+        versions.data?.data,
+        zcacheOptions?.version,
+      ),
+    },
+  });
   const supported = unavailableReason === null;
   form.register("spec.kv_cache", {
     validate: (value) =>
@@ -122,11 +135,7 @@ export function EndpointKVCacheFields({
       t("endpoints.kvCacheSettings.requirements"),
   });
   if (cache?.provider && cache.provider !== "zcache") return null;
-  if (
-    !systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") &&
-    !enabled
-  )
-    return null;
+  if (!hasZCache && !enabled) return null;
   const cacheSwitch = (
     <Switch
       {...(!sectioned ? { id: "endpoint-kv-cache-enabled" } : {})}
@@ -152,11 +161,7 @@ export function EndpointKVCacheFields({
     />
   );
   const unavailableMessage = unavailableReason ? (
-    <p
-      data-testid="endpoint-kv-cache-unavailable"
-      role="status"
-      className="text-sm text-muted-foreground"
-    >
+    <p role="status" className="text-sm text-muted-foreground">
       {unavailableReason !== "endpoints.kvCacheSettings.checkingRuntime" && (
         <>
           <span className="font-medium text-foreground">
@@ -164,12 +169,7 @@ export function EndpointKVCacheFields({
           </span>{" "}
         </>
       )}
-      {t(unavailableReason, {
-        phase:
-          cacheManager.kind === "pending" || cacheManager.kind === "unavailable"
-            ? cacheManager.phase
-            : undefined,
-      })}
+      {t(unavailableReason, phaseValues)}
     </p>
   ) : null;
   const cacheTimeoutField = cache?.provider ? (
@@ -204,73 +204,31 @@ export function EndpointKVCacheFields({
       />
     </FormFieldGroup>
   ) : null;
-  const CacheManagerIcon =
-    cacheManager.kind === "ready"
-      ? CheckCircle2
-      : cacheManager.kind === "loading" || cacheManager.kind === "pending"
-        ? LoaderCircle
-        : cacheManager.kind === "not-configured"
-          ? AlertCircle
-          : AlertTriangle;
-  const cacheManagerText = (() => {
-    switch (cacheManager.kind) {
-      case "ready":
-        return t("endpoints.kvCacheSettings.managerReady");
-      case "loading":
-        return t("endpoints.kvCacheSettings.managerLoading");
-      case "pending":
-        return t("endpoints.kvCacheSettings.managerPending", {
-          phase: cacheManager.phase,
-        });
-      case "unavailable":
-        return t("endpoints.kvCacheSettings.managerUnavailable");
-      case "not-configured":
-        return t("endpoints.kvCacheSettings.managerNotConfigured");
-    }
-  })();
-  const cacheManagerTone =
-    cacheManager.kind === "ready"
-      ? "text-[var(--nt-text-colorful-positive)]"
-      : cacheManager.kind === "loading" || cacheManager.kind === "pending"
-        ? "text-[var(--nt-text-colorful-notice)]"
-        : "text-destructive";
-  const cacheManagerDetail =
-    cacheManager.kind === "ready" ||
-    cacheManager.kind === "pending" ||
-    cacheManager.kind === "unavailable"
-      ? cacheManager
-      : null;
+  const managerDisplay = CACHE_MANAGER_DISPLAY[cacheManager.kind];
+  const CacheManagerIcon = managerDisplay.icon;
+  const l1CapacityGiB =
+    "l1CapacityGiB" in cacheManager ? cacheManager.l1CapacityGiB : null;
   const cacheManagerError =
     cacheManager.kind === "unavailable" ? cacheManager.errorMessage : null;
   const managerStatus =
     cacheManager.kind === "not-configured" ? null : (
-      <div
-        data-testid="endpoint-kv-cache-manager-status"
-        data-l1-capacity={
-          cacheManagerDetail?.l1CapacityGiB == null
-            ? undefined
-            : cacheManagerDetail.l1CapacityGiB
-        }
-        className="rounded-md border bg-muted/20 px-3 py-2.5"
-      >
+      <div className="rounded-md border bg-muted/20 px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <CacheManagerIcon
             aria-hidden="true"
             className={cn(
               "size-4 shrink-0",
-              cacheManagerTone,
-              cacheManager.kind === "loading" || cacheManager.kind === "pending"
-                ? "motion-safe:animate-spin"
-                : undefined,
+              managerDisplay.tone,
+              managerDisplay.spin ? "motion-safe:animate-spin" : undefined,
             )}
           />
-          <span className={cn("font-medium", cacheManagerTone)}>
-            {cacheManagerText}
+          <span className={cn("font-medium", managerDisplay.tone)}>
+            {t(managerDisplay.key, phaseValues)}
           </span>
-          {cacheManagerDetail?.l1CapacityGiB != null && (
+          {l1CapacityGiB != null && (
             <span className="text-muted-foreground">
               {t("endpoints.kvCacheSettings.l1Capacity", {
-                capacity: cacheManagerDetail.l1CapacityGiB,
+                capacity: l1CapacityGiB,
               })}
             </span>
           )}
@@ -290,7 +248,6 @@ export function EndpointKVCacheFields({
   const content = (
     <>
       <div
-        data-testid="endpoint-kv-cache-header"
         className={cn(
           "flex flex-wrap items-center justify-between gap-3",
           !sectioned && "bg-muted/50 px-4 py-3",
@@ -333,10 +290,7 @@ export function EndpointKVCacheFields({
         <div className="mt-4 space-y-4">
           {managerStatus}
           <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-            <div
-              data-testid="endpoint-kv-cache-toggle"
-              className="w-fit min-w-0"
-            >
+            <div className="w-fit min-w-0">
               <FormFieldGroup
                 {...form}
                 name="spec.kv_cache"
@@ -347,9 +301,7 @@ export function EndpointKVCacheFields({
               </FormFieldGroup>
             </div>
             {enabled && cacheTimeoutField && (
-              <div data-testid="endpoint-kv-cache-config" className="min-w-0">
-                {cacheTimeoutField}
-              </div>
+              <div className="min-w-0">{cacheTimeoutField}</div>
             )}
             {unavailableMessage && (
               <div className="sm:col-span-2">{unavailableMessage}</div>

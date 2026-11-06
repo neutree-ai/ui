@@ -249,8 +249,7 @@ describe("EndpointsShow", () => {
     },
   );
 
-  // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page (NEU-728).
+  // A Flex endpoint deploys with no model, so the API omits spec.model.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {
