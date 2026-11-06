@@ -1306,10 +1306,16 @@ function GpuDetailsSheet({
                               ? ` · ${t("observations.replicaCountLabel", {
                                   count: allocation.allocations.length,
                                 })}`
-                              : allocation.allocations.every(
+                              : /* "Full card" was wrong twice: it read as "uses
+                                   all the memory", and it was claimed whenever a
+                                   replica lacked a vGPU index — even while other
+                                   Endpoints shared the card. A card is dedicated
+                                   only when this Endpoint is the only one on it. */
+                                sorted.length === 1 &&
+                                  allocation.allocations.every(
                                     (item) => !item.vdevice,
                                   )
-                                ? ` · ${t("observations.fullCard")}`
+                                ? ` · ${t("observations.dedicatedCard")}`
                                 : ""}
                           </p>
                         </div>
