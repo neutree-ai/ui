@@ -1,12 +1,11 @@
 import { compareVersions, validate } from "compare-versions";
-import type { EngineVersion } from "@/domains/engine/types";
+
+type Versioned = { version: string };
 
 /**
- * Engine versions come from engine packages (built-in definitions and
- * `neutree-cli engine import`), so they are not guaranteed to be strict semver:
- * packages ship labels such as `v1.0.RC2` or `latest`, which `compare-versions`
- * rejects by throwing. Keep the semver path for the common case and fall back to
- * a natural-order comparison that keeps digit runs numeric.
+ * Natural-order comparison for version labels that are not strict semver
+ * (`v1.0.RC2`, `latest`), which `compare-versions` rejects by throwing.
+ * Digit runs compare numerically.
  */
 function compareNaturally(a: string, b: string): number {
   // Split into digits, letters and separators separately: merging a separator
@@ -48,7 +47,7 @@ function compareNaturally(a: string, b: string): number {
  * such as `qwen38` can never take over as "latest" from a real release like
  * `v0.25.0`.
  */
-export function compareEngineVersions(a: string, b: string): number {
+export function compareVersionStrings(a: string, b: string): number {
   const aIsVersion = validate(a);
   const bIsVersion = validate(b);
   if (aIsVersion && bIsVersion) return compareVersions(a, b);
@@ -57,31 +56,27 @@ export function compareEngineVersions(a: string, b: string): number {
   return compareNaturally(a, b);
 }
 
-/** Oldest → newest. Ties keep the order the engine returned. */
-function sortEngineVersions(versions: EngineVersion[]): EngineVersion[] {
+/** Newest → oldest, the order every version list in the UI renders. Ties keep input order. */
+export function sortVersionsNewestFirst<T extends Versioned>(
+  versions: T[],
+): T[] {
   return versions
     .map((version, index) => ({ version, index }))
     .sort((a, b) => {
-      const diff = compareEngineVersions(a.version.version, b.version.version);
+      const diff = compareVersionStrings(a.version.version, b.version.version);
       return diff !== 0 ? diff : a.index - b.index;
     })
-    .map((entry) => entry.version);
-}
-
-/** Newest → oldest, the order every version list in the UI renders. */
-export function sortEngineVersionsNewestFirst(
-  versions: EngineVersion[],
-): EngineVersion[] {
-  return sortEngineVersions(versions).reverse();
+    .map((entry) => entry.version)
+    .reverse();
 }
 
 /**
  * The version the UI treats as the default. Engines return their versions in
  * creation order, not newest-first, so never read `spec.versions[0]` for this.
  */
-export function newestEngineVersion(
-  versions: EngineVersion[],
-): EngineVersion | undefined {
-  const sorted = sortEngineVersions(versions);
-  return sorted[sorted.length - 1];
+export function newestVersion<T extends Versioned>(
+  versions: T[],
+): T | undefined {
+  const sorted = sortVersionsNewestFirst(versions);
+  return sorted[0];
 }

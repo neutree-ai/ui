@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
+import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 import { VariablesInput } from "./VariablesInput";
 
 const objectSchema = {
@@ -347,5 +348,218 @@ describe("VariablesInput value inputs", () => {
 
     expect(screen.queryByTestId("image-widget")).toBeNull();
     screen.getByDisplayValue("my-workload:v1");
+  });
+});
+
+describe("VariablesInput primitive and draft controls", () => {
+  const primitiveSchema = {
+    enabled: { type: "boolean" },
+    count: { type: "number" },
+    maximum: { type: "integer" },
+    note: { type: "string" },
+  } as unknown as Schema;
+
+  it("edits existing primitive values and preserves an unknown value as text", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{
+          enabled: false,
+          count: 1,
+          maximum: 2,
+          note: "note",
+          unknown: "raw",
+          flag: true,
+        }}
+        onChange={onChange}
+        schema={primitiveSchema}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox"));
+    const [count, maximum] = screen.getAllByRole("spinbutton");
+    fireEvent.change(count, { target: { value: "1.5" } });
+    fireEvent.change(maximum, { target: { value: "4" } });
+    fireEvent.change(screen.getByDisplayValue("note"), {
+      target: { value: "updated" },
+    });
+    fireEvent.change(screen.getByDisplayValue("raw"), {
+      target: { value: "changed" },
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(5);
+    expect(onChange.mock.calls[0][0].enabled).toBe(true);
+    expect(onChange.mock.calls[1][0].count).toBe(1.5);
+    expect(onChange.mock.calls[2][0].maximum).toBe(4);
+    expect(onChange.mock.calls[3][0].note).toBe("updated");
+    expect(onChange.mock.calls[4][0].unknown).toBe("changed");
+  });
+
+  it("clears a JSON error as soon as the existing value is corrected", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: { method: "mtp" } }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    screen.getByText("components.variablesInput.invalidJsonValue");
+
+    fireEvent.change(textarea, {
+      target: { value: '{"method":"eagle"}' },
+    });
+
+    expect(
+      screen.queryByText("components.variablesInput.invalidJsonValue"),
+    ).toBeNull();
+    expect(onChange).toHaveBeenCalledWith({
+      speculative_config: { method: "eagle" },
+    });
+  });
+
+  it("removes an invalid existing JSON value without its draft or error", async () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: '{"method":' }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    const textarea = screen.getByDisplayValue(
+      '{"method":',
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    await screen.findByText("components.variablesInput.invalidJsonValue");
+    fireEvent.click(screen.getAllByTestId("remove-variable")[0]);
+
+    expect(onChange).toHaveBeenCalledWith({});
+  });
+
+  it("rejects valid JSON with the wrong shape for an object field", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{ speculative_config: { method: "mtp" } }}
+        onChange={onChange}
+        schema={objectSchema}
+      />,
+    );
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: "[]" } });
+
+    screen.getByText("components.variablesInput.invalidJsonValue");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("flags an initially stored array where the schema requires an object", () => {
+    render(
+      <VariablesInput
+        value={{ speculative_config: "[]" }}
+        onChange={vi.fn()}
+        schema={objectSchema}
+      />,
+    );
+
+    screen.getByText("components.variablesInput.invalidJsonValue");
+  });
+
+  it("clears the form-level JSON error when the value becomes valid", async () => {
+    render(<VariablesInputForm onSubmit={vi.fn()} />);
+
+    const textarea = screen.getByDisplayValue(
+      /"method": "mtp"/,
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    screen.getByText("components.variablesInput.invalidJsonValue");
+
+    fireEvent.change(textarea, {
+      target: { value: '{"method":"eagle"}' },
+    });
+
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByText("components.variablesInput.invalidJsonValue"),
+      ).toBeNull(),
+    );
+  });
+
+  it("selects a schema key from the draft suggestions and removes the row", async () => {
+    render(
+      <VariablesInput
+        value={{}}
+        onChange={vi.fn()}
+        schema={
+          { alpha: { type: "string", title: "Alpha" } } as unknown as Schema
+        }
+      />,
+    );
+
+    const keyInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
+    fireEvent.focus(keyInput);
+    fireEvent.change(keyInput, { target: { value: "al" } });
+    fireEvent.click(await screen.findByText("Alpha"));
+
+    expect(keyInput.value).toBe("alpha");
+    fireEvent.blur(keyInput);
+    fireEvent.click(screen.getByTestId("remove-variable"));
+    expect(screen.queryByDisplayValue("alpha")).toBeNull();
+  });
+
+  it("reports an invalid draft to the resource form before submission", () => {
+    const beforeSubmit = {
+      current: null as (() => boolean | undefined) | null,
+    };
+    render(
+      <ResourceFormSubmitContext.Provider
+        value={{
+          registerBeforeSubmit: vi.fn((handler) => {
+            beforeSubmit.current = handler;
+            return vi.fn();
+          }),
+        }}
+      >
+        <VariablesInputForm defaultArgs={{}} onSubmit={vi.fn()} />
+      </ResourceFormSubmitContext.Provider>,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "speculative_config" },
+    });
+    const textarea = screen.getByDisplayValue("{}") as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: '{"method":' } });
+    fireEvent.blur(textarea);
+
+    expect(beforeSubmit.current?.()).toBe(false);
+  });
+
+  it("edits a drafted numeric row with a number control", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{}}
+        onChange={onChange}
+        schema={{ count: { type: "integer" } } as unknown as Schema}
+      />,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "count" },
+    });
+    const valueInput = screen.getByRole("spinbutton");
+    fireEvent.change(valueInput, { target: { value: "3" } });
+    fireEvent.blur(valueInput);
+
+    expect(onChange).toHaveBeenCalledWith({ count: 3 });
   });
 });

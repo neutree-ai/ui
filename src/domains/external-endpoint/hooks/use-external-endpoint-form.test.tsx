@@ -254,6 +254,12 @@ const clickAction = (name: string, index = 0) =>
       name: `external_endpoints.actions.${name}`,
     })[index],
   );
+const clickTestConnectivity = () =>
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "external_endpoints.messages.testConnectivity",
+    }),
+  );
 const table = (name: "primaryTargets" | "fallbackTargets") =>
   screen.getByRole("table", { name: `external_endpoints.sections.${name}` });
 
@@ -350,6 +356,14 @@ describe("model services", () => {
         workspace: "default",
       }),
     );
+    clickTestConnectivity();
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenLastCalledWith(0, {
+        type: "endpoint_ref",
+        endpoint_ref: "endpoint-running",
+        workspace: "default",
+      }),
+    );
     expect(result.current.form.getValues("spec.upstreams.0")).toMatchObject({
       upstream: null,
       auth: null,
@@ -360,6 +374,63 @@ describe("model services", () => {
         .getValues("spec.model_routes")
         ?.map((r: ModelRoute) => r.model),
     ).toEqual([""]);
+  });
+
+  it("restores an external URL channel when switching back from an endpoint reference", () => {
+    const { result } = renderEndpointForm({ action: "create" });
+    clickAction("addModelService");
+
+    const typeField = () =>
+      within(screen.getByTestId("field-_upstreamType_0")).getByRole("combobox");
+    change(typeField(), "endpoint_ref");
+    change(typeField(), "external");
+
+    expect(result.current.form.getValues("spec.upstreams.0")).toMatchObject({
+      endpoint_ref: undefined,
+      upstream: { url: "" },
+      auth: { type: "bearer", credential: "" },
+    });
+  });
+
+  it("tests a blank external URL in create mode", async () => {
+    const { result } = renderEndpointForm({ action: "create" });
+    clickAction("addModelService");
+    act(() =>
+      result.current.form.setValue("spec.upstreams.0.upstream.url", null),
+    );
+
+    clickTestConnectivity();
+
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenCalledWith(0, {
+        type: "external",
+        url: "",
+        credential: "",
+      }),
+    );
+  });
+
+  it("includes the saved identity when testing an external URL in edit mode", async () => {
+    renderEndpointForm({
+      spec: {
+        upstreams: [makeUpstream({ name: "primary" })],
+        model_routes: [],
+      },
+    });
+
+    clickTestConnectivity();
+
+    await waitFor(() =>
+      expect(connectivityTest).toHaveBeenCalledWith(
+        0,
+        expect.objectContaining({
+          type: "external",
+          name: "review-only",
+          workspace: "default",
+          stored_upstream_url: "https://example.com",
+        }),
+      ),
+    );
   });
 
   it("queries models and tests connectivity with the remaining channel's saved identity after deletion and edits", async () => {
@@ -387,11 +458,7 @@ describe("model services", () => {
       name: "review-only",
       stored_upstream_url: "https://b.example/v1",
     };
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
+    clickTestConnectivity();
     expect(connectivityTest).toHaveBeenCalledWith(0, {
       type: "external",
       url: "https://new-b.example/v1",

@@ -8,6 +8,10 @@ type FormCardGridProps = {
   variant?: "card" | "section";
 } & PropsWithChildren<unknown>;
 
+/** The four-column form grid, stacked to one column below `sm`. */
+export const FORM_GRID_CLASS =
+  "grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-4";
+
 export default function FormCardGrid({
   children,
   title,
@@ -25,9 +29,7 @@ export default function FormCardGrid({
             </h2>
           </div>
         )}
-        <div className="grid grid-cols-4 gap-x-6 gap-y-4 px-6 py-5 xs:grid-cols-1">
-          {children}
-        </div>
+        <div className={cn(FORM_GRID_CLASS, "px-6 py-5")}>{children}</div>
       </section>
     );
   }
@@ -48,9 +50,7 @@ export default function FormCardGrid({
           </h2>
         </div>
       )}
-      <div className="grid grid-cols-4 gap-x-5 gap-y-4 px-5 py-4 xs:grid-cols-1">
-        {children}
-      </div>
+      <div className={cn(FORM_GRID_CLASS, "px-5 py-4")}>{children}</div>
     </section>
   );
 }

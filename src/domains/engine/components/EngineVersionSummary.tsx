@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/hover-card";
 import type { EngineVersion } from "@/domains/engine/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { sortEngineVersionsNewestFirst } from "../lib/version-order";
+import { sortVersionsNewestFirst } from "@/foundation/lib/version-order";
 
 type EngineVersionSummaryProps = {
   versions: EngineVersion[];
@@ -28,7 +28,7 @@ export function EngineVersionSummary({
 }: EngineVersionSummaryProps) {
   const { t } = useTranslation();
   const newestFirst = useMemo(
-    () => sortEngineVersionsNewestFirst(versions),
+    () => sortVersionsNewestFirst(versions),
     [versions],
   );
 

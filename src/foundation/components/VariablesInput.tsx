@@ -15,7 +15,6 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
@@ -484,168 +483,166 @@ export const VariablesInput = React.forwardRef<
   };
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-2">
-        <Table ref={ref}>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("components.variablesInput.key")}</TableHead>
-              <TableHead>{t("components.variablesInput.value")}</TableHead>
-              <TableHead className="w-12" />
+    <div className="w-full [&>div]:rounded-none [&>div]:bg-transparent">
+      <Table ref={ref}>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("components.variablesInput.key")}</TableHead>
+            <TableHead>{t("components.variablesInput.value")}</TableHead>
+            <TableHead className="w-12" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Existing variables - directly editable */}
+          {Object.entries(actualValue).map(([key, val]) => (
+            <TableRow key={key}>
+              <TableCell className="font-medium">
+                {key}
+                {schema[key]?.title && (
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({schema[key].title})
+                  </span>
+                )}
+              </TableCell>
+              <TableCell>{renderValueInput(key, val)}</TableCell>
+              <TableCell>
+                <Button
+                  data-testid="remove-variable"
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveJsonVariable(key)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Existing variables - directly editable */}
-            {Object.entries(actualValue).map(([key, val]) => (
-              <TableRow key={key}>
-                <TableCell className="font-medium">
-                  {key}
-                  {schema[key]?.title && (
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({schema[key].title})
-                    </span>
-                  )}
+          ))}
+          {/* Editing rows */}
+          {editingRows.map((row) => {
+            const isFocused = focusedRowId === row.id;
+
+            // Filter schema options based on current input
+            const filteredOptions = !row.key
+              ? schemaKeyOptions
+              : schemaKeyOptions.filter((opt) => {
+                  const searchLower = row.key.toLowerCase();
+                  return (
+                    opt.value.toLowerCase().includes(searchLower) ||
+                    opt.label.toLowerCase().includes(searchLower)
+                  );
+                });
+
+            const showSuggestions =
+              isFocused &&
+              schemaKeyOptions.length > 0 &&
+              filteredOptions.length > 0;
+
+            return (
+              <TableRow key={row.id}>
+                <TableCell>
+                  <Input
+                    ref={(el) => {
+                      inputRefs.current[row.id] = el;
+                    }}
+                    value={row.key}
+                    onChange={(e) =>
+                      handleEditingKeyChange(row.id, e.target.value)
+                    }
+                    onFocus={() => setFocusedRowId(row.id)}
+                    onBlur={() => {
+                      setTimeout(() => setFocusedRowId(null), 200);
+                    }}
+                    placeholder={
+                      schemaKeyOptions.length > 0
+                        ? t("components.variablesInput.selectOrTypeKey")
+                        : t("components.variablesInput.newKey")
+                    }
+                    className="w-full"
+                  />
+                  {/* Schema key suggestions dropdown - rendered via portal */}
+                  {showSuggestions &&
+                    dropdownPosition &&
+                    focusedRowId === row.id &&
+                    createPortal(
+                      <div
+                        style={{
+                          position: "fixed",
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
+                          width: `${dropdownPosition.width}px`,
+                          zIndex: 50,
+                        }}
+                      >
+                        <Command className="rounded-lg border shadow-md bg-popover">
+                          <CommandList>
+                            <CommandEmpty>
+                              {t("components.variablesInput.noSchemaKeys")}
+                            </CommandEmpty>
+                            <CommandGroup className="max-h-[200px] overflow-y-auto">
+                              {filteredOptions.map((option) => (
+                                <CommandItem
+                                  key={option.value}
+                                  value={option.value}
+                                  onSelect={() => {
+                                    handleEditingKeyChange(
+                                      row.id,
+                                      option.value,
+                                    );
+                                    setFocusedRowId(null);
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {option.label}
+                                    </span>
+                                    {option.label !== option.value && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {option.value}
+                                      </span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </div>,
+                      document.body,
+                    )}
                 </TableCell>
-                <TableCell>{renderValueInput(key, val)}</TableCell>
+                <TableCell>{renderEditingValueInput(row)}</TableCell>
                 <TableCell>
                   <Button
                     data-testid="remove-variable"
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemoveJsonVariable(key)}
+                    onClick={() => handleRemoveEditingRow(row.id)}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
-            {/* Editing rows */}
-            {editingRows.map((row) => {
-              const isFocused = focusedRowId === row.id;
-
-              // Filter schema options based on current input
-              const filteredOptions = !row.key
-                ? schemaKeyOptions
-                : schemaKeyOptions.filter((opt) => {
-                    const searchLower = row.key.toLowerCase();
-                    return (
-                      opt.value.toLowerCase().includes(searchLower) ||
-                      opt.label.toLowerCase().includes(searchLower)
-                    );
-                  });
-
-              const showSuggestions =
-                isFocused &&
-                schemaKeyOptions.length > 0 &&
-                filteredOptions.length > 0;
-
-              return (
-                <TableRow key={row.id}>
-                  <TableCell>
-                    <Input
-                      ref={(el) => {
-                        inputRefs.current[row.id] = el;
-                      }}
-                      value={row.key}
-                      onChange={(e) =>
-                        handleEditingKeyChange(row.id, e.target.value)
-                      }
-                      onFocus={() => setFocusedRowId(row.id)}
-                      onBlur={() => {
-                        setTimeout(() => setFocusedRowId(null), 200);
-                      }}
-                      placeholder={
-                        schemaKeyOptions.length > 0
-                          ? t("components.variablesInput.selectOrTypeKey")
-                          : t("components.variablesInput.newKey")
-                      }
-                      className="w-full"
-                    />
-                    {/* Schema key suggestions dropdown - rendered via portal */}
-                    {showSuggestions &&
-                      dropdownPosition &&
-                      focusedRowId === row.id &&
-                      createPortal(
-                        <div
-                          style={{
-                            position: "fixed",
-                            top: `${dropdownPosition.top}px`,
-                            left: `${dropdownPosition.left}px`,
-                            width: `${dropdownPosition.width}px`,
-                            zIndex: 50,
-                          }}
-                        >
-                          <Command className="rounded-lg border shadow-md bg-popover">
-                            <CommandList>
-                              <CommandEmpty>
-                                {t("components.variablesInput.noSchemaKeys")}
-                              </CommandEmpty>
-                              <CommandGroup className="max-h-[200px] overflow-y-auto">
-                                {filteredOptions.map((option) => (
-                                  <CommandItem
-                                    key={option.value}
-                                    value={option.value}
-                                    onSelect={() => {
-                                      handleEditingKeyChange(
-                                        row.id,
-                                        option.value,
-                                      );
-                                      setFocusedRowId(null);
-                                    }}
-                                    className="cursor-pointer"
-                                  >
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">
-                                        {option.label}
-                                      </span>
-                                      {option.label !== option.value && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {option.value}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </div>,
-                        document.body,
-                      )}
-                  </TableCell>
-                  <TableCell>{renderEditingValueInput(row)}</TableCell>
-                  <TableCell>
-                    <Button
-                      data-testid="remove-variable"
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveEditingRow(row.id)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {/* Bottom + button */}
-        <div className="mt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddNewRow}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t("components.variablesInput.addVariable")}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            );
+          })}
+        </TableBody>
+      </Table>
+      {/* Bottom + button */}
+      <div className="mt-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAddNewRow}
+          className="w-full"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {t("components.variablesInput.addVariable")}
+        </Button>
+      </div>
+    </div>
   );
 });
 
