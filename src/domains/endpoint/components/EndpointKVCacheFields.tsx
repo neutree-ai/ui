@@ -3,11 +3,15 @@ import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useCacheVersions } from "@/domains/endpoint/hooks/use-cache-versions";
-import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import {
+  endpointZCacheOptions,
+  zcacheSupport,
+} from "@/domains/endpoint/lib/zcache";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
+import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import type { EndpointClusterRef } from "../types";
 
 export function EndpointKVCacheFields({
@@ -21,24 +25,26 @@ export function EndpointKVCacheFields({
 }) {
   const { t } = useTranslation();
   const { systemInfo } = useSystemApi();
+  const zcache = endpointZCacheOptions(cluster);
   const versions = useCacheVersions(
-    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-      true,
+    zcache?.enabled === true &&
+      systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+        true,
   );
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
   const engine = form.watch("spec.engine");
   const task = form.watch("spec.model.task");
-  const runtimeVersion = endpointZCacheOptions(cluster)?.version;
-  const compatible = !!versions.data?.data
-    .find((v) => v.version === runtimeVersion)
-    ?.engine_versions.includes(engine?.version);
-  const supported =
-    cluster?.spec.type === "kubernetes" &&
-    endpointZCacheOptions(cluster)?.enabled &&
-    engine?.engine === "vllm" &&
-    (!task || task === "text-generation") &&
-    compatible;
+  const support = zcacheSupport({
+    cluster,
+    engine,
+    task,
+    supportedEngineVersions: engineVersionsFor(
+      versions.data?.data,
+      zcache?.version,
+    ),
+  });
+  const supported = support === "ok";
   form.register("spec.kv_cache", {
     validate: (value) =>
       value?.provider !== "zcache" ||
@@ -98,9 +104,9 @@ export function EndpointKVCacheFields({
       {enabled && !supported && (
         <p role="alert" className="px-4 pt-3 text-sm text-destructive">
           {t(
-            compatible
-              ? "endpoints.kvCacheSettings.requirements"
-              : "clusters.cacheUpgrade.incompatible",
+            support === "incompatible"
+              ? "endpoints.kvCacheSettings.incompatibleRuntime"
+              : "endpoints.kvCacheSettings.requirements",
           )}
         </p>
       )}

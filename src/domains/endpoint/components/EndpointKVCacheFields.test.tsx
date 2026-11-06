@@ -10,6 +10,20 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
   }),
 }));
 
+vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+  useCacheVersions: () => ({
+    data: {
+      data: [
+        {
+          version: "v0.5.6-post.1",
+          engine_versions: ["v0.32.0-zcache-enabled"],
+        },
+        { version: "v0.5.0", engine_versions: ["v0.24.0"] },
+      ],
+    },
+  }),
+}));
+
 function Editor({
   cache,
   save,
@@ -42,13 +56,6 @@ function Editor({
           cluster={
             {
               metadata: { name: "test" },
-              status: {
-                cache: {
-                  details: {
-                    ready_runtime_version: "v0.5.0",
-                  },
-                },
-              },
               spec: {
                 type: "kubernetes",
                 cache: {
@@ -222,26 +229,11 @@ it("blocks cache after switching to an embedding task and allows disabling it", 
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toBeNull();
 });
-vi.mock("@/domains/endpoint/hooks/use-cache-versions", () => ({
-  useCacheVersions: () => ({
-    data: {
-      data: [
-        {
-          version: "v0.5.6-post.1",
-          engine_versions: ["v0.32.0-zcache-enabled"],
-        },
-        { version: "v0.5.0", engine_versions: ["v0.24.0"] },
-      ],
-    },
-  }),
-}));
-
 it.each([
-  ["", "v0.24.0", true],
   ["v0.5.6-post.1", "v0.24.0", true],
   ["v0.5.6-post.1", "v0.32.0-zcache-enabled", false],
 ])(
-  "uses only the persisted target version (%s, %s)",
+  "allows cache only for an engine the cluster runtime supports (%s, %s)",
   (runtimeVersion, engineVersion, disabled) => {
     render(
       <Editor
@@ -256,3 +248,17 @@ it.each([
     );
   },
 );
+
+it("names the version mismatch when the cluster runtime does not support the engine", () => {
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: {} }}
+      save={vi.fn()}
+      runtimeVersion="v0.5.6-post.1"
+      engineVersion="v0.24.0"
+    />,
+  );
+  expect(screen.getByRole("alert").textContent).toBe(
+    "endpoints.kvCacheSettings.incompatibleRuntime",
+  );
+});

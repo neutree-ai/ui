@@ -39,6 +39,22 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
         name={props.name}
         rules={props.rules}
         render={({ field }: { field: ControllerRenderProps }) => {
+          const control = (
+            <FormControl>
+              {cloneElement(props.children, {
+                ...field,
+                ...props.children.props,
+              })}
+            </FormControl>
+          );
+          const notes = (
+            <>
+              {props.description && (
+                <FormDescription>{props.description}</FormDescription>
+              )}
+              <FormMessage />
+            </>
+          );
           return (
             <FormItem
               data-testid={`field-${props.name}`}
@@ -50,31 +66,35 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
                   : "",
               )}
             >
-              {!props.isCheckbox && (
-                <FormLabel className={formFieldLabelClassName}>
-                  {props.label}
-                  {props.required ? (
-                    <span className="ml-1 text-destructive" aria-hidden="true">
-                      *
-                    </span>
-                  ) : null}
-                </FormLabel>
+              {props.isCheckbox ? (
+                <>
+                  {control}
+                  <FormLabel className={formFieldLabelClassName}>
+                    {props.label}
+                  </FormLabel>
+                  {notes}
+                </>
+              ) : (
+                <>
+                  <FormLabel className={formFieldLabelClassName}>
+                    {props.label}
+                    {props.required ? (
+                      <span
+                        className="ml-1 text-destructive"
+                        aria-hidden="true"
+                      >
+                        *
+                      </span>
+                    ) : null}
+                  </FormLabel>
+                  {/* The description and error sit closer to the control than
+                      FormItem's spacing puts the label. */}
+                  <div className="space-y-1">
+                    {control}
+                    {notes}
+                  </div>
+                </>
               )}
-              <FormControl>
-                {cloneElement(props.children, {
-                  ...field,
-                  ...props.children.props,
-                })}
-              </FormControl>
-              {props.isCheckbox && (
-                <FormLabel className={formFieldLabelClassName}>
-                  {props.label}
-                </FormLabel>
-              )}
-              {props.description && (
-                <FormDescription>{props.description}</FormDescription>
-              )}
-              <FormMessage />
             </FormItem>
           );
         }}

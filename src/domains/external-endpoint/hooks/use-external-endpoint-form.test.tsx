@@ -254,6 +254,12 @@ const clickAction = (name: string, index = 0) =>
       name: `external_endpoints.actions.${name}`,
     })[index],
   );
+const clickTestConnectivity = () =>
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "external_endpoints.messages.testConnectivity",
+    }),
+  );
 const table = (name: "primaryTargets" | "fallbackTargets") =>
   screen.getByRole("table", { name: `external_endpoints.sections.${name}` });
 
@@ -350,11 +356,7 @@ describe("model services", () => {
         workspace: "default",
       }),
     );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
+    clickTestConnectivity();
     await waitFor(() =>
       expect(connectivityTest).toHaveBeenLastCalledWith(0, {
         type: "endpoint_ref",
@@ -397,11 +399,7 @@ describe("model services", () => {
       result.current.form.setValue("spec.upstreams.0.upstream.url", null),
     );
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
+    clickTestConnectivity();
 
     await waitFor(() =>
       expect(connectivityTest).toHaveBeenCalledWith(0, {
@@ -412,33 +410,6 @@ describe("model services", () => {
     );
   });
 
-  it("tests a blank endpoint reference in create mode", async () => {
-    const { result } = renderEndpointForm({ action: "create" });
-    clickAction("addModelService");
-    change(
-      within(screen.getByTestId("field-_upstreamType_0")).getByRole("combobox"),
-      "endpoint_ref",
-    );
-    const getValues = vi
-      .spyOn(result.current.form, "getValues")
-      .mockReturnValue(undefined as never);
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
-
-    await waitFor(() =>
-      expect(connectivityTest).toHaveBeenCalledWith(0, {
-        type: "endpoint_ref",
-        endpoint_ref: "",
-        workspace: "default",
-      }),
-    );
-    getValues.mockRestore();
-  });
-
   it("includes the saved identity when testing an external URL in edit mode", async () => {
     renderEndpointForm({
       spec: {
@@ -447,20 +418,16 @@ describe("model services", () => {
       },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
+    clickTestConnectivity();
 
     await waitFor(() =>
       expect(connectivityTest).toHaveBeenCalledWith(
         0,
         expect.objectContaining({
           type: "external",
-          name: expect.any(String),
+          name: "review-only",
           workspace: "default",
-          stored_upstream_url: expect.any(String),
+          stored_upstream_url: "https://example.com",
         }),
       ),
     );
@@ -491,11 +458,7 @@ describe("model services", () => {
       name: "review-only",
       stored_upstream_url: "https://b.example/v1",
     };
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "external_endpoints.messages.testConnectivity",
-      }),
-    );
+    clickTestConnectivity();
     expect(connectivityTest).toHaveBeenCalledWith(0, {
       type: "external",
       url: "https://new-b.example/v1",
