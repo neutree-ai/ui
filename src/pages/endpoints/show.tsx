@@ -4,8 +4,10 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
+import { Check, Copy } from "lucide-react";
 import { lazy, Suspense, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import type { Cluster } from "@/domains/cluster/types";
@@ -41,6 +43,7 @@ import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
@@ -139,6 +142,7 @@ const getSchedulerText = (
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
+  const { copy, copied } = useCopyToClipboard();
   const { grafanaUrl, systemInfo } = useSystemApi();
   const {
     query: { data, isLoading },
@@ -223,7 +227,31 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       >
         <Tabs defaultValue="basic" className="flex h-full flex-col">
           <ShowPage.ObjectHeader
-            title={record.metadata.name}
+            title={
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <span className="truncate">{record.metadata.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  title={t("api_keys.buttons.copy")}
+                  aria-label={`${record.metadata.name} ${t("api_keys.buttons.copy")}`}
+                  onClick={() =>
+                    copy(record.metadata.name, {
+                      successMessage: t("components.apiKey.copySuccess"),
+                      errorMessage: t("components.apiKey.errors.copyFailed"),
+                    })
+                  }
+                >
+                  {copied ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </Button>
+              </span>
+            }
             descriptionClassName="max-w-none"
             description={
               <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
