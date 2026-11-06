@@ -73,6 +73,12 @@ export function buildCatalogOriginAnnotations(origin: {
   return annotations;
 }
 
+/** A recorded feature as shown to the user: `name`, or `name: value`. */
+export const formatCatalogFeature = (feature: FeatureSelection): string =>
+  feature.value === undefined
+    ? feature.name
+    : `${feature.name}: ${feature.value}`;
+
 export function readCatalogOrigin(
   annotations: Annotations,
 ): CatalogOrigin | null {

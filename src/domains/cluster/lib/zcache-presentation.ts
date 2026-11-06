@@ -129,3 +129,16 @@ export function operationPhase(phase?: string) {
 export function cacheMessage(message: string | undefined, serviceName: string) {
   return message?.replace(/\bzcache(?=\s|:|$)/gi, serviceName);
 }
+
+/** Largest per-node L1 capacity the cache service accepts (int32 max). */
+export const MAX_CACHE_CAPACITY_GIB = 2147483647;
+
+/** A per-node capacity is a whole number of GiB within the service's range. */
+export function isValidCacheCapacity(value: unknown) {
+  const capacity = Number(value);
+  return (
+    Number.isInteger(capacity) &&
+    capacity >= 1 &&
+    capacity <= MAX_CACHE_CAPACITY_GIB
+  );
+}

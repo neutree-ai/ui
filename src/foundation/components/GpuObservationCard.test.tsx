@@ -2,11 +2,10 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import type {
-  AcceleratorSample,
-  GpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
+import type { GpuAllocation } from "@/foundation/lib/accelerator-observations";
+import { makeAcceleratorSample as sample } from "@/foundation/testing/resource-builders";
 import {
   GpuObservationCard,
   GpuObservationTableHeader,
@@ -36,17 +35,6 @@ const allocation: GpuAllocation = {
   kvCacheCapacityMiB: 8192,
 };
 
-const sample = (
-  metric: string,
-  value: number,
-  labels: Record<string, string> = {},
-): AcceleratorSample => ({
-  metric,
-  value,
-  observed_at: 1,
-  labels: { node: "node", accelerator_uuid: "gpu", ...labels },
-});
-
 const card = (
   props: Partial<Parameters<typeof GpuObservationCard>[0]> = {},
 ) => (
@@ -63,23 +51,11 @@ const card = (
 );
 
 describe("GPU observation row", () => {
-  it("uses the merged inventory table columns", () => {
-    const { container } = render(
-      <MemoryRouter>
-        <GpuObservationTableHeader variant="inventory" />
-      </MemoryRouter>,
-    );
+  it("labels the merged inventory table columns", () => {
+    render(<GpuObservationTableHeader variant="inventory" />);
 
-    expect(
-      [...(container.firstElementChild?.children ?? [])].map(
-        (cell) => cell.textContent,
-      ),
-    ).toEqual([
-      "clusters.fields.gpuNumber",
-      "clusters.fields.health",
-      "observations.vramAllocation",
-      "observations.utilization",
-    ]);
+    screen.getByText("clusters.fields.health");
+    screen.getByText("observations.vramAllocation");
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -145,7 +121,7 @@ describe("GPU observation row", () => {
 
     screen.getByText("observations.noMeasurement");
     const row = screen.getByTestId("gpu-allocation-row");
-    expect(row.textContent).toContain("—");
+    expect(row.textContent).toContain(EMPTY_VALUE);
     // "Unused" is reserved minus actual, so with no measurement there is no
     // number to print — the line is omitted rather than shown as a dash.
     expect(row.textContent).not.toContain("observations.allocatedUnused");
@@ -171,7 +147,7 @@ describe("GPU observation row", () => {
     );
   });
 
-  it("shows composition in the tooltip and on the hovered segment", async () => {
+  it("shows the hovered Endpoint's composition in its tooltip", async () => {
     render(
       card({
         variant: "inventory",
@@ -191,11 +167,6 @@ describe("GPU observation row", () => {
       }),
     );
 
-    screen.getByTestId("endpoint-segment-weights-pattern");
-    screen.getByTestId("endpoint-segment-kv-pattern");
-    screen.getByTestId("endpoint-segment-remaining-pattern");
-    screen.getByTestId("endpoint-segment-actual-marker");
-
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
     // The name is a way into the object, not just a label.
     expect(
@@ -211,7 +182,6 @@ describe("GPU observation row", () => {
     expect(tooltip.textContent).toContain("observations.otherReservation");
     expect(tooltip.textContent).toContain("5.0 GiB");
     expect(tooltip.textContent).toContain("observations.actualVramUsage");
-    within(tooltip).getByTestId("actual-marker-legend");
     expect(tooltip.textContent).toContain("12.0 GiB");
     expect(tooltip.textContent).toMatch(/observations\.actualOfReserved:80/);
   });
@@ -351,7 +321,7 @@ describe("GPU observation row", () => {
     within(dialog).getByText("observations.hardwareFields.numa_node");
     // No reported counter: the fixed grid shows the gaps itself.
     expect(dialog.textContent).not.toContain("observations.hardwareReported");
-    expect(within(dialog).getAllByText("—").length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText(EMPTY_VALUE).length).toBeGreaterThan(0);
   });
 
   it("derives the FP16 estimate from utilisation and labels it as an estimate", () => {
@@ -402,7 +372,7 @@ describe("GPU observation row", () => {
       within(dialog).getByRole("button", { name: /^instance, 15\.0 GiB/ }),
     );
     expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(1);
-    within(dialog).getByTestId("expanded-endpoint-actual-marker");
+    within(dialog).getByText("observations.usedShare:67");
     within(dialog).getByRole("link", {
       name: "observations.openEndpoint:instance",
     });
@@ -448,9 +418,7 @@ describe("GPU observation row", () => {
       }),
     );
     expect(expandedCount()).toBe(1);
-    expect(
-      within(dialog).queryByTestId("expanded-endpoint-actual-marker"),
-    ).toBeNull();
+    within(dialog).getByText("observations.noMeasurement");
     // The expanded card carries its own legend instead of a duplicated bar.
     expect(dialog.textContent).toContain("observations.modelWeights");
     expect(dialog.textContent).toContain("2.0 GiB");

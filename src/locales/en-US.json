@@ -60,7 +60,6 @@
 			"openGrafana": "View detailed monitoring"
 		},
 		"options": {
-			"none": "None",
 			"enabled": "Enabled",
 			"disabled": "Disabled"
 		},
@@ -163,8 +162,8 @@
 			"externalManaged": "Your password is managed by your organization's identity provider and cannot be changed here."
 		},
 		"error": {
-			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
 			"404": "Sorry, the page you visited does not exist.",
+			"info": "You may have forgotten to add the {{action}} component to {{resource}} resource.",
 			"resource404": "Are you sure you have created the {{resource}} resource.",
 			"notFound": "404 not found",
 			"backHome": "Back Home",
@@ -688,7 +687,6 @@
 			"noInstances": "No inference instances use this cache.",
 			"loadFailed": "Could not load the upgrade plan. Refresh and try again.",
 			"confirm": "Confirm upgrade",
-			"incompatible": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
 			"incompatibleTarget": "Incompatible with the target cache version",
 			"phases": {
 				"UpdatingRuntime": "Updating cache runtime",
@@ -1218,10 +1216,13 @@
 			"modelCatalog": "Model Catalog (Template)",
 			"memoryGb": "Memory (GB)",
 			"acceleratorCount": "Accelerator Count",
-			"allocatedCard": "allocated card",
-			"allocatedCards": "allocated cards",
+			"allocatedCardCount": "{{count}} allocated cards",
+			"allocatedCardCount_one": "{{count}} allocated card",
+			"allocatedCardCount_other": "{{count}} allocated cards",
 			"allocationMode": "Allocation Mode",
-			"card": "card",
+			"cardCount": "{{count}} cards",
+			"cardCount_one": "{{count}} card",
+			"cardCount_other": "{{count}} cards",
 			"cards": "cards",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
@@ -1259,8 +1260,9 @@
 			"vgpuMemoryCapacity": "VRAM",
 			"vgpuCoreCapacity": "Core",
 			"matchingGpuCards": "Matching Cards",
-			"replicaUnit": "replica",
-			"replicaUnits": "replicas",
+			"replicaCount": "{{count}} replicas",
+			"replicaCount_one": "{{count}} replica",
+			"replicaCount_other": "{{count}} replicas",
 			"instance": "Instance",
 			"nodeCount": "Node Count",
 			"restartCount": "Restarts",
@@ -1273,9 +1275,7 @@
 		"sections": {
 			"clusterSettings": "Cluster",
 			"clusterCapacity": "Capacity",
-			"modelAndReplicas": "Model & Replicas",
 			"schedulingTargetResources": "Scheduling Target and Resource Selection",
-			"schedulingTarget": "Scheduling Target",
 			"customizeSettings": "Customize Settings",
 			"configurationDetails": "Configuration Details",
 			"engineSettings": "Engine",
@@ -1449,8 +1449,7 @@
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
 			"basicResources": "Capacity shared with the selected cluster.",
-			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card.",
-			"declaredWeights": "What the catalog's author measured for the model weights alone, per replica — it does not include the KV cache, which is estimated separately below from this deployment's context and concurrency."
+			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
 		},
 		"actions": {
 			"openResources": "Open Resources",
@@ -1522,16 +1521,11 @@
 			"playground": "Playground"
 		},
 		"recipe": {
-			"section": "Recipe options",
 			"variant": "Variant",
 			"features": "Features",
 			"selectVariant": "Select a variant",
 			"defaultOn": "default on",
 			"conflictsWith": "conflicts with",
-			"preview": "Composed preview",
-			"previewError": "Cannot compose",
-			"engineArgs": "Engine args",
-			"env": "Environment",
 			"performanceTuning": "Performance tuning",
 			"verifiedOn": "Verified on:",
 			"resourceEstimate": "Resource estimate",
@@ -1544,10 +1538,6 @@
 			"vramRequiredOnly": "Requires ≥ {{gb}} GB VRAM",
 			"composeBlocked": "Cannot deploy: the selected recipe options are invalid — {{error}}",
 			"defaultVariant": "Default variant",
-			"engineArgCount": "{{count}} engine args",
-			"engineArgCount_one": "1 engine arg",
-			"envCount": "{{count}} env vars",
-			"envCount_one": "1 env var",
 			"verifiedAccelerator": "Validated by this recipe",
 			"vramRequiredLabel": "Required VRAM",
 			"vramRequiredValue": "≥ {{gb}} GB"
@@ -1705,9 +1695,7 @@
 			"noBackendDeploymentFound": "No Backend deployment found for this endpoint, or logs are not yet available."
 		},
 		"simplified": {
-			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant.",
-			"showAdvanced": "Show all options",
-			"hideAdvanced": "Hide advanced options"
+			"autoConfigured": "Model, engine and resources are auto-configured from the selected variant."
 		},
 		"saveAsCatalog": {
 			"title": "Save as Catalog",
@@ -1750,8 +1738,6 @@
 		},
 		"weights": {
 			"declared": "Declared by the catalog",
-			"breakdown": "{{weights}} GB weights + {{kv}} GB KV cache = {{total}} GB required",
-			"acrossReplicas": "{{gb}} GB × {{count}} replicas = {{total}} GB across the deployment",
 			"estimated": "Estimated from checkpoint metadata",
 			"sourceCatalog": "Measured by the model catalog for the weights alone, per replica.",
 			"sourceCheckpoint": "Estimated from checkpoint metadata for the weights alone, per replica."

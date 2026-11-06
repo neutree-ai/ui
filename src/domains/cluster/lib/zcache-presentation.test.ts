@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 import {
   activeCacheChange,
+  isValidCacheCapacity,
+  MAX_CACHE_CAPACITY_GIB,
   resolveZCacheState,
   sameCacheConfig,
 } from "./zcache-presentation";
@@ -125,5 +127,18 @@ describe("cache presentation", () => {
       phase: "Reconciling",
       resultLabelKey: "clusters.zcache.reconciling",
     });
+  });
+
+  it.each([
+    { value: 1, valid: true },
+    { value: "16", valid: true },
+    { value: MAX_CACHE_CAPACITY_GIB, valid: true },
+    { value: MAX_CACHE_CAPACITY_GIB + 1, valid: false },
+    { value: 0, valid: false },
+    { value: 1.5, valid: false },
+    { value: "", valid: false },
+    { value: undefined, valid: false },
+  ])("capacity $value -> valid: $valid", ({ value, valid }) => {
+    expect(isValidCacheCapacity(value)).toBe(valid);
   });
 });

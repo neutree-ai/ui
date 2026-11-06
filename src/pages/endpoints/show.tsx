@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef } from "react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -27,6 +27,7 @@ import {
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
+import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { endpointCacheDashboard } from "@/domains/endpoint/lib/zcache";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
@@ -36,11 +37,11 @@ import {
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { ObservationStatus } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -133,34 +134,27 @@ const RayDashboardTab = ({
   );
 };
 
-const getSchedulerText = (
-  schedulerType: string | null | undefined,
-  t: (key: string) => string,
-) => {
-  switch (schedulerType) {
-    case "consistent_hash":
-      return t("models.scheduler.consistentHashing");
-    case "roundrobin":
-      return t("models.scheduler.roundRobin");
-    default:
-      return t("models.scheduler.unavailable");
-  }
-};
-
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
-  const { grafanaUrl } = useSystemApi();
+  const { grafanaUrl, systemInfo } = useSystemApi();
+  // Live observations and the polling that feeds them only serve the basic
+  // tab, so the other tabs do not keep refetching and re-rendering the page.
+  const [tab, setTab] = useState("basic");
+  const onBasicTab = tab === "basic";
   const {
     query: { data, isLoading },
-  } = useShow<Endpoint>({ queryOptions: { refetchInterval: 15000 } });
+  } = useShow<Endpoint>({
+    queryOptions: { refetchInterval: onBasicTab ? 15000 : false },
+  });
   const record = data?.data;
+  const inactive =
+    record?.status?.phase === "Paused" || record?.status?.phase === "Deleted";
   const observations = useAcceleratorObservations(
     "endpoints",
     record?.metadata.workspace,
     record?.metadata.name,
+    !inactive && onBasicTab,
   );
-  const inactive =
-    record?.status?.phase === "Paused" || record?.status?.phase === "Deleted";
   const gpuSamples = inactive ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
@@ -186,17 +180,20 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     ],
     queryOptions: {
       enabled: Boolean(record?.spec.cluster),
-      refetchInterval: 30_000,
+      refetchInterval: onBasicTab ? 30_000 : false,
     },
   });
 
-  const cacheStatus = zcacheStatus(clusterData?.data?.[0]);
-  const clusterType = clusterData?.data?.[0]?.spec?.type;
+  const cluster = clusterData?.data?.[0];
+  const cacheStatus = zcacheStatus(cluster);
+  const clusterType = cluster?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
-  const cacheCanBeConfigured =
+  const showCacheSummary =
     record?.spec.kv_cache != null ||
-    clusterData?.data?.[0]?.spec.cache?.provider === "zcache";
+    (systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+      true &&
+      cluster?.spec.cache?.provider === "zcache");
 
   const {
     panels,
@@ -233,10 +230,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
-  const schedulerText = getSchedulerText(
-    record.spec.deployment_options?.scheduler?.type,
-    t,
-  );
+  const schedulerText =
+    schedulerLabel(record.spec.deployment_options?.scheduler?.type, t) ??
+    t("models.scheduler.unavailable");
   const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   );
@@ -261,7 +257,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </>
         )}
       >
-        <Tabs defaultValue="basic" className="flex h-full flex-col">
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="flex h-full flex-col"
+        >
           <ShowPage.ObjectHeader
             title={record.metadata.name}
             descriptionClassName="max-w-none"
@@ -383,11 +383,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {cacheCanBeConfigured && (
-              <EndpointKVCacheSummary
-                endpoint={record}
-                cluster={clusterData?.data?.[0]}
-              />
+            {showCacheSummary && (
+              <EndpointKVCacheSummary endpoint={record} cluster={cluster} />
             )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
@@ -414,9 +411,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       observationStatus={observations.status}
                       onObservationRetry={observations.refetch}
                       tflopsOverrides={parseTflops(
-                        clusterData?.data?.[0]?.metadata?.annotations?.[
-                          TFLOPS_ANNOTATION
-                        ],
+                        cluster?.metadata?.annotations?.[TFLOPS_ANNOTATION],
                       )}
                       l1CacheByNode={
                         record.spec.kv_cache?.provider === "zcache"
@@ -425,9 +420,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                       }
                       resources={record.status?.resources}
                       requestedResources={record.spec.resources}
-                      clusterResourceInfo={
-                        clusterData?.data?.[0]?.status?.resource_info
-                      }
+                      clusterResourceInfo={cluster?.status?.resource_info}
                     />
                   </div>
                 </ShowPage.Section>
@@ -447,10 +440,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           </TabsContent>
           {shouldShowRayDashboard && (
             <TabsContent value="ray" className="mt-0 flex-1">
-              <RayDashboardTab
-                record={record}
-                cluster={clusterData?.data?.[0]}
-              />
+              <RayDashboardTab record={record} cluster={cluster} />
             </TabsContent>
           )}
           <TabsContent
@@ -502,7 +492,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <GrafanaDashboard
                     {...monitorDashboardProps}
                     className="flex-1"
-                    hideVariables={selectedPanel !== "cache"}
                   />
                 ) : null}
               </div>

@@ -30,7 +30,9 @@ import type {
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
 import { Disclosure } from "@/foundation/components/Disclosure";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
+import FormCardGrid, {
+  FORM_GRID_CLASS,
+} from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { FormSelect } from "@/foundation/components/FormSelect";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
@@ -46,6 +48,7 @@ import {
   modelSourceSuggestions,
   parseStoredModelSource,
 } from "@/foundation/lib/model-source";
+import { cn } from "@/foundation/lib/utils";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
 import { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 
@@ -602,7 +605,7 @@ export const useExternalEndpointForm = ({
                   }
                   contentClassName="pt-4"
                 >
-                  <div className="grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-4">
+                  <div className={cn(FORM_GRID_CLASS, "items-start")}>
                     <FormField
                       control={form.control}
                       name={`spec.upstreams.${index}.name`}
@@ -611,15 +614,17 @@ export const useExternalEndpointForm = ({
                           data-testid={`field-spec.upstreams.${index}.name`}
                         >
                           <UpstreamNameLabel />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={t(
-                                "external_endpoints.placeholders.provider",
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
+                          <div className="space-y-1">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder={t(
+                                  "external_endpoints.placeholders.provider",
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -682,7 +687,7 @@ export const useExternalEndpointForm = ({
                           {...form}
                           name={`spec.upstreams.${index}.auth.credential`}
                           label={t("external_endpoints.fields.credential")}
-                          className="col-span-4 xs:col-span-1"
+                          className="sm:col-span-4"
                           description={
                             isEdit
                               ? t("common.messages.leaveEmptyToKeepValue")
@@ -696,7 +701,7 @@ export const useExternalEndpointForm = ({
                             )}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-4 mt-3 flex justify-start">
+                        <div className="mt-3 flex justify-start sm:col-span-4">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}
@@ -737,7 +742,7 @@ export const useExternalEndpointForm = ({
                           {...form}
                           name={`spec.upstreams.${index}.endpoint_ref`}
                           label={t("external_endpoints.fields.endpointRef")}
-                          className="col-span-4 xs:col-span-1"
+                          className="sm:col-span-4"
                         >
                           <EndpointRefSelect
                             options={endpointOptions}
@@ -751,7 +756,7 @@ export const useExternalEndpointForm = ({
                             }}
                           />
                         </FormFieldGroup>
-                        <div className="col-span-4 mt-3 flex justify-start">
+                        <div className="mt-3 flex justify-start sm:col-span-4">
                           <TestConnectivityButton
                             testing={connectivity.testingMap[index] ?? false}
                             result={connectivity.resultMap[index] ?? null}

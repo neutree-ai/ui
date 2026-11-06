@@ -7,7 +7,10 @@ import {
 import type { ComponentProps, ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
+import {
+  makeAcceleratorSample,
+  makeGpuDevice,
+} from "@/foundation/testing/resource-builders";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 import EndpointRuntimeResourcesCard, {
   EndpointRuntimeResourcesSummary,
@@ -29,15 +32,16 @@ vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   }),
 }));
 
+// A replica's share of a Tesla-T4 card on its node.
 const makeDevice = (overrides: Partial<Device> = {}): Device => ({
-  uuid: "GPU-t4-01",
-  order: 1,
-  product: "Tesla-T4",
+  ...makeGpuDevice(
+    "GPU-t4-01",
+    { memory_mib: 76288, core_units: 65 },
+    { order: 1, allocatable: { memory_mib: 81920, core_units: 100 } },
+  ),
   memory_mib: 8192,
   core_units: 35,
   node_id: "gpu-node-01",
-  allocatable: { memory_mib: 81920, core_units: 100 },
-  available: { memory_mib: 76288, core_units: 65 },
   ...overrides,
 });
 
@@ -54,17 +58,6 @@ const makeReplica = (overrides: Partial<Replica> = {}): Replica => ({
 const withReplicas = (...replicas: Replica[]): RuntimeResources => ({
   summary: null,
   replicas,
-});
-
-const sample = (
-  metric: string,
-  value: number,
-  labels: Record<string, string>,
-): AcceleratorSample => ({
-  metric,
-  value,
-  observed_at: 1,
-  labels,
 });
 
 const deviceLabels = (node: string, uuid: string) => ({
@@ -155,12 +148,12 @@ describe("EndpointRuntimeResourcesCard", () => {
         samples={devices.flatMap((device, index) => {
           const labels = deviceLabels(device.node_id ?? "", device.uuid);
           return [
-            sample(
+            makeAcceleratorSample(
               "neutree_endpoint_replica_accelerator_memory_used_bytes",
               memory[index] * 1024 ** 3,
               labels,
             ),
-            sample(
+            makeAcceleratorSample(
               "neutree_endpoint_replica_accelerator_utilization_ratio",
               utilization[index],
               labels,
@@ -258,7 +251,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
 
     screen.getByText(
-      "2 endpoints.fields.replicaUnits / 2 endpoints.fields.allocatedCards",
+      "endpoints.fields.replicaCount:2 / endpoints.fields.allocatedCardCount:2",
     );
   });
 

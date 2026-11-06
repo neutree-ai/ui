@@ -9,12 +9,12 @@ import {
 import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { EngineVersionSummary } from "@/domains/engine/components/EngineVersionSummary";
 import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
-import { newestEngineVersion } from "@/domains/engine/lib/version-order";
 import type { Engine } from "@/domains/engine/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { Link } from "@/foundation/components/Link";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { newestVersion } from "@/foundation/lib/version-order";
 
 type EngineCardProps = {
   engine: Engine;
@@ -33,7 +33,7 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
   const name = engine.metadata.name;
   const workspace = engine.metadata.workspace ?? "";
   const versions = engine.spec.versions ?? [];
-  const newest = newestEngineVersion(versions);
+  const newest = newestVersion(versions);
   const newestLabel = newest?.version ?? EMPTY_VALUE;
   const tasks = engine.spec.supported_tasks ?? [];
   const showsStatus = isExceptionalEnginePhase(engine.status?.phase);

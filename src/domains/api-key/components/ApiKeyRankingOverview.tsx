@@ -9,24 +9,17 @@ import {
 } from "@/components/ui/tooltip";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import { CHART_SERIES_SEPARATOR } from "@/foundation/lib/chart-palette";
+import {
+  CHART_MORE_COLOR,
+  CHART_SERIES_SEPARATOR,
+  chartCategoryMark,
+} from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
 // Per-key reference (id + display name) for attributing ranking entries.
 type RankingKeyRef = { id: string; name: string; description?: string | null };
-
-// Top-3 + "others" donut slice colours. The three ranked contributors take the
-// first three steps of the categorical palette; the folded "others" bucket takes
-// the neutral step so it never competes with a real category. Tokens, not
-// literals, keep the donut in the same colour language as the usage chart.
-const RANK_SLICE_COLORS = [
-  "var(--nt-chart-cat-1)",
-  "var(--nt-chart-cat-2)",
-  "var(--nt-chart-cat-3)",
-];
-const OTHER_SLICE_COLOR = "var(--nt-chart-cat-8)";
 
 type Entry = { name: string; description?: string | null; value: number };
 
@@ -133,10 +126,17 @@ const RankingPanel = ({
                 strokeWidth={1}
                 isAnimationActive={false}
               >
+                {/* The ranked contributors take the first categorical steps;
+                    the folded "others" slice takes the neutral More colour so
+                    it never competes with a real category. */}
                 {pie.map((_, i) => (
                   <Cell
                     key={i}
-                    fill={RANK_SLICE_COLORS[i] ?? OTHER_SLICE_COLOR}
+                    fill={
+                      i < top.length
+                        ? chartCategoryMark(i).color
+                        : CHART_MORE_COLOR
+                    }
                   />
                 ))}
               </Pie>

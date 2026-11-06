@@ -1,4 +1,5 @@
 import { useCustom } from "@refinedev/core";
+import { useCallback } from "react";
 import {
   type AcceleratorSnapshot,
   observationStatus,
@@ -19,9 +20,12 @@ export function useAcceleratorObservations(
       retry: false,
     },
   });
+  const { refetch: refetchQuery } = query;
+  const refetch = useCallback(() => {
+    void refetchQuery();
+  }, [refetchQuery]);
   // A disabled query keeps its last cached result; it is not shown.
-  if (!enabled)
-    return { samples: [], status: "no_data" as const, refetch: () => {} };
+  if (!enabled) return { samples: [], status: "no_data" as const, refetch };
   const samples = query.error ? [] : (query.data?.data.samples ?? []);
   return {
     samples,
@@ -31,8 +35,6 @@ export function useAcceleratorObservations(
       query.data?.data.status,
       samples.length > 0,
     ),
-    refetch: () => {
-      void query.refetch();
-    },
+    refetch,
   };
 }

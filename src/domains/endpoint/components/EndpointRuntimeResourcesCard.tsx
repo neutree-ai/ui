@@ -19,7 +19,6 @@ import {
   formatL1CacheUsage,
   type GpuAllocation,
   type NodeL1CacheUsage,
-  reading,
 } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import { formatMiBAsGiB, formatToDecimal } from "@/foundation/lib/unit";
@@ -29,7 +28,11 @@ import type {
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
-import type { EndpointReplicaResourceRow } from "../lib/resource-status";
+import {
+  type ReplicaIdentity,
+  replicaDeviceAllocation,
+  replicaGroupUsage,
+} from "../lib/replica-usage";
 
 type EndpointRuntimeResourcesCardProps = {
   resources: EndpointResourceStatus | null | undefined;
@@ -55,23 +58,6 @@ const formatCoreLimit = (value: number): ReactNode =>
 const formatMemoryGiB = (value: number): ReactNode =>
   formatMiBAsGiB(value) ?? <EmptyValue />;
 
-const formatCount = (
-  count: number,
-  singular: string,
-  plural: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-) => `${count} ${t(count === 1 ? singular : plural)}`;
-
-const formatAllocatedCardCount = (
-  count: number,
-  t: (key: string, options?: Record<string, unknown>) => string,
-) =>
-  `${count} ${t(
-    count === 1
-      ? "endpoints.fields.allocatedCard"
-      : "endpoints.fields.allocatedCards",
-  )}`;
-
 export function EndpointRuntimeResourcesSummary({
   resources,
   className,
@@ -92,88 +78,30 @@ export function EndpointRuntimeResourcesSummary({
 
   return (
     <span className={cn("text-xs text-muted-foreground", className)}>
-      {formatCount(
-        replicaGroups.length,
-        "endpoints.fields.replicaUnit",
-        "endpoints.fields.replicaUnits",
-        t,
-      )}{" "}
-      / {formatAllocatedCardCount(allocatedDeviceCount, t)}
+      {t("endpoints.fields.replicaCount", { count: replicaGroups.length })} /{" "}
+      {t("endpoints.fields.allocatedCardCount", {
+        count: allocatedDeviceCount,
+      })}
     </span>
   );
 }
-
-const allocationForDevice = (
-  device: EndpointReplicaResourceRow,
-  identity: { endpointName: string; workspace: string; modelName: string },
-): GpuAllocation => ({
-  endpoint: identity.endpointName,
-  workspace: identity.workspace,
-  model: identity.modelName,
-  node: device.nodeId,
-  uuid: device.uuid,
-  replica: device.replicaId,
-  instance: device.instanceId,
-  vdevice: device.vdeviceIndex ?? undefined,
-  memoryMiB: device.memoryMiB,
-  modelWeightsMiB: device.modelWeightsMiB,
-  kvCacheCapacityMiB: device.kvCacheCapacityMiB,
-});
-
-const measuredTotal = (values: Array<number | null>): number | null =>
-  values.length > 0 && values.every((value) => value != null)
-    ? values.reduce<number>((sum, value) => sum + Number(value), 0)
-    : null;
 
 type ObservationHandles = { status?: string; refetch?: () => void };
 
 function ReplicaSummary({
   group,
+  allocations,
   samples,
-  identity,
-  observations,
 }: {
   group: EndpointReplicaResourceGroup;
+  allocations: GpuAllocation[];
   samples: AcceleratorSample[];
-  identity: { endpointName: string; workspace: string; modelName: string };
-  observations?: ObservationHandles;
 }) {
   const { t } = useTranslation();
-  const devices = group.nodes.flatMap((node) => node.devices);
-  const measurements = devices.map((device) => {
-    const allocation = allocationForDevice(device, identity);
-    return reading(
-      samples,
-      "neutree_endpoint_replica_accelerator_memory_used_bytes",
-      device.nodeId,
-      device.uuid,
-      allocation,
-    );
-  });
-  const utilizations = devices.map((device) => {
-    const allocation = allocationForDevice(device, identity);
-    return reading(
-      samples,
-      "neutree_endpoint_replica_accelerator_utilization_ratio",
-      device.nodeId,
-      device.uuid,
-      allocation,
-    );
-  });
-  const actual = measuredTotal(
-    measurements.map((sample) => (sample ? sample.value / 1024 ** 2 : null)),
+  const { actualMiB, averageUtilization, peakUtilization } = replicaGroupUsage(
+    allocations,
+    samples,
   );
-  const utilValues = utilizations.map((sample) => sample?.value ?? null);
-  const allUtilizationsKnown =
-    utilValues.length > 0 && utilValues.every((value) => value != null);
-  const averageUtilization = allUtilizationsKnown
-    ? (utilValues.reduce<number>((sum, value) => sum + Number(value), 0) /
-        utilValues.length) *
-      100
-    : null;
-  const peakUtilization = allUtilizationsKnown
-    ? Math.max(...utilValues.map(Number)) * 100
-    : null;
   const l0Cache =
     group.kvCacheCapacityMiB == null
       ? null
@@ -188,9 +116,9 @@ function ReplicaSummary({
       <SummaryCell
         label={t("observations.vramInUse")}
         value={
-          actual == null
+          actualMiB == null
             ? "—"
-            : `${formatMemoryGiB(actual)} / ${formatMemoryGiB(group.memoryMiB)}`
+            : `${formatMemoryGiB(actualMiB)} / ${formatMemoryGiB(group.memoryMiB)}`
         }
       />
       <SummaryCell
@@ -246,14 +174,13 @@ function NodeSummary({
   l1Cache,
   requestedCpu,
   requestedMemory,
-  t,
 }: {
   node: EndpointReplicaNodeResourceGroup;
   l1Cache?: NodeL1CacheUsage;
   requestedCpu: ReactNode;
   requestedMemory: ReactNode;
-  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-trans-2)] px-4 py-2.5">
       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[var(--nt-stroke-neutral-trans-2)] text-muted-foreground">
@@ -274,13 +201,7 @@ function NodeSummary({
             {t("observations.l1KvCache")} {formatL1CacheUsage(l1Cache)}
           </>
         )}{" "}
-        ·{" "}
-        {formatCount(
-          node.deviceCount,
-          "endpoints.fields.card",
-          "endpoints.fields.cards",
-          t,
-        )}
+        · {t("endpoints.fields.cardCount", { count: node.deviceCount })}
       </span>
     </div>
   );
@@ -307,12 +228,19 @@ function Replica({
   clusterResourceInfo?: ClusterResourceInfo | null;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   tflopsOverrides: Record<string, number>;
-  identity: { endpointName: string; workspace: string; modelName: string };
+  identity: ReplicaIdentity;
   requestedCorePerCard?: number;
   observations?: ObservationHandles;
 }) {
   const { t } = useTranslation();
   const replicaName = group.replicaId || group.instanceId;
+  const nodes = group.nodes.map((node) => ({
+    node,
+    devices: node.devices.map((device) => ({
+      device,
+      allocation: replicaDeviceAllocation(device, identity),
+    })),
+  }));
 
   return (
     <section
@@ -349,12 +277,7 @@ function Replica({
           </div>
         </div>
         <span className="whitespace-nowrap text-xs text-muted-foreground">
-          {formatCount(
-            group.deviceCount,
-            "endpoints.fields.card",
-            "endpoints.fields.cards",
-            t,
-          )}
+          {t("endpoints.fields.cardCount", { count: group.deviceCount })}
           {" · "}
           {formatMemoryGiB(group.memoryMiB)} {t("endpoints.fields.vgpuMemory")}
         </span>
@@ -362,56 +285,51 @@ function Replica({
 
       <ReplicaSummary
         group={group}
+        allocations={nodes.flatMap(({ devices }) =>
+          devices.map(({ allocation }) => allocation),
+        )}
         samples={samples}
-        identity={identity}
-        observations={observations}
       />
 
       <div className="overflow-x-auto">
         <div role="table">
           <GpuObservationTableHeader variant="allocation" />
-          {group.nodes.map((node) => (
+          {nodes.map(({ node, devices }) => (
             <div key={node.nodeId}>
               <NodeSummary
                 node={node}
                 l1Cache={l1CacheByNode?.[node.nodeId]}
                 requestedCpu={requestedCpu}
                 requestedMemory={requestedMemory}
-                t={t}
               />
-              {node.devices.map((device, deviceIndex) => {
-                const allocation: GpuAllocation = {
-                  ...allocationForDevice(device, identity),
-                };
-                return (
-                  <GpuObservationCard
-                    key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
-                    variant="allocation"
-                    device={{
-                      node: device.nodeId,
-                      uuid: device.uuid,
-                      index: device.order ?? deviceIndex + 1,
-                      product: device.product,
-                      totalMiB: device.physicalMemoryMiB,
-                      allocatedMiB: device.memoryMiB,
-                      coreUnits:
-                        device.coreUnits > 0
-                          ? device.coreUnits
-                          : requestedCorePerCard,
-                      peakFP16TFLOPS: productPeakTflops(
-                        clusterResourceInfo,
-                        device.product,
-                      ),
-                    }}
-                    samples={samples}
-                    allocations={[allocation]}
-                    replica={allocation}
-                    tflopsOverrides={tflopsOverrides}
-                    observationStatus={observations?.status}
-                    onRetry={observations?.refetch}
-                  />
-                );
-              })}
+              {devices.map(({ device, allocation }, deviceIndex) => (
+                <GpuObservationCard
+                  key={`${device.uuid}:${device.vdeviceIndex ?? deviceIndex}`}
+                  variant="allocation"
+                  device={{
+                    node: device.nodeId,
+                    uuid: device.uuid,
+                    index: device.order ?? deviceIndex + 1,
+                    product: device.product,
+                    totalMiB: device.physicalMemoryMiB,
+                    allocatedMiB: device.memoryMiB,
+                    coreUnits:
+                      device.coreUnits > 0
+                        ? device.coreUnits
+                        : requestedCorePerCard,
+                    peakFP16TFLOPS: productPeakTflops(
+                      clusterResourceInfo,
+                      device.product,
+                    ),
+                  }}
+                  samples={samples}
+                  allocations={[allocation]}
+                  replica={allocation}
+                  tflopsOverrides={tflopsOverrides}
+                  observationStatus={observations?.status}
+                  onRetry={observations?.refetch}
+                />
+              ))}
             </div>
           ))}
         </div>

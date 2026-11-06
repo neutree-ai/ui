@@ -2,6 +2,11 @@ import { fireEvent, render as renderUI, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  makeGpuDevice,
+  makeNodeResources,
+  makeResourceInfo,
+} from "@/foundation/testing/resource-builders";
 
 const render = (ui: ReactNode) => renderUI(ui, { wrapper: MemoryRouter });
 
@@ -38,25 +43,6 @@ vi.mock("@/domains/cluster/components/ClusterResourceSummary", () => ({
 
 vi.mock("@/domains/cluster/components/ClusterCacheSection", () => ({
   ClusterCacheSection: () => <div data-testid="cluster-cache-section" />,
-}));
-
-vi.mock("@/domains/cluster/components/NodeResourcesTable", () => ({
-  NodeResourcesTable: ({
-    nodeResources,
-    acceleratorTypes,
-    framed,
-    gpuView,
-  }: {
-    nodeResources: Record<string, unknown>;
-    acceleratorTypes: string[];
-    framed: boolean;
-    gpuView: string;
-  }) => (
-    <div data-testid="node-resources-table" data-gpu-view={gpuView}>
-      {Object.keys(nodeResources).join(",")}|{acceleratorTypes.join(",")}|
-      {String(framed)}
-    </div>
-  ),
 }));
 
 vi.mock("@/foundation/components/ShowPage", () => {
@@ -121,19 +107,8 @@ vi.mock("@/foundation/components/ShowButton", () => ({
 }));
 vi.mock("@/foundation/components/Timestamp", () => ({ default: () => null }));
 vi.mock("@/foundation/components/Table", () => {
-  const Table = ({
-    children,
-    showColumnVisibility,
-  }: {
-    children: ReactNode;
-    showColumnVisibility?: boolean;
-  }) => (
-    <div
-      data-testid="endpoint-table"
-      data-show-column-visibility={String(showColumnVisibility)}
-    >
-      {children}
-    </div>
+  const Table = ({ children }: { children: ReactNode }) => (
+    <div data-testid="endpoint-table">{children}</div>
   );
   Table.Column = () => null;
   return { Table };
@@ -222,26 +197,10 @@ describe("ClustersShow", () => {
       phase: "Running",
       version: "v1.2.0",
       resource_info: {
-        allocatable: {
-          cpu: 16,
-          memory: 64,
-          accelerator_groups: {
-            nvidia_gpu: { quantity: 1, product_groups: { "Tesla-T4": 1 } },
-          },
-        },
+        allocatable: makeResourceInfo(16, 64, { "Tesla-T4": 1 }),
         available: null,
         node_resources: {
-          "node-a": {
-            allocatable: null,
-            available: null,
-            devices: [
-              {
-                uuid: "gpu-a",
-                product: "Tesla-T4",
-                health: true,
-              },
-            ],
-          },
+          "node-a": makeNodeResources({ devices: [makeGpuDevice("gpu-a")] }),
         },
       },
     };
@@ -254,14 +213,19 @@ describe("ClustersShow", () => {
       screen.getByTestId("cluster-resource-summary").textContent,
     ).toContain('"cpu":16');
     expect(screen.queryByText("observations.flops")).toBeNull();
-    const table = screen.getByTestId("node-resources-table");
-    expect(table.textContent).toBe("node-a|nvidia_gpu|false");
-    expect(table.getAttribute("data-gpu-view")).toBe("cards");
+    screen.getByText("node-a");
+    expect(
+      screen
+        .getByRole("button", { name: "clusters.options.cardView" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    screen.getByTestId("gpu-inventory-card");
 
     fireEvent.click(
       screen.getByRole("button", { name: "clusters.options.tableView" }),
     );
-    expect(table.getAttribute("data-gpu-view")).toBe("table");
+    screen.getByTestId("gpu-inventory-row");
+    expect(screen.queryByTestId("gpu-inventory-card")).toBeNull();
 
     firstCluster.unmount();
     showCluster({ name: "another-gpu-cluster", status });
@@ -271,9 +235,7 @@ describe("ClustersShow", () => {
       level: 1,
       name: "another-gpu-cluster",
     });
-    expect(
-      screen.getByTestId("node-resources-table").getAttribute("data-gpu-view"),
-    ).toBe("table");
+    screen.getByTestId("gpu-inventory-row");
   });
 
   // The API requires router.replicas / resources.cpu / resources.memory for a
@@ -300,11 +262,7 @@ describe("ClustersShow", () => {
     render(<ClustersShow />);
 
     screen.getByRole("heading", { level: 1, name: "gpu-cluster" });
-    expect(
-      screen
-        .getByTestId("endpoint-table")
-        .getAttribute("data-show-column-visibility"),
-    ).toBe("false");
+    screen.getByTestId("endpoint-table");
   });
 
   it("moves KV cache into its own tab for Kubernetes clusters", () => {

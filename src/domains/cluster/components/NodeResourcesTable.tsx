@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Server } from "lucide-react";
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,14 +23,16 @@ import type {
   NodeL1CacheUsage,
 } from "@/foundation/lib/accelerator-observations";
 import { formatL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import { compareDevicesByOrderThenUuid } from "@/foundation/lib/device-resource-utils";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type {
-  DeviceResource,
+  ClusterResourceInfo,
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
 import { calcResourceUsage } from "../lib/calc-resource-usage";
+import { observedGpuFromDevice } from "../lib/observed-gpu";
 import { getAcceleratorProductQuantities } from "../lib/resource-status";
 import { ResourceProgressBar } from "./ResourceProgressBar";
 
@@ -80,13 +82,11 @@ interface NodeResourcesTableProps {
   samples?: AcceleratorSample[];
   allocations?: GpuAllocation[];
   gpuView?: GpuObservationDisplay;
-  renderGpuRow?: (
-    device: DeviceResource,
-    nodeName: string,
-    index: number,
-    display: GpuObservationDisplay,
-    showProduct: boolean,
-  ) => ReactNode;
+  /** Source of each product's peak FP16 TFLOPS. */
+  clusterResourceInfo?: ClusterResourceInfo | null;
+  tflopsOverrides?: Record<string, number>;
+  observationStatus?: string;
+  onObservationRetry?: () => void;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }
 
@@ -99,7 +99,10 @@ export const NodeResourcesTable = ({
   samples = [],
   allocations = [],
   gpuView = "table",
-  renderGpuRow,
+  clusterResourceInfo,
+  tflopsOverrides,
+  observationStatus,
+  onObservationRetry,
   l1CacheByNode,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
@@ -184,38 +187,26 @@ export const NodeResourcesTable = ({
               new Set(
                 sortedDevices.map((device) => device.product).filter(Boolean),
               ).size > 1;
-            const gpuRows = sortedDevices.map((device, index) =>
-              renderGpuRow ? (
-                renderGpuRow(device, nodeName, index, gpuView, showProduct)
-              ) : (
-                <GpuObservationCard
-                  key={device.uuid}
-                  variant="inventory"
-                  display={gpuView}
-                  showProduct={showProduct}
-                  device={{
-                    node: nodeName,
-                    uuid: device.uuid,
-                    index: device.order ?? index + 1,
-                    product: device.product,
-                    totalMiB: device.allocatable?.memory_mib ?? null,
-                    allocatedMiB:
-                      device.allocatable?.memory_mib != null &&
-                      device.available?.memory_mib != null
-                        ? Math.max(
-                            0,
-                            device.allocatable.memory_mib -
-                              device.available.memory_mib,
-                          )
-                        : null,
-                    coreUnits: device.allocatable?.core_units,
-                    healthy: device.health,
-                  }}
-                  samples={samples}
-                  allocations={allocations}
-                />
-              ),
-            );
+            const gpuRows = sortedDevices.map((device, index) => (
+              <GpuObservationCard
+                key={device.uuid}
+                variant="inventory"
+                display={gpuView}
+                showProduct={showProduct}
+                observationStatus={observationStatus}
+                onRetry={onObservationRetry}
+                device={{
+                  ...observedGpuFromDevice(nodeName, device, index),
+                  peakFP16TFLOPS: productPeakTflops(
+                    clusterResourceInfo,
+                    device.product,
+                  ),
+                }}
+                tflopsOverrides={tflopsOverrides}
+                samples={samples}
+                allocations={allocations}
+              />
+            ));
 
             return (
               <Fragment key={nodeName}>

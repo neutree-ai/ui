@@ -1,3 +1,4 @@
+import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
 import type {
   AcceleratorProductResources,
   DeviceResource,
@@ -75,3 +76,17 @@ export function makeResourceInfo(
 export const makeNodeResources = (
   overrides: Partial<NodeResourceStatus> = {},
 ): NodeResourceStatus => ({ allocatable: null, available: null, ...overrides });
+
+/** One observation sample on GPU `gpu` of node `node`; `labels` add to or
+ * replace those two. */
+export const makeAcceleratorSample = (
+  metric: string,
+  value: number,
+  labels: Record<string, string> = {},
+  observedAt = 1,
+): AcceleratorSample => ({
+  metric,
+  value,
+  observed_at: observedAt,
+  labels: { node: "node", accelerator_uuid: "gpu", ...labels },
+});

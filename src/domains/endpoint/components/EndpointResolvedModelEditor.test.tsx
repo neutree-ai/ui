@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
+import { selectOption } from "@/foundation/testing/interactions";
 import { EndpointResolvedModelEditor } from "./EndpointResolvedModelEditor";
 
 type EditorProps = ComponentProps<typeof EndpointResolvedModelEditor>;
@@ -81,15 +82,9 @@ describe("EndpointResolvedModelEditor", () => {
     );
 
     screen.getByTestId("endpoint-selected-model");
-    const registryField = screen.getByTestId("field-spec.model.registry");
     screen.getByTestId("field-spec.model.name");
 
-    const registryTrigger = registryField.querySelector(
-      'button[role="combobox"]',
-    );
-    if (!registryTrigger) throw new Error("registry combobox is missing");
-    fireEvent.click(registryTrigger);
-    fireEvent.click(screen.getByRole("option", { name: "hf" }));
+    selectOption("spec.model.registry", "hf");
 
     fireEvent.click(screen.getByTestId("model-optional-fields-toggle"));
     fireEvent.input(screen.getByLabelText("endpoints.fields.modelVersion"), {

@@ -415,7 +415,7 @@ const catalogB = {
   },
 };
 
-/** A recipe-shaped catalog (it has variants), which turns on simplified mode. */
+/** A recipe-shaped catalog: it has variants, composed into the form. */
 function recipeCatalog({
   id = 3,
   name = "recipe-mc",
@@ -518,12 +518,11 @@ function renderEndpointForm(
     (r) => (
       <>
         {r.metadataFields}
-        {r.advancedToggle}
-        {r.templateFields}
-        {r.recipeFields}
-        {r.weightFields}
+        {action === "create" ? r.wizardProfileFields : r.templateFields}
+        {r.runtimeFields}
         {r.resourceFields}
         {r.customizeFields}
+        {r.wizardEstimateFields}
       </>
     ),
   );
@@ -575,7 +574,16 @@ function openCombobox(fieldName: string) {
   return trigger as HTMLButtonElement;
 }
 
-const selectCatalog = (label: string) => selectOption("-model-catalog", label);
+/** Creating starts from a directly chosen model; the catalog picker appears
+ * once the catalog source is chosen. */
+function selectCatalog(label: string) {
+  if (!screen.queryByTestId("field--model-catalog")) {
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.modelSource.catalog" }),
+    );
+  }
+  selectOption("-model-catalog", label);
+}
 
 const memoryInput = () =>
   screen.getByRole("spinbutton", {
@@ -621,13 +629,15 @@ describe("create vs edit", () => {
     { action: "create" as const, locked: false },
     { action: "edit" as const, locked: true },
   ])(
-    "$action: catalog picker hidden and name and cluster locked: $locked",
+    "$action: model source choice hidden and name and cluster locked: $locked",
     async ({ action, locked }) => {
       renderEndpointForm(action, { clusters: [vgpuCluster()] });
 
-      expect(screen.queryByTestId("field--model-catalog") === null).toBe(
-        locked,
-      );
+      expect(
+        screen.queryByRole("button", {
+          name: "endpoints.modelSource.catalog",
+        }) === null,
+      ).toBe(locked);
       expect(
         screen.getByTestId("field-metadata.name").querySelector("input")
           ?.disabled,
@@ -1226,42 +1236,6 @@ describe("capacity checks", () => {
   });
 });
 
-describe("simplified recipe deploy on vGPU clusters", () => {
-  // The virtual-card split and its capacity feedback are deploy essentials on
-  // a vGPU cluster, so they stay outside "Show all options".
-  it("keeps the vGPU split and current request visible", () => {
-    const { result } = renderEndpointForm("create", {
-      catalogs: [catalogA, recipeCatalog()],
-      clusters: [vgpuCluster()],
-    });
-    selectCatalog("recipe-mc");
-
-    setValues(result, {
-      "spec.cluster": "vgpu",
-      "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
-    });
-    selectGpuAllocationMode("vgpu");
-
-    expect(screen.queryByTestId("field-spec.model.version")).toBeNull();
-    screen.getByTestId("endpoint-virtual-card-split-group");
-    screen.getByTestId("endpoint-current-request-panel");
-  });
-
-  it("has no vGPU split on other clusters", () => {
-    const { result } = renderEndpointForm("create", {
-      catalogs: [catalogA, recipeCatalog()],
-      clusters: [plainGpuCluster()],
-    });
-    selectCatalog("recipe-mc");
-
-    setValues(result, { "spec.cluster": "plain-gpu" });
-
-    expect(
-      screen.queryByTestId("endpoint-virtual-card-split-group"),
-    ).toBeNull();
-  });
-});
-
 describe("submit transform", () => {
   it("submits backend-compatible flat vGPU resource keys", async () => {
     const { result } = renderEndpointForm("edit");
@@ -1337,31 +1311,6 @@ describe("catalog selection", () => {
       }),
     );
   });
-
-  it("resets everything on None and still accepts a catalog after", async () => {
-    const { result } = renderEndpointForm();
-    selectCatalog("vllm-llama");
-    await waitFor(() =>
-      expect(fieldValue(result, "spec.model.name")).toBe("llama-3"),
-    );
-
-    selectCatalog("common.options.none");
-
-    await waitFor(() =>
-      expect(result.current.form.getValues().spec).toMatchObject({
-        model: { name: "", file: "", registry: "" },
-        engine: { engine: "", version: "" },
-        resources: { cpu: "0", memory: "0" },
-        replicas: { num: 1 },
-        deployment_options: { scheduler: { type: "consistent_hash" } },
-      }),
-    );
-
-    selectCatalog("llama-cpp-basic");
-    await waitFor(() =>
-      expect(fieldValue(result, "spec.model.name")).toBe("tiny-model"),
-    );
-  });
 });
 
 describe("validation", () => {
@@ -1421,6 +1370,37 @@ describe("validation", () => {
     },
   );
 
+  it.each([
+    { type: "nvidia_gpu", error: false },
+    { type: "amd_gpu", error: true },
+  ])(
+    "accelerator $type for an engine shipping nvidia_gpu -> error: $error",
+    async ({ type, error }) => {
+      const engine = {
+        metadata: metadata("vllm"),
+        spec: {
+          versions: [
+            { version: "v1", values_schema: {}, images: { nvidia_gpu: {} } },
+          ],
+          supported_tasks: ["text-generation"],
+        },
+      };
+      const { result } = renderEndpointForm("create", { engines: [engine] });
+      setValues(result, {
+        "spec.engine": { engine: "vllm", version: "v1" },
+        "spec.resources.accelerator": { type, product: T4 },
+      });
+
+      await validate(result, "spec.resources.accelerator");
+
+      expect(
+        screen.queryByText(
+          "endpoints.messages.engineAcceleratorIncompatible",
+        ) !== null,
+      ).toBe(error);
+    },
+  );
+
   // The existence check reads an exact-name lookup, not whatever page the
   // dropdown last fetched. Its result arrives after the form has rendered, so
   // re-validating on it must not loop: the Refine form wrapper is a new object
@@ -1461,6 +1441,51 @@ describe("validation", () => {
       ).toBeNull();
     });
   });
+});
+
+describe("KV cache on a cluster that cannot serve it", () => {
+  it.each([
+    {
+      cache: { provider: "zcache", options: { timeout_seconds: 5 } },
+      error: true,
+    },
+    { cache: null, error: false },
+  ])("kv_cache $cache -> error: $error", async ({ cache, error }) => {
+    const { result } = renderEndpointForm("edit", {
+      clusters: [plainGpuCluster()],
+    });
+    setValues(result, {
+      "metadata.name": "cached",
+      "spec.cluster": "plain-gpu",
+      "spec.kv_cache": cache,
+    });
+
+    await validate(result);
+
+    expect(formError(result, "spec.kv_cache")?.message).toBe(
+      error ? "endpoints.kvCacheSettings.requirements" : undefined,
+    );
+    expect(
+      screen.queryByText("endpoints.kvCacheSettings.requirements") !== null,
+    ).toBe(error);
+  });
+});
+
+it("rejects a KV cache timeout outside 0.1 to 60 seconds", async () => {
+  const { result } = renderEndpointForm("edit", {
+    clusters: [plainGpuCluster()],
+  });
+  setValues(result, {
+    "metadata.name": "cached",
+    "spec.cluster": "plain-gpu",
+    "spec.kv_cache": { provider: "zcache", options: { timeout_seconds: 61 } },
+  });
+
+  await validate(result);
+
+  expect(
+    formError(result, "spec.kv_cache.options.timeout_seconds")?.message,
+  ).toBe("endpoints.kvCacheSettings.invalidTimeout");
 });
 
 describe("unverified accelerator fallback", () => {
@@ -1970,14 +1995,13 @@ describe("the weights estimate", () => {
 
     withModel(result, checkpointShape);
 
-    screen.getByTestId("endpoint-weights-estimate");
     screen.getByTestId("kv-cache-estimate");
-    expect(screen.queryByTestId("endpoint-declared-weights")).toBeNull();
+    expect(screen.queryByText(/^endpoints\.weights\.declared/)).toBeNull();
     expect(screen.getByTestId("kv-cache-tokens").tagName).toBe("INPUT");
     expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
   });
 
-  it("puts what the catalog declares beside the estimate, giving way to the VRAM check", () => {
+  it("shows what the catalog declares and checks VRAM against it", () => {
     renderEndpointForm("create", {
       catalogs: [
         catalogA,
@@ -1990,9 +2014,9 @@ describe("the weights estimate", () => {
     });
     selectCatalog("recipe-mc");
 
-    const block = screen.getByTestId("endpoint-declared-weights");
-    within(block).getByTestId("vram-check-badge");
-    expect(within(block).queryByText("35B")).toBeNull();
+    screen.getByText("endpoints.weights.declared 48 GB");
+    screen.getByTestId("vram-check-badge");
+    expect(screen.queryByText("35B")).toBeNull();
   });
 
   // Flex serves a model baked into its own image: no checkpoint to compute a
@@ -2035,9 +2059,8 @@ describe("the weights estimate", () => {
 
     if (picked) withModel(result);
 
-    expect(
-      screen.getByTestId("kv-cache-estimate").getAttribute("data-state"),
-    ).not.toBe("missing-fields");
+    screen.getByTestId("kv-cache-tokens");
+    expect(screen.queryByText(/^endpoints\.kvCache\.missingFields/)).toBeNull();
   });
 
   // A recipe exposing the context window as a feature must not offer it a
@@ -2066,8 +2089,42 @@ describe("the weights estimate", () => {
 
     const tokens = screen.getByTestId("kv-cache-tokens");
     expect(tokens.tagName).not.toBe("INPUT");
-    expect(tokens.getAttribute("data-owned-by")).toBe("Context window");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "endpoints.wizard.summary.showEstimateDetails",
+      }),
+    );
+    screen.getByRole("button", {
+      name: /endpoints\.kvCache\.ownedBy:Context window/,
+    });
     expect(tokens.textContent).toBe("8,192");
     expect(screen.getByTestId("kv-cache-sequences").tagName).toBe("INPUT");
+  });
+
+  it("requires the declared weights plus the KV cache estimate in VRAM", async () => {
+    const { result } = renderEndpointForm("create", {
+      catalogs: [
+        catalogA,
+        recipeCatalog({
+          variant: { vram_minimum_gb: 48 },
+          model: { info: { ...checkpointShape, parameter_dtype: "bfloat16" } },
+        }),
+      ],
+      clusters: [noResourceCluster],
+    });
+    selectCatalog("recipe-mc");
+
+    // 2 (K and V) × 32 layers × 8 heads × 128 dims × 2 bytes × 8192 tokens
+    // is exactly 1 GiB for one sequence.
+    fireEvent.change(screen.getByTestId("kv-cache-tokens"), {
+      target: { value: "8192" },
+    });
+    fireEvent.change(screen.getByTestId("kv-cache-sequences"), {
+      target: { value: "1" },
+    });
+
+    await waitFor(() =>
+      expect(result.current.reviewContext.requiredVramGb).toBe(49),
+    );
   });
 });

@@ -1,3 +1,8 @@
+import {
+  BYTES_PER_GB,
+  precisionBytes,
+  precisionIdForDtype,
+} from "@/foundation/lib/kv-cache";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 const parameterCount = (value: string | undefined): number | null => {
@@ -22,6 +27,8 @@ const parameterCount = (value: string | undefined): number | null => {
   return amount * multiplier;
 };
 
+/** Explicit quantization bits win; otherwise the dtype is read the same way
+ * the KV cache estimate reads it, falling back to the quantization label. */
 const bytesPerParameter = (info: ModelInfo): number | null => {
   if (
     typeof info.quantization_bits === "number" &&
@@ -31,23 +38,17 @@ const bytesPerParameter = (info: ModelInfo): number | null => {
     return info.quantization_bits / 8;
   }
 
-  const dtype = `${info.parameter_dtype ?? ""} ${info.quantization ?? ""}`
-    .toLowerCase()
-    .replaceAll("_", "");
-  const bitMatch = dtype.match(/(?:fp|int|bit)?\s*(4|8|16|32)\s*bit?/);
-  if (bitMatch) return Number(bitMatch[1]) / 8;
-  if (/\b(?:fp?32|float32)\b/.test(dtype)) return 4;
-  if (/\b(?:fp?16|float16|bfloat16|bf16|half)\b/.test(dtype)) return 2;
-  if (/\b(?:fp?8|float8)\b/.test(dtype)) return 1;
-  if (/\b(?:int4|nf4|q4)\b/.test(dtype)) return 0.5;
-
-  return null;
+  return precisionBytes(
+    precisionIdForDtype(info.parameter_dtype) ??
+      precisionIdForDtype(info.quantization),
+  );
 };
 
 /**
- * Estimates checkpoint weights from the model metadata Neutree already reads.
- * This is a deployment-sizing estimate, not a replacement for a catalog's
- * measured `vram_minimum_gb` when that number is available.
+ * Estimates checkpoint weights from the model metadata Neutree already reads,
+ * in the same 1024³-byte GB as the KV cache estimate it is added to. This is a
+ * deployment-sizing estimate, not a replacement for a catalog's measured
+ * `vram_minimum_gb` when that number is available.
  */
 export function estimateModelWeightsGb(info: ModelInfo | null | undefined) {
   if (!info) return null;
@@ -56,5 +57,18 @@ export function estimateModelWeightsGb(info: ModelInfo | null | undefined) {
   const bytes = bytesPerParameter(info);
   if (parameters == null || bytes == null) return null;
 
-  return (parameters * bytes) / 1e9;
+  return (parameters * bytes) / BYTES_PER_GB;
+}
+
+/**
+ * What one replica needs in VRAM: the weights and the KV cache are held at
+ * once, so it is their sum. Either half may still be unknown; the other is
+ * then the best figure there is. Null only when neither is known.
+ */
+export function perReplicaRequiredGb(
+  weightsGb: number | null,
+  kvCacheGb: number | null,
+): number | null {
+  if (weightsGb == null && kvCacheGb == null) return null;
+  return (weightsGb ?? 0) + (kvCacheGb ?? 0);
 }

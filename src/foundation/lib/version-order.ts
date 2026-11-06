@@ -3,10 +3,13 @@ import { compareVersions, validate } from "compare-versions";
 type Versioned = { version: string };
 
 /**
- * Engine packages are not guaranteed to be strict semver, so known semver
- * values rank above free-form labels and the fallback keeps digit runs numeric.
+ * Natural-order comparison for version labels that are not strict semver
+ * (`v1.0.RC2`, `latest`), which `compare-versions` rejects by throwing.
+ * Digit runs compare numerically.
  */
 function compareNaturally(a: string, b: string): number {
+  // Split into digits, letters and separators separately: merging a separator
+  // into the following label (".RC") would compare the dot instead of the label.
   const tokenize = (value: string) =>
     value.match(/\d+|\p{L}+|[^\p{L}\d]+/gu) ?? [];
   const left = tokenize(a);
@@ -26,6 +29,8 @@ function compareNaturally(a: string, b: string): number {
       if (diff !== 0) return diff > 0 ? 1 : -1;
       continue;
     }
+    // A label chunk ranks below the numeric release at the same position, so
+    // `v1.0.RC2` sorts below `v1.0.0` like a pre-release should.
     if (lIsNumber !== rIsNumber) return lIsNumber ? 1 : -1;
 
     const diff = l.toLowerCase().localeCompare(r.toLowerCase());
@@ -35,6 +40,13 @@ function compareNaturally(a: string, b: string): number {
   return 0;
 }
 
+/**
+ * Ascending order: negative when `a` is older than `b`, 0 when equal.
+ *
+ * A version that parses outranks one that does not, so a free-form package tag
+ * such as `qwen38` can never take over as "latest" from a real release like
+ * `v0.25.0`.
+ */
 export function compareVersionStrings(a: string, b: string): number {
   const aIsVersion = validate(a);
   const bIsVersion = validate(b);
@@ -44,6 +56,7 @@ export function compareVersionStrings(a: string, b: string): number {
   return compareNaturally(a, b);
 }
 
+/** Newest → oldest, the order every version list in the UI renders. Ties keep input order. */
 export function sortVersionsNewestFirst<T extends Versioned>(
   versions: T[],
 ): T[] {
@@ -57,6 +70,10 @@ export function sortVersionsNewestFirst<T extends Versioned>(
     .reverse();
 }
 
+/**
+ * The version the UI treats as the default. Engines return their versions in
+ * creation order, not newest-first, so never read `spec.versions[0]` for this.
+ */
 export function newestVersion<T extends Versioned>(
   versions: T[],
 ): T | undefined {

@@ -22,7 +22,6 @@ type DisclosureProps = {
   triggerClassName?: string;
   contentClassName?: string;
   testId?: string;
-  dataState?: string;
   triggerTestId?: string;
   defaultOpen?: boolean;
   open?: boolean;
@@ -46,7 +45,6 @@ export function Disclosure({
   triggerClassName,
   contentClassName,
   testId,
-  dataState,
   triggerTestId,
   defaultOpen,
   open,
@@ -61,13 +59,12 @@ export function Disclosure({
         className,
       )}
       data-testid={testId}
-      data-state={dataState}
       data-variant={variant}
       defaultOpen={defaultOpen}
       open={open}
       onOpenChange={onOpenChange}
     >
-      <div className={cn("flex items-stretch", card ? "bg-transparent" : "")}>
+      <div className="flex items-stretch">
         <CollapsibleTrigger asChild>
           <Button
             type="button"

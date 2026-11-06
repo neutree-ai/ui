@@ -1,5 +1,6 @@
 import type { EndpointCacheDashboard } from "@/foundation/lib/grafana-dashboard-configs";
 import type { EndpointClusterRef } from "../types";
+import type { EndpointCacheManagerStatus } from "./cache-manager-status";
 
 // The endpoint only needs cache availability and node placement, not the
 // cluster management UI's control-plane and operation types.
@@ -83,4 +84,68 @@ export function endpointCacheDashboard({
       L1Nodes: JSON.stringify(nodePattern).slice(1, -1),
     },
   };
+}
+
+/**
+ * The i18n key explaining why an endpoint cannot enable ZCache, or null when
+ * it can. Requirements are checked in the order a user fixes them: cluster,
+ * accelerator, engine and task, then the cluster's cache runtime and manager,
+ * and last the engine version the runtime supports.
+ */
+export function kvCacheUnavailableReason({
+  cluster,
+  acceleratorType,
+  engine,
+  task,
+  manager,
+  versions,
+}: {
+  cluster?: EndpointClusterRef;
+  acceleratorType?: string | null;
+  engine?: { engine?: string; version?: string };
+  task?: string;
+  manager: Pick<EndpointCacheManagerStatus, "kind">;
+  versions: { isLoading: boolean; isError: boolean; engineVersions: string[] };
+}): string | null {
+  const options = endpointZCacheOptions(cluster);
+  if (cluster?.spec.type !== "kubernetes" || !options?.enabled)
+    return "endpoints.kvCacheSettings.unavailableCluster";
+  if (!acceleratorType)
+    return "endpoints.kvCacheSettings.unavailableAccelerator";
+  if (!acceleratorType.toLowerCase().includes("nvidia"))
+    return "endpoints.kvCacheSettings.unavailableAcceleratorVendor";
+  if (engine?.engine !== "vllm")
+    return "endpoints.kvCacheSettings.unavailableEngine";
+  if (task && task !== "text-generation")
+    return "endpoints.kvCacheSettings.unavailableTask";
+  if (!options.version) return "endpoints.kvCacheSettings.unavailableRuntime";
+  switch (manager.kind) {
+    case "loading":
+      return "endpoints.kvCacheSettings.checkingManager";
+    case "not-configured":
+      return "endpoints.kvCacheSettings.unavailableManager";
+    case "pending":
+      return "endpoints.kvCacheSettings.managerPending";
+    case "unavailable":
+      return "endpoints.kvCacheSettings.managerUnavailable";
+  }
+  if (versions.isError)
+    return "endpoints.kvCacheSettings.unavailableRuntimeCheck";
+  if (versions.isLoading) return "endpoints.kvCacheSettings.checkingRuntime";
+  if (versions.engineVersions.length === 0)
+    return "endpoints.kvCacheSettings.noCompatibleEngineVersion";
+  if (!engine.version || !versions.engineVersions.includes(engine.version))
+    return "endpoints.kvCacheSettings.unavailableEngineVersion";
+  return null;
+}
+
+/** A KV cache timeout is optional; when set it must be 0.1 to 60 seconds. */
+export function isValidKvCacheTimeout(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === "number" &&
+      Number.isFinite(value) &&
+      value >= 0.1 &&
+      value <= 60)
+  );
 }

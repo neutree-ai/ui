@@ -1,17 +1,15 @@
 import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import { CommandLoading } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { ComposePreview } from "@/domains/endpoint/components/ComposePreview";
 import { EndpointCatalogOrigin } from "@/domains/endpoint/components/EndpointCatalogOrigin";
 import { EndpointClusterGpuResourcesPanel } from "@/domains/endpoint/components/EndpointClusterGpuResourcesPanel";
 import { EndpointConfigurationSummary } from "@/domains/endpoint/components/EndpointConfigurationSummary";
@@ -21,8 +19,8 @@ import {
   EndpointResolvedModelEditor,
   type VariantResetNotice,
 } from "@/domains/endpoint/components/EndpointResolvedModelEditor";
-import { EndpointWeightsEstimate } from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import { FeaturePicker } from "@/domains/endpoint/components/FeaturePicker";
+import type { KVCacheEstimateState } from "@/domains/endpoint/components/KVCacheEstimate";
 import { ModelOptionalFields } from "@/domains/endpoint/components/ModelOptionalFields";
 import { formatTaskName } from "@/domains/endpoint/components/ModelTask";
 import { VariantPicker } from "@/domains/endpoint/components/VariantPicker";
@@ -31,6 +29,7 @@ import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageI
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
+import { useKvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import {
   buildCatalogOriginAnnotations,
   readCatalogOrigin,
@@ -50,10 +49,14 @@ import {
   findEngineCacheArgControls,
   readEngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
-import { estimateModelWeightsGb } from "@/domains/endpoint/lib/estimate-weights";
-import type {
-  EndpointReviewCapacityMetric,
-  EndpointReviewContext,
+import {
+  estimateModelWeightsGb,
+  perReplicaRequiredGb,
+} from "@/domains/endpoint/lib/estimate-weights";
+import {
+  type EndpointReviewCapacityMetric,
+  type EndpointReviewContext,
+  formatCapacityValue,
 } from "@/domains/endpoint/lib/review-context";
 import {
   formatVgpuMemoryGiBInputValue,
@@ -64,7 +67,10 @@ import {
   VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
-import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import {
+  endpointZCacheOptions,
+  isValidKvCacheTimeout,
+} from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -250,9 +256,6 @@ const formatOneDecimal = (value: number | null | undefined) => {
   return Number.isFinite(numberValue) ? numberValue.toFixed(1) : "0.0";
 };
 
-const formatCardCount = (value: number) =>
-  Number.isInteger(value) ? String(value) : value.toFixed(1);
-
 const formatInputNumber = (value: number | null | undefined) => {
   if (value == null) return "";
   const numberValue = Number(value);
@@ -264,13 +267,7 @@ const getCapacityBadgeClassName = (exceeded: boolean) =>
     ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50"
     : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-50";
 
-export const useEndpointForm = ({
-  action,
-  layout = "legacy",
-}: {
-  action: "create" | "edit";
-  layout?: "legacy" | "wizard";
-}) => {
+export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();
   const { current: currentWorkspace } = useWorkspace();
   const [preselectCatalogId] = useState(() =>
@@ -301,13 +298,14 @@ export const useEndpointForm = ({
     useState<ModelSourceDraft | null>(null);
   const [manualModelDraft, setManualModelDraft] =
     useState<ModelSourceDraft | null>(null);
-  // Simplified-mode disclosure: when deploying from a Recipe catalog card the
-  // model/engine/resources are auto-configured from the chosen variant, so the
-  // raw fields and advanced resource controls start collapsed behind this toggle.
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [gpuAllocationModeChoice, setGpuAllocationModeChoice] =
     useState<GpuAllocationMode | null>(null);
   const effectiveGpuAllocationModeRef = useRef<GpuAllocationMode>("full");
+  // Accelerator types the selected engine version ships images for; empty
+  // while the engine is unknown, which leaves every accelerator acceptable.
+  const engineAcceleratorTypesRef = useRef<string[]>([]);
+  // Why ZCache cannot serve the current selection; null while it can.
+  const kvCacheUnavailableRef = useRef<string | null>(null);
 
   const form = useForm<Endpoint>({
     // Required fields stay quiet until they are touched or a global submit is
@@ -354,6 +352,39 @@ export const useEndpointForm = ({
         },
         t,
       );
+      const acceleratorType = values.spec?.resources?.accelerator?.type;
+      const engineAcceleratorTypes = engineAcceleratorTypesRef.current;
+      if (
+        acceleratorType &&
+        engineAcceleratorTypes.length > 0 &&
+        !engineAcceleratorTypes.includes(acceleratorType) &&
+        !fieldErrors["spec.resources.accelerator"]
+      ) {
+        fieldErrors["spec.resources.accelerator"] = {
+          type: "manual",
+          message: t("endpoints.messages.engineAcceleratorIncompatible"),
+        };
+      }
+      if (
+        values.spec?.kv_cache?.provider === "zcache" &&
+        kvCacheUnavailableRef.current &&
+        !fieldErrors["spec.kv_cache"]
+      ) {
+        fieldErrors["spec.kv_cache"] = {
+          type: "manual",
+          message: t("endpoints.kvCacheSettings.requirements"),
+        };
+      }
+      const kvCache = values.spec?.kv_cache;
+      if (
+        kvCache?.provider === "zcache" &&
+        !isValidKvCacheTimeout(kvCache.options?.timeout_seconds)
+      ) {
+        fieldErrors["spec.kv_cache.options.timeout_seconds"] = {
+          type: "manual",
+          message: t("endpoints.kvCacheSettings.invalidTimeout"),
+        };
+      }
       if (!values.metadata?.name?.trim()) {
         fieldErrors["metadata.name"] = {
           type: "manual",
@@ -581,6 +612,14 @@ export const useEndpointForm = ({
     t,
     cacheEnabled,
   });
+  const kvCacheAvailability = useKvCacheAvailability({
+    cluster: selectedCluster,
+    acceleratorType: selectedAccelerator?.type,
+    engine: engineSpec,
+    task: currentModelTask,
+    cacheStatusLoading: clusters.query.isFetching,
+  });
+  kvCacheUnavailableRef.current = kvCacheAvailability.unavailableReason;
   const hasClusterCapacityEvidence = Boolean(
     selectedCluster?.status?.resource_info,
   );
@@ -1700,7 +1739,7 @@ export const useEndpointForm = ({
     : featureGroups;
 
   // Live composition for Recipe MCs — used for preview and for populating the
-  // legacy form fields on selection / when the user toggles features/variant.
+  // form fields on selection / when the user toggles features/variant.
   const composeResult = useMemo(() => {
     if (!selectedCatalog || !isRecipeCatalog) return null;
     return composeEndpointSpec(
@@ -1881,39 +1920,37 @@ export const useEndpointForm = ({
     setFeatureSelections(next);
   };
 
-  const clusterGpuResourcesPanel =
-    currentCluster || layout === "wizard" ? (
-      <EndpointClusterGpuResourcesPanel
-        resourceInfo={schedulingResourceInfo}
-        schedulingNodeResources={reusableNodeResources}
-        currentCluster={currentCluster}
-        nodeCount={selectedClusterNodeCount}
-        selectedAccelerator={selectedAccelerator}
-        virtualizationEnabled={isSelectedClusterVgpuEnabled}
-        inset={layout !== "wizard"}
-        request={{
-          allocationMode: isFractionalGpuAllocationMode
-            ? "fractional"
-            : effectiveGpuAllocationMode,
-          gpuPerReplica: gpuUsage,
-          cpuPerReplica: normalizedResources?.cpu,
-          memoryPerReplica: normalizedResources?.memory,
-          requestedFullGpuCards,
-          fullGpuCardCapacity,
-          fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
-          requestedVirtualCards,
-          totalVirtualCardCapacity,
-          requestedVgpuMemoryMiB,
-          availableVgpuMemoryMiB,
-          requestedVgpuCoreUnits,
-          availableVgpuCoreUnits,
-          memoryMiBPerCard: effectiveVgpuMemoryMiB,
-          coreUnitsPerCard: vgpuCoreUnitsPerCard,
-          vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
-        }}
-        t={t}
-      />
-    ) : null;
+  const clusterGpuResourcesPanel = (
+    <EndpointClusterGpuResourcesPanel
+      resourceInfo={schedulingResourceInfo}
+      schedulingNodeResources={reusableNodeResources}
+      currentCluster={currentCluster}
+      nodeCount={selectedClusterNodeCount}
+      selectedAccelerator={selectedAccelerator}
+      virtualizationEnabled={isSelectedClusterVgpuEnabled}
+      request={{
+        allocationMode: isFractionalGpuAllocationMode
+          ? "fractional"
+          : effectiveGpuAllocationMode,
+        gpuPerReplica: gpuUsage,
+        cpuPerReplica: normalizedResources?.cpu,
+        memoryPerReplica: normalizedResources?.memory,
+        requestedFullGpuCards,
+        fullGpuCardCapacity,
+        fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
+        requestedVirtualCards,
+        totalVirtualCardCapacity,
+        requestedVgpuMemoryMiB,
+        availableVgpuMemoryMiB,
+        requestedVgpuCoreUnits,
+        availableVgpuCoreUnits,
+        memoryMiBPerCard: effectiveVgpuMemoryMiB,
+        coreUnitsPerCard: vgpuCoreUnitsPerCard,
+        vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
+      }}
+      t={t}
+    />
+  );
 
   const handleModelSourceModeChange = (next: ModelSourceMode) => {
     if (next === modelSourceMode) return;
@@ -2008,14 +2045,6 @@ export const useEndpointForm = ({
     applyModelValues(variantResetSnapshot.model);
   };
 
-  // Simplified mode applies only to creating an endpoint from a Recipe catalog
-  // (the "deploy from card" entry). In that flow model/engine/resources are
-  // already composed from the variant, so we hide the raw fields by default and
-  // surface only the essentials (variant, replicas, cluster, accelerator) plus a
-  // lightweight resource estimate. `showFull` re-reveals every advanced control.
-  const simplified = !isEdit && isRecipeCatalog && Boolean(selectedCatalog);
-  const showFull = layout === "wizard" || !simplified || showAdvanced;
-
   // Active variant + its display metadata, used for the estimate summary.
   const activeVariant =
     modelSourceMode === "catalog"
@@ -2024,17 +2053,6 @@ export const useEndpointForm = ({
       : null;
   const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
   const activeModelInfo = activeVariant?.model?.info ?? null;
-
-  // The variant's declared figure is weights alone; what a replica actually
-  // needs in VRAM also includes the KV cache, which EndpointWeightsEstimate
-  // computes from the context and concurrency this deployment will run with
-  // and reports back here. Falls back to the declared weights until that
-  // estimate lands, so callers outside the estimate section (the unverified-
-  // accelerator notice below) never regress to showing nothing.
-  const [kvCacheRequiredGb, setKvCacheRequiredGb] = useState<number | null>(
-    null,
-  );
-  const requiredVramGb = kvCacheRequiredGb ?? activeVariantVram;
 
   // What the KV cache estimate is computed from. There is no second read for
   // it: picking a model already fetches the version detail above and lands its
@@ -2110,19 +2128,10 @@ export const useEndpointForm = ({
     () => Object.keys(engineVersion?.images ?? {}),
     [engineVersion],
   );
-  form.register("spec.resources.accelerator", {
-    validate: (value) =>
-      !value?.type ||
-      engineAcceleratorTypes.length === 0 ||
-      engineAcceleratorTypes.includes(value.type) ||
-      t("endpoints.messages.engineAcceleratorIncompatible"),
-  });
+  engineAcceleratorTypesRef.current = engineAcceleratorTypes;
   // A recipe's validated list orders and labels the accelerators; it never
-  // removes any. Hiding the picker proved too restrictive, and
-  // filtering was the one place the simplified form took capability away
-  // rather than folding it — the two modes now offer the same set and differ
-  // only in emphasis. Sort is stable, so the cluster's own order survives
-  // within each group.
+  // removes any. Sort is stable, so the cluster's own order survives within
+  // each group.
   const displayedAcceleratorOptions = useMemo(() => {
     const marked = acceleratorOptions.map((option) => {
       const total = Math.max(0, Number(option.total || 0));
@@ -2132,8 +2141,8 @@ export const useEndpointForm = ({
         ...option,
         capacityDescription: t("endpoints.options.acceleratorCapacity", {
           defaultValue: "{{free}} free · {{total}} total",
-          free: formatCardCount(free),
-          total: formatCardCount(total),
+          free: formatCapacityValue(free),
+          total: formatCapacityValue(total),
         }),
         engineCompatible:
           engineAcceleratorTypes.length === 0 ||
@@ -2304,16 +2313,15 @@ export const useEndpointForm = ({
     />
   );
 
-  const modelVersionFields =
-    showFull && !hidesModelFields ? (
-      <ModelOptionalFields
-        control={form.control}
-        values={currentModelValues}
-        className="col-span-4"
-      />
-    ) : null;
+  const modelVersionFields = !hidesModelFields ? (
+    <ModelOptionalFields
+      control={form.control}
+      values={currentModelValues}
+      className="col-span-4"
+    />
+  ) : null;
 
-  const engineFields = showFull ? (
+  const engineFields = (
     <FormCardGrid
       title={t("endpoints.sections.engineSettings")}
       variant={sectionVariant}
@@ -2391,7 +2399,7 @@ export const useEndpointForm = ({
         </FormFieldGroup>
       )}
     </FormCardGrid>
-  ) : null;
+  );
 
   const weightsFromCatalog =
     selectedCatalog && modelSourceMode === "catalog" ? activeVariantVram : null;
@@ -2431,18 +2439,37 @@ export const useEndpointForm = ({
           form.watch("spec.model.version") ?? ""
         }`,
       };
-  const weightEstimateFields = (
-    <EndpointWeightsEstimate
-      declared={declaredWeights}
-      kvCache={kvCacheEstimate}
-      onRequiredGbChange={setKvCacheRequiredGb}
-    />
+  // The declared figure is weights alone; what a replica needs in VRAM also
+  // includes the KV cache, which the estimate panel in the deployment summary
+  // computes from the context and concurrency this deployment will run with.
+  // The total is held here rather than in the panel so the review step and the
+  // unverified-accelerator notice check the same figure the summary shows, and
+  // keep it while the summary tab is closed. It is dropped when the model
+  // changes: the previous model's cache says nothing about the next one.
+  const [kvCacheGb, setKvCacheGb] = useState<number | null>(null);
+  const kvCacheModelKey = kvCacheEstimate?.modelKey ?? null;
+  const [kvCacheGbModelKey, setKvCacheGbModelKey] = useState(kvCacheModelKey);
+  if (kvCacheGbModelKey !== kvCacheModelKey) {
+    setKvCacheGbModelKey(kvCacheModelKey);
+    setKvCacheGb(null);
+  }
+  const currentKvCacheGb = kvCacheEstimate ? kvCacheGb : null;
+  const handleKvCacheStateChange = useCallback(
+    (state: KVCacheEstimateState) =>
+      setKvCacheGb(state.kind === "ready" ? state.totalGb : null),
+    [],
+  );
+  const requiredVramGb = perReplicaRequiredGb(
+    perReplicaWeights,
+    currentKvCacheGb,
   );
   const wizardEstimateFields = (
     <EndpointDeploymentSummary
       values={form.watch() as unknown as Endpoint}
       declared={declaredWeights}
       kvCache={kvCacheEstimate}
+      kvCacheGb={currentKvCacheGb}
+      onKvCacheStateChange={handleKvCacheStateChange}
     />
   );
   const reviewCatalogOrigin = isEdit
@@ -2544,35 +2571,14 @@ export const useEndpointForm = ({
   );
   const configurationSummaryFields =
     hasDeploymentPreview || (composeResult && !composeResult.ok) ? (
-      layout === "wizard" ? (
-        <EndpointConfigurationSummary
-          values={currentDeploymentValues}
-          reviewContext={reviewContext}
-          composeError={
-            composeResult && !composeResult.ok ? composeResult.error : null
-          }
-          modelRequired={!hidesModelFields}
-        />
-      ) : (
-        <ComposePreview
-          composed={
-            composeResult && !composeResult.ok
-              ? null
-              : {
-                  model: currentDeploymentValues.spec.model,
-                  engine: currentDeploymentValues.spec.engine,
-                  resources: currentDeploymentValues.spec.resources,
-                  engine_args: (currentDeploymentValues.spec.variables
-                    ?.engine_args ?? {}) as Record<string, unknown>,
-                  env: currentDeploymentValues.spec.env ?? {},
-                }
-          }
-          error={
-            composeResult && !composeResult.ok ? composeResult.error : null
-          }
-          collapsible={!showFull}
-        />
-      )
+      <EndpointConfigurationSummary
+        values={currentDeploymentValues}
+        reviewContext={reviewContext}
+        composeError={
+          composeResult && !composeResult.ok ? composeResult.error : null
+        }
+        modelRequired={!hidesModelFields}
+      />
     ) : null;
 
   const resolvedModelSourceLabel =
@@ -2660,7 +2666,6 @@ export const useEndpointForm = ({
             variants={selectedCatalog.spec.variants ?? {}}
             value={selectedVariant}
             onChange={handleVariantChange}
-            layout={layout === "wizard" ? "radio" : "compact"}
           />
         </div>
       </>
@@ -2962,96 +2967,41 @@ export const useEndpointForm = ({
       </FormCardGrid>
     ),
     wizardProfileFields,
-    // Endpoint configuration order: Model & Replicas -> Engine -> Scheduling target and resources.
+    // The edit step's model section: what the endpoint was deployed from,
+    // replicas, and the model it serves. Creating uses wizardProfileFields.
     templateFields: (
       <>
         <FormCardGrid
-          title={t(
-            isEdit
-              ? "endpoints.sections.modelAndProfile"
-              : "endpoints.sections.modelAndReplicas",
-          )}
+          title={t("endpoints.sections.modelAndProfile")}
           variant={sectionVariant}
         >
           {/* Edit mode has no catalog picker — the deployment already happened
           — but it renders what that deployment came from in the same place, so
           the endpoint does not read as two different things depending on which
           page you are on. */}
-          {isEdit && (
-            <div className="col-span-4">
-              <EndpointCatalogOrigin
-                annotations={queryEndpoint?.metadata?.annotations}
-              />
-            </div>
-          )}
-          {isEdit && (
-            <div
-              className={cn(
-                "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-                FORM_GRID_GAP_CLASS,
-              )}
+          <div className="col-span-4">
+            <EndpointCatalogOrigin
+              annotations={queryEndpoint?.metadata?.annotations}
+            />
+          </div>
+          <div
+            className={cn(
+              "col-span-4 grid grid-cols-1 sm:grid-cols-4",
+              FORM_GRID_GAP_CLASS,
+            )}
+          >
+            <FormFieldGroup
+              {...form}
+              name="spec.replicas.num"
+              label={t("endpoints.fields.replicas")}
+              className="sm:col-span-1"
+              required
             >
-              <FormFieldGroup
-                {...form}
-                name="spec.replicas.num"
-                label={t("endpoints.fields.replicas")}
-                className="sm:col-span-1"
-                required
-              >
-                <Input type="number" min={1} />
-              </FormFieldGroup>
-            </div>
-          )}
-          {!isEdit && (
-            <div
-              data-testid="model-catalog-row"
-              className={cn(
-                "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-                FORM_GRID_GAP_CLASS,
-              )}
-            >
-              <FormFieldGroup
-                {...form}
-                name="-model-catalog"
-                label={t("endpoints.fields.modelCatalog")}
-                className="col-span-2"
-              >
-                <FormCombobox
-                  placeholder={t("endpoints.placeholders.selectModelCatalog")}
-                  disabled={modelCatalogs.query.isLoading}
-                  options={[
-                    { label: t("common.options.none"), value: "" },
-                    ...(modelCatalogs.query.data?.data || []).map(
-                      (catalog) => ({
-                        label: catalog.metadata.name,
-                        value: catalog.id.toString(),
-                      }),
-                    ),
-                  ]}
-                  value={selectedModelCatalog}
-                  onChange={(value) =>
-                    handleModelCatalogSelect(value as string)
-                  }
-                />
-              </FormFieldGroup>
-              {/* Replicas sits beside the catalog to use the otherwise-empty
-                  right half of this row (create mode; edit renders it below). */}
-              <FormFieldGroup
-                {...form}
-                name="spec.replicas.num"
-                label={t("endpoints.fields.replicas")}
-                className="col-span-2"
-                required
-              >
-                <Input type="number" min={1} />
-              </FormFieldGroup>
-            </div>
-          )}
+              <Input type="number" min={1} />
+            </FormFieldGroup>
+          </div>
           {!hidesModelFields && (
             <>
-              {/* Model registry + name are shown by default (so a recipe deploy
-              surfaces which model/registry it resolves to); version + file are
-              advanced and stay under "Show all options". */}
               <FormFieldGroup
                 {...form}
                 name="spec.model.registry"
@@ -3178,49 +3128,19 @@ export const useEndpointForm = ({
           )}
           {modelVersionFields}
         </FormCardGrid>
-
-        {layout === "legacy" && engineFields}
       </>
     ),
     runtimeFields: (
       <>
-        {layout === "wizard" && engineFields}
+        {engineFields}
         <EndpointKVCacheFields
           form={form}
           cluster={selectedCluster}
-          acceleratorType={selectedAccelerator?.type}
-          cacheStatusLoading={clusters.query.isFetching}
+          availability={kvCacheAvailability}
           isEdit={isEdit}
           cacheChanged={cacheChanged}
-          sectioned={layout === "wizard"}
         />
       </>
-    ),
-    // Recipe selection section — shown only when the selected MC is a Recipe MC.
-    // For trivial MCs this returns `null` so the existing form layout is
-    // pixel-identical to before.
-    recipeFields:
-      layout !== "wizard" && !isEdit && isRecipeCatalog && selectedCatalog ? (
-        <FormCardGrid
-          title={t("endpoints.recipe.section", "Recipe options")}
-          testId="endpoint-recipe-options"
-          variant={sectionVariant}
-        >
-          {recipeVariantFields}
-          {recipeFeatureFields}
-        </FormCardGrid>
-      ) : null,
-    // What the deployment is expected to weigh. Its own section so both ways
-    // of getting here can show it: the recipe section only exists when a recipe
-    // catalog is selected, and the model section is not rendered for an engine
-    // that needs no model spec — either would hide one of the two halves.
-    weightFields: (
-      <FormCardGrid
-        title={t("endpoints.sections.weights")}
-        variant={sectionVariant}
-      >
-        <div className="col-span-4">{weightEstimateFields}</div>
-      </FormCardGrid>
     ),
     wizardEstimateFields,
     configurationSummaryFields,
@@ -3235,122 +3155,48 @@ export const useEndpointForm = ({
         title={t("endpoints.sections.schedulingTargetResources")}
         variant={sectionVariant}
       >
-        <div
-          data-testid="endpoint-resource-config-grid"
-          className={cn(
-            "col-span-4",
-            layout === "wizard" ? "space-y-0" : "space-y-4",
-          )}
-        >
+        <div data-testid="endpoint-resource-config-grid" className="col-span-4">
           <section
             data-testid="endpoint-scheduling-target-card"
-            className={cn(
-              "w-full",
-              layout === "wizard"
-                ? "border-b pb-4"
-                : "rounded-md border bg-background px-3 py-2",
-            )}
+            className="w-full border-b pb-4"
           >
-            <div
-              className={cn(
-                layout === "wizard"
-                  ? "grid gap-3"
-                  : "grid gap-3 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] xl:items-center",
-              )}
-            >
-              {layout !== "wizard" && (
-                <div className="flex h-9 min-w-0 items-center">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="whitespace-nowrap text-base font-semibold leading-6 text-foreground">
-                      {t("endpoints.sections.schedulingTarget")}
-                    </h3>
-                    <InfoHint
-                      label={t(
-                        "endpoints.descriptions.clusterSchedulingTarget",
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-              <div
-                className={cn(
-                  "grid min-w-0 grid-cols-1 gap-3",
-                  layout === "wizard"
-                    ? "w-full max-w-[520px]"
-                    : "items-end justify-start",
-                )}
-              >
-                <FormFieldGroup
-                  {...form}
-                  name="spec.cluster"
-                  label={t("common.fields.cluster")}
-                  labelAccessory={
-                    layout === "wizard" ? (
-                      <InfoHint
-                        label={t(
-                          "endpoints.descriptions.clusterSchedulingTarget",
-                        )}
-                      />
-                    ) : undefined
-                  }
-                  className="w-full max-w-[280px]"
-                  required
-                >
-                  <FormCombobox
-                    disabled={isEdit || clusters.query.isLoading}
-                    placeholder={t("endpoints.placeholders.selectCluster")}
-                    options={clusterOptions}
+            <div className="grid w-full min-w-0 max-w-[520px] grid-cols-1 gap-3">
+              <FormFieldGroup
+                {...form}
+                name="spec.cluster"
+                label={t("common.fields.cluster")}
+                labelAccessory={
+                  <InfoHint
+                    label={t("endpoints.descriptions.clusterSchedulingTarget")}
                   />
-                </FormFieldGroup>
-              </div>
+                }
+                className="w-full max-w-[280px]"
+                required
+              >
+                <FormCombobox
+                  disabled={isEdit || clusters.query.isLoading}
+                  placeholder={t("endpoints.placeholders.selectCluster")}
+                  options={clusterOptions}
+                />
+              </FormFieldGroup>
             </div>
           </section>
 
-          {layout === "legacy" && (
-            <EndpointKVCacheFields
-              form={form}
-              cluster={selectedCluster}
-              isEdit={isEdit}
-              cacheChanged={cacheChanged}
-            />
-          )}
-
           <div
             data-testid="endpoint-resource-layout-grid"
-            className={cn(
-              "grid gap-3",
-              layout === "wizard" &&
-                "pt-4 min-[1366px]:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)] min-[1366px]:items-start min-[1366px]:gap-0",
-              layout === "legacy" &&
-                (currentCluster
-                  ? "xl:grid-cols-[minmax(360px,420px)_minmax(620px,1fr)]"
-                  : "xl:grid-cols-[minmax(360px,420px)]"),
-            )}
+            className="grid gap-3 pt-4 min-[1366px]:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)] min-[1366px]:items-start min-[1366px]:gap-0"
           >
             <div
               data-testid="endpoint-resource-config-main"
-              className={cn(
-                "min-w-0",
-                layout === "legacy" && "xl:sticky xl:top-4",
-                layout === "wizard" &&
-                  "min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:pr-6",
-              )}
+              className="min-w-0 min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:pr-6"
             >
               <section
                 data-testid="endpoint-resource-plan-card"
-                className={cn(
-                  "grid",
-                  layout === "wizard"
-                    ? "gap-5"
-                    : "overflow-hidden rounded-xl border bg-background shadow-sm",
-                )}
+                className="grid gap-5"
               >
                 <div
                   data-testid="endpoint-resource-plan-header"
-                  className={cn(
-                    "flex items-start justify-between gap-3",
-                    layout === "wizard" ? "pb-0" : "border-b p-4",
-                  )}
+                  className="flex items-start justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <h3 className="text-base font-semibold leading-6 text-foreground">
@@ -3361,7 +3207,7 @@ export const useEndpointForm = ({
                     </p>
                   </div>
                 </div>
-                {layout === "wizard" && !currentCluster && (
+                {!currentCluster && (
                   <EmptyState
                     variant="inline"
                     className="text-left"
@@ -3374,8 +3220,7 @@ export const useEndpointForm = ({
                   data-testid="endpoint-resource-request-grid"
                   className={cn(
                     "grid grid-cols-1 content-start items-start gap-3 self-start sm:grid-cols-2",
-                    layout === "wizard" ? "p-0" : "p-4",
-                    layout === "wizard" && !currentCluster && "hidden",
+                    !currentCluster && "hidden",
                   )}
                 >
                   <div
@@ -3711,9 +3556,8 @@ export const useEndpointForm = ({
                     )}
                   </div>
 
-                  {/* Capacity feedback stays visible in simplified mode so
-                      users do not choose a card count without seeing whether it
-                      can be placed. */}
+                  {/* Capacity feedback sits beside the card count so users do
+                      not choose one without seeing whether it can be placed. */}
                   {currentCluster &&
                     selectedAccelerator?.type &&
                     selectedAccelerator?.product && (
@@ -3847,20 +3691,12 @@ export const useEndpointForm = ({
                 </div>
               </section>
             </div>
-            {clusterGpuResourcesPanel && (
-              <div
-                data-testid="endpoint-resource-context"
-                className={cn(
-                  "min-w-0",
-                  layout === "legacy" &&
-                    "overflow-hidden rounded-xl border bg-background shadow-sm xl:sticky xl:top-4 xl:self-start",
-                  layout === "wizard" &&
-                    "border-t pt-5 min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:self-start min-[1366px]:border-l min-[1366px]:border-t-0 min-[1366px]:pl-6 min-[1366px]:pt-0",
-                )}
-              >
-                {clusterGpuResourcesPanel}
-              </div>
-            )}
+            <div
+              data-testid="endpoint-resource-context"
+              className="min-w-0 border-t pt-5 min-[1366px]:sticky min-[1366px]:top-4 min-[1366px]:self-start min-[1366px]:border-l min-[1366px]:border-t-0 min-[1366px]:pl-6 min-[1366px]:pt-0"
+            >
+              {clusterGpuResourcesPanel}
+            </div>
           </div>
         </div>
 
@@ -3875,8 +3711,7 @@ export const useEndpointForm = ({
       </FormCardGrid>
     ),
     // Advanced settings keep endpoint deployment controls and runtime details.
-    // Hidden in simplified mode until the user expands the advanced disclosure.
-    customizeFields: showFull ? (
+    customizeFields: (
       <FormCardGrid
         title={t("endpoints.sections.advancedOptions")}
         variant={sectionVariant}
@@ -3940,41 +3775,6 @@ export const useEndpointForm = ({
           <VariablesInput schema={{}} />
         </FormFieldGroup>
       </FormCardGrid>
-    ) : null,
-    // Simplified-mode banner + disclosure toggle. Null outside simplified mode so
-    // the standard create/edit layouts are unaffected.
-    advancedToggle:
-      layout === "legacy" && simplified ? (
-        <FormCardGrid variant={sectionVariant}>
-          <div className="col-span-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2.5">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="size-4 text-primary" />
-              {t(
-                "endpoints.simplified.autoConfigured",
-                "Model, engine and resources are auto-configured from the selected variant.",
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvanced((v) => !v)}
-            >
-              {showAdvanced
-                ? t(
-                    "endpoints.simplified.hideAdvanced",
-                    "Hide advanced options",
-                  )
-                : t("endpoints.simplified.showAdvanced", "Show all options")}
-              <ChevronDown
-                className={cn(
-                  "ml-1 size-4 transition-transform",
-                  showAdvanced && "rotate-180",
-                )}
-              />
-            </Button>
-          </div>
-        </FormCardGrid>
-      ) : null,
+    ),
   };
 };

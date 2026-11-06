@@ -1,11 +1,14 @@
 import type { Endpoint } from "@/domains/endpoint/types";
+import { formatDisplayValue } from "./display-value";
+import { EndpointStep } from "./endpoint-wizard";
 
 export type EndpointReviewChange = {
   step: number;
   label: string;
   before: unknown;
   after: unknown;
-  format?: "cache";
+  /** Shows a value of this field; generic value formatting when absent. */
+  display?: (value: unknown) => string;
 };
 
 type ReviewField = Omit<EndpointReviewChange, "before" | "after"> & {
@@ -16,8 +19,8 @@ const reviewField = (
   step: number,
   label: string,
   read: ReviewField["read"],
-  format?: ReviewField["format"],
-): ReviewField => ({ step, label, read, format });
+  display?: ReviewField["display"],
+): ReviewField => ({ step, label, read, ...(display ? { display } : {}) });
 
 const numberValue = (value: unknown): unknown => {
   if (value == null || value === "") return null;
@@ -39,85 +42,103 @@ const cacheValue = (endpoint: Endpoint) => {
   };
 };
 
+const displayCache = (value: unknown): string => {
+  if (value == null) return "";
+  const cache = value as {
+    provider?: string;
+    options?: { timeout_seconds?: number };
+  };
+  const timeout = cache.options?.timeout_seconds;
+  return [cache.provider, timeout == null ? null : `${timeout}s`]
+    .filter(Boolean)
+    .join(" · ");
+};
+
+const { model, resources, runtime, advanced } = EndpointStep;
+
 const fields: ReviewField[] = [
-  reviewField(0, "endpoints.fields.replicas", (endpoint) =>
+  reviewField(model, "endpoints.fields.replicas", (endpoint) =>
     numberValue(endpoint.spec?.replicas?.num),
   ),
   reviewField(
-    0,
+    model,
     "endpoints.fields.modelRegistry",
     (endpoint) => endpoint.spec?.model?.registry,
   ),
   reviewField(
-    0,
+    model,
     "endpoints.fields.modelName",
     (endpoint) => endpoint.spec?.model?.name,
   ),
   reviewField(
-    0,
+    model,
     "endpoints.fields.modelVersion",
     (endpoint) => endpoint.spec?.model?.version,
   ),
   reviewField(
-    0,
+    model,
     "endpoints.fields.modelFile",
     (endpoint) => endpoint.spec?.model?.file,
   ),
-  reviewField(1, "common.fields.cluster", (endpoint) => endpoint.spec?.cluster),
-  reviewField(1, "common.fields.cpu", (endpoint) =>
+  reviewField(
+    resources,
+    "common.fields.cluster",
+    (endpoint) => endpoint.spec?.cluster,
+  ),
+  reviewField(resources, "common.fields.cpu", (endpoint) =>
     numberValue(endpoint.spec?.resources?.cpu),
   ),
-  reviewField(1, "common.fields.memory", (endpoint) =>
+  reviewField(resources, "common.fields.memory", (endpoint) =>
     numberValue(endpoint.spec?.resources?.memory),
   ),
-  reviewField(1, "endpoints.fields.physicalGpu", (endpoint) =>
+  reviewField(resources, "endpoints.fields.physicalGpu", (endpoint) =>
     numberValue(endpoint.spec?.resources?.gpu),
   ),
-  reviewField(1, "endpoints.fields.accelerator", (endpoint) => {
+  reviewField(resources, "endpoints.fields.accelerator", (endpoint) => {
     const accelerator = endpoint.spec?.resources?.accelerator;
     if (!accelerator?.type && !accelerator?.product) return null;
     return [accelerator?.type, accelerator?.product]
       .filter(Boolean)
       .join(" / ");
   }),
-  reviewField(1, "endpoints.fields.vgpuMemory", (endpoint) =>
+  reviewField(resources, "endpoints.fields.vgpuMemory", (endpoint) =>
     numberValue(
       endpoint.spec?.resources?.accelerator?.virtualization?.memory_mib,
     ),
   ),
-  reviewField(1, "endpoints.fields.vgpuCoreLimit", (endpoint) =>
+  reviewField(resources, "endpoints.fields.vgpuCoreLimit", (endpoint) =>
     numberValue(
       endpoint.spec?.resources?.accelerator?.virtualization?.core_percent,
     ),
   ),
   reviewField(
-    2,
+    runtime,
     "endpoints.fields.taskType",
     (endpoint) => endpoint.spec?.model?.task,
   ),
   reviewField(
-    2,
+    runtime,
     "common.fields.engine",
     (endpoint) => endpoint.spec?.engine?.engine,
   ),
   reviewField(
-    2,
+    runtime,
     "endpoints.fields.engineVersion",
     (endpoint) => endpoint.spec?.engine?.version,
   ),
-  reviewField(2, "endpoints.sections.kvCache", cacheValue, "cache"),
+  reviewField(runtime, "endpoints.sections.kvCache", cacheValue, displayCache),
   reviewField(
-    3,
+    advanced,
     "endpoints.fields.schedulerType",
     (endpoint) => endpoint.spec?.deployment_options?.scheduler?.type,
   ),
   reviewField(
-    3,
+    advanced,
     "endpoints.fields.engineVariables",
     (endpoint) => endpoint.spec?.variables?.engine_args,
   ),
   reviewField(
-    3,
+    advanced,
     "endpoints.fields.environment",
     (endpoint) => endpoint.spec?.env,
   ),
@@ -155,20 +176,7 @@ export function endpointReviewChanges(
 
 export function formatEndpointReviewValue(
   value: unknown,
-  format?: EndpointReviewChange["format"],
+  display?: EndpointReviewChange["display"],
 ): string {
-  if (format === "cache") {
-    if (value == null) return "";
-    const cache = value as {
-      provider?: string;
-      options?: { timeout_seconds?: number };
-    };
-    const timeout = cache.options?.timeout_seconds;
-    return [cache.provider, timeout == null ? null : `${timeout}s`]
-      .filter(Boolean)
-      .join(" · ");
-  }
-  if (value == null || value === "") return "";
-  if (typeof value === "object") return JSON.stringify(canonicalValue(value));
-  return String(value);
+  return display ? display(value) : formatDisplayValue(canonicalValue(value));
 }

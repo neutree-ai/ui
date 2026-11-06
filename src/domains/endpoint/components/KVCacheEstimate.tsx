@@ -2,6 +2,7 @@ import {
   type ReactNode,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -44,6 +45,9 @@ import {
   type KvCacheResult,
   type KvCacheSource,
   type LinearStateCheckpointPolicy,
+  unreportedFactorKeys as listUnreportedFactorKeys,
+  NOTED_KV_CACHE_SOURCES,
+  precisionBytes,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { modelFieldSource } from "@/foundation/types/model-types";
@@ -142,23 +146,19 @@ const percent = new Intl.NumberFormat("en", {
   maximumFractionDigits: 0,
 });
 
-const bytesOf = (id: KvCachePrecisionId | ""): number | null =>
-  KV_CACHE_PRECISIONS.find((precision) => precision.id === id)?.bytes ?? null;
-
 /** Provenance is an annotation on a factor, not another factor. Keeping it
  * outside the split tag and at caption weight preserves the distinction without
  * making every row read as three equally important values. */
 const SourceNote = ({ source }: { source: KvCacheSource }) => {
   const { t } = useTranslation();
 
-  if (source !== "derived" && source !== "manual" && source !== "deployment") {
+  if (!NOTED_KV_CACHE_SOURCES.has(source)) {
     return null;
   }
 
   return (
     <span
       className="text-[10px] font-normal text-muted-foreground/75"
-      data-segment="source"
       title={t(`endpoints.kvCache.sourceHints.${source}`)}
     >
       ({t(`endpoints.kvCache.sources.${source}`)})
@@ -186,21 +186,11 @@ const FactorTerm = ({
       className="inline-flex items-center gap-1 whitespace-nowrap font-mono text-[11px] leading-4"
       title={sourceHint}
     >
-      <span
-        className="inline-flex overflow-hidden rounded-[var(--nt-radius-checkbox)] border bg-background"
-        data-testid={`kv-cache-factor-${factorKey}`}
-        data-formula-tag
-      >
-        <span
-          className="inline-flex items-center bg-[var(--nt-fill-neutral-opaque-1)] px-1.5 py-1 text-muted-foreground"
-          data-segment="label"
-        >
+      <span className="inline-flex overflow-hidden rounded-[var(--nt-radius-checkbox)] border bg-background">
+        <span className="inline-flex items-center bg-[var(--nt-fill-neutral-opaque-1)] px-1.5 py-1 text-muted-foreground">
           {t(`endpoints.kvCache.factors.${factorKey}`)}
         </span>
-        <span
-          className="inline-flex items-center border-l bg-background px-1.5 py-1 font-medium tabular-nums text-foreground"
-          data-segment="value"
-        >
+        <span className="inline-flex items-center border-l bg-background px-1.5 py-1 font-medium tabular-nums text-foreground">
           {groupedNumber.format(value)}
         </span>
       </span>
@@ -426,9 +416,6 @@ const ComponentRow = ({
   );
 };
 
-const factorValues = (factor: KvCacheFactor) =>
-  factor.kind === "sum" || factor.kind === "min" ? factor.terms : [factor];
-
 const Refusal = ({
   result,
 }: {
@@ -595,9 +582,8 @@ const CountField = ({
 }) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const showsSource = ["derived", "manual", "unstated", "deployment"].includes(
-    field.source,
-  );
+  const showsSource =
+    NOTED_KV_CACHE_SOURCES.has(field.source) || field.source === "unstated";
   const sourceHint = showsSource
     ? t(`endpoints.kvCache.sourceHints.${field.source}`)
     : null;
@@ -681,8 +667,6 @@ export const KVCacheEstimate = ({
   read,
   engineArgs = NO_ENGINE_CACHE_ARGS,
   controls = NO_ENGINE_CACHE_ARG_CONTROLS,
-  stackFields = false,
-  onEstimate,
   onStateChange,
 }: {
   read: ModelInfoRead;
@@ -699,34 +683,28 @@ export const KVCacheEstimate = ({
    * what-if the deployment does not follow.
    */
   controls?: EngineCacheArgControls;
-  /** The estimator is often placed in a narrow persistent rail. Stacking its
-   * fields keeps them readable instead of squeezing three columns into it. */
-  stackFields?: boolean;
   /**
-   * Reports the panel's current total (in GB), or null while it cannot compute
-   * one — a caller combining this with a declared weights figure needs the
-   * number, not just the rendering of it. Fires on every recompute, including
-   * unmount (via the effect cleanup path a caller may wire up), so a stale
-   * total never lingers once this panel stops mounting.
+   * Reports what the panel currently works out to — the total and the inputs
+   * behind it, or why there is none — as it recomputes. A caller combining it
+   * with a declared weights figure needs the number, not just the rendering of
+   * it; while no model is selected or the read is not ready it is unavailable.
    */
-  onEstimate?: (gb: number | null) => void;
   onStateChange?: (state: KVCacheEstimateState) => void;
 }) => {
-  useEffect(() => {
-    if (read.state !== "ready") {
-      onEstimate?.(null);
-    }
-    // Only the non-ready paths are handled here — the ready path's total comes
-    // from the Estimator itself, which knows the actual computed result.
-  }, [read.state, onEstimate]);
+  // Why the checkpoint cannot be estimated from, or null once it has been read;
+  // the ready path's state comes from the Estimator, which knows the result.
+  const unavailableReason =
+    read.state === "ready"
+      ? null
+      : read.state === "unread"
+        ? `unread-${read.reason}`
+        : read.state;
 
   useEffect(() => {
-    if (read.state === "ready" || read.state === "none") return;
-    onStateChange?.({
-      kind: "unavailable",
-      reason: read.state === "unread" ? `unread-${read.reason}` : read.state,
-    });
-  }, [onStateChange, read]);
+    if (unavailableReason !== null) {
+      onStateChange?.({ kind: "unavailable", reason: unavailableReason });
+    }
+  }, [unavailableReason, onStateChange]);
 
   if (read.state === "none") {
     return null;
@@ -734,9 +712,7 @@ export const KVCacheEstimate = ({
 
   if (read.state !== "ready") {
     return (
-      <Panel
-        state={read.state === "unread" ? `unread-${read.reason}` : read.state}
-      >
+      <Panel state={unavailableReason ?? read.state}>
         <div
           className="text-sm text-muted-foreground"
           data-testid="kv-cache-notice"
@@ -752,8 +728,6 @@ export const KVCacheEstimate = ({
       info={read.info}
       engineArgs={engineArgs}
       controls={controls}
-      stackFields={stackFields}
-      onEstimate={onEstimate}
       onStateChange={onStateChange}
     />
   );
@@ -823,15 +797,11 @@ const Estimator = ({
   info,
   engineArgs,
   controls,
-  stackFields,
-  onEstimate,
   onStateChange,
 }: {
   info: ModelInfo;
   engineArgs: EngineCacheArgs;
   controls: EngineCacheArgControls;
-  stackFields: boolean;
-  onEstimate?: (gb: number | null) => void;
   onStateChange?: (state: KVCacheEstimateState) => void;
 }) => {
   const { t } = useTranslation();
@@ -887,42 +857,47 @@ const Estimator = ({
   const indexes = hasIndexer(info);
   const drafts = hasDraftModules(info);
 
-  const checkpointPolicy: LinearStateCheckpointPolicy =
-    checkpointInterval.trim() === ""
-      ? { kind: "prompt-end" }
-      : { kind: "fixed-interval", tokens: parseCount(checkpointInterval) };
+  const tokensSource = tokensField.source;
+  const sequencesSource = sequencesField.source;
+  const result = useMemo(() => {
+    const checkpointPolicy: LinearStateCheckpointPolicy =
+      checkpointInterval.trim() === ""
+        ? { kind: "prompt-end" }
+        : { kind: "fixed-interval", tokens: parseCount(checkpointInterval) };
 
-  const result = estimateKvCache({
+    return estimateKvCache({
+      info,
+      tokensPerSequence: parseCount(tokens),
+      sequences: parseCount(sequences),
+      tokensSource,
+      sequencesSource,
+      bytesPerElement: precisionBytes(precision),
+      recurrentStateBytesPerElement: precisionBytes(recurrentPrecision),
+      indexerBytesPerElement: precisionBytes(indexerPrecision),
+      checkpointPolicy,
+      includeLinearState,
+      includeDraftKvCache,
+    });
+  }, [
     info,
-    tokensPerSequence: parseCount(tokens),
-    sequences: parseCount(sequences),
-    tokensSource: tokensField.source,
-    sequencesSource: sequencesField.source,
-    bytesPerElement: bytesOf(precision),
-    recurrentStateBytesPerElement: bytesOf(recurrentPrecision),
-    indexerBytesPerElement: bytesOf(indexerPrecision),
-    checkpointPolicy,
+    tokens,
+    sequences,
+    tokensSource,
+    sequencesSource,
+    precision,
+    recurrentPrecision,
+    indexerPrecision,
+    checkpointInterval,
     includeLinearState,
     includeDraftKvCache,
-  });
+  ]);
   const unreportedFactorKeys = result.ok
-    ? Array.from(
-        new Set(
-          result.components
-            .flatMap((component) => component.factors.flatMap(factorValues))
-            .filter((factor) => factor.source === "unstated")
-            .map((factor) => factor.key),
-        ),
-      ).sort()
+    ? listUnreportedFactorKeys(result)
     : [];
   const unreportedFactorLabels = unreportedFactorKeys
     .map((key) => t(`endpoints.kvCache.factors.${key}`))
     .join(", ");
 
-  const resultGb = result.ok ? result.totalGb : null;
-  useEffect(() => {
-    onEstimate?.(resultGb);
-  }, [resultGb, onEstimate]);
   useEffect(() => {
     onStateChange?.(
       result.ok
@@ -949,14 +924,10 @@ const Estimator = ({
 
   return (
     <Panel state={result.ok ? result.family : result.reason}>
+      {/* The estimator sits in a narrow persistent rail, so its fields stack
+      instead of squeezing three columns into it. */}
       {inputsAffectResult && (
-        <div
-          className={
-            stackFields
-              ? "grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2"
-              : "grid grid-cols-1 gap-3 sm:grid-cols-3"
-          }
-        >
+        <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2">
           <CountField
             id="kv-cache-tokens"
             label={t(
@@ -1013,11 +984,7 @@ const Estimator = ({
 
       {inputsAffectResult && (linear || indexes || drafts) ? (
         <div
-          className={
-            stackFields
-              ? "mt-3 grid grid-cols-1 gap-3"
-              : "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"
-          }
+          className="mt-3 grid grid-cols-1 gap-3"
           data-testid="kv-cache-policy-inputs"
         >
           {linear ? (
@@ -1154,10 +1121,7 @@ const Estimator = ({
               </DialogHeader>
               <div className="min-h-0 overflow-y-auto pr-1">
                 {unreportedFactorKeys.length > 0 && (
-                  <div
-                    className="mb-4 rounded-md bg-muted/50 px-3 py-2.5 text-xs"
-                    data-testid="kv-cache-unreported-sources"
-                  >
+                  <div className="mb-4 rounded-md bg-muted/50 px-3 py-2.5 text-xs">
                     <p className="text-foreground">
                       {t("endpoints.kvCache.sourceUnreported", {
                         count: unreportedFactorKeys.length,

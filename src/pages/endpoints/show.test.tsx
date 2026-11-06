@@ -238,7 +238,8 @@ describe("EndpointsShow", () => {
     );
   });
 
-  it("shows cache status when the Endpoint's cluster can use ZCache", () => {
+  it("shows cache status when the platform supports ZCache", () => {
+    systemApiState.clusterCacheProviders = ["zcache"];
     useListMock.mockReturnValue({
       data: {
         data: [
@@ -265,6 +266,7 @@ describe("EndpointsShow", () => {
 
     expect(screen.queryByTestId("endpoint-kv-cache-summary")).toBeNull();
   });
+
   it.each(["Paused", "Deleted"])(
     "hides retained runtime allocations once the endpoint is %s",
     (phase) => {
@@ -291,8 +293,7 @@ describe("EndpointsShow", () => {
     },
   );
 
-  // A Flex endpoint deploys with no model, so the API omits spec.model. Reading
-  // the task off it used to throw and blank the whole page.
+  // A Flex endpoint deploys with no model, so the API omits spec.model.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
       query: {

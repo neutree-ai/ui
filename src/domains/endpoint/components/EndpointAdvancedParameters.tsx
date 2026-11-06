@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
 import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
@@ -25,20 +26,15 @@ type ParameterEntries = Record<string, unknown> | null | undefined;
 type EndpointAdvancedParametersProps = {
   engineParameters: ParameterEntries;
   environmentVariables: ParameterEntries;
-  collapsible?: boolean;
-  framed?: boolean;
+  /** "card" is a framed section with every parameter listed, for show pages;
+   * "inline" is an unframed section collapsed to a count, for embedding in a
+   * review that already frames it. */
+  variant?: "card" | "inline";
 };
 
-const formatParameterValue = (value: unknown) => {
-  if (typeof value === "string") return value;
-  if (value === undefined) return "";
-
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-};
+/** A stated null is shown as written, not as an empty value. */
+const formatParameterValue = (value: unknown) =>
+  value === null ? "null" : formatDisplayValue(value);
 
 /** The value as the reader needs it once the cell has cut it off.
  *
@@ -190,8 +186,7 @@ function ParameterGroup({
 export function EndpointAdvancedParameters({
   engineParameters,
   environmentVariables,
-  collapsible = false,
-  framed = true,
+  variant = "card",
 }: EndpointAdvancedParametersProps) {
   const { t } = useTranslation();
   const hasEngineParameters = Boolean(
@@ -222,13 +217,13 @@ export function EndpointAdvancedParameters({
     </div>
   );
 
-  if (collapsible) {
+  if (variant === "inline") {
     const engineCount = Object.keys(engineParameters ?? {}).length;
     const environmentCount = Object.keys(environmentVariables ?? {}).length;
     return (
       <ShowPage.Section
         title={t("endpoints.sections.advancedOptions")}
-        framed={framed}
+        framed={false}
       >
         <Disclosure
           variant="plain"
@@ -249,10 +244,7 @@ export function EndpointAdvancedParameters({
   }
 
   return (
-    <ShowPage.Section
-      title={t("endpoints.sections.advancedOptions")}
-      framed={framed}
-    >
+    <ShowPage.Section title={t("endpoints.sections.advancedOptions")}>
       {content}
     </ShowPage.Section>
   );

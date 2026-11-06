@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { makeEndpoint } from "@/domains/endpoint/testing/builders";
 import type { Endpoint } from "@/domains/endpoint/types";
 import {
   endpointReviewChanges,
   formatEndpointReviewValue,
 } from "./endpoint-review-changes";
 
-const endpoint = {
-  metadata: { name: "chat", workspace: "default" },
+const endpoint = makeEndpoint({
   spec: {
-    cluster: "cluster-a",
-    replicas: { num: 1 },
     model: {
       registry: "registry-a",
       name: "model-a",
@@ -17,7 +15,6 @@ const endpoint = {
       file: "",
       task: "text-generation",
     },
-    engine: { engine: "vllm", version: "0.31.0" },
     resources: {
       cpu: 4,
       memory: 8,
@@ -28,12 +25,11 @@ const endpoint = {
         virtualization: { memory_mib: 8192, core_percent: 50 },
       },
     },
-    kv_cache: null,
     deployment_options: { scheduler: { type: "consistent_hash" } },
     variables: { engine_args: { max_model_len: 32768 } },
     env: { A: "1" },
   },
-} as unknown as Endpoint;
+});
 
 const changed = (overrides: Record<string, unknown>) =>
   ({
@@ -322,18 +318,18 @@ describe("endpointReviewChanges", () => {
       },
     });
 
-    expect(endpointReviewChanges(current, baseline)).toEqual([
-      {
-        step: 2,
-        label: "endpoints.sections.kvCache",
-        before: null,
-        after: {
-          provider: "zcache",
-          options: { timeout_seconds: 5 },
-        },
-        format: "cache",
-      },
-    ]);
+    const [change, ...rest] = endpointReviewChanges(current, baseline);
+
+    expect(rest).toEqual([]);
+    expect(change).toMatchObject({
+      step: 2,
+      label: "endpoints.sections.kvCache",
+      before: null,
+    });
+    expect(formatEndpointReviewValue(change.before, change.display)).toBe("");
+    expect(formatEndpointReviewValue(change.after, change.display)).toBe(
+      "zcache · 5s",
+    );
   });
 
   it("normalizes a cache provider without timeout options", () => {
@@ -341,26 +337,17 @@ describe("endpointReviewChanges", () => {
       kv_cache: { provider: "zcache", options: null },
     });
 
-    expect(endpointReviewChanges(current, endpoint)).toEqual([
-      {
-        step: 2,
-        label: "endpoints.sections.kvCache",
-        before: null,
-        after: { provider: "zcache", options: null },
-        format: "cache",
-      },
-    ]);
+    const [change] = endpointReviewChanges(current, endpoint);
+
+    expect(change.after).toEqual({ provider: "zcache", options: null });
+    expect(formatEndpointReviewValue(change.after, change.display)).toBe(
+      "zcache",
+    );
   });
 });
 
 describe("formatEndpointReviewValue", () => {
-  it("formats structured and cache values compactly", () => {
+  it("formats structured values compactly", () => {
     expect(formatEndpointReviewValue({ a: 1, b: 2 })).toBe('{"a":1,"b":2}');
-    expect(
-      formatEndpointReviewValue(
-        { provider: "zcache", options: { timeout_seconds: 5 } },
-        "cache",
-      ),
-    ).toBe("zcache · 5s");
   });
 });

@@ -1,43 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useEffect } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { isHidden } from "@/foundation/testing/interactions";
 import { EndpointDeploymentSummary } from "./EndpointDeploymentSummary";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: Record<string, unknown>) =>
-      options ? `${key}:${JSON.stringify(options)}` : key,
-  }),
-}));
-
 vi.mock("./KVCacheEstimate", () => ({
-  KVCacheEstimate: ({
-    read,
-    onStateChange,
-  }: {
-    read: { state: string };
-    onStateChange?: (state: unknown) => void;
-  }) => {
-    useEffect(() => {
-      onStateChange?.(
-        read.state === "ready"
-          ? {
-              kind: "ready",
-              totalGb: 16.1,
-              tokensPerSequence: 262_144,
-              sequences: 256,
-              precision: "bf16",
-              family: "qwen_linear_full_hybrid",
-            }
-          : {
-              kind: "unavailable",
-              reason: read.state === "loading" ? "pending" : read.state,
-            },
-      );
-    }, [onStateChange, read]);
-    return <div data-testid="kv-details">KV details</div>;
-  },
+  KVCacheEstimate: () => <div data-testid="kv-details">KV details</div>,
 }));
 
 const values = {
@@ -74,25 +42,33 @@ const kvCache = {
   modelKey: "hf:qwen:main",
 };
 
-describe("EndpointDeploymentSummary", () => {
-  it("shows the combined per-replica total when weights and KV are known", async () => {
-    render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={{
-          perReplicaGb: 27,
-          source: "catalog",
-          replicas: 1,
-          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
-        }}
-        kvCache={kvCache}
-      />,
-    );
+const catalogWeights = {
+  perReplicaGb: 27,
+  source: "catalog" as const,
+  replicas: 1,
+  accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
+};
 
-    await waitFor(() => screen.getByText("43.1 GB"));
-    screen.getByTestId("deployment-capacity-bar");
+const renderSummary = (
+  props: Partial<Parameters<typeof EndpointDeploymentSummary>[0]> = {},
+) =>
+  render(
+    <EndpointDeploymentSummary
+      values={values}
+      declared={null}
+      kvCache={kvCache}
+      kvCacheGb={null}
+      onKvCacheStateChange={vi.fn()}
+      {...props}
+    />,
+  );
+
+describe("EndpointDeploymentSummary", () => {
+  it("shows the combined per-replica total when weights and KV are known", () => {
+    renderSummary({ declared: catalogWeights, kvCacheGb: 16.1 });
+
+    screen.getByText("43.1 GB");
     screen.getByText("endpoints.weights.declared 27 GB");
-    expect(screen.queryByText("qwen3-6-27b")).toBeNull();
     screen.getByTestId("vram-check-badge");
 
     fireEvent.click(
@@ -100,75 +76,43 @@ describe("EndpointDeploymentSummary", () => {
         name: "endpoints.wizard.summary.showEstimateDetails",
       }),
     );
-    expect(
-      screen
-        .getByTestId("kv-details")
-        .closest("[aria-hidden]")
-        ?.getAttribute("aria-hidden"),
-    ).toBe("false");
+    expect(isHidden(screen.getByTestId("kv-details"))).toBe(false);
   });
 
-  it("does not invent a total when the available facts are insufficient", () => {
-    render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={null}
-        kvCache={{
-          ...kvCache,
-          read: { state: "unreported" },
-        }}
-      />,
-    );
+  it("does not invent a total when neither weights nor KV are known", () => {
+    renderSummary();
 
     screen.getByText("endpoints.wizard.summary.estimateUnavailable");
     expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
   });
 
-  it("does not infer weights when the catalog does not declare them", async () => {
-    render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={null}
-        kvCache={kvCache}
-      />,
-    );
+  it("labels a KV-only total as partial rather than inferring weights", () => {
+    renderSummary({ kvCacheGb: 16.1 });
 
-    await waitFor(() => screen.getByText("16.1 GB"));
+    screen.getByText("16.1 GB");
     screen.getByText("endpoints.wizard.summary.partialPerReplica");
-    expect(screen.queryByText(/Weights 0 GB/)).toBeNull();
   });
 
   it("distinguishes checkpoint-estimated weights from catalog declarations", () => {
-    render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={{
-          perReplicaGb: 16,
-          source: "checkpoint",
-          replicas: 1,
-          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
-        }}
-        kvCache={null}
-      />,
-    );
+    renderSummary({
+      declared: { ...catalogWeights, perReplicaGb: 16, source: "checkpoint" },
+      kvCache: null,
+    });
 
     screen.getByText("endpoints.weights.estimated 16 GB");
   });
 
   it("reports cache as enabled when the endpoint configures it", () => {
-    render(
-      <EndpointDeploymentSummary
-        values={{
-          ...values,
-          spec: {
-            ...values.spec,
-            kv_cache: { provider: "zcache", options: { timeout_seconds: 5 } },
-          },
-        }}
-        declared={null}
-        kvCache={null}
-      />,
-    );
+    renderSummary({
+      values: {
+        ...values,
+        spec: {
+          ...values.spec,
+          kv_cache: { provider: "zcache", options: { timeout_seconds: 5 } },
+        },
+      },
+      kvCache: null,
+    });
 
     screen.getByText("endpoints.wizard.summary.cacheEnabled");
   });

@@ -1,48 +1,61 @@
 import { ChevronDown } from "lucide-react";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type {
-  EndpointDeclaredWeights,
-  EndpointKvCacheInput,
-} from "@/domains/endpoint/components/EndpointWeightsEstimate";
 import {
   KVCacheEstimate,
   type KVCacheEstimateState,
 } from "@/domains/endpoint/components/KVCacheEstimate";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
+import type {
+  EngineCacheArgControls,
+  EngineCacheArgs,
+} from "@/domains/endpoint/lib/engine-cache-args";
+import { perReplicaRequiredGb } from "@/domains/endpoint/lib/estimate-weights";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { InfoHint } from "@/foundation/components/InfoHint";
 import { METRIC_BAR_SERIES_FILL_CLASSES } from "@/foundation/components/MetricBar";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
+
+type EndpointDeclaredWeights = {
+  /** Weights per replica, from the catalog or estimated from the checkpoint.
+   * Does not include the KV cache, which is computed separately and added. */
+  perReplicaGb: number | null;
+  /** Catalog declarations are measured; checkpoint values are calculated. */
+  source?: "catalog" | "checkpoint";
+  replicas: number;
+  /** What the chosen cluster offers one replica, for the VRAM check. */
+  accelerator: {
+    product?: string | null;
+    perGpuGb?: number | null;
+    gpuCount?: number | string | null;
+  };
+};
+
+type EndpointKvCacheInput = {
+  read: ModelInfoRead;
+  engineArgs: EngineCacheArgs;
+  /** Controls elsewhere on the form that own the context and concurrency. */
+  controls: EngineCacheArgControls;
+  /**
+   * Identity of the model being estimated. The estimator's inputs derive their
+   * defaults from the checkpoint, so it is remounted when the checkpoint
+   * changes — carrying the previous model's context length into the next
+   * model's estimate would look like a value read from it.
+   */
+  modelKey: string;
+};
 
 type Props = {
   values: Endpoint;
   declared: EndpointDeclaredWeights | null;
   kvCache: EndpointKvCacheInput | null;
-};
-
-const sameKvState = (
-  first: KVCacheEstimateState,
-  second: KVCacheEstimateState,
-) => {
-  if (first.kind !== second.kind) return false;
-  if (first.kind === "ready" && second.kind === "ready") {
-    return (
-      first.totalGb === second.totalGb &&
-      first.tokensPerSequence === second.tokensPerSequence &&
-      first.sequences === second.sequences &&
-      first.precision === second.precision &&
-      first.family === second.family
-    );
-  }
-  return (
-    first.kind === "unavailable" &&
-    second.kind === "unavailable" &&
-    first.reason === second.reason &&
-    JSON.stringify(first.missingFields) === JSON.stringify(second.missingFields)
-  );
+  /** The KV cache estimate's current total, owned by the caller so the rest of
+   * the form checks the same per-replica figure this summary shows. */
+  kvCacheGb: number | null;
+  onKvCacheStateChange: (state: KVCacheEstimateState) => void;
 };
 
 function SummaryRow({
@@ -64,22 +77,14 @@ export function EndpointDeploymentSummary({
   values,
   declared,
   kvCache,
+  kvCacheGb: kvGb,
+  onKvCacheStateChange,
 }: Props) {
   const { t } = useTranslation();
-  const [kvState, setKvState] = useState<KVCacheEstimateState>({
-    kind: "unavailable",
-    reason: "pending",
-  });
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const updateKvState = useCallback((next: KVCacheEstimateState) => {
-    setKvState((current) => (sameKvState(current, next) ? current : next));
-  }, []);
 
-  const declaredWeightsGb = declared?.perReplicaGb ?? null;
-  const weightsGb = declaredWeightsGb;
-  const kvGb = kvState.kind === "ready" ? kvState.totalGb : null;
-  const knownPerReplicaGb =
-    weightsGb != null || kvGb != null ? (weightsGb ?? 0) + (kvGb ?? 0) : null;
+  const weightsGb = declared?.perReplicaGb ?? null;
+  const knownPerReplicaGb = perReplicaRequiredGb(weightsGb, kvGb);
   const replicas = Math.max(1, Number(values.spec.replicas?.num ?? 1));
   const fleetGb =
     knownPerReplicaGb != null ? knownPerReplicaGb * replicas : null;
@@ -213,8 +218,7 @@ export function EndpointDeploymentSummary({
               read={kvCache.read}
               engineArgs={kvCache.engineArgs}
               controls={kvCache.controls}
-              stackFields
-              onStateChange={updateKvState}
+              onStateChange={onKvCacheStateChange}
             />
           </div>
         </div>

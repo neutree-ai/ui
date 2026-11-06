@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import {
-  CHART_CATEGORY_COUNT,
   CHART_CATEGORY_TOKENS,
   CHART_SERIES_SEPARATOR,
   type ChartMark,
@@ -35,9 +34,7 @@ import {
 const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
 
 // SVG marks cannot paint a CSS background-image, so the Gold / Violet extension
-// slots are drawn as an SVG <pattern>. Past those eight identities the chart
-// collapses to the solid neutral "more" bucket rather than recycling a hue.
-const MAX_SVG_MARKS = CHART_CATEGORY_COUNT;
+// slots are drawn as an SVG <pattern>.
 const STRIPE_PATTERN_PREFIX = "usage-chart-stripes";
 const SOFT_STRIPE_PATTERN_PREFIX = "usage-chart-stripes-soft";
 
@@ -87,7 +84,6 @@ const StripePatterns = ({ soft = false }: { soft?: boolean }) => (
 function seriesMark(series: UsageSeries[], key: string): ChartMark {
   const index = series.findIndex((s) => s.key === key);
   if (key === OTHER_SERIES_KEY || index < 0) return chartMoreMark();
-  if (index >= MAX_SVG_MARKS) return chartMoreMark();
   return chartCategoryMark(index);
 }
 
@@ -299,15 +295,9 @@ export const UsageChart = ({
     [dayCategories, series, t],
   );
 
-  const dayBarsHaveStripes = dayBars.some((category) =>
-    category.promptFill.startsWith("url("),
-  );
   const trendMarks = useMemo(
     () => new Map(series.map((s) => [s.key, seriesMark(series, s.key)])),
     [series],
-  );
-  const trendHasStripes = [...trendMarks.values()].some(
-    (mark) => mark.pattern === "stripes",
   );
 
   const title = isSingleDay
@@ -461,12 +451,8 @@ export const UsageChart = ({
           <ResponsiveContainer width="100%" height="100%">
             {isSingleDay ? (
               <BarChart data={dayBars} margin={CHART_MARGIN}>
-                {dayBarsHaveStripes ? (
-                  <>
-                    <StripePatterns />
-                    <StripePatterns soft />
-                  </>
-                ) : null}
+                <StripePatterns />
+                <StripePatterns soft />
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -519,7 +505,7 @@ export const UsageChart = ({
                 margin={CHART_MARGIN}
                 onClick={handleChartClick}
               >
-                {trendHasStripes ? <StripePatterns /> : null}
+                <StripePatterns />
                 {trendAxes}
                 {series.map((s) => {
                   const mark = trendMarks.get(s.key) ?? chartMoreMark();
