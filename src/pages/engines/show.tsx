@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { ValueSchemaTable } from "@/domains/engine/components/ValueSchemaTable";
 import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
-import { sortEngineVersionsNewestFirst } from "@/domains/engine/lib/version-order";
 import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { cn } from "@/foundation/lib/utils";
+import { sortVersionsNewestFirst } from "@/foundation/lib/version-order";
 
 export const EnginesShow = () => {
   const { t } = useTranslation();
@@ -33,7 +33,7 @@ export const EnginesShow = () => {
   const versions = record.spec.versions ?? [];
   // Engines return versions in creation order, so the default comes from the
   // comparison, not from `spec.versions[0]` — which used to select the oldest.
-  const newestFirst = sortEngineVersionsNewestFirst(versions);
+  const newestFirst = sortVersionsNewestFirst(versions);
   const selected =
     versions.find((version) => version.version === versionFromQuery) ??
     newestFirst[0];

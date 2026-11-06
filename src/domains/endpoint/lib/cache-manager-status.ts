@@ -1,7 +1,7 @@
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
 
-type EndpointCacheManagerStatus =
+export type EndpointCacheManagerStatus =
   | {
       kind: "loading";
     }

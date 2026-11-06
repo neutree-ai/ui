@@ -210,10 +210,10 @@ describe("EndpointAdvancedParameters", () => {
     });
   });
 
-  it("summarizes collapsible groups and expands their parameters", () => {
+  it("summarizes inline groups as a count and expands their parameters", () => {
     render(
       <EndpointAdvancedParameters
-        collapsible
+        variant="inline"
         engineParameters={{ max_model_len: 32768 }}
         environmentVariables={{ HF_HOME: "/models/cache" }}
       />,

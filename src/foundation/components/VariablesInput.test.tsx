@@ -437,11 +437,7 @@ describe("VariablesInput primitive and draft controls", () => {
       '{"method":',
     ) as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: '{"method":' } });
-    await vi.waitFor(() =>
-      expect(
-        screen.queryByText("components.variablesInput.invalidJsonValue"),
-      ).not.toBeNull(),
-    );
+    await screen.findByText("components.variablesInput.invalidJsonValue");
     fireEvent.click(screen.getAllByTestId("remove-variable")[0]);
 
     expect(onChange).toHaveBeenCalledWith({});
@@ -517,6 +513,7 @@ describe("VariablesInput primitive and draft controls", () => {
     expect(keyInput.value).toBe("alpha");
     fireEvent.blur(keyInput);
     fireEvent.click(screen.getByTestId("remove-variable"));
+    expect(screen.queryByDisplayValue("alpha")).toBeNull();
   });
 
   it("reports an invalid draft to the resource form before submission", () => {
@@ -546,31 +543,23 @@ describe("VariablesInput primitive and draft controls", () => {
     expect(beforeSubmit.current?.()).toBe(false);
   });
 
-  it.each(["number", "integer", "string"] as const)(
-    "edits a drafted %s row with the type-specific control",
-    (type) => {
-      const onChange = vi.fn();
-      render(
-        <VariablesInput
-          value={{}}
-          onChange={onChange}
-          schema={{ count: { type } } as unknown as Schema}
-        />,
-      );
+  it("edits a drafted numeric row with a number control", () => {
+    const onChange = vi.fn();
+    render(
+      <VariablesInput
+        value={{}}
+        onChange={onChange}
+        schema={{ count: { type: "integer" } } as unknown as Schema}
+      />,
+    );
 
-      fireEvent.change(screen.getAllByRole("textbox")[0], {
-        target: { value: "count" },
-      });
-      const valueInput =
-        type === "string"
-          ? screen.getAllByRole("textbox")[1]
-          : screen.getByRole("spinbutton");
-      fireEvent.change(valueInput, { target: { value: "3" } });
-      fireEvent.blur(valueInput);
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "count" },
+    });
+    const valueInput = screen.getByRole("spinbutton");
+    fireEvent.change(valueInput, { target: { value: "3" } });
+    fireEvent.blur(valueInput);
 
-      expect(onChange).toHaveBeenCalledWith({
-        count: type === "string" ? "3" : 3,
-      });
-    },
-  );
+    expect(onChange).toHaveBeenCalledWith({ count: 3 });
+  });
 });

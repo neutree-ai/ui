@@ -35,10 +35,7 @@ enum EndpointPhase {
 export type EndpointSpec = {
   kv_cache?: {
     provider: string;
-    options?: {
-      timeout_seconds?: number;
-      [key: string]: unknown;
-    };
+    options?: { timeout_seconds?: number; [key: string]: unknown };
   } | null;
   cluster: string;
   /**
@@ -135,15 +132,6 @@ type EndpointClusterCacheCondition = {
 };
 
 type EndpointClusterCacheDetails = {
-  ready_runtime_version?: string;
-  runtime_endpoint?: {
-    address?: string;
-    port?: number;
-  };
-  control_plane?: {
-    phase?: string;
-    ready?: boolean;
-  };
   current?: {
     enabled?: boolean;
     version?: string;

@@ -268,6 +268,23 @@ export function countFullCardAvailableDevicesByProduct(
   return result;
 }
 
+/** Physical devices per product, whatever their health or allocation. */
+export function countPhysicalDevicesByProduct(
+  nodeResources: Record<string, NodeResourceStatus> | null | undefined,
+) {
+  const result = new Map<string, number>();
+
+  for (const node of Object.values(nodeResources ?? {})) {
+    for (const device of node.devices ?? []) {
+      if (device.product) {
+        result.set(device.product, (result.get(device.product) ?? 0) + 1);
+      }
+    }
+  }
+
+  return result;
+}
+
 const shortenUuid = (uuid: string) => {
   if (uuid.length <= 18) {
     return uuid;

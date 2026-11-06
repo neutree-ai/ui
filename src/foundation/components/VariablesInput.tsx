@@ -483,8 +483,8 @@ export const VariablesInput = React.forwardRef<
   };
 
   return (
-    <div className="w-full">
-      <Table ref={ref} containerClassName="rounded-none bg-transparent">
+    <div className="w-full [&>div]:rounded-none [&>div]:bg-transparent">
+      <Table ref={ref}>
         <TableHeader>
           <TableRow>
             <TableHead>{t("components.variablesInput.key")}</TableHead>

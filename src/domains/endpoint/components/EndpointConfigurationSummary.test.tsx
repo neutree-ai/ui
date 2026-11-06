@@ -1,54 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { EndpointReviewContext } from "@/domains/endpoint/lib/review-context";
-import type { Endpoint } from "@/domains/endpoint/types";
+import { describe, expect, it } from "vitest";
+import {
+  makeEndpoint,
+  makeReviewContext,
+} from "@/domains/endpoint/testing/builders";
 import { EndpointConfigurationSummary } from "./EndpointConfigurationSummary";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallbackOrOptions?: unknown, options?: unknown) => {
-      if (typeof fallbackOrOptions === "string") return fallbackOrOptions;
-      const params = (fallbackOrOptions ?? options) as
-        | Record<string, unknown>
-        | undefined;
-      if (key === "endpoints.wizard.summary.resourcePerReplicaValue") {
-        return `${params?.cpu} CPU · ${params?.memory} GiB · ${params?.gpu} GPU`;
-      }
-      if (key === "endpoints.wizard.summary.cacheConfiguration") {
-        return `${params?.provider} · ${params?.timeout}s timeout`;
-      }
-      if (key === "endpoints.wizard.summary.gibValue") {
-        return `${params?.value} GiB`;
-      }
-      if (key === "endpoints.wizard.summary.percentValue") {
-        return `${params?.value}%`;
-      }
-      if (key === "endpoints.wizard.summary.versionResolvedAtDeployment") {
-        return "Resolved at deployment";
-      }
-      if (key === "endpoints.wizard.summary.fileDefaultEntryPoint") {
-        return "Default entry point";
-      }
-      return key;
-    },
-  }),
-}));
-
-const values = {
-  id: 1,
-  api_version: "v1",
-  kind: "Endpoint",
-  metadata: { name: "summary", workspace: "default" },
+const values = makeEndpoint({
   spec: {
-    cluster: "gpu-k8s-west",
-    model: {
-      registry: "huggingface",
-      name: "org/model",
-      version: "",
-      file: "",
-      task: "text-generation",
-    },
-    engine: { engine: "vllm", version: "v0.32.0" },
     resources: {
       cpu: 8,
       memory: 32,
@@ -65,10 +24,9 @@ const values = {
     variables: { engine_args: { max_model_len: 8192 } },
     env: { TOKEN: "secret" },
   },
-  status: null,
-} as unknown as Endpoint;
+});
 
-const reviewContext: EndpointReviewContext = {
+const reviewContext = makeReviewContext({
   catalogOrigin: {
     catalog: "qwen-catalog",
     variant: "fp8",
@@ -78,19 +36,13 @@ const reviewContext: EndpointReviewContext = {
     ],
     featuresUnreadable: false,
   },
-  modelDelivery: "at-deploy-time",
-  noVerifiedAccelerator: false,
-  requiredVramGb: 32,
   nodeCount: 2,
   clusterCapacity: [
     { key: "cpu", requested: 16, available: 248, total: 384 },
-    { key: "memory", requested: 64, available: 980, total: 1536 },
-    { key: "cards", requested: 2, available: 5, total: 8 },
-    { key: "vram", requested: 32, available: 302, total: 512 },
+    { key: "memory", requested: 64, available: 980.5, total: 1536 },
     { key: "core", requested: 100, available: 500, total: 800 },
   ],
-  clusterCapacityUnavailable: false,
-};
+});
 
 describe("EndpointConfigurationSummary", () => {
   it("shows every deployment-affecting endpoint field", () => {
@@ -106,45 +58,47 @@ describe("EndpointConfigurationSummary", () => {
       "fp8",
       "context_window: 32768",
       "tool_choice",
-      "gpu-k8s-west",
+      "cluster-a",
+      "· endpoints.fields.nodeCount 2",
       "models.scheduler.consistentHashing",
-      "huggingface",
-      "org/model",
+      "hf",
+      "qwen",
       "text-generation",
-      "Resolved at deployment",
-      "Default entry point",
-      "vllm v0.32.0",
-      "zcache · 5s timeout",
+      "endpoints.wizard.summary.versionResolvedAtDeployment",
+      "endpoints.wizard.summary.fileDefaultEntryPoint",
+      "vllm 0.31.0",
+      "endpoints.wizard.summary.cacheConfiguration:zcache,5",
       "NVIDIA H100",
-      "8 CPU · 32 GiB · 1 GPU",
-      "16 GiB",
-      "50%",
+      "endpoints.wizard.summary.resourcePerReplicaValue:8,32,1",
+      "endpoints.wizard.summary.gibValue:16",
+      "endpoints.wizard.summary.percentValue:50",
+      "248 endpoints.wizard.summary.available / 384 pages.vramCalculator.metrics.cores",
+      "980.5 endpoints.wizard.summary.available / 1536 endpoints.options.gib",
+      "500 endpoints.wizard.summary.available / 800",
     ]) {
       screen.getByText(text);
     }
-    expect(
-      screen.getByTestId("endpoint-summary-cluster-identity").textContent,
-    ).toContain("endpoints.fields.nodeCount 2");
-    for (const [key, values] of [
-      ["cpu", ["248", "384"]],
-      ["memory", ["980", "1536"]],
-      ["cards", ["5", "8"]],
-      ["vram", ["302", "512"]],
-      ["core", ["500", "800"]],
-    ] as const) {
-      const row = screen.getByTestId(`configuration-capacity-${key}`);
-      for (const value of values) expect(row.textContent).toContain(value);
+    for (const [key, value] of [
+      ["max_model_len", "8192"],
+      ["TOKEN", "secret"],
+    ]) {
+      expect(screen.getByText(key).parentElement?.textContent).toBe(
+        `${key}: ${value}`,
+      );
     }
-    expect(
-      screen
-        .getByTestId("endpoint-configuration-summary")
-        .querySelector('[data-key-value-entry="max_model_len"]')?.textContent,
-    ).toBe("max_model_len: 8192");
-    expect(
-      screen
-        .getByTestId("endpoint-configuration-summary")
-        .querySelector('[data-key-value-entry="TOKEN"]')?.textContent,
-    ).toBe("TOKEN: secret");
+  });
+
+  it("shows an unrecognised scheduler type as is", () => {
+    render(
+      <EndpointConfigurationSummary
+        values={makeEndpoint({
+          spec: { deployment_options: { scheduler: { type: "custom" } } },
+        })}
+        reviewContext={reviewContext}
+      />,
+    );
+
+    screen.getByText("custom");
   });
 
   it("omits the model section for an engine that brings its own workload", () => {
@@ -157,16 +111,13 @@ describe("EndpointConfigurationSummary", () => {
     );
 
     expect(screen.queryByText("endpoints.fields.modelRegistry")).toBeNull();
-    screen.getByText("vllm v0.32.0");
+    screen.getByText("vllm 0.31.0");
   });
 
   it("shows compose and capacity failures without a catalog", () => {
     render(
       <EndpointConfigurationSummary
-        values={{
-          ...values,
-          spec: { ...values.spec, kv_cache: null },
-        }}
+        values={makeEndpoint()}
         reviewContext={{
           ...reviewContext,
           catalogOrigin: null,

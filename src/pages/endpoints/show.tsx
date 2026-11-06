@@ -28,6 +28,7 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import type { EndpointReplicaResourceRow } from "@/domains/endpoint/lib/resource-status";
+import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { endpointCacheDashboard } from "@/domains/endpoint/lib/zcache";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
@@ -138,20 +139,6 @@ const RayDashboardTab = ({
       title={t("common.tabs.rayDashboard")}
     />
   );
-};
-
-const getSchedulerText = (
-  schedulerType: string | null | undefined,
-  t: (key: string) => string,
-) => {
-  switch (schedulerType) {
-    case "consistent_hash":
-      return t("models.scheduler.consistentHashing");
-    case "roundrobin":
-      return t("models.scheduler.roundRobin");
-    default:
-      return t("models.scheduler.unavailable");
-  }
 };
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
@@ -284,10 +271,9 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       replica={replicaAllocation(device)}
     />
   );
-  const schedulerText = getSchedulerText(
-    record.spec.deployment_options?.scheduler?.type,
-    t,
-  );
+  const schedulerText =
+    schedulerLabel(record.spec.deployment_options?.scheduler?.type, t) ??
+    t("models.scheduler.unavailable");
   const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   );

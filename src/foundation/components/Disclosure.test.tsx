@@ -5,14 +5,11 @@ import { Disclosure } from "./Disclosure";
 describe("Disclosure", () => {
   it("uses one trigger for the title and chevron", () => {
     render(
-      <Disclosure title="Details" summary="Read-only summary" testId="details">
+      <Disclosure title="Details" summary="Read-only summary">
         <p>Expanded content</p>
       </Disclosure>,
     );
 
-    expect(screen.getByTestId("details").getAttribute("data-variant")).toBe(
-      "card",
-    );
     const trigger = screen.getByRole("button", {
       name: /Details.*Read-only summary/,
     });

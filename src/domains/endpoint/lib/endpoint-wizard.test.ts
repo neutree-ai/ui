@@ -1,14 +1,27 @@
 import { describe, expect, it } from "vitest";
-import type { Endpoint } from "@/domains/endpoint/types";
+import { makeEndpoint } from "@/domains/endpoint/testing/builders";
 import {
   endpointDirtySteps,
   endpointErrorsByStep,
   endpointServerIssue,
   endpointStepCompletions,
+  endpointStepStatus,
   endpointStepValidationPaths,
   endpointWizardIssues,
+  firstEndpointErrorPath,
   firstEndpointErrorStep,
 } from "./endpoint-wizard";
+
+const complete = makeEndpoint({
+  spec: {
+    resources: {
+      cpu: 4,
+      memory: 16,
+      gpu: 1,
+      accelerator: { type: "nvidia_gpu", product: "L40S" },
+    },
+  },
+});
 
 describe("endpoint wizard error mapping", () => {
   it("groups nested field errors under the step that owns the field", () => {
@@ -76,6 +89,19 @@ describe("endpoint wizard error mapping", () => {
     expect(firstEndpointErrorStep({})).toBeNull();
   });
 
+  it("finds the first invalid field on a step to focus", () => {
+    const errors = {
+      metadata: { name: { type: "required", message: "Name is required" } },
+      spec: {
+        resources: { cpu: { type: "min", message: "CPU" } },
+        cluster: { type: "required", message: "Cluster" },
+      },
+    };
+
+    expect(firstEndpointErrorPath(errors, 1)).toBe("spec.resources.cpu");
+    expect(firstEndpointErrorPath(errors, 2)).toBeNull();
+  });
+
   it("uses the model step for an error path the wizard does not recognize", () => {
     expect(
       firstEndpointErrorStep({
@@ -110,6 +136,7 @@ describe("endpoint wizard error mapping", () => {
           1: ["GPU is required"],
         },
         "Capacity is insufficient",
+        { step: 4, message: "Server rejected" },
       ),
     ).toEqual([
       { step: 0, message: "Name is required", source: "validation" },
@@ -121,8 +148,73 @@ describe("endpoint wizard error mapping", () => {
         message: "Capacity is insufficient",
         source: "capacity",
       },
+      { step: 4, message: "Server rejected", source: "server" },
     ]);
   });
+
+  it.each([
+    {
+      mode: "create",
+      active: false,
+      issueCount: 2,
+      modified: false,
+      completion: "complete",
+      status: "attention",
+    },
+    {
+      mode: "edit",
+      active: false,
+      issueCount: 0,
+      modified: true,
+      completion: "complete",
+      status: "modified",
+    },
+    {
+      mode: "create",
+      active: false,
+      issueCount: 0,
+      modified: false,
+      completion: "complete",
+      status: "completed",
+    },
+    {
+      mode: "create",
+      active: true,
+      issueCount: 0,
+      modified: false,
+      completion: "complete",
+      status: "current",
+    },
+    {
+      mode: "create",
+      active: true,
+      issueCount: 0,
+      modified: false,
+      completion: "in-progress",
+      status: "in-progress",
+    },
+    {
+      mode: "edit",
+      active: false,
+      issueCount: 0,
+      modified: false,
+      completion: "in-progress",
+      status: "pending",
+    },
+    {
+      mode: "create",
+      active: false,
+      issueCount: 0,
+      modified: false,
+      completion: "not-started",
+      status: "pending",
+    },
+  ] as const)(
+    "$mode step (active $active, $issueCount issues, modified $modified, $completion) -> $status",
+    ({ status, ...step }) => {
+      expect(endpointStepStatus(step)).toBe(status);
+    },
+  );
 
   it("defines a disjoint validation scope for each wizard step", () => {
     expect(endpointStepValidationPaths[0]).toEqual(
@@ -146,39 +238,21 @@ describe("endpoint wizard error mapping", () => {
   });
 
   it("separates untouched, in-progress and completed create steps", () => {
-    const base = {
-      metadata: { name: "", workspace: "default" },
+    const base = makeEndpoint({
+      metadata: { name: "" },
       spec: {
         cluster: "",
         model: { registry: "", name: "", version: "", file: "", task: "" },
         engine: { engine: "", version: "" },
         resources: { cpu: 0, memory: 0, gpu: 0, accelerator: null },
-        replicas: { num: 1 },
       },
-    } as unknown as Endpoint;
+    });
 
     expect(endpointStepCompletions(base, true)[0]).toBe("not-started");
 
     const inProgress = structuredClone(base);
     inProgress.metadata.name = "chat";
     expect(endpointStepCompletions(inProgress, true)[0]).toBe("in-progress");
-
-    const complete = structuredClone(inProgress);
-    complete.spec.model = {
-      registry: "hf",
-      name: "org/model",
-      version: "",
-      file: "",
-      task: "text-generation",
-    };
-    complete.spec.cluster = "cluster-a";
-    complete.spec.resources = {
-      cpu: 4,
-      memory: 16,
-      gpu: 1,
-      accelerator: { type: "nvidia_gpu", product: "L40S" },
-    };
-    complete.spec.engine = { engine: "vllm", version: "v0.32.0" };
 
     expect(endpointStepCompletions(complete, true)).toMatchObject({
       0: "complete",
@@ -189,27 +263,8 @@ describe("endpoint wizard error mapping", () => {
   });
 
   it("keeps the model step complete when its task is still missing", () => {
-    const values = {
-      metadata: { name: "chat", workspace: "default" },
-      spec: {
-        cluster: "cluster-a",
-        model: {
-          registry: "hf",
-          name: "org/model",
-          version: "",
-          file: "",
-          task: "",
-        },
-        engine: { engine: "vllm", version: "v0.32.0" },
-        resources: {
-          cpu: 4,
-          memory: 16,
-          gpu: 1,
-          accelerator: { type: "nvidia_gpu", product: "L40S" },
-        },
-        replicas: { num: 1 },
-      },
-    } as unknown as Endpoint;
+    const values = structuredClone(complete);
+    values.spec.model!.task = "";
 
     expect(endpointStepCompletions(values, true)).toMatchObject({
       0: "complete",
@@ -245,6 +300,16 @@ describe("endpoint wizard error mapping", () => {
       step: 0,
       path: "metadata.name",
       message: "conflict",
+    });
+    expect(
+      endpointServerIssue(
+        { code: "PGRST", message: 'duplicate key value "chat" (23505)' },
+        "fallback",
+      ),
+    ).toEqual({
+      step: 0,
+      path: "metadata.name",
+      message: 'duplicate key value "chat" (23505)',
     });
     expect(
       endpointServerIssue({ code: "unknown", message: "" }, "fallback"),

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -103,9 +103,9 @@ describe("ModelInfoFields", () => {
   it("marks a derived field and leaves an auto one unmarked", () => {
     renderWithTooltip(<ModelInfoFields info={parsed} />);
 
-    screen
-      .getByTestId("model-info-head_dim")
-      .querySelector('[aria-label="model_registries.models.sources.derived"]');
+    within(screen.getByTestId("model-info-head_dim")).getByLabelText(
+      "model_registries.models.sources.derived",
+    );
     expect(
       screen
         .getByTestId("model-info-architecture")

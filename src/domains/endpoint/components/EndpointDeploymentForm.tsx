@@ -1,15 +1,19 @@
 import { AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { FieldErrors } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { EndpointDeploymentWizard } from "@/domains/endpoint/components/EndpointDeploymentWizard";
 import { useEndpointForm } from "@/domains/endpoint/hooks/use-endpoint-form";
 import { endpointReviewChanges } from "@/domains/endpoint/lib/endpoint-review-changes";
 import {
   type EndpointServerIssue,
+  EndpointStep,
   endpointErrorsByStep,
   endpointServerIssue,
   endpointStepValidationPaths,
+  firstEndpointErrorPath,
   firstEndpointErrorStep,
+  LAST_ENDPOINT_STEP,
 } from "@/domains/endpoint/lib/endpoint-wizard";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
@@ -18,6 +22,10 @@ import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const NO_MODIFIED_STEPS = new Set<number>();
+
+/** Where to move the user once the step they are sent to has rendered: the
+ * first invalid field on it, or the resource request that is over capacity. */
+type PendingFocus = "first-error" | "capacity" | null;
 
 export function EndpointDeploymentForm({
   action,
@@ -29,6 +37,7 @@ export function EndpointDeploymentForm({
   const [serverIssue, setServerIssue] = useState<EndpointServerIssue | null>(
     null,
   );
+  const [pendingFocus, setPendingFocus] = useState<PendingFocus>(null);
   const { t } = useTranslation();
   const {
     form,
@@ -45,10 +54,25 @@ export function EndpointDeploymentForm({
     wizardStepCompletions,
     resourceFields,
     customizeFields,
-  } = useEndpointForm({
-    action,
-    layout: "wizard",
-  });
+  } = useEndpointForm({ action });
+
+  useEffect(() => {
+    if (!pendingFocus) return;
+    setPendingFocus(null);
+    if (pendingFocus === "capacity") {
+      // The request panel is not a form field, so it is scrolled to rather
+      // than focused.
+      document
+        .querySelector<HTMLElement>(
+          '[data-testid="endpoint-current-request-panel"]',
+        )
+        ?.scrollIntoView({ block: "center" });
+      return;
+    }
+    const path = firstEndpointErrorPath(form.formState.errors, activeStep);
+    if (path) form.setFocus(path as never);
+  }, [pendingFocus, activeStep, form]);
+
   const editLoadFailed =
     action === "edit" &&
     editQuery != null &&
@@ -124,13 +148,13 @@ export function EndpointDeploymentForm({
           changes: reviewChanges.map((change) => t(change.label)).join(", "),
         })
       : undefined;
-  const focusFirstInvalid = () => {
-    window.setTimeout(() => {
-      const invalid = document.querySelector<HTMLElement>(
-        '[data-testid="form"] [aria-invalid="true"]',
-      );
-      invalid?.focus();
-    }, 0);
+  const showFirstError = (errors: FieldErrors) => {
+    setValidationAttempted(true);
+    const step = firstEndpointErrorStep(errors);
+    if (step != null) {
+      setActiveStep(step);
+      setPendingFocus("first-error");
+    }
   };
   const goToNextStep = async () => {
     const paths =
@@ -139,10 +163,10 @@ export function EndpointDeploymentForm({
       ];
     const valid = paths.length === 0 || (await form.trigger([...paths]));
     if (!valid) {
-      focusFirstInvalid();
+      setPendingFocus("first-error");
       return;
     }
-    setActiveStep((step) => Math.min(4, step + 1));
+    setActiveStep((step) => Math.min(LAST_ENDPOINT_STEP, step + 1));
   };
   const modelFields =
     action === "create" ? (
@@ -164,35 +188,15 @@ export function EndpointDeploymentForm({
       blockedSubmitMode="report"
       onBlockedSubmit={() => {
         if (action === "edit" && !hasChanges) return;
-        setValidationAttempted(true);
-        void form.handleSubmit(
-          () => {
-            setActiveStep(1);
-            window.setTimeout(() => {
-              document
-                .querySelector<HTMLElement>(
-                  '[data-testid="endpoint-current-request-panel"]',
-                )
-                ?.scrollIntoView({ block: "center" });
-            }, 0);
-          },
-          (errors) => {
-            const step = firstEndpointErrorStep(errors);
-            if (step != null) {
-              setActiveStep(step);
-              focusFirstInvalid();
-            }
-          },
-        )();
+        // Submit is blocked by capacity alone, so a form that is otherwise
+        // valid is sent to the over-capacity request.
+        void form.handleSubmit(() => {
+          setValidationAttempted(true);
+          setActiveStep(EndpointStep.resources);
+          setPendingFocus("capacity");
+        }, showFirstError)();
       }}
-      onInvalid={(errors) => {
-        setValidationAttempted(true);
-        const step = firstEndpointErrorStep(errors);
-        if (step != null) {
-          setActiveStep(step);
-          focusFirstInvalid();
-        }
-      }}
+      onInvalid={showFirstError}
       onSubmitError={(error) => {
         setValidationAttempted(true);
         const issue = endpointServerIssue(
@@ -209,7 +213,7 @@ export function EndpointDeploymentForm({
         } else {
           setServerIssue(issue);
         }
-        focusFirstInvalid();
+        setPendingFocus("first-error");
       }}
       contentWidth="wide"
       cancelHref={`#/${currentWorkspace}/endpoints`}
@@ -234,7 +238,7 @@ export function EndpointDeploymentForm({
         ) : null
       }
       footerActions={
-        activeStep < 4 ? (
+        activeStep < LAST_ENDPOINT_STEP ? (
           <Button
             type="button"
             onClick={() => {

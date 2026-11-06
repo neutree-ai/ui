@@ -1,5 +1,23 @@
 import type { FieldErrors, FieldPath } from "react-hook-form";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { getApiErrorCode } from "@/foundation/lib/api-error-code";
+import {
+  getErrorMessage,
+  isDuplicateNameError,
+} from "@/foundation/lib/error-message";
+
+/** The wizard's steps, in order. */
+export const EndpointStep = {
+  model: 0,
+  resources: 1,
+  runtime: 2,
+  advanced: 3,
+  confirm: 4,
+} as const;
+
+type EndpointStepIndex = (typeof EndpointStep)[keyof typeof EndpointStep];
+
+export const LAST_ENDPOINT_STEP = EndpointStep.confirm;
 
 export type EndpointWizardErrors = Record<number, string[]>;
 
@@ -22,10 +40,11 @@ export type EndpointServerIssue = {
 /**
  * Field ownership for step-by-step validation. Keep this aligned with the
  * controls mounted by each wizard step, not with the API's nesting. In
- * particular, spec.model.task is rendered with the engine on the runtime step.
+ * particular, spec.model.task is rendered with the engine on the runtime step,
+ * so it is listed there and not under the model step's spec.model.* fields.
  */
 export const endpointStepValidationPaths = {
-  0: [
+  [EndpointStep.model]: [
     "metadata.name",
     "metadata.workspace",
     "spec.replicas.num",
@@ -35,41 +54,31 @@ export const endpointStepValidationPaths = {
     "spec.model.file",
     "-model-catalog" as FieldPath<Endpoint>,
   ],
-  1: ["spec.cluster", "spec.resources"],
-  2: ["spec.engine", "spec.kv_cache", "spec.model.task"],
-  3: ["spec.deployment_options", "spec.variables", "spec.env"],
-  4: [],
-} as const satisfies Record<number, readonly FieldPath<Endpoint>[]>;
+  [EndpointStep.resources]: ["spec.cluster", "spec.resources"],
+  [EndpointStep.runtime]: ["spec.engine", "spec.kv_cache", "spec.model.task"],
+  [EndpointStep.advanced]: [
+    "spec.deployment_options",
+    "spec.variables",
+    "spec.env",
+  ],
+  [EndpointStep.confirm]: [],
+} as const satisfies Record<EndpointStepIndex, readonly FieldPath<Endpoint>[]>;
 
+const stepPrefixes = Object.entries(endpointStepValidationPaths)
+  .flatMap(([step, paths]) =>
+    paths.map((prefix: string) => ({ prefix, step: Number(step) })),
+  )
+  .sort((left, right) => right.prefix.length - left.prefix.length);
+
+/** The step that owns a field: the one listing the longest prefix of it. */
 const endpointRootStep = (path: string): number => {
-  if (path === "spec.model.task") {
-    return 2;
-  }
-  if (
-    path.startsWith("metadata.") ||
-    path.startsWith("spec.model.") ||
-    path.startsWith("spec.replicas.") ||
-    path === "-model-catalog"
-  ) {
-    return 0;
-  }
-  if (path.startsWith("spec.cluster") || path.startsWith("spec.resources.")) {
-    return 1;
-  }
-  if (path.startsWith("spec.engine.") || path.startsWith("spec.kv_cache.")) {
-    return 2;
-  }
-  if (
-    path.startsWith("spec.deployment_options.") ||
-    path.startsWith("spec.variables.") ||
-    path.startsWith("spec.env.")
-  ) {
-    return 3;
-  }
+  const owner = stepPrefixes.find(
+    ({ prefix }) => path === prefix || path.startsWith(`${prefix}.`),
+  );
 
   // An unexpected form error still belongs somewhere actionable. The model
   // step is the safest fallback because it owns the remaining required inputs.
-  return 0;
+  return owner?.step ?? EndpointStep.model;
 };
 
 const walkErrors = (
@@ -93,18 +102,32 @@ const walkErrors = (
   }
 };
 
+const flattenErrors = (errors: FieldErrors) => {
+  const flattened: Array<{ path: string; message: string }> = [];
+  walkErrors(errors, "", flattened);
+  return flattened;
+};
+
 export function endpointErrorsByStep(
   errors: FieldErrors,
 ): EndpointWizardErrors {
-  const flattened: Array<{ path: string; message: string }> = [];
-  walkErrors(errors, "", flattened);
-
   const grouped: EndpointWizardErrors = {};
-  for (const error of flattened) {
+  for (const error of flattenErrors(errors)) {
     const step = endpointRootStep(error.path);
     grouped[step] = [...(grouped[step] ?? []), error.message];
   }
   return grouped;
+}
+
+/** The first field with an error on `step`, to move focus to. */
+export function firstEndpointErrorPath(
+  errors: FieldErrors,
+  step: number,
+): string | null {
+  return (
+    flattenErrors(errors).find((error) => endpointRootStep(error.path) === step)
+      ?.path ?? null
+  );
 }
 
 export function endpointDirtySteps(dirtyFields: unknown): ReadonlySet<number> {
@@ -175,23 +198,23 @@ export function endpointStepCompletions(
   );
 
   return {
-    0: modelComplete
+    [EndpointStep.model]: modelComplete
       ? "complete"
       : modelStarted
         ? "in-progress"
         : "not-started",
-    1: resourceComplete
+    [EndpointStep.resources]: resourceComplete
       ? "complete"
       : resourceStarted
         ? "in-progress"
         : "not-started",
-    2: runtimeComplete
+    [EndpointStep.runtime]: runtimeComplete
       ? "complete"
       : runtimeStarted
         ? "in-progress"
         : "not-started",
     // Scheduler, engine args and environment variables are all optional.
-    3: "complete",
+    [EndpointStep.advanced]: "complete",
   };
 }
 
@@ -205,16 +228,16 @@ export function firstEndpointErrorStep(errors: FieldErrors): number | null {
 }
 
 const serverCodeSteps: Record<string, number> = {
-  "10216": 1,
-  "10219": 1,
-  "10222": 1,
-  "10227": 1,
-  "10230": 1,
-  "10232": 2,
-  "10233": 1,
-  "10229": 0,
-  "10234": 0,
-  "22023": 2,
+  "10216": EndpointStep.resources,
+  "10219": EndpointStep.resources,
+  "10222": EndpointStep.resources,
+  "10227": EndpointStep.resources,
+  "10230": EndpointStep.resources,
+  "10232": EndpointStep.runtime,
+  "10233": EndpointStep.resources,
+  "10229": EndpointStep.model,
+  "10234": EndpointStep.model,
+  "22023": EndpointStep.runtime,
 };
 
 const explicitServerPath = (error: unknown): string | null => {
@@ -236,43 +259,33 @@ const explicitServerPath = (error: unknown): string | null => {
 };
 
 /**
- * Maps stable server error codes to an actionable step. Message/hint text is
- * only displayed; it is never parsed to choose a field.
+ * Maps a failed save to an actionable step: an explicit field path or a
+ * duplicate name to the field's step, a stable server code to its step, and
+ * anything else to the confirm step.
  */
 export function endpointServerIssue(
   error: unknown,
   fallbackMessage: string,
 ): EndpointServerIssue {
-  const value =
-    error && typeof error === "object"
-      ? (error as {
-          code?: unknown;
-          statusCode?: unknown;
-          message?: unknown;
-        })
-      : null;
-  const code =
-    typeof value?.code === "string" ? value.code : String(value?.code ?? "");
   const path =
     explicitServerPath(error) ??
-    (code === "23505" || value?.statusCode === 409
-      ? "metadata.name"
-      : undefined);
+    (isDuplicateNameError(error) ? "metadata.name" : undefined);
+  const code = getApiErrorCode(error);
   const step =
-    path != null ? endpointRootStep(path) : (serverCodeSteps[code] ?? 4);
-  const message =
-    typeof value?.message === "string" && value.message.trim()
-      ? value.message.trim()
-      : fallbackMessage;
+    path != null
+      ? endpointRootStep(path)
+      : ((code ? serverCodeSteps[code] : undefined) ?? LAST_ENDPOINT_STEP);
 
-  return { step, path, message };
+  return { step, path, message: getErrorMessage(error, fallbackMessage) };
 }
 
 /** One source of truth for the stepper and summary. Field validation keeps its
- * owning step; a capacity block is the resource step's issue. */
+ * owning step; a capacity block is the resource step's issue; a server issue
+ * keeps the step it was mapped to. */
 export function endpointWizardIssues(
   errorsByStep: EndpointWizardErrors,
   capacityMessage?: string | null,
+  serverIssue?: EndpointServerIssue | null,
 ): EndpointDeploymentIssue[] {
   const issues: EndpointDeploymentIssue[] = [];
 
@@ -282,8 +295,53 @@ export function endpointWizardIssues(
     }
   }
   if (capacityMessage) {
-    issues.push({ step: 1, message: capacityMessage, source: "capacity" });
+    issues.push({
+      step: EndpointStep.resources,
+      message: capacityMessage,
+      source: "capacity",
+    });
+  }
+  if (serverIssue) {
+    issues.push({
+      step: serverIssue.step,
+      message: serverIssue.message,
+      source: "server",
+    });
   }
 
   return issues;
+}
+
+export type EndpointStepStatus =
+  | "attention"
+  | "modified"
+  | "completed"
+  | "in-progress"
+  | "current"
+  | "pending";
+
+/**
+ * What the stepper says about one step. Issues win, then an edit's changes;
+ * completion is only tracked while creating.
+ */
+export function endpointStepStatus({
+  mode,
+  active,
+  issueCount,
+  modified,
+  completion,
+}: {
+  mode: "create" | "edit";
+  active: boolean;
+  issueCount: number;
+  modified: boolean;
+  completion: EndpointStepCompletion;
+}): EndpointStepStatus {
+  if (issueCount > 0) return "attention";
+  if (modified) return "modified";
+  if (mode === "create" && !active && completion === "complete") {
+    return "completed";
+  }
+  if (mode === "create" && completion === "in-progress") return "in-progress";
+  return active ? "current" : "pending";
 }

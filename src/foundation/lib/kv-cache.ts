@@ -42,6 +42,12 @@ export const KV_CACHE_PRECISIONS = [
 
 export type KvCachePrecisionId = (typeof KV_CACHE_PRECISIONS)[number]["id"];
 
+/** Bytes per element of a precision; null for none picked. */
+export const precisionBytes = (
+  id: KvCachePrecisionId | "" | null | undefined,
+): number | null =>
+  KV_CACHE_PRECISIONS.find((precision) => precision.id === id)?.bytes ?? null;
+
 /** GB here is 1024³ bytes, matching how the rest of the UI reports memory. */
 export const BYTES_PER_GB = 1024 ** 3;
 
@@ -112,7 +118,9 @@ export function defaultRecurrentStatePrecisionId(
   return precisionIdForDtype(info?.recurrent_state_dtype);
 }
 
-function precisionIdForDtype(
+/** A checkpoint dtype or quantization label mapped onto a cache precision;
+ * null for one this module does not recognise. */
+export function precisionIdForDtype(
   dtype: string | undefined,
 ): KvCachePrecisionId | null {
   const normalized = dtype?.toLowerCase().trim();
@@ -269,6 +277,32 @@ export type KvCacheRefusal = {
 };
 
 export type KvCacheResult = KvCacheEstimate | KvCacheRefusal;
+
+/**
+ * The provenances worth naming beside a value: the ones a reader would not
+ * assume from the checkpoint alone. "unstated" is not among them — it is
+ * summarised once per formula (see unreportedFactorKeys) rather than per value.
+ */
+export const NOTED_KV_CACHE_SOURCES: ReadonlySet<KvCacheSource> = new Set([
+  "derived",
+  "manual",
+  "deployment",
+]);
+
+/** The values a factor is made of: its terms for a sum or min, else itself. */
+const kvCacheFactorValues = (factor: KvCacheFactor): KvCacheValue[] =>
+  factor.kind === "sum" || factor.kind === "min" ? factor.terms : [factor];
+
+/** The distinct, sorted keys of every value in the estimate with no provenance. */
+export const unreportedFactorKeys = (estimate: KvCacheEstimate): string[] =>
+  Array.from(
+    new Set(
+      estimate.components
+        .flatMap((component) => component.factors.flatMap(kvCacheFactorValues))
+        .filter((value) => value.source === "unstated")
+        .map((value) => value.key),
+    ),
+  ).sort();
 
 /**
  * How many linear-attention states a sequence keeps.

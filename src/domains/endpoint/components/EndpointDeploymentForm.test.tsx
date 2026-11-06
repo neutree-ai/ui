@@ -2,37 +2,17 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { endpointStepValidationPaths } from "@/domains/endpoint/lib/endpoint-wizard";
+import { makeEndpoint } from "@/domains/endpoint/testing/builders";
 import { EndpointDeploymentForm } from "./EndpointDeploymentForm";
 
-const baselineEndpoint = {
-  metadata: { name: "deepseek-r1-multinode", workspace: "design-lab" },
-  spec: {
-    cluster: "gpu-k8s-west",
-    replicas: { num: 1 },
-    model: {
-      registry: "huggingface",
-      name: "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
-      version: "1.0",
-      file: "model.safetensors",
-      task: "text-generation",
-    },
-    engine: { engine: "vllm", version: "0.32.0" },
-    resources: {
-      cpu: 8,
-      memory: 32,
-      gpu: 1,
-      accelerator: { type: "nvidia_gpu", product: "H100" },
-    },
-    kv_cache: null,
-    deployment_options: { scheduler: { type: "consistent_hash" } },
-    variables: { engine_args: { max_model_len: 32768 } },
-    env: {},
-  },
-} as const;
+const baselineEndpoint = makeEndpoint();
 
 const mocks = vi.hoisted(() => ({
   trigger: vi.fn(),
   submit: vi.fn(),
+  setError: vi.fn(),
+  setFocus: vi.fn(),
+  formErrors: {} as Record<string, unknown>,
   submitBlocked: false,
   submitErrors: null as Record<string, unknown> | null,
   serverError: {
@@ -51,19 +31,10 @@ const mocks = vi.hoisted(() => ({
     | undefined,
 }));
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { changes?: string }) =>
-      key.endsWith("redeployDetails") && options?.changes
-        ? `${key}:${options.changes}`
-        : key,
-  }),
-}));
-
 vi.mock("@/domains/endpoint/hooks/use-endpoint-form", () => ({
   useEndpointForm: () => ({
     form: {
-      formState: { errors: {}, dirtyFields: mocks.dirtyFields },
+      formState: { errors: mocks.formErrors, dirtyFields: mocks.dirtyFields },
       handleSubmit:
         (
           onValid: () => void,
@@ -73,7 +44,8 @@ vi.mock("@/domains/endpoint/hooks/use-endpoint-form", () => ({
           if (mocks.submitErrors) onInvalid(mocks.submitErrors);
           else onValid();
         },
-      setError: vi.fn(),
+      setError: mocks.setError,
+      setFocus: mocks.setFocus,
       trigger: mocks.trigger,
       watch: () => mocks.values,
     },
@@ -209,7 +181,10 @@ describe("EndpointDeploymentForm", () => {
       code: "10232",
       message: "Server rejected the engine",
     };
+    mocks.formErrors = {};
     mocks.submit.mockReset();
+    mocks.setError.mockReset();
+    mocks.setFocus.mockReset();
     mocks.trigger.mockReset();
   });
 
@@ -298,14 +273,12 @@ describe("EndpointDeploymentForm", () => {
 
   it("keeps edit save available from the first step when changes exist", () => {
     mocks.query = { data: { data: baselineEndpoint }, isLoading: false };
-    mocks.values = {
-      ...structuredClone(baselineEndpoint),
+    mocks.values = makeEndpoint({
       spec: {
-        ...baselineEndpoint.spec,
         replicas: { num: 2 },
-        resources: { ...baselineEndpoint.spec.resources, cpu: 16 },
+        resources: { ...baselineEndpoint.spec.resources!, cpu: 16 },
       },
-    };
+    });
     mocks.dirtyFields = { spec: { resources: { cpu: true } } };
     render(<EndpointDeploymentForm action="edit" />);
 
@@ -333,12 +306,29 @@ describe("EndpointDeploymentForm", () => {
     },
   );
 
-  it("moves to the step mapped from a stable server error code", () => {
+  it("moves to the step mapped from a server error code", () => {
     render(<EndpointDeploymentForm action="create" />);
 
     fireEvent.click(screen.getByRole("button", { name: "reject server" }));
 
     expect(screen.getByTestId("active-step").textContent).toBe("2");
+    expect(mocks.setError).not.toHaveBeenCalled();
+  });
+
+  it("puts a server error with a field path on that field", () => {
+    mocks.serverError = {
+      field: "spec.engine.version",
+      message: "Unsupported engine version",
+    };
+    render(<EndpointDeploymentForm action="create" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "reject server" }));
+
+    expect(screen.getByTestId("active-step").textContent).toBe("2");
+    expect(mocks.setError).toHaveBeenCalledWith("spec.engine.version", {
+      type: "server",
+      message: "Unsupported engine version",
+    });
   });
 
   it("moves to review after blocked submission validation succeeds", async () => {
@@ -368,33 +358,18 @@ describe("EndpointDeploymentForm", () => {
     expect(screen.getByTestId("active-step").textContent).toBe("1");
   });
 
-  it("moves to the first invalid step from direct invalid feedback", () => {
+  it("moves to and focuses the first invalid field from invalid feedback", () => {
+    mocks.formErrors = {
+      spec: {
+        engine: { version: { type: "required", message: "Version" } },
+      },
+    };
     render(<EndpointDeploymentForm action="create" />);
 
     fireEvent.click(screen.getByRole("button", { name: "invalid form" }));
 
     expect(screen.getByTestId("active-step").textContent).toBe("2");
-  });
-
-  it("shows a page-level server issue when no field path is available", () => {
-    mocks.serverError = { message: "Unknown server failure" };
-    render(<EndpointDeploymentForm action="create" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "reject server" }));
-
-    expect(screen.getByTestId("active-step").textContent).toBe("4");
-  });
-
-  it("maps an explicit server field path onto its wizard step", () => {
-    mocks.serverError = {
-      field: "spec.engine.version",
-      message: "Unsupported engine version",
-    };
-    render(<EndpointDeploymentForm action="create" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "reject server" }));
-
-    expect(screen.getByTestId("active-step").textContent).toBe("2");
+    expect(mocks.setFocus).toHaveBeenCalledWith("spec.engine.version");
   });
 
   it("returns to the previous step from the wizard footer", async () => {

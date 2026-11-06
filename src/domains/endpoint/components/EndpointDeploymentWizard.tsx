@@ -5,11 +5,12 @@ import {
   CheckCircle2,
   Circle,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
+import { formatCatalogFeature } from "@/domains/endpoint/lib/catalog-origin";
 import {
   type EndpointReviewChange,
   formatEndpointReviewValue,
@@ -17,29 +18,50 @@ import {
 import {
   type EndpointDeploymentIssue,
   type EndpointServerIssue,
+  EndpointStep,
   type EndpointStepCompletions,
+  type EndpointStepStatus,
   type EndpointWizardErrors,
+  endpointStepStatus,
   endpointWizardIssues,
+  LAST_ENDPOINT_STEP,
 } from "@/domains/endpoint/lib/endpoint-wizard";
-import type {
-  EndpointReviewCapacityMetric,
-  EndpointReviewContext,
+import {
+  CAPACITY_METRIC_LABELS,
+  type EndpointReviewContext,
+  formatCapacityValue,
+  capacityExceeded as isCapacityExceeded,
 } from "@/domains/endpoint/lib/review-context";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { FormSectionStack } from "@/foundation/components/FormSectionStack";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
 
-const STEP_KEYS = [
-  "endpoints.wizard.steps.model",
-  "endpoints.wizard.steps.resources",
-  "endpoints.wizard.steps.runtime",
-  "endpoints.wizard.steps.advanced",
-  "endpoints.wizard.steps.confirm",
-] as const;
+const STEP_KEYS = {
+  [EndpointStep.model]: "endpoints.wizard.steps.model",
+  [EndpointStep.resources]: "endpoints.wizard.steps.resources",
+  [EndpointStep.runtime]: "endpoints.wizard.steps.runtime",
+  [EndpointStep.advanced]: "endpoints.wizard.steps.advanced",
+  [EndpointStep.confirm]: "endpoints.wizard.steps.confirm",
+} as const;
+
+const STEPS = Object.values(EndpointStep);
+
+const STEP_STATUS_KEYS: Record<EndpointStepStatus, string> = {
+  attention: "endpoints.wizard.step.needsAttention",
+  modified: "endpoints.wizard.step.modified",
+  completed: "endpoints.wizard.step.completed",
+  "in-progress": "endpoints.wizard.step.inProgress",
+  current: "endpoints.wizard.step.current",
+  pending: "endpoints.wizard.step.pending",
+};
+
+const EDIT_STEP_STATUS_KEYS: Partial<Record<EndpointStepStatus, string>> = {
+  current: "endpoints.wizard.step.currentConfiguration",
+  pending: "endpoints.wizard.step.unchanged",
+};
 
 type EndpointDeploymentWizardProps<T extends FieldValues = FieldValues> = {
   form: UseFormReturn<T>;
@@ -116,29 +138,8 @@ function DeploymentSummary<T extends FieldValues>({
   );
 }
 
-const CAPACITY_LABELS: Record<
-  EndpointReviewCapacityMetric["key"],
-  { label: string; unit: string }
-> = {
-  cpu: {
-    label: "common.fields.cpu",
-    unit: "pages.vramCalculator.metrics.cores",
-  },
-  memory: { label: "common.fields.memory", unit: "endpoints.options.gib" },
-  cards: {
-    label: "endpoints.fields.physicalGpu",
-    unit: "endpoints.fields.cards",
-  },
-  vram: { label: "clusters.fields.memoryUsage", unit: "endpoints.options.gib" },
-  core: { label: "clusters.fields.coreUsage", unit: "" },
-};
-
-const formatCapacityValue = (value: number | null) =>
-  value == null ? (
-    <EmptyValue />
-  ) : (
-    formatToDecimal(value, Number.isInteger(value) ? 0 : 1)
-  );
+const capacityValue = (value: number | null) =>
+  value == null ? <EmptyValue /> : formatCapacityValue(value);
 
 function CatalogOriginValue({
   catalog,
@@ -150,13 +151,7 @@ function CatalogOriginValue({
   features?: ReadonlyArray<{ name: string; value?: string }>;
 }) {
   const { t } = useTranslation();
-  const featureText = features
-    .map((feature) =>
-      feature.value === undefined
-        ? feature.name
-        : `${feature.name}: ${feature.value}`,
-    )
-    .join(", ");
+  const featureText = features.map(formatCatalogFeature).join(", ");
 
   return (
     <span className="break-words">
@@ -188,21 +183,13 @@ function ReviewRisks({
   if (reviewContext.modelDelivery === "at-deploy-time") {
     risks.push({
       key: "download",
-      content: (
-        <p data-testid="review-runtime-download">
-          {t("endpoints.messages.runtimeDownloadHint")}
-        </p>
-      ),
+      content: <p>{t("endpoints.messages.runtimeDownloadHint")}</p>,
     });
   }
   if (reviewContext.modelDelivery === "unknown") {
     risks.push({
       key: "download-unknown",
-      content: (
-        <p data-testid="review-runtime-download-unknown">
-          {t("endpoints.messages.runtimeDownloadUnknown")}
-        </p>
-      ),
+      content: <p>{t("endpoints.messages.runtimeDownloadUnknown")}</p>,
     });
   }
   if (reviewContext.noVerifiedAccelerator) {
@@ -215,7 +202,7 @@ function ReviewRisks({
     risks.push({
       key: "unverified",
       content: (
-        <p data-testid="review-unverified-accelerator">
+        <p>
           {t("endpoints.recipe.noVerifiedAccelerator")}
           {required}
         </p>
@@ -225,11 +212,7 @@ function ReviewRisks({
   if (reviewContext.clusterCapacityUnavailable) {
     risks.push({
       key: "capacity-unavailable",
-      content: (
-        <p data-testid="review-capacity-unavailable">
-          {t("endpoints.messages.clusterResourcesUnavailable")}
-        </p>
-      ),
+      content: <p>{t("endpoints.messages.clusterResourcesUnavailable")}</p>,
     });
   }
 
@@ -237,7 +220,7 @@ function ReviewRisks({
   if (risks.length === 0 && (!capacity || capacity.length === 0)) return null;
 
   return (
-    <section className="px-4 py-3" data-testid="review-deployment-risks">
+    <section className="px-4 py-3">
       <h2 className="text-sm font-semibold">
         {t("endpoints.wizard.review.risks", "Deployment risks")}
       </h2>
@@ -264,9 +247,8 @@ function ReviewRisks({
           </h3>
           <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {capacity.map((metric) => {
-              const labels = CAPACITY_LABELS[metric.key];
-              const capacityExceeded =
-                metric.available != null && metric.requested > metric.available;
+              const labels = CAPACITY_METRIC_LABELS[metric.key];
+              const capacityExceeded = isCapacityExceeded(metric);
               return (
                 <div
                   key={metric.key}
@@ -275,8 +257,6 @@ function ReviewRisks({
                     capacityExceeded &&
                       "border-destructive/40 bg-destructive/5",
                   )}
-                  data-testid={`review-capacity-${metric.key}`}
-                  data-state={capacityExceeded ? "exceeded" : "within-capacity"}
                 >
                   <div className="text-xs font-medium">{t(labels.label)}</div>
                   <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
@@ -289,14 +269,14 @@ function ReviewRisks({
                         capacityExceeded && "text-destructive",
                       )}
                     >
-                      {formatCapacityValue(metric.requested)}
+                      {capacityValue(metric.requested)}
                       {labels.unit && ` ${t(labels.unit)}`}
                     </dd>
                     <dt className="text-muted-foreground">
                       {t("endpoints.wizard.review.available", "Available")}
                     </dt>
                     <dd className="text-right font-medium tabular-nums">
-                      {formatCapacityValue(metric.available)}
+                      {capacityValue(metric.available)}
                       {metric.available != null &&
                         labels.unit &&
                         ` ${t(labels.unit)}`}
@@ -339,15 +319,21 @@ function ReviewStep<T extends FieldValues>({
   const resources = values.spec.resources;
   const cache = values.spec.kv_cache;
   const advanced = values.spec.deployment_options?.scheduler?.type;
-  const resourceIssues = issues.filter((issue) => issue.step === 1);
-  const runtimeIssues = issues.filter((issue) => issue.step === 2);
-  const reviewIssues = issues.filter((issue) => issue.step >= 4);
+  const resourceIssues = issues.filter(
+    (issue) => issue.step === EndpointStep.resources,
+  );
+  const runtimeIssues = issues.filter(
+    (issue) => issue.step === EndpointStep.runtime,
+  );
+  const reviewIssues = issues.filter(
+    (issue) => issue.step >= LAST_ENDPOINT_STEP,
+  );
   const hasAdvancedReviewContent =
     Object.keys(values.spec.variables?.engine_args ?? {}).length > 0 ||
     Object.keys(values.spec.env ?? {}).length > 0;
   const groups = [
     {
-      step: 0,
+      step: EndpointStep.model,
       label: t("endpoints.wizard.steps.model"),
       value: t("endpoints.wizard.review.model", {
         model: values.spec.model?.name || "—",
@@ -355,7 +341,7 @@ function ReviewStep<T extends FieldValues>({
       }),
     },
     {
-      step: 1,
+      step: EndpointStep.resources,
       label: t("endpoints.wizard.steps.resources"),
       value: t("endpoints.wizard.review.resources", {
         cluster: values.spec.cluster || "—",
@@ -366,7 +352,7 @@ function ReviewStep<T extends FieldValues>({
       }),
     },
     {
-      step: 2,
+      step: EndpointStep.runtime,
       label: t("endpoints.wizard.steps.runtime"),
       value: cache
         ? t("endpoints.wizard.review.runtimeCache", {
@@ -380,7 +366,7 @@ function ReviewStep<T extends FieldValues>({
           }),
     },
     {
-      step: 3,
+      step: EndpointStep.advanced,
       label: t("endpoints.wizard.steps.advanced"),
       value: t("endpoints.wizard.review.advanced", {
         scheduler: advanced || "consistent_hash",
@@ -392,10 +378,7 @@ function ReviewStep<T extends FieldValues>({
 
   return (
     <div className="space-y-4">
-      <div
-        className="divide-y overflow-hidden rounded-lg border bg-[var(--nt-fill-neutral-white)]"
-        data-testid="review-single-surface"
-      >
+      <div className="divide-y overflow-hidden rounded-lg border bg-[var(--nt-fill-neutral-white)]">
         <section>
           <div className="border-b px-4 py-3">
             <h2 className="text-base font-semibold">
@@ -414,10 +397,7 @@ function ReviewStep<T extends FieldValues>({
             )}
           </div>
           {mode === "edit" && hasChanges && reviewChanges.length > 0 && (
-            <section
-              className="border-b px-4 py-3"
-              data-testid="review-change-list"
-            >
+            <section className="border-b px-4 py-3">
               <h3 className="text-sm font-semibold">
                 {t("endpoints.wizard.review.changesToSave")}
               </h3>
@@ -435,7 +415,7 @@ function ReviewStep<T extends FieldValues>({
                       <span className="max-w-full break-all rounded bg-background px-1.5 py-0.5 font-mono text-muted-foreground">
                         {formatEndpointReviewValue(
                           change.before,
-                          change.format,
+                          change.display,
                         ) || <EmptyValue />}
                       </span>
                       <ArrowRight
@@ -448,7 +428,7 @@ function ReviewStep<T extends FieldValues>({
                       <span className="max-w-full break-all rounded bg-background px-1.5 py-0.5 font-mono font-medium">
                         {formatEndpointReviewValue(
                           change.after,
-                          change.format,
+                          change.display,
                         ) || <EmptyValue />}
                       </span>
                     </dd>
@@ -457,10 +437,7 @@ function ReviewStep<T extends FieldValues>({
               </dl>
             </section>
           )}
-          <div
-            className="grid gap-3 border-b px-4 py-3 sm:grid-cols-2"
-            data-testid="review-endpoint-identity"
-          >
+          <div className="grid gap-3 border-b px-4 py-3 sm:grid-cols-2">
             <div className="min-w-0">
               <div className="text-xs text-muted-foreground">
                 {t("common.fields.name")}
@@ -489,25 +466,22 @@ function ReviewStep<T extends FieldValues>({
                   <div className="text-sm font-medium">{group.label}</div>
                   <div className="min-w-0 text-sm text-muted-foreground">
                     <p className="break-words">{group.value}</p>
-                    {group.step === 0 && reviewContext.catalogOrigin && (
-                      <p
-                        className="mt-1 break-words text-xs text-muted-foreground"
-                        data-testid="review-catalog-origin"
-                      >
-                        {t("endpoints.wizard.summary.catalog")}:{" "}
-                        <CatalogOriginValue
-                          catalog={reviewContext.catalogOrigin.catalog}
-                          variant={reviewContext.catalogOrigin.variant}
-                          features={reviewContext.catalogOrigin.features}
-                        />
-                        {reviewContext.catalogOrigin.featuresUnreadable && (
-                          <span>
-                            {" "}
-                            {t("endpoints.origin.featuresUnreadable")}
-                          </span>
-                        )}
-                      </p>
-                    )}
+                    {group.step === EndpointStep.model &&
+                      reviewContext.catalogOrigin && (
+                        <p className="mt-1 break-words text-xs text-muted-foreground">
+                          <CatalogOriginValue
+                            catalog={reviewContext.catalogOrigin.catalog}
+                            variant={reviewContext.catalogOrigin.variant}
+                            features={reviewContext.catalogOrigin.features}
+                          />
+                          {reviewContext.catalogOrigin.featuresUnreadable && (
+                            <span>
+                              {" "}
+                              {t("endpoints.origin.featuresUnreadable")}
+                            </span>
+                          )}
+                        </p>
+                      )}
                     {errors.length > 0 && (
                       <p className="mt-1 flex items-start gap-1 text-destructive">
                         <AlertCircle
@@ -539,17 +513,7 @@ function ReviewStep<T extends FieldValues>({
           <h2 className="text-sm font-semibold">
             {t("endpoints.wizard.review.checks")}
           </h2>
-          <div
-            className="mt-2 space-y-2 text-sm text-muted-foreground"
-            data-testid="deployment-checks"
-            data-state={
-              issues.length > 0
-                ? "issues"
-                : validationAttempted
-                  ? "clear"
-                  : "unvalidated"
-            }
-          >
+          <div className="mt-2 space-y-2 text-sm text-muted-foreground">
             {issues.length > 0 && (
               <p className="flex items-start gap-2 text-destructive">
                 <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4" />
@@ -562,19 +526,16 @@ function ReviewStep<T extends FieldValues>({
               {resourceIssues.length > 0 ? (
                 <AlertTriangle
                   aria-hidden="true"
-                  data-status="attention"
                   className="mt-0.5 h-4 w-4 shrink-0 text-[var(--nt-text-colorful-notice)]"
                 />
               ) : !validationAttempted ? (
                 <Circle
                   aria-hidden="true"
-                  data-status="pending"
                   className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
                 />
               ) : (
                 <CheckCircle2
                   aria-hidden="true"
-                  data-status="clear"
                   className="mt-0.5 h-4 w-4 shrink-0 text-[var(--nt-text-colorful-positive)]"
                 />
               )}
@@ -630,8 +591,7 @@ function ReviewStep<T extends FieldValues>({
               environmentVariables={
                 (values.spec.env ?? null) as Record<string, unknown> | null
               }
-              collapsible
-              framed={false}
+              variant="inline"
             />
           </div>
         )}
@@ -662,32 +622,23 @@ export function EndpointDeploymentWizard<T extends FieldValues = FieldValues>({
   submitBlocked,
 }: EndpointDeploymentWizardProps<T>) {
   const { t } = useTranslation();
-  const [visitedSteps, setVisitedSteps] = useState(() => new Set([0]));
-
-  useEffect(() => {
-    setVisitedSteps((visited) => {
-      if (visited.has(activeStep)) return visited;
-      const next = new Set(visited);
-      next.add(activeStep);
-      return next;
-    });
-  }, [activeStep]);
+  const [visitedSteps, setVisitedSteps] = useState<ReadonlySet<number>>(
+    () => new Set([EndpointStep.model, activeStep]),
+  );
+  // The active step is owned by the parent, so a step reached from outside
+  // (next, an invalid submit) is recorded while rendering it.
+  if (!visitedSteps.has(activeStep)) {
+    setVisitedSteps(new Set(visitedSteps).add(activeStep));
+  }
 
   const capacityMessage =
-    submitBlocked && (activeStep === 1 || visitedSteps.has(1))
+    submitBlocked && visitedSteps.has(EndpointStep.resources)
       ? t("endpoints.wizard.issues.capacityBlocked")
       : null;
-  const issues = useMemo(() => {
-    const next = endpointWizardIssues(errorsByStep, capacityMessage);
-    if (serverIssue) {
-      next.push({
-        step: serverIssue.step,
-        message: serverIssue.message,
-        source: "server",
-      });
-    }
-    return next;
-  }, [capacityMessage, errorsByStep, serverIssue]);
+  const issues = useMemo(
+    () => endpointWizardIssues(errorsByStep, capacityMessage, serverIssue),
+    [capacityMessage, errorsByStep, serverIssue],
+  );
 
   const stepFields = [
     modelFields,
@@ -714,7 +665,8 @@ export function EndpointDeploymentWizard<T extends FieldValues = FieldValues>({
         aria-label={t("endpoints.wizard.navigation")}
         className="grid overflow-hidden rounded-lg border bg-[var(--nt-fill-neutral-white)] sm:grid-cols-3 xl:grid-cols-5"
       >
-        {STEP_KEYS.map((key, index) => {
+        {STEPS.map((index) => {
+          const key = STEP_KEYS[index];
           const issueCount = issues.filter(
             (issue) => issue.step === index,
           ).length;
@@ -724,27 +676,18 @@ export function EndpointDeploymentWizard<T extends FieldValues = FieldValues>({
           const completion = visitedSteps.has(index)
             ? (stepCompletions[index] ?? "not-started")
             : "not-started";
-          const status = hasError
-            ? t("endpoints.wizard.step.needsAttention", {
-                count: issueCount,
-              })
-            : modified
-              ? t("endpoints.wizard.step.modified")
-              : mode === "create" && !active && completion === "complete"
-                ? t("endpoints.wizard.step.completed")
-                : mode === "create" && completion === "in-progress"
-                  ? t("endpoints.wizard.step.inProgress")
-                  : active
-                    ? t(
-                        mode === "edit"
-                          ? "endpoints.wizard.step.currentConfiguration"
-                          : "endpoints.wizard.step.current",
-                      )
-                    : t(
-                        mode === "edit"
-                          ? "endpoints.wizard.step.unchanged"
-                          : "endpoints.wizard.step.pending",
-                      );
+          const stepStatus = endpointStepStatus({
+            mode,
+            active,
+            issueCount,
+            modified,
+            completion,
+          });
+          const status = t(
+            (mode === "edit" && EDIT_STEP_STATUS_KEYS[stepStatus]) ||
+              STEP_STATUS_KEYS[stepStatus],
+            stepStatus === "attention" ? { count: issueCount } : undefined,
+          );
           return (
             <button
               key={key}
@@ -760,7 +703,6 @@ export function EndpointDeploymentWizard<T extends FieldValues = FieldValues>({
             >
               <span className="flex items-center gap-2">
                 <span
-                  data-testid={`endpoint-wizard-step-${index + 1}`}
                   className={cn(
                     "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-semibold tabular-nums",
                     active &&
@@ -840,7 +782,7 @@ export function EndpointDeploymentWizard<T extends FieldValues = FieldValues>({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start 2xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-4">
           <div key={activeStep}>
-            {activeStep < STEP_KEYS.length - 1 ? (
+            {activeStep < LAST_ENDPOINT_STEP ? (
               <FormSectionStack>{stepFields[activeStep]}</FormSectionStack>
             ) : (
               stepFields[activeStep]

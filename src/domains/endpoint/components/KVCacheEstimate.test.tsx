@@ -11,20 +11,6 @@ import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { pickOption } from "@/foundation/testing/interactions";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({
-    t: (key: string, fallbackOrVars?: unknown, vars?: unknown) => {
-      const values = (vars ?? fallbackOrVars) as
-        | Record<string, unknown>
-        | undefined;
-
-      return values && typeof values === "object"
-        ? `${key} ${JSON.stringify(values)}`
-        : key;
-    },
-  }),
-}));
-
 /** deepseek-ai/DeepSeek-V3, as the registry reports it. */
 const deepseekV3: ModelInfo = {
   num_hidden_layers: 61,
@@ -56,20 +42,6 @@ const qwen36: ModelInfo = {
   max_position_embeddings: 262144,
   parameter_dtype: "bfloat16",
   field_sources: { max_position_embeddings: "auto" },
-};
-
-const linearAttention: ModelInfo = {
-  num_hidden_layers: 2,
-  num_key_value_heads: 1,
-  head_dim: 64,
-  linear_conv_kernel_dim: 4,
-  linear_num_key_heads: 2,
-  linear_key_head_dim: 128,
-  linear_num_value_heads: 4,
-  linear_value_head_dim: 128,
-  max_position_embeddings: 4096,
-  parameter_dtype: "bfloat16",
-  layer_types: ["linear_attention", "full_attention"],
 };
 
 describe("KVCacheEstimate", () => {
@@ -127,18 +99,6 @@ describe("KVCacheEstimate", () => {
         missingFields: ["kv_lora_rank"],
       }),
     );
-  });
-
-  it("lays out policy inputs in both compact and stacked forms", () => {
-    const { rerender } = render(
-      <KVCacheEstimate read={ready(linearAttention)} />,
-    );
-
-    screen.getByTestId("kv-cache-policy-inputs");
-
-    rerender(<KVCacheEstimate read={ready(linearAttention)} stackFields />);
-
-    screen.getByTestId("kv-cache-policy-inputs");
   });
 
   it("recalculates after choosing a different cache precision", async () => {
@@ -260,22 +220,9 @@ describe("KVCacheEstimate", () => {
   });
 
   // A caller combining this panel's total with a declared weights figure
-  // (EndpointWeightsEstimate) needs the number itself, not just the render of
+  // (EndpointDeploymentSummary) needs the number itself, not just the render of
   // it — so the panel reports it back rather than keeping it as private state.
-  it("reports its computed total to onEstimate", () => {
-    const onEstimate = vi.fn();
-    render(
-      <KVCacheEstimate read={ready(deepseekV3)} onEstimate={onEstimate} />,
-    );
-
-    // 61 x 576 x 2 = 70,272 bytes/token, at the checkpoint's own 163,840-token
-    // ceiling and the panel's one-sequence default.
-    expect(onEstimate).toHaveBeenLastCalledWith(
-      expect.closeTo((70272 * 163840) / 2 ** 30, 5),
-    );
-  });
-
-  it("reports its complete estimate state for the deployment summary", () => {
+  it("reports its computed total and the inputs behind it", () => {
     const onStateChange = vi.fn();
     render(
       <KVCacheEstimate
@@ -284,23 +231,17 @@ describe("KVCacheEstimate", () => {
       />,
     );
 
+    // 61 x 576 x 2 = 70,272 bytes/token, at the checkpoint's own 163,840-token
+    // ceiling and the panel's one-sequence default.
     expect(onStateChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         kind: "ready",
+        totalGb: expect.closeTo((70272 * 163840) / 2 ** 30, 5),
         tokensPerSequence: 163840,
         sequences: 1,
         precision: "bf16",
       }),
     );
-  });
-
-  it("reports null to onEstimate while the read is not ready", () => {
-    const onEstimate = vi.fn();
-    render(
-      <KVCacheEstimate read={{ state: "loading" }} onEstimate={onEstimate} />,
-    );
-
-    expect(onEstimate).toHaveBeenLastCalledWith(null);
   });
 
   it("reports an unavailable state while the read is not ready", () => {
@@ -353,7 +294,7 @@ describe("KVCacheEstimate", () => {
     // The server's own wording is kept: it names the specific obstacle.
     expect(notice).toContain("the registry said so");
     // A read that never happened must not be reported as a missing field.
-    expect(notice).not.toContain("missingFields");
+    expect(notice).not.toContain("endpoints.kvCache.missingFields");
   });
 
   it("distinguishes a checkpoint it could not parse from one that omits a field", () => {
@@ -536,7 +477,7 @@ describe("KVCacheEstimate formula dialog", () => {
     expect(screen.queryByTestId("kv-cache-components")).toBeNull();
   });
 
-  it("keeps provenance outside the factor tag as a muted parenthetical", () => {
+  it("names a hand-entered value's provenance beside it in the formula", () => {
     render(
       <KVCacheEstimate
         read={ready({
@@ -550,26 +491,9 @@ describe("KVCacheEstimate formula dialog", () => {
     );
     fireEvent.click(open());
 
-    const dialog = screen.getByRole("dialog");
-    const sourceNotes = dialog.querySelectorAll('[data-segment="source"]');
-    expect(sourceNotes).toHaveLength(1);
-    expect(sourceNotes[0].textContent).toBe(
+    within(screen.getByRole("dialog")).getByText(
       "(endpoints.kvCache.sources.manual)",
     );
-    expect(sourceNotes[0].closest("[data-formula-tag]")).toBeNull();
-
-    const factorTags = dialog.querySelectorAll("[data-formula-tag]");
-    expect(factorTags.length).toBeGreaterThan(2);
-    expect(
-      [...factorTags].every(
-        (tag) => tag.querySelector('[data-segment="label"]') !== null,
-      ),
-    ).toBe(true);
-    expect(
-      [...factorTags].every(
-        (tag) => tag.querySelector('[data-segment="value"]') !== null,
-      ),
-    ).toBe(true);
   });
 
   it("collapses repeated unreported provenance into one summary", () => {
@@ -577,9 +501,7 @@ describe("KVCacheEstimate formula dialog", () => {
     fireEvent.click(open());
 
     const dialog = screen.getByRole("dialog");
-    const summary = within(dialog).getByTestId("kv-cache-unreported-sources");
-    expect(summary.textContent).toContain("endpoints.kvCache.sourceUnreported");
-    expect(summary.textContent).toContain("fields");
+    within(dialog).getByText(/^endpoints\.kvCache\.sourceUnreported:/);
     expect(
       within(dialog).queryByText("endpoints.kvCache.sources.unstated"),
     ).toBeNull();

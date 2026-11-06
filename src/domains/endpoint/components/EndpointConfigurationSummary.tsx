@@ -1,15 +1,17 @@
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type {
-  EndpointReviewCapacityMetric,
-  EndpointReviewContext,
+import { formatCatalogFeature } from "@/domains/endpoint/lib/catalog-origin";
+import {
+  CAPACITY_METRIC_LABELS,
+  type EndpointReviewContext,
+  formatCapacityValue,
 } from "@/domains/endpoint/lib/review-context";
+import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { getRoundedVgpuMemoryGiBValue } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { KeyValueList } from "@/foundation/components/KeyValueList";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { KeyValueList } from "./KeyValueList";
 
 type Props = {
   values: Endpoint;
@@ -35,10 +37,8 @@ export function EndpointConfigurationSummary({
   );
   const env = Object.entries(spec.env ?? {});
   const replicas = Math.max(1, Number(spec.replicas?.num ?? 1));
-  const scheduler = formatScheduler(
-    spec.deployment_options?.scheduler?.type,
-    t,
-  );
+  const schedulerType = spec.deployment_options?.scheduler?.type;
+  const scheduler = schedulerLabel(schedulerType, t) ?? schedulerType;
   const vgpuMemoryGiB = getRoundedVgpuMemoryGiBValue(
     virtualization?.memory_mib,
   );
@@ -51,7 +51,7 @@ export function EndpointConfigurationSummary({
     : t("endpoints.wizard.summary.cacheDisabled");
 
   return (
-    <div className="space-y-5" data-testid="endpoint-configuration-summary">
+    <div className="space-y-5">
       {composeError && (
         <Alert variant="destructive">
           <AlertCircle aria-hidden="true" />
@@ -61,10 +61,7 @@ export function EndpointConfigurationSummary({
 
       <ConfigSection title={t("endpoints.wizard.summary.deployment")}>
         <ConfigRow label={t("common.fields.cluster")}>
-          <span
-            data-testid="endpoint-summary-cluster-identity"
-            className="inline-flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5"
-          >
+          <span className="inline-flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5">
             <span>{spec.cluster || <EmptyValue />}</span>
             <span className="text-xs text-muted-foreground">
               · {t("endpoints.fields.nodeCount")}{" "}
@@ -98,9 +95,7 @@ export function EndpointConfigurationSummary({
                             key={`${feature.name}:${feature.value ?? ""}`}
                             className="block break-words"
                           >
-                            {feature.value === undefined
-                              ? feature.name
-                              : `${feature.name}: ${feature.value}`}
+                            {formatCatalogFeature(feature)}
                           </span>
                         ))}
                         {reviewContext.catalogOrigin.featuresUnreadable && (
@@ -191,20 +186,17 @@ export function EndpointConfigurationSummary({
               {t("endpoints.messages.clusterResourcesUnavailable")}
             </ConfigRow>
           ) : (
-            reviewContext.clusterCapacity?.map((metric) => (
-              <ConfigRow
-                key={metric.key}
-                label={capacityLabel(metric.key, t)}
-                testId={`configuration-capacity-${metric.key}`}
-              >
-                {formatCapacity(metric.available)}{" "}
-                {t("endpoints.wizard.summary.available", "available")} /{" "}
-                {formatCapacity(metric.total)}
-                {capacityUnit(metric.key, t)
-                  ? ` ${capacityUnit(metric.key, t)}`
-                  : ""}
-              </ConfigRow>
-            ))
+            reviewContext.clusterCapacity?.map((metric) => {
+              const { label, unit } = CAPACITY_METRIC_LABELS[metric.key];
+              return (
+                <ConfigRow key={metric.key} label={t(label)}>
+                  {capacityValue(metric.available)}{" "}
+                  {t("endpoints.wizard.summary.available", "available")} /{" "}
+                  {capacityValue(metric.total)}
+                  {unit ? ` ${t(unit)}` : ""}
+                </ConfigRow>
+              );
+            })
           )}
         </ConfigSection>
       )}
@@ -215,7 +207,7 @@ export function EndpointConfigurationSummary({
             {t("endpoints.fields.engineVariables")}
           </div>
           {engineArgs.length > 0 ? (
-            <KeyValueList entries={engineArgs} compact />
+            <KeyValueList entries={engineArgs} />
           ) : (
             <EmptyValue />
           )}
@@ -224,11 +216,7 @@ export function EndpointConfigurationSummary({
           <div className="text-xs font-medium text-muted-foreground">
             {t("endpoints.fields.environment")}
           </div>
-          {env.length > 0 ? (
-            <KeyValueList entries={env} compact />
-          ) : (
-            <EmptyValue />
-          )}
+          {env.length > 0 ? <KeyValueList entries={env} /> : <EmptyValue />}
         </div>
       </ConfigSection>
     </div>
@@ -250,17 +238,12 @@ const ConfigSection = ({
 
 const ConfigRow = ({
   label,
-  testId,
   children,
 }: {
   label: string;
-  testId?: string;
   children: React.ReactNode;
 }) => (
-  <div
-    className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 py-1.5 text-xs"
-    data-testid={testId}
-  >
+  <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 py-1.5 text-xs">
     <dt className="text-muted-foreground">{label}</dt>
     <dd className="min-w-0 break-words text-foreground">{children}</dd>
   </div>
@@ -273,55 +256,5 @@ const formatEngine = (
   return value || <EmptyValue />;
 };
 
-const capacityLabel = (
-  key: EndpointReviewCapacityMetric["key"],
-  t: (key: string, options?: { defaultValue?: string }) => string,
-) => {
-  switch (key) {
-    case "cpu":
-      return t("common.fields.cpu");
-    case "memory":
-      return t("common.fields.memory");
-    case "cards":
-      return t("endpoints.fields.physicalGpu");
-    case "vram":
-      return t("clusters.fields.memoryUsage");
-    case "core":
-      return t("clusters.fields.coreUsage");
-    default:
-      return key;
-  }
-};
-
-const capacityUnit = (
-  key: EndpointReviewCapacityMetric["key"],
-  t: (key: string, options?: { defaultValue?: string }) => string,
-) => {
-  switch (key) {
-    case "cpu":
-      return t("pages.vramCalculator.metrics.cores");
-    case "memory":
-    case "vram":
-      return t("endpoints.options.gib");
-    case "cards":
-      return t("endpoints.fields.cards");
-    default:
-      return "";
-  }
-};
-
-const formatCapacity = (value: number | null) => {
-  if (value == null) return <EmptyValue />;
-  return formatToDecimal(value, Number.isInteger(value) ? 0 : 1);
-};
-
-const formatScheduler = (
-  scheduler: string | undefined,
-  t: (key: string) => string,
-) => {
-  if (scheduler === "roundrobin") return t("models.scheduler.roundRobin");
-  if (scheduler === "consistent_hash") {
-    return t("models.scheduler.consistentHashing");
-  }
-  return scheduler ?? "";
-};
+const capacityValue = (value: number | null) =>
+  value == null ? <EmptyValue /> : formatCapacityValue(value);
