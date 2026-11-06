@@ -2948,6 +2948,7 @@
 		"vgpuLabel": "vGPU",
 		"openEndpoint": "Open {{endpoint}} endpoint",
 		"replicaCountLabel": "{{count}} replicas",
+		"replicaCountOfTotal": "{{onCard}} / {{total}} replicas",
 		"usedShare": "{{percent}}% used",
 		"usedColumn": "Used",
 		"replicaAllocations_one": "{{count}} replica allocation",

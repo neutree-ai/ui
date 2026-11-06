@@ -20,6 +20,8 @@ export type GpuAllocation = {
   replica: string;
   instance: string;
   vdevice?: string;
+  /** Replicas this Endpoint runs in total, across every card. */
+  endpointReplicas?: number;
   memoryMiB: number;
   modelWeightsMiB?: number | null;
   kvCacheCapacityMiB?: number | null;
@@ -76,6 +78,7 @@ function toGpuAllocation(
     replica: replica.replica_id ?? "",
     instance: replica.instance_id,
     vdevice: device.vdevice_index ?? undefined,
+    endpointReplicas: endpoint.status?.resources?.replicas?.length,
     memoryMiB: device.memory_mib,
     modelWeightsMiB: replica.model_weights_mib ?? null,
     kvCacheCapacityMiB: replica.kv_cache_capacity_mib ?? null,

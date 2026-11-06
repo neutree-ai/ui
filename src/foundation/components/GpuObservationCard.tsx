@@ -1303,16 +1303,37 @@ function GpuDetailsSheet({
                             {allocation.model || <EmptyValue />} ·{" "}
                             {allocation.workspace}
                             {allocation.allocations.length > 1
-                              ? ` · ${t("observations.replicaCountLabel", {
-                                  count: allocation.allocations.length,
-                                })}`
-                              : /* Only a partition is worth naming. Whether a
-                                   card happens to be held alone is already
-                                   visible from the single row, so it stays
-                                   unsaid. */
-                                allocation.allocations[0]?.vdevice
-                                ? ` · ${t("observations.vgpuLabel")} ${allocation.allocations[0].vdevice}`
-                                : ""}
+                              ? ` · ${(() => {
+                                  const onCard = allocation.allocations.length;
+                                  const total =
+                                    allocation.allocations[0]
+                                      ?.endpointReplicas ?? onCard;
+                                  return total > onCard
+                                    ? t("observations.replicaCountOfTotal", {
+                                        onCard,
+                                        total,
+                                      })
+                                    : t("observations.replicaCountLabel", {
+                                        count: onCard,
+                                      });
+                                })()}`
+                              : (() => {
+                                  const onCard = allocation.allocations.length;
+                                  const total =
+                                    allocation.allocations[0]
+                                      ?.endpointReplicas ?? onCard;
+                                  if (total > onCard) {
+                                    return ` · ${t(
+                                      "observations.replicaCountOfTotal",
+                                      { onCard, total },
+                                    )}`;
+                                  }
+                                  const vdevice =
+                                    allocation.allocations[0]?.vdevice;
+                                  return vdevice
+                                    ? ` · ${t("observations.vgpuLabel")} ${vdevice}`
+                                    : "";
+                                })()}
                           </p>
                         </div>
                         {!isOpen && (
