@@ -19,21 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  type EndpointCacheManagerStatus,
-  readEndpointCacheManagerStatus,
-} from "@/domains/endpoint/lib/cache-manager-status";
-import {
-  endpointZCacheOptions,
-  kvCacheUnavailableReason,
-} from "@/domains/endpoint/lib/zcache";
+import type { KvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
+import type { EndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
-import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointClusterRef } from "../types";
 
@@ -76,62 +67,23 @@ const CACHE_MANAGER_DISPLAY: Record<
 export function EndpointKVCacheFields({
   form,
   cluster,
-  cacheStatusLoading = false,
-  acceleratorType,
+  availability: { hasZCache, cacheManager, unavailableReason },
   isEdit,
   cacheChanged = false,
 }: {
   form: UseFormReturn;
   cluster?: EndpointClusterRef;
-  cacheStatusLoading?: boolean;
-  acceleratorType?: string | null;
+  availability: KvCacheAvailability;
   isEdit: boolean;
   cacheChanged?: boolean;
 }) {
   const { t } = useTranslation();
-  const { systemInfo } = useSystemApi();
-  const hasZCache =
-    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-    true;
-  const zcacheOptions = endpointZCacheOptions(cluster);
-  const versions = useCacheVersions(
-    hasZCache &&
-      cluster?.spec.type === "kubernetes" &&
-      zcacheOptions?.enabled === true,
-  );
   const [configOpen, setConfigOpen] = useState(false);
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
-  const engine = form.watch("spec.engine");
-  const task = form.watch("spec.model.task");
-  const cacheManager = readEndpointCacheManagerStatus(
-    cluster,
-    cacheStatusLoading,
-  );
   const phaseValues =
     "phase" in cacheManager ? { phase: cacheManager.phase } : {};
-  const unavailableReason = kvCacheUnavailableReason({
-    cluster,
-    acceleratorType,
-    engine,
-    task,
-    manager: cacheManager,
-    versions: {
-      isLoading: versions.isLoading,
-      isError: versions.isError,
-      engineVersions: engineVersionsFor(
-        versions.data?.data,
-        zcacheOptions?.version,
-      ),
-    },
-  });
   const supported = unavailableReason === null;
-  form.register("spec.kv_cache", {
-    validate: (value) =>
-      value?.provider !== "zcache" ||
-      !!supported ||
-      t("endpoints.kvCacheSettings.requirements"),
-  });
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
   const cacheSwitch = (
@@ -175,15 +127,6 @@ export function EndpointKVCacheFields({
       name="spec.kv_cache.options.timeout_seconds"
       label={t("endpoints.kvCacheSettings.timeout")}
       description={t("endpoints.kvCacheSettings.timeoutHint")}
-      rules={{
-        validate: (value) =>
-          !form.getValues("spec.kv_cache.provider") ||
-          value === undefined ||
-          (Number.isFinite(value) &&
-            Number(value) >= 0.1 &&
-            Number(value) <= 60) ||
-          t("endpoints.kvCacheSettings.invalidTimeout"),
-      }}
     >
       <Input
         type="number"

@@ -231,7 +231,7 @@
   "src/foundation/components/VariablesInput.tsx": "2651b1125ac6266b5b4be2feeab2e97c",
   "src/domains/endpoint/lib/cluster-resources.ts": "668d3d5b6edcfb77bde27cf5fb83abc1",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "741ae76ed001565f31a2a859a38bdf9e",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "5b79652c89f968f27ecda810cd49f384",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "c176213ab0fdc5931201c83ab6694760",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "096f3387a1d97da1043d9bcad6feb0e9",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "5cb85f13749c95994ec4b63daa494f0b",
   "src/pages/external-endpoints/create.tsx": "78286cb967917dee72c9c2b2ea415b43",
@@ -449,8 +449,8 @@
   "src/domains/cluster/components/ClusterCacheSection.tsx": "91bdc78e4c7a84cc48cad25518831940",
   "src/domains/cluster/lib/zcache-presentation.ts": "52e676e791d5c8dc4edb0c88b59accef",
   "src/domains/cluster/components/CacheRetry.tsx": "c0d9766365cfcb136a2983f65e6f05f8",
-  "src/domains/endpoint/lib/zcache.ts": "e282596631d8bac966493b5c3f363cd2",
-  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "6385a8dd9b17901eb949e036c46fa47b",
+  "src/domains/endpoint/lib/zcache.ts": "ae33f4a3c8354873b4916095abdd638b",
+  "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "126db968f703fa4305b87b253ec3987e",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "332a0a9f31f6d9f7f0629586794a4b3a",
   "src/pages/auth/SsoCallbackPage.tsx": "936c5937d9c257e1a0c2e56259d907a3",
   "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
@@ -531,5 +531,6 @@
   "src/domains/endpoint/lib/estimate-weights.ts": "458ce82311f63ead02085dbb6321657b",
   "src/domains/endpoint/lib/review-context.ts": "b19a894ad8db26e853f2204d74d714a2",
   "src/foundation/lib/form-errors.ts": "191739f1dd15aefc1059ff47fc7e6c48",
-  "src/domains/endpoint/lib/scheduler.ts": "49c6e0b6daf38111e6b4dd27637f6913"
+  "src/domains/endpoint/lib/scheduler.ts": "49c6e0b6daf38111e6b4dd27637f6913",
+  "src/domains/endpoint/hooks/use-kv-cache-availability.ts": "62f5ac8b2c363feb1769c902dd5b81f3"
 }

@@ -1443,6 +1443,51 @@ describe("validation", () => {
   });
 });
 
+describe("KV cache on a cluster that cannot serve it", () => {
+  it.each([
+    {
+      cache: { provider: "zcache", options: { timeout_seconds: 5 } },
+      error: true,
+    },
+    { cache: null, error: false },
+  ])("kv_cache $cache -> error: $error", async ({ cache, error }) => {
+    const { result } = renderEndpointForm("edit", {
+      clusters: [plainGpuCluster()],
+    });
+    setValues(result, {
+      "metadata.name": "cached",
+      "spec.cluster": "plain-gpu",
+      "spec.kv_cache": cache,
+    });
+
+    await validate(result);
+
+    expect(formError(result, "spec.kv_cache")?.message).toBe(
+      error ? "endpoints.kvCacheSettings.requirements" : undefined,
+    );
+    expect(
+      screen.queryByText("endpoints.kvCacheSettings.requirements") !== null,
+    ).toBe(error);
+  });
+});
+
+it("rejects a KV cache timeout outside 0.1 to 60 seconds", async () => {
+  const { result } = renderEndpointForm("edit", {
+    clusters: [plainGpuCluster()],
+  });
+  setValues(result, {
+    "metadata.name": "cached",
+    "spec.cluster": "plain-gpu",
+    "spec.kv_cache": { provider: "zcache", options: { timeout_seconds: 61 } },
+  });
+
+  await validate(result);
+
+  expect(
+    formError(result, "spec.kv_cache.options.timeout_seconds")?.message,
+  ).toBe("endpoints.kvCacheSettings.invalidTimeout");
+});
+
 describe("unverified accelerator fallback", () => {
   // The recipe's hardware-verified list is advice: when none of its GPUs are
   // in the cluster, the picker falls back to every accelerator with a notice.

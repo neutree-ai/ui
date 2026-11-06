@@ -29,6 +29,7 @@ import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageI
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
 import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
+import { useKvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import {
   buildCatalogOriginAnnotations,
   readCatalogOrigin,
@@ -66,7 +67,10 @@ import {
   VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
-import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import {
+  endpointZCacheOptions,
+  isValidKvCacheTimeout,
+} from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -300,6 +304,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Accelerator types the selected engine version ships images for; empty
   // while the engine is unknown, which leaves every accelerator acceptable.
   const engineAcceleratorTypesRef = useRef<string[]>([]);
+  // Why ZCache cannot serve the current selection; null while it can.
+  const kvCacheUnavailableRef = useRef<string | null>(null);
 
   const form = useForm<Endpoint>({
     // Required fields stay quiet until they are touched or a global submit is
@@ -357,6 +363,26 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         fieldErrors["spec.resources.accelerator"] = {
           type: "manual",
           message: t("endpoints.messages.engineAcceleratorIncompatible"),
+        };
+      }
+      if (
+        values.spec?.kv_cache?.provider === "zcache" &&
+        kvCacheUnavailableRef.current &&
+        !fieldErrors["spec.kv_cache"]
+      ) {
+        fieldErrors["spec.kv_cache"] = {
+          type: "manual",
+          message: t("endpoints.kvCacheSettings.requirements"),
+        };
+      }
+      const kvCache = values.spec?.kv_cache;
+      if (
+        kvCache?.provider === "zcache" &&
+        !isValidKvCacheTimeout(kvCache.options?.timeout_seconds)
+      ) {
+        fieldErrors["spec.kv_cache.options.timeout_seconds"] = {
+          type: "manual",
+          message: t("endpoints.kvCacheSettings.invalidTimeout"),
         };
       }
       if (!values.metadata?.name?.trim()) {
@@ -586,6 +612,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     t,
     cacheEnabled,
   });
+  const kvCacheAvailability = useKvCacheAvailability({
+    cluster: selectedCluster,
+    acceleratorType: selectedAccelerator?.type,
+    engine: engineSpec,
+    task: currentModelTask,
+    cacheStatusLoading: clusters.query.isFetching,
+  });
+  kvCacheUnavailableRef.current = kvCacheAvailability.unavailableReason;
   const hasClusterCapacityEvidence = Boolean(
     selectedCluster?.status?.resource_info,
   );
@@ -3102,8 +3136,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         <EndpointKVCacheFields
           form={form}
           cluster={selectedCluster}
-          acceleratorType={selectedAccelerator?.type}
-          cacheStatusLoading={clusters.query.isFetching}
+          availability={kvCacheAvailability}
           isEdit={isEdit}
           cacheChanged={cacheChanged}
         />
