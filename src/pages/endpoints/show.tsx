@@ -27,7 +27,6 @@ import {
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
-import type { EndpointReplicaResourceRow } from "@/domains/endpoint/lib/resource-status";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { endpointCacheDashboard } from "@/domains/endpoint/lib/zcache";
 import type { Endpoint } from "@/domains/endpoint/types";
@@ -38,7 +37,6 @@ import {
   detailTabTriggerClassName,
 } from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { GpuObservationCard } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
@@ -50,14 +48,9 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import {
-  gpuAllocations,
-  nodeL1CacheByNode,
-  toGpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
+import { nodeL1CacheByNode } from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
-  productPeakTflops,
   TFLOPS_ANNOTATION,
 } from "@/foundation/lib/accelerator-tflops";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
@@ -162,7 +155,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     record?.metadata.name,
     !inactive && onBasicTab,
   );
-  const allocations = gpuAllocations(record ? [record] : []);
+  const gpuSamples = inactive ? [] : observations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -194,11 +187,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const cluster = clusterData?.data?.[0];
   const cacheStatus = zcacheStatus(cluster);
   const clusterType = cluster?.spec?.type;
-  const tflopsOverrides = parseTflops(
-    cluster?.metadata?.annotations?.[TFLOPS_ANNOTATION],
-  );
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
+  const showCacheSummary =
+    record?.spec.kv_cache != null ||
+    (systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
+      true &&
+      cluster?.spec.cache?.provider === "zcache");
 
   const {
     panels,
@@ -235,42 +230,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const replicaCount = record.spec.replicas?.num ?? 1;
   const shouldShowScheduler = replicaCount > 1;
-
-  // The card reads only this replica's samples, so it gets the same
-  // allocation identity the cluster view derives from the raw status.
-  const replicaAllocation = (device: EndpointReplicaResourceRow) => {
-    const replica = record.status?.resources?.replicas?.find(
-      (r) => r.instance_id === device.instanceId,
-    );
-    const raw = replica?.devices?.find(
-      (d) => d.uuid === device.uuid && d.vdevice_index === device.vdeviceIndex,
-    );
-    return replica && raw ? toGpuAllocation(record, replica, raw) : undefined;
-  };
-
-  const renderDeviceObservation = (
-    device: EndpointReplicaResourceRow,
-    deviceIndex: number,
-  ) => (
-    <GpuObservationCard
-      device={{
-        node: device.nodeId,
-        uuid: device.uuid,
-        index: device.order ?? deviceIndex + 1,
-        product: device.product,
-        peakFP16TFLOPS: productPeakTflops(
-          cluster?.status?.resource_info,
-          device.product,
-        ),
-        totalMiB: device.physicalMemoryMiB,
-        allocatedMiB: device.memoryMiB,
-      }}
-      tflopsOverrides={tflopsOverrides}
-      samples={observations.samples}
-      allocations={allocations}
-      replica={replicaAllocation(device)}
-    />
-  );
   const schedulerText =
     schedulerLabel(record.spec.deployment_options?.scheduler?.type, t) ??
     t("models.scheduler.unavailable");
@@ -424,10 +383,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {(systemInfo?.capabilities?.cluster_cache_providers?.includes(
-              "zcache",
-            ) ||
-              record.spec.kv_cache) && (
+            {showCacheSummary && (
               <EndpointKVCacheSummary endpoint={record} cluster={cluster} />
             )}
             <EndpointPerformanceCard
@@ -448,13 +404,18 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   <div className="space-y-6">
                     <ObservationStatus status={observations.status} />
                     <EndpointRuntimeResourcesCard
-                      renderMemory={renderDeviceObservation}
+                      endpointName={record.metadata.name}
+                      workspace={record.metadata.workspace ?? "default"}
+                      modelName={record.spec.model?.name ?? ""}
+                      samples={gpuSamples}
+                      observationStatus={observations.status}
+                      onObservationRetry={observations.refetch}
+                      tflopsOverrides={parseTflops(
+                        cluster?.metadata?.annotations?.[TFLOPS_ANNOTATION],
+                      )}
                       l1CacheByNode={
                         record.spec.kv_cache?.provider === "zcache"
-                          ? nodeL1CacheByNode(
-                              cacheStatus?.nodes,
-                              observations.samples,
-                            )
+                          ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
                           : undefined
                       }
                       resources={record.status?.resources}

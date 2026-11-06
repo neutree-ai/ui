@@ -123,7 +123,7 @@ export function EndpointPerformanceCard({
               <HitRate
                 label={t("endpoints.performance.l0HitRate")}
                 ratio={metrics.l0_hit_rate}
-                series="green"
+                series="teal"
                 testId="perf-l0-hit-rate"
               />
               <HitRate
@@ -249,7 +249,7 @@ function HitRate({
 }: {
   label: string;
   ratio?: number;
-  series: "green" | "blue";
+  series: "teal" | "blue";
   testId: string;
 }) {
   const measured = ratio != null;

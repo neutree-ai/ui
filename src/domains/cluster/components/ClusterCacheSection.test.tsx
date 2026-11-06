@@ -8,7 +8,6 @@ import { ClusterCacheSection } from "./ClusterCacheSection";
 const render = (ui: ReactNode) => renderUI(ui, { wrapper: MemoryRouter });
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
-vi.mock("./ZCacheEditor", () => ({ ZCacheEditor: () => null }));
 vi.mock("./CacheRetry", () => ({
   CacheRetry: () => <button type="button">Retry service</button>,
 }));
@@ -112,6 +111,28 @@ describe("ClusterCacheSection", () => {
       />,
     );
     screen.getByText("clusters.zcache.reconciling");
+  });
+
+  it("keeps cache configuration editing in the cluster edit page", () => {
+    render(
+      <ClusterCacheSection
+        cluster={makeCluster(
+          {},
+          {
+            phase: "Ready",
+            details: {
+              observed_at: "now",
+              ready_runtime_version: "v0.5.6-post.1",
+            },
+          },
+        )}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "clusters.zcache.edit" }),
+    ).toBeNull();
+    screen.getByRole("button", { name: "clusters.cacheUpgrade.title" });
   });
 
   it("shows pending enablement over an old Disabled observation", () => {

@@ -1,8 +1,5 @@
-import { useCan } from "@refinedev/core";
-import { Settings2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
@@ -12,15 +9,13 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import {
-  activeCacheChange,
   cacheMessage,
   operationLabel,
-  sameCacheConfig,
+  resolveZCacheState,
 } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
 import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
-import { ZCacheEditor } from "./ZCacheEditor";
 import { ZCacheUpgrade } from "./ZCacheUpgrade";
 
 export function ClusterCacheSection({
@@ -31,20 +26,11 @@ export function ClusterCacheSection({
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }) {
   const { systemInfo } = useSystemApi();
-  const [searchParams] = useSearchParams();
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const focusCache = searchParams.get("section") === "cache";
   const available =
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
     true;
-  useEffect(() => {
-    if (focusCache && available)
-      sectionRef.current?.scrollIntoView({ block: "start" });
-  }, [focusCache, available]);
   return available ? (
-    <div ref={sectionRef} id="cache" className="scroll-mt-4">
-      <ZCacheDetails cluster={cluster} l1CacheByNode={l1CacheByNode} />
-    </div>
+    <ZCacheDetails cluster={cluster} l1CacheByNode={l1CacheByNode} />
   ) : null;
 }
 
@@ -56,46 +42,26 @@ function ZCacheDetails({
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
 }) {
   const { t } = useTranslation();
-  const { data: access } = useCan({ resource: "clusters", action: "edit" });
-  const [editing, setEditing] = useState(false);
   const [history, setHistory] = useState(false);
   const status = zcacheStatus(cluster);
   const summary = cluster.status?.cache;
-  const availability = summary?.conditions?.find((c) => c.type === "Ready");
   const desired = zcacheSpec(cluster);
+  const state = resolveZCacheState({ desired, status, summary });
+  const { activeChange: busy, availability, phase, resultLabelKey } = state;
+  const { stale } = state;
   const nodes = status?.nodes ?? [];
   const targetNodes = desired?.enabled ? desired.target_nodes : [];
   const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
-  const matches = sameCacheConfig(desired, status?.current);
-  const basePhase = summary?.phase ?? "Disabled";
-  const phase =
-    (basePhase === "Ready" || basePhase === "Disabled") && !matches
-      ? "Reconciling"
-      : basePhase;
-  const stale = availability?.status === "Unknown" || !status?.observed_at;
-  const busy = activeCacheChange(status);
   const request = busy?.request;
   const cp = status?.control_plane;
-  const resultKey =
-    phase === "Failed"
-      ? "clusters.zcache.failed"
-      : phase === "Disabled"
-        ? "clusters.zcache.disabled"
-        : phase === "Ready"
-          ? "clusters.zcache.applied"
-          : phase === "Unavailable"
-            ? availability?.status === "False"
-              ? "clusters.zcache.unavailable"
-              : "clusters.zcache.unknown"
-            : "clusters.zcache.reconciling";
   return (
     <ShowPage.Section
       title={
         <span className="flex items-center gap-3">
           {t("clusters.cache.title")}
           <Badge variant={phase === "Failed" ? "destructive" : "secondary"}>
-            {t(resultKey)}
+            {t(resultLabelKey)}
           </Badge>
         </span>
       }
@@ -104,14 +70,6 @@ function ZCacheDetails({
           {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
             <CacheRetry cluster={cluster} />
           )}
-          <Button
-            size="sm"
-            disabled={access?.can !== true}
-            onClick={() => setEditing(true)}
-          >
-            <Settings2 className="mr-2 h-4 w-4" />
-            {t("clusters.zcache.edit")}
-          </Button>
         </div>
       }
     >
@@ -135,7 +93,7 @@ function ZCacheDetails({
           >
             <span>
               {t("clusters.zcache.failureHint")}
-              {availability?.status === "True" &&
+              {availability === "available" &&
                 ` · ${t("clusters.zcache.stillAvailable")}`}
             </span>
             <Button variant="ghost" size="sm" onClick={() => setHistory(true)}>
@@ -218,7 +176,7 @@ function ZCacheDetails({
                   return (
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
-                        <span className="break-all">{name}</span>
+                        <span className="whitespace-nowrap">{name}</span>
                         {node?.reason && node.runtime !== "Ready" && (
                           <details className="mt-1 text-xs text-muted-foreground">
                             <summary className="cursor-pointer">
@@ -281,9 +239,6 @@ function ZCacheDetails({
           </p>
         )}
       </div>
-      {editing && (
-        <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />
-      )}
       <ZCacheActivity
         summary={summary}
         status={status}

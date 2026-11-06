@@ -9,15 +9,17 @@ import {
 } from "@/components/ui/tooltip";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import {
+  CHART_MORE_COLOR,
+  CHART_SERIES_SEPARATOR,
+  chartCategoryMark,
+} from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
 
 // Per-key reference (id + display name) for attributing ranking entries.
 type RankingKeyRef = { id: string; name: string; description?: string | null };
-
-// Top-3 + "others" donut slice colors (blue / green / amber / muted-gray).
-const SLICE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#cbd5e1"];
 
 type Entry = { name: string; description?: string | null; value: number };
 
@@ -120,13 +122,21 @@ const RankingPanel = ({
                 nameKey="name"
                 innerRadius={22}
                 outerRadius={38}
-                stroke="none"
+                stroke={CHART_SERIES_SEPARATOR}
+                strokeWidth={1}
                 isAnimationActive={false}
               >
+                {/* The ranked contributors take the first categorical steps;
+                    the folded "others" slice takes the neutral More colour so
+                    it never competes with a real category. */}
                 {pie.map((_, i) => (
                   <Cell
                     key={i}
-                    fill={SLICE_COLORS[Math.min(i, SLICE_COLORS.length - 1)]}
+                    fill={
+                      i < top.length
+                        ? chartCategoryMark(i).color
+                        : CHART_MORE_COLOR
+                    }
                   />
                 ))}
               </Pie>

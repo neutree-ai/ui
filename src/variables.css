@@ -96,7 +96,9 @@
 		--nt-effect-menu-shadow-default:
 			0px 12px 40px 0px rgba(45, 58, 86, 0.3),
 			0px 0px 10px 0px rgba(107, 125, 153, 0.18);
-		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(29, 50, 108, 0.6);
+		--nt-effect-tooltip-shadow:
+			0px 4px 12px 0px rgba(29, 50, 108, 0.12),
+			0px 1px 3px 0px rgba(29, 50, 108, 0.08);
 		--nt-outline-hover: 0px 0px 0px 4px rgba(225, 230, 241, 0.6);
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(0, 136, 255, 0.16);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(255, 74, 74, 0.16);
@@ -113,16 +115,29 @@
 		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
 		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
 		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
-		/* Chart series. Steps from the product style guide chart palette.
-		   Categorical order is fixed and
-		   never cycled. Data series read from these; status tokens
-		   (positive/notice/serious) stay reserved for state, so a healthy metric is
-		   never painted in a warning colour. */
-		--nt-chart-series-1: #008cff;
-		--nt-chart-series-2: #1aacb4;
-		--nt-chart-series-3: #7e41ff;
-		--nt-chart-series-4: #00ba5d;
-		--nt-chart-series-5: #e58a00;
+		/* Chart categories. Six coordinated Paul Tol Vibrant main colours cover
+		   the normal categorical case. Gold and Violet are extension slots: their
+		   full eight-colour CVD separation is weaker, so chart marks add a
+		   texture and category lists keep a segment number or direct label.
+		   The categorical order is fixed and never cycled. Status tokens
+		   (positive/notice/serious) stay reserved for state.
+		   Cyan, Orange and Gold sit below 3:1 against the #f2f5fa card surface;
+		   thin marks therefore need the series separator or adjacent text.
+		   src/foundation/lib/chart-palette.test.ts checks contrast and CVD. */
+		--nt-chart-cat-1: #0077bb;
+		--nt-chart-cat-2: #ee7733;
+		--nt-chart-cat-3: #33bbee;
+		--nt-chart-cat-4: #cc3311;
+		--nt-chart-cat-5: #009988;
+		--nt-chart-cat-6: #ee3377;
+		--nt-chart-cat-7: #e3bf48;
+		--nt-chart-cat-8: #8e5aa9;
+		/* More is deliberately separate from the eight category slots: it is a
+		   solid neutral bucket, never a ninth hue and never a striped mark. */
+		--nt-chart-more: #8a8f98;
+		--nt-chart-more-foreground: #ffffff;
+		/* A single series may wear the product's primary. */
+		--nt-chart-brand: hsl(var(--primary));
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
@@ -290,22 +305,27 @@
 		--nt-effect-menu-shadow-default:
 			0px 18px 42px 0px rgba(0, 0, 0, 0.48),
 			0px 0px 0px 1px rgba(173, 192, 224, 0.12);
-		--nt-effect-tooltip-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.5);
+		--nt-effect-tooltip-shadow:
+			0px 4px 16px 0px rgba(0, 0, 0, 0.28), 0px 1px 3px 0px rgba(0, 0, 0, 0.18);
 		--nt-outline-hover: 0px 0px 0px 4px rgba(158, 179, 214, 0.14);
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
 		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(234, 162, 58, 0.18);
-		/* Chart series. Steps from the product style guide chart palette
-		   (chart-blue-blue-5, chart-cyan-cyan-5). Categorical order is fixed and
-		   never cycled. Data series read from these; status tokens
-		   (positive/notice/serious) stay reserved for state, so a healthy metric is
-		   never painted in a warning colour. Validated for CVD separation and
-		   contrast against the bar track in both themes. */
-		--nt-chart-series-1: #008cff;
-		--nt-chart-series-2: #1aacb4;
-		--nt-chart-series-3: #9b7cf2;
-		--nt-chart-series-4: #23bf72;
-		--nt-chart-series-5: #eaa23a;
+		/* Chart categories. The six main colours and two extension hues carry
+		   the same category identity in both themes; every fill clears 3:1
+		   against the #132033 card surface. Gold and Violet still keep their
+		   texture because the all-eight CVD separation is reduced. */
+		--nt-chart-cat-1: #0077bb;
+		--nt-chart-cat-2: #ee7733;
+		--nt-chart-cat-3: #33bbee;
+		--nt-chart-cat-4: #cc3311;
+		--nt-chart-cat-5: #009988;
+		--nt-chart-cat-6: #ee3377;
+		--nt-chart-cat-7: #e3bf48;
+		--nt-chart-cat-8: #8e5aa9;
+		--nt-chart-more: #d1d5db;
+		--nt-chart-more-foreground: #132033;
+		--nt-chart-brand: hsl(var(--primary));
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;

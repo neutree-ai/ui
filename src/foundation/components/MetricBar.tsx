@@ -8,10 +8,13 @@ import { cn } from "@/foundation/lib/utils";
 
 export type MetricBarSeries =
   | "blue"
+  | "orange"
   | "cyan"
-  | "purple"
-  | "green"
-  | "amber"
+  | "red"
+  | "teal"
+  | "magenta"
+  | "gold"
+  | "violet"
   | "neutral";
 
 type MetricBarProps = Omit<
@@ -36,6 +39,12 @@ const shapeClasses = {
   square: "rounded-none [&>div]:rounded-none",
 } as const;
 
+// Adjacent segments are separated by the surface colour, not outlined: a ring
+// around every block turns a meter into stacked boxes, and on a 6px bar the ring
+// eats most of the fill. The inset shadow draws the gap without changing the box.
+const SEGMENT_GAP =
+  "[&>div+div]:[box-shadow:inset_1px_0_0_var(--nt-fill-neutral-white)]";
+
 /** Fill for a mark that carries a series colour without being a bar — the
  * per-card segments of a discrete meter, a legend swatch. Kept beside the bar's
  * own map so a series never means two different colours across a page.
@@ -44,23 +53,27 @@ const shapeClasses = {
  * class names, so deriving one from the other with a `[&>div]:` prefix would
  * leave every variant unbuilt. */
 export const METRIC_BAR_SERIES_FILL_CLASSES: Record<MetricBarSeries, string> = {
-  blue: "bg-[var(--nt-chart-series-1)]",
-  cyan: "bg-[var(--nt-chart-series-2)]",
-  purple: "bg-[var(--nt-chart-series-3)]",
-  green: "bg-[var(--nt-chart-series-4)]",
-  amber: "bg-[var(--nt-chart-series-5)]",
-  neutral:
-    "bg-[var(--nt-fill-neutral-trans-7)] dark:bg-[var(--nt-fill-neutral-trans-5)]",
+  blue: `bg-[var(--nt-chart-cat-1)]`,
+  orange: `bg-[var(--nt-chart-cat-2)]`,
+  cyan: `bg-[var(--nt-chart-cat-3)]`,
+  red: `bg-[var(--nt-chart-cat-4)]`,
+  teal: `bg-[var(--nt-chart-cat-5)]`,
+  magenta: `bg-[var(--nt-chart-cat-6)]`,
+  gold: `bg-[var(--nt-chart-cat-7)]`,
+  violet: `bg-[var(--nt-chart-cat-8)]`,
+  neutral: `bg-[var(--nt-chart-more)]`,
 };
 
 const seriesClasses: Record<MetricBarSeries, string> = {
-  blue: "[&>div]:bg-[var(--nt-chart-series-1)]",
-  cyan: "[&>div]:bg-[var(--nt-chart-series-2)]",
-  purple: "[&>div]:bg-[var(--nt-chart-series-3)]",
-  green: "[&>div]:bg-[var(--nt-chart-series-4)]",
-  amber: "[&>div]:bg-[var(--nt-chart-series-5)]",
-  neutral:
-    "[&>div]:bg-[var(--nt-fill-neutral-trans-7)] dark:[&>div]:bg-[var(--nt-fill-neutral-trans-5)]",
+  blue: `[&>div]:bg-[var(--nt-chart-cat-1)] ${SEGMENT_GAP}`,
+  orange: `[&>div]:bg-[var(--nt-chart-cat-2)] ${SEGMENT_GAP}`,
+  cyan: `[&>div]:bg-[var(--nt-chart-cat-3)] ${SEGMENT_GAP}`,
+  red: `[&>div]:bg-[var(--nt-chart-cat-4)] ${SEGMENT_GAP}`,
+  teal: `[&>div]:bg-[var(--nt-chart-cat-5)] ${SEGMENT_GAP}`,
+  magenta: `[&>div]:bg-[var(--nt-chart-cat-6)] ${SEGMENT_GAP}`,
+  gold: `[&>div]:bg-[var(--nt-chart-cat-7)] ${SEGMENT_GAP}`,
+  violet: `[&>div]:bg-[var(--nt-chart-cat-8)] ${SEGMENT_GAP}`,
+  neutral: `[&>div]:bg-[var(--nt-chart-more)] ${SEGMENT_GAP}`,
 };
 
 const trackClasses = {

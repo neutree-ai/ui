@@ -1,33 +1,34 @@
-import { ArrowUpRight } from "lucide-react";
-import { type ReactNode, useState } from "react";
-import { Link } from "react-router";
+import { useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { GpuAllocationBar } from "@/foundation/components/GpuAllocationBar";
+import { GpuDetailsSheet } from "@/foundation/components/GpuDetailsSheet";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
+  CopyUuidButton,
+  DeviceHealth,
+  DeviceProduct,
+  formatUtilization,
+  GiB,
+  GiBValue,
+  GPU_BAR_TRACK_CLASS,
+  OTHER_MASK,
+  SEGMENT_DIVIDER,
+} from "@/foundation/components/GpuObservationParts";
+import { MetricBar } from "@/foundation/components/MetricBar";
 import {
   type AcceleratorSample,
-  allocationColor,
-  allocationUsedMiB,
-  deviceHardwareInfo,
+  allocationComposition,
+  deviceReadings,
   type GpuAllocation,
-  hasAllocationReading,
   type ObservedGpu,
-  reading,
+  percentOf,
 } from "@/foundation/lib/accelerator-observations";
-import { peakTflops } from "@/foundation/lib/accelerator-tflops";
+import { CHART_STRIPES_BACKGROUND } from "@/foundation/lib/chart-palette";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatMiBAsGiB } from "@/foundation/lib/unit";
-import { MetricBar } from "./MetricBar";
+import { cn } from "@/foundation/lib/utils";
+
+type GpuObservationVariant = "inventory" | "allocation";
+export type GpuObservationDisplay = "table" | "cards";
 
 type Props = {
   device: ObservedGpu;
@@ -35,469 +36,87 @@ type Props = {
   allocations: GpuAllocation[];
   replica?: GpuAllocation;
   tflopsOverrides?: Record<string, number>;
-  detailsTrigger?: ReactNode;
+  variant?: GpuObservationVariant;
+  display?: GpuObservationDisplay;
+  showProduct?: boolean;
+  /** observationStatus() value for the samples this card renders. */
+  observationStatus?: string;
+  /** Refetch for the samples; when absent no Retry affordance is offered. */
+  onRetry?: () => void;
 };
-const gib = (mib: number | null | undefined) => formatMiBAsGiB(mib) ?? "—";
-const allocationKey = (a: GpuAllocation, index: number) =>
-  `${a.endpoint}:${a.replica}:${a.instance}:${a.vdevice ?? index}`;
-const endpointHref = (a: GpuAllocation) =>
-  `/${encodeURIComponent(a.workspace)}/endpoints/show/${encodeURIComponent(a.endpoint)}`;
-const ratio = (
-  value: number | null | undefined,
-  total: number | null | undefined,
-) =>
-  value == null || !total
-    ? 0
-    : Math.max(0, Math.min(100, (value / total) * 100));
 
-export function GpuObservationCard({
-  device,
-  samples,
-  allocations,
-  replica,
-  tflopsOverrides = {},
-  detailsTrigger,
-}: Props) {
+const INVENTORY_GRID =
+  "grid min-w-[784px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(190px,1.3fr)] items-center gap-3 px-4";
+const ALLOCATION_GRID =
+  "grid min-w-[644px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px] items-center gap-3 px-4";
+
+export function GpuObservationTableHeader({
+  variant = "allocation",
+}: {
+  variant?: GpuObservationVariant;
+}) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const get = (name: string) =>
-    reading(
-      samples,
-      name,
-      device.node,
-      device.uuid,
-      name.startsWith("neutree_endpoint_") ? replica : undefined,
-    );
-  const used = get(
-    replica
-      ? "neutree_endpoint_replica_accelerator_memory_used_bytes"
-      : "neutree_accelerator_memory_used_bytes",
-  );
-  const utilization = get(
-    replica
-      ? "neutree_endpoint_replica_accelerator_utilization_ratio"
-      : "neutree_accelerator_utilization_ratio",
-  );
-  const nominalTflops = peakTflops(
-    device.product,
-    tflopsOverrides,
-    device.peakFP16TFLOPS,
-  );
-  const physical = get("neutree_accelerator_memory_total_bytes");
-  const total = physical ? physical.value / 1024 ** 2 : device.totalMiB;
-  const actual = used ? used.value / 1024 ** 2 : null;
-  const temperature = get("neutree_accelerator_temperature_celsius");
-  const power = get("neutree_accelerator_power_usage_watts");
-  const hardware = deviceHardwareInfo(samples, device.node, device.uuid);
-  const assigned = allocations.filter(
-    (a) => a.node === device.node && a.uuid === device.uuid,
-  );
-  // Both values come from the engine's startup log. The L0 KV-Cache is the
-  // pool vLLM pre-allocates at startup; its live usage ratio only counts
-  // in-flight requests, so it is deliberately not used as a fallback here.
-  const composition = (a: GpuAllocation) =>
-    `${t("observations.modelWeights")} ${gib(a.modelWeightsMiB)} · ${t("observations.l0KvCache")} ${gib(a.kvCacheCapacityMiB)}`;
-  const hasComposition = (a?: GpuAllocation) =>
-    a?.modelWeightsMiB != null && a.kvCacheCapacityMiB != null;
-  const activeAllocation =
-    replica ?? (assigned.length === 1 ? assigned[0] : undefined);
-  const multiBar =
-    assigned.length > 0 &&
-    !replica &&
-    (assigned.length === 1 ||
-      assigned.some((a) => hasAllocationReading(samples, a)));
-  const usedByAllocation = new Map(
-    assigned.map((a) => [
-      a,
-      allocationUsedMiB(samples, a, assigned.length, actual),
-    ]),
-  );
-  const assignedUsedMiB = (a: GpuAllocation) => usedByAllocation.get(a) ?? null;
-  // Segments are only drawn on top of a real measurement, never on their own.
-  const firstComposedIndex = multiBar
-    ? assigned.findIndex((a) => hasComposition(a) && assignedUsedMiB(a) != null)
-    : -1;
-  const showLegend = multiBar
-    ? firstComposedIndex >= 0
-    : actual != null && hasComposition(activeAllocation);
-  const legendColor =
-    firstComposedIndex >= 0
-      ? allocationColor(
-          assigned[firstComposedIndex].endpoint,
-          firstComposedIndex,
-        )
-      : "var(--nt-chart-series-1)";
-  const label = (value?: string) =>
-    !value || value === "unknown" || value === "-1" ? "—" : value;
-  const utilizationText = utilization
-    ? `${(utilization.value * 100).toFixed(0)}%`
-    : "—";
-  const hardwareFields = [
-    ...(get("neutree_node_accelerator_nvidia_info")
+  const labels =
+    variant === "inventory"
       ? [
-          "architecture",
-          "cuda_capability",
-          "cuda_driver_version",
-          "nvlink",
-          "nvswitch",
+          t("clusters.fields.gpuNumber"),
+          t("clusters.fields.health"),
+          t("observations.vramAllocation"),
+          t("observations.utilization"),
         ]
-      : []),
-    ...extraHardwareFields
-      .filter((field) => hardware[field.key] != null)
-      .map((field) => field.key),
-    "driver_version",
-    "pcie_bus_id",
-    "pcie_generation",
-    "pcie_width",
-    "numa_node",
-  ];
-  const hardwareLabel = (key: string) => {
-    const value = hardware[key];
-    const extraField = extraHardwareFields.find((field) => field.key === key);
-    if (extraField?.values)
-      return extraField.values[value] ? t(extraField.values[value]) : "—";
-    if (["nvlink", "nvswitch"].includes(key)) {
-      return value === "1"
-        ? t("observations.present")
-        : value === "0"
-          ? t("observations.absent")
-          : "—";
-    }
-    return label(value);
-  };
-  const memory = (
-    <div className="space-y-2">
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">
-          {t("observations.actualMemory")}
-        </span>
-        <strong className="tabular-nums">{gib(actual)}</strong>
-      </div>
-      <div
-        className="relative h-2.5 overflow-hidden rounded-full bg-muted"
-        role="group"
-        aria-label={`${t("observations.actual")}: ${gib(actual)}, ${t("observations.allocated")}: ${gib(device.allocatedMiB)}, ${t("observations.physical")}: ${gib(total)}`}
-      >
-        {multiBar ? (
-          <div className="flex h-full">
-            {assigned.map((a, index) => {
-              const fallbackMiB = assignedUsedMiB(a);
-              const segmentWidth =
-                a.memoryMiB > 0
-                  ? ratio(a.memoryMiB, total)
-                  : 100 / assigned.length;
-              const denom = a.memoryMiB || total;
-              const measuredPct = ratio(fallbackMiB, denom);
-              const color = allocationColor(a.endpoint, index);
-              return (
-                <Tooltip key={allocationKey(a, index)}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      className="relative block h-full shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                      to={endpointHref(a)}
-                      aria-label={`${a.endpoint}: ${t("observations.actual")} ${gib(fallbackMiB)}, ${t("observations.allocated")} ${gib(a.memoryMiB)}`}
-                      style={{ width: `${segmentWidth}%` }}
-                    >
-                      <span
-                        className="absolute inset-0 opacity-30"
-                        style={{ backgroundColor: color }}
-                      />
-                      {fallbackMiB != null && (
-                        <span
-                          className="absolute inset-y-0 left-0"
-                          style={{
-                            backgroundColor: color,
-                            width: `${measuredPct}%`,
-                          }}
-                        />
-                      )}
-                      {fallbackMiB != null && hasComposition(a) && (
-                        <CompositionSegments
-                          measuredPct={measuredPct}
-                          weightsPct={ratio(a.modelWeightsMiB, denom)}
-                          kvPct={ratio(a.kvCacheCapacityMiB, denom)}
-                        />
-                      )}
-                      {fallbackMiB == null && (
-                        <span className="absolute inset-0 border border-dashed border-[var(--nt-stroke-neutral-trans-3)]" />
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{a.endpoint} ↗</p>
-                    <p>{a.model}</p>
-                    <p>
-                      {t("observations.actual")} {gib(fallbackMiB)} /{" "}
-                      {t("observations.allocated")} {gib(a.memoryMiB)}
-                    </p>
-                    <p>
-                      {t("observations.modelWeights")} {gib(a.modelWeightsMiB)}
-                    </p>
-                    <p>
-                      {t("observations.l0KvCache")} {gib(a.kvCacheCapacityMiB)}
-                    </p>
-                    {fallbackMiB != null && fallbackMiB > a.memoryMiB && (
-                      <p>{t("observations.overAllocation")}</p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-        ) : (
-          <>
-            <div
-              className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30"
-              style={{ width: `${ratio(device.allocatedMiB, total)}%` }}
-            />
-            {actual != null && (
-              <div
-                className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]"
-                style={{ width: `${ratio(actual, total)}%` }}
-              />
-            )}
-            {actual != null &&
-              activeAllocation &&
-              hasComposition(activeAllocation) && (
-                <CompositionSegments
-                  measuredPct={ratio(actual, total)}
-                  weightsPct={ratio(activeAllocation.modelWeightsMiB, total)}
-                  kvPct={ratio(activeAllocation.kvCacheCapacityMiB, total)}
-                />
-              )}
-          </>
-        )}
-      </div>
-      <div className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground">
-        <span>
-          {t("observations.allocated")} {gib(device.allocatedMiB)}
-        </span>
-        <span>
-          {t("observations.physical")} {gib(total)}
-        </span>
-      </div>
-      {showLegend && <CompositionLegend color={legendColor} />}
-      {replica && (
-        <div
-          className="text-xs text-muted-foreground"
-          data-testid="gpu-kv-weights-breakdown"
-        >
-          {composition(replica)}
-        </div>
-      )}
-      {!replica && assigned.length > 0 && (
-        <div
-          className="space-y-1 text-xs text-muted-foreground"
-          data-testid="gpu-kv-weights-breakdown"
-        >
-          {assigned.map((a, index) => {
-            const duplicateEndpoint =
-              assigned.filter((item) => item.endpoint === a.endpoint).length >
-              1;
-            const instanceLabel =
-              duplicateEndpoint && (a.replica || a.instance)
-                ? `${a.endpoint} (${a.replica || a.instance})`
-                : a.endpoint;
-            return (
-              <div
-                key={allocationKey(a, index)}
-                className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
-              >
-                <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                  <span
-                    className="inline-block h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"
-                    style={
-                      multiBar
-                        ? {
-                            backgroundColor: allocationColor(a.endpoint, index),
-                          }
-                        : undefined
-                    }
-                  />
-                  <span className="break-all">{instanceLabel}</span>
-                </span>{" "}
-                <span>{composition(a)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {actual == null && (
-        <p className="text-xs text-muted-foreground">
-          {t("observations.noMeasurement")}
-        </p>
-      )}
-    </div>
-  );
+      : [
+          t("observations.deviceAndHealth"),
+          t("observations.vramInUse"),
+          t("observations.utilization"),
+          t("observations.computeShare"),
+        ];
+
   return (
-    <div className="mt-2 space-y-2" data-testid="gpu-observation-card">
-      {!detailsTrigger && (
-        <>
-          {memory}
-          <div className="flex flex-wrap justify-between gap-2 text-xs">
-            <span className="text-muted-foreground">
-              {t("observations.utilization")}
-            </span>
-            <span className="tabular-nums">{utilizationText}</span>
-          </div>
-          <MetricBar
-            size="sm"
-            series="green"
-            value={utilization ? utilization.value * 100 : null}
-            track={utilization ? "subtle" : "unavailable"}
-          />
-        </>
+    <div
+      className={cn(
+        variant === "inventory" ? INVENTORY_GRID : ALLOCATION_GRID,
+        "border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-trans-2)] py-2 text-[11px] font-medium uppercase leading-4 tracking-wide text-muted-foreground",
       )}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="flex items-center gap-1 text-xs text-primary hover:underline"
-          onClick={() => setOpen(true)}
+    >
+      {labels.map((label, index) => (
+        <span
+          // The final column is an unlabeled action column.
+          key={`${label}:${index}`}
+          className="min-w-0 truncate"
         >
-          {detailsTrigger ?? (
-            <>
-              {t("observations.details")}{" "}
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </>
-          )}
-        </button>
-      </div>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-          <SheetHeader>
-            <SheetTitle>
-              GPU {device.index} · {device.product}
-            </SheetTitle>
-            <SheetDescription className="break-all">
-              {device.node}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-6">
-            <div>
-              <p className="mb-2 text-xs text-muted-foreground">UUID</p>
-              <p className="select-all break-all font-mono text-xs">
-                {device.uuid}
-              </p>
-            </div>
-            <section className="space-y-3">
-              <h3 className="font-medium">
-                {t(
-                  replica
-                    ? "observations.replicaUsage"
-                    : "observations.deviceUsage",
-                )}
-              </h3>
-              {memory}
-              <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.utilization")}
-                  </p>
-                  {utilizationText}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.deviceTemperature")}
-                  </p>
-                  {temperature ? `${temperature.value.toFixed(0)} °C` : "—"}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.devicePower")}
-                  </p>
-                  {power ? `${power.value.toFixed(0)} W` : "—"}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {t("observations.fp16")}
-                  </p>
-                  <span className="tabular-nums">
-                    {nominalTflops != null && utilization
-                      ? (nominalTflops * utilization.value).toFixed(1)
-                      : "—"}{" "}
-                    / {nominalTflops?.toFixed(1) ?? "—"} TFLOPS
-                  </span>
-                </div>
-              </div>
-              {used && (
-                <p className="text-xs text-muted-foreground">
-                  {t("observations.sampleTime")}{" "}
-                  {new Date(used.observed_at * 1000).toLocaleTimeString()}
-                </p>
-              )}
-            </section>
-            <section>
-              <h3 className="mb-3 font-medium">{t("observations.hardware")}</h3>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                {hardwareFields.map((key) => (
-                  <div key={key}>
-                    <dt className="text-xs text-muted-foreground">
-                      {t(
-                        extraHardwareFields.find((field) => field.key === key)
-                          ?.label ?? `observations.hardwareFields.${key}`,
-                      )}
-                    </dt>
-                    <dd className="break-all">{hardwareLabel(key)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-            <section>
-              <h3 className="mb-3 font-medium">
-                {t("observations.assignments")}
-              </h3>
-              <div className="space-y-3">
-                {assigned.map((a, index) => {
-                  return (
-                    <div
-                      key={allocationKey(a, index)}
-                      className="rounded-md border p-3 text-sm"
-                    >
-                      <Link
-                        className="font-medium text-primary hover:underline"
-                        to={endpointHref(a)}
-                      >
-                        {a.endpoint}
-                      </Link>
-                      <p className="break-all text-xs text-muted-foreground">
-                        {a.model}
-                      </p>
-                      <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                        {a.replica || a.instance}
-                      </p>
-                      <p className="mt-2 text-xs">
-                        {t("observations.actual")} {gib(assignedUsedMiB(a))} ·{" "}
-                        {t("observations.allocated")} {gib(a.memoryMiB)}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {composition(a)}
-                      </p>
-                    </div>
-                  );
-                })}
-                {assigned.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {t("observations.noAssignments")}
-                  </p>
-                )}
-              </div>
-            </section>
-          </div>
-        </SheetContent>
-      </Sheet>
+          {label}
+        </span>
+      ))}
     </div>
   );
 }
 
-// Theme-aware overlays on top of the solid measured bar:
-// 1. Model weights: 100% solid instance color
-// 2. L0 KV-Cache: diagonal stripes in theme background color
-// 3. Other measured memory: 45% theme background wash (55% instance color),
-//    visibly lighter than weights and darker than the 30% allocated-unused track
-const KV_STRIPES =
-  "repeating-linear-gradient(135deg, hsl(var(--background) / 0.65) 0 2px, transparent 2px 4px)";
-const OTHER_MASK = "hsl(var(--background) / 0.45)";
-const SEGMENT_DIVIDER = "hsl(var(--background) / 0.9)";
+function DeviceIdentity({
+  device,
+  showHealth = true,
+  showProduct = true,
+}: {
+  device: ObservedGpu;
+  showHealth?: boolean;
+  showProduct?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="whitespace-nowrap text-sm font-semibold leading-5">
+          {t("clusters.fields.gpuNumber")} {device.index}
+        </span>
+        <CopyUuidButton device={device} />
+        {showHealth && device.healthy != null && (
+          <DeviceHealth device={device} className="shrink-0" />
+        )}
+      </div>
+      {showProduct && <DeviceProduct device={device} />}
+    </div>
+  );
+}
 
 function CompositionSegments({
   measuredPct,
@@ -508,8 +127,6 @@ function CompositionSegments({
   weightsPct: number;
   kvPct: number;
 }) {
-  // Never draw past the measured usage: the composition explains the
-  // measurement, it does not replace it.
   const weights = Math.min(weightsPct, measuredPct);
   const kv = Math.min(kvPct, measuredPct - weights);
   const other = Math.max(0, measuredPct - weights - kv);
@@ -517,7 +134,6 @@ function CompositionSegments({
     <>
       {weights > 0 && (
         <div
-          data-testid="gpu-bar-weights-segment"
           className="pointer-events-none absolute inset-y-0 left-0 border-r"
           style={{
             width: `${weights}%`,
@@ -527,19 +143,17 @@ function CompositionSegments({
       )}
       {kv > 0 && (
         <div
-          data-testid="gpu-bar-kv-segment"
           className="pointer-events-none absolute inset-y-0 border-r"
           style={{
             left: `${weights}%`,
             width: `${kv}%`,
-            backgroundImage: KV_STRIPES,
+            backgroundImage: CHART_STRIPES_BACKGROUND,
             borderRightColor: SEGMENT_DIVIDER,
           }}
         />
       )}
       {other > 0 && (
         <div
-          data-testid="gpu-bar-other-segment"
           className="pointer-events-none absolute inset-y-0 border-r"
           style={{
             left: `${weights + kv}%`,
@@ -553,38 +167,288 @@ function CompositionSegments({
   );
 }
 
-function CompositionLegend({ color }: { color: string }) {
+function AllocationVram({
+  device,
+  replica,
+  actual,
+  total,
+}: {
+  device: ObservedGpu;
+  replica?: GpuAllocation;
+  actual: number | null;
+  total: number | null;
+}) {
   const { t } = useTranslation();
-  const swatch = "inline-block h-2 w-3 shrink-0 rounded-sm";
-  const items = [
-    { key: "modelWeights", style: { backgroundColor: color } },
-    {
-      key: "l0KvCache",
-      style: { backgroundColor: color, backgroundImage: KV_STRIPES },
-    },
-    {
-      key: "otherMemory",
-      style: {
-        backgroundColor: color,
-        boxShadow: `inset 0 0 0 999px ${OTHER_MASK}`,
-      },
-    },
-    {
-      key: "allocatedUnused",
-      style: { backgroundColor: color, opacity: 0.3 },
-    },
-  ];
+  const reserved = device.allocatedMiB;
+  const hasComposition =
+    replica?.modelWeightsMiB != null && replica.kvCacheCapacityMiB != null;
+  const share = allocationComposition(
+    { memoryMiB: reserved ?? 0 },
+    actual,
+  ).actualPct;
+  const unused =
+    actual != null && reserved != null ? Math.max(0, reserved - actual) : null;
+
+  return (
+    <div className="min-w-0 space-y-1.5">
+      {/* One bar, one set of numbers: the composition is drawn inside the same
+          measured bar it belongs to, instead of a second chart beside it. */}
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span className="whitespace-nowrap font-semibold tabular-nums text-foreground">
+          <GiBValue mib={actual} />
+          <span className="font-normal text-muted-foreground">
+            {" "}
+            / <GiBValue mib={reserved} /> GiB
+          </span>
+        </span>
+        <span className="shrink-0 truncate text-[11px] text-muted-foreground">
+          {share != null
+            ? t("observations.actualOfReserved", {
+                percent: Math.round(share),
+              })
+            : t("observations.noMeasurement")}
+        </span>
+      </div>
+      <div className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}>
+        <div className="absolute inset-0 overflow-hidden rounded-full">
+          <div
+            className="absolute inset-y-0 left-0 bg-[var(--nt-chart-cat-1)] opacity-30"
+            style={{ width: `${percentOf(reserved, total)}%` }}
+          />
+          {actual != null && (
+            <div
+              className="absolute inset-y-0 left-0 bg-[var(--nt-chart-cat-1)]"
+              style={{ width: `${percentOf(actual, total)}%` }}
+            />
+          )}
+          {actual != null && replica && hasComposition && (
+            <CompositionSegments
+              measuredPct={percentOf(actual, total)}
+              weightsPct={percentOf(replica.modelWeightsMiB, total)}
+              kvPct={percentOf(replica.kvCacheCapacityMiB, total)}
+            />
+          )}
+        </div>
+      </div>
+      {hasComposition && (
+        <p className="break-words text-[11px] leading-4 text-muted-foreground">
+          {t("observations.modelWeights")} <GiB mib={replica.modelWeightsMiB} />{" "}
+          · {t("observations.l0KvCache")}{" "}
+          <GiB mib={replica.kvCacheCapacityMiB} />
+          {unused != null && (
+            <>
+              {" · "}
+              {t("observations.allocatedUnused")} <GiB mib={unused} />
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Utilization({
+  reading,
+  inline = false,
+}: {
+  reading?: AcceleratorSample;
+  inline?: boolean;
+}) {
+  const { t } = useTranslation();
   return (
     <div
-      className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground"
-      data-testid="gpu-bar-legend"
+      className={cn(
+        "min-w-0",
+        inline ? "flex items-center gap-2" : "space-y-1",
+      )}
     >
-      {items.map((item) => (
-        <span key={item.key} className="inline-flex items-center gap-1">
-          <i className={swatch} style={item.style} />
-          {t(`observations.${item.key}`)}
-        </span>
-      ))}
+      <div className="shrink-0 text-xs font-semibold tabular-nums">
+        {reading ? formatUtilization(reading.value) : <EmptyValue />}
+      </div>
+      <MetricBar
+        size="sm"
+        series="teal"
+        value={reading ? reading.value * 100 : null}
+        track={reading ? "outlined" : "unavailable"}
+        aria-label={t("observations.utilization")}
+        className={inline ? "min-w-16 flex-1" : undefined}
+      />
     </div>
+  );
+}
+
+export function GpuObservationCard({
+  device,
+  samples,
+  allocations,
+  replica,
+  tflopsOverrides = {},
+  variant = "allocation",
+  display = "table",
+  showProduct = true,
+  observationStatus,
+  onRetry,
+}: Props) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const readings = deviceReadings(device, samples, replica);
+  const assigned = allocations.filter(
+    (allocation) =>
+      allocation.node === device.node && allocation.uuid === device.uuid,
+  );
+  const allocationBar = (
+    <GpuAllocationBar
+      device={device}
+      assigned={assigned}
+      samples={samples}
+      cardUsedMiB={readings.actual}
+      total={readings.total}
+    />
+  );
+  const reservedOfTotal = (
+    <>
+      <GiBValue mib={device.allocatedMiB} />
+      <span className="font-normal text-muted-foreground">
+        {" "}
+        / <GiBValue mib={readings.total} /> GiB
+      </span>
+    </>
+  );
+  const sheet = (
+    <GpuDetailsSheet
+      open={open}
+      onOpenChange={setOpen}
+      device={device}
+      samples={samples}
+      assigned={assigned}
+      replica={replica}
+      tflopsOverrides={tflopsOverrides}
+      observationStatus={observationStatus}
+      onRetry={onRetry}
+    />
+  );
+  const detailsButton = (className: string) => (
+    <button
+      type="button"
+      aria-label={t("observations.detailsForGpu", { index: device.index })}
+      className={cn(
+        "pointer-events-none absolute inset-0 outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--nt-stroke-outstanding-base)]",
+        className,
+      )}
+      onClick={() => setOpen(true)}
+    />
+  );
+
+  if (variant === "inventory" && display === "cards") {
+    return (
+      <TooltipProvider delayDuration={120} skipDelayDuration={200}>
+        <article
+          role="listitem"
+          data-testid="gpu-inventory-card"
+          className={cn(
+            "relative min-w-0 cursor-pointer rounded-md border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] p-3 transition-colors hover:border-[var(--nt-stroke-outstanding-light)] hover:bg-[var(--nt-fill-outstanding-thin)]",
+            device.healthy === false &&
+              "bg-[var(--nt-fill-neutral-trans-3)] text-[var(--nt-text-neutral-tertiary)]",
+          )}
+          onClick={() => setOpen(true)}
+        >
+          {detailsButton("rounded-[inherit]")}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-1">
+                <span className="min-w-0 truncate text-sm font-semibold leading-5 text-foreground">
+                  {t("clusters.fields.gpuNumber")} {device.index}
+                </span>
+                <CopyUuidButton device={device} />
+              </div>
+              {showProduct && <DeviceProduct device={device} />}
+            </div>
+            <DeviceHealth device={device} />
+          </div>
+          <div className="mt-3 space-y-2.5">
+            <div>
+              <div className="mb-1 flex items-center justify-between gap-3 text-[11px] leading-4">
+                <span className="text-muted-foreground">
+                  {t("observations.vramAllocation")}
+                </span>
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
+                  {reservedOfTotal}
+                </span>
+              </div>
+              {allocationBar}
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between gap-3 text-[11px] leading-4">
+                <span className="text-muted-foreground">
+                  {t("observations.utilization")}
+                </span>
+                <Utilization reading={readings.utilization} inline />
+              </div>
+            </div>
+          </div>
+        </article>
+        {sheet}
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <TooltipProvider delayDuration={120} skipDelayDuration={200}>
+      <div
+        data-testid={
+          variant === "inventory" ? "gpu-inventory-row" : "gpu-allocation-row"
+        }
+        className={cn(
+          variant === "inventory" ? INVENTORY_GRID : ALLOCATION_GRID,
+          "relative cursor-pointer border-b border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] py-1.5 transition-colors last:border-b-0 hover:bg-[var(--nt-fill-neutral-trans-2)]",
+          device.healthy === false &&
+            "bg-[var(--nt-fill-neutral-trans-3)] text-[var(--nt-text-neutral-tertiary)]",
+        )}
+        onClick={() => setOpen(true)}
+      >
+        {detailsButton("")}
+        <DeviceIdentity
+          device={device}
+          showHealth={variant !== "inventory"}
+          showProduct={variant !== "inventory" || showProduct}
+        />
+
+        {variant === "inventory" ? (
+          <>
+            <DeviceHealth device={device} />
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0 flex-1">{allocationBar}</div>
+              <span className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums text-foreground">
+                {reservedOfTotal}
+              </span>
+            </div>
+            <Utilization reading={readings.utilization} inline />
+          </>
+        ) : (
+          <>
+            <AllocationVram
+              device={device}
+              replica={replica}
+              actual={readings.actual}
+              total={readings.total}
+            />
+            <Utilization reading={readings.utilization} />
+            <div className="min-w-0 text-xs">
+              <div className="font-semibold tabular-nums">
+                {device.coreUnits != null ? (
+                  `${device.coreUnits}%`
+                ) : (
+                  <EmptyValue />
+                )}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {t("observations.computeShareLower")}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      {sheet}
+    </TooltipProvider>
   );
 }

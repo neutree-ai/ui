@@ -133,7 +133,7 @@ All in `src/foundation/testing/`.
 | `pickOption(trigger, option)` | Pick an option from the Radix Select opened by `trigger`, for a select found by role or label (e.g. one of several rows) rather than a `field-<name>` testid. |
 | `fillField(fieldName, value)` | Type into the input inside `data-testid="field-<fieldName>"` and blur it. |
 | `openMenu(trigger)` | Open a Radix DropdownMenu or Select. They open on pointer down; a plain `click` leaves them closed and later assertions pass vacuously. |
-| `resource-builders.ts` | `makeGpuDevice`, `makeNodeResources`, `makeResourceInfo`, `vgpuProduct`, `FULL_T4` — node and GPU resource shapes for capacity and placement tests. |
+| `resource-builders.ts` | `makeGpuDevice`, `makeNodeResources`, `makeResourceInfo`, `vgpuProduct`, `FULL_T4` — node and GPU resource shapes for capacity and placement tests; `makeAcceleratorSample` — one GPU observation sample. |
 | `isHidden(element)` | Whether an element is hidden from the user (`hidden` attribute or Tailwind `hidden` class on it or an ancestor). The one sanctioned way to check visibility toggled by a class. |
 
 ## Testing Patterns
