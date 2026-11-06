@@ -2946,8 +2946,6 @@
 		"replicaLabel": "Replica",
 		"instanceLabel": "Instance",
 		"vgpuLabel": "vGPU",
-		"fullCard": "Full card",
-		"dedicatedCard": "Dedicated card",
 		"openEndpoint": "Open {{endpoint}} endpoint",
 		"replicaCountLabel": "{{count}} replicas",
 		"usedShare": "{{percent}}% used",
