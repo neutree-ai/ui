@@ -42,6 +42,12 @@ export const KV_CACHE_PRECISIONS = [
 
 export type KvCachePrecisionId = (typeof KV_CACHE_PRECISIONS)[number]["id"];
 
+/** Bytes per element of a precision; null for none picked. */
+export const precisionBytes = (
+  id: KvCachePrecisionId | "" | null | undefined,
+): number | null =>
+  KV_CACHE_PRECISIONS.find((precision) => precision.id === id)?.bytes ?? null;
+
 /** GB here is 1024³ bytes, matching how the rest of the UI reports memory. */
 export const BYTES_PER_GB = 1024 ** 3;
 
@@ -112,7 +118,9 @@ export function defaultRecurrentStatePrecisionId(
   return precisionIdForDtype(info?.recurrent_state_dtype);
 }
 
-function precisionIdForDtype(
+/** A checkpoint dtype or quantization label mapped onto a cache precision;
+ * null for one this module does not recognise. */
+export function precisionIdForDtype(
   dtype: string | undefined,
 ): KvCachePrecisionId | null {
   const normalized = dtype?.toLowerCase().trim();

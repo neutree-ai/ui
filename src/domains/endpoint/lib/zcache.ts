@@ -138,3 +138,14 @@ export function kvCacheUnavailableReason({
     return "endpoints.kvCacheSettings.unavailableEngineVersion";
   return null;
 }
+
+/** A KV cache timeout is optional; when set it must be 0.1 to 60 seconds. */
+export function isValidKvCacheTimeout(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === "number" &&
+      Number.isFinite(value) &&
+      value >= 0.1 &&
+      value <= 60)
+  );
+}

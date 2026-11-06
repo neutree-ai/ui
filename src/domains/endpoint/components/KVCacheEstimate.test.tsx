@@ -220,7 +220,7 @@ describe("KVCacheEstimate", () => {
   });
 
   // A caller combining this panel's total with a declared weights figure
-  // (EndpointWeightsEstimate) needs the number itself, not just the render of
+  // (EndpointDeploymentSummary) needs the number itself, not just the render of
   // it — so the panel reports it back rather than keeping it as private state.
   it("reports its computed total and the inputs behind it", () => {
     const onStateChange = vi.fn();

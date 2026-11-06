@@ -64,7 +64,6 @@ type EndpointClusterGpuResourcesPanelProps = {
   selectedAccelerator?: SelectedAccelerator | null;
   virtualizationEnabled: boolean;
   request?: EndpointResourceRequestContext;
-  inset?: boolean;
   t: Translate;
 };
 
@@ -1072,7 +1071,6 @@ export function EndpointClusterGpuResourcesPanel({
   selectedAccelerator,
   virtualizationEnabled,
   request,
-  inset = true,
   t,
 }: EndpointClusterGpuResourcesPanelProps) {
   const title = t("endpoints.sections.clusterDeviceResources");
@@ -1102,8 +1100,8 @@ export function EndpointClusterGpuResourcesPanel({
   if (!resourceInfo) {
     return (
       <div className="grid min-h-[220px] grid-rows-[auto_1fr] overflow-hidden">
-        <ClusterResourcesToolbar title={title} inset={inset} />
-        <div className={cn("flex min-h-0 items-start", inset && "px-3 pb-3")}>
+        <ClusterResourcesToolbar title={title} />
+        <div className="flex min-h-0 items-start">
           <EmptyState variant="inline" className="w-full text-left">
             {currentCluster
               ? t("endpoints.messages.clusterResourcesUnavailable")
@@ -1118,7 +1116,6 @@ export function EndpointClusterGpuResourcesPanel({
     <div className="grid min-h-0 grid-rows-[auto_1fr]">
       <ClusterResourcesToolbar
         title={title}
-        inset={inset}
         filteredByAccelerator={filteredByAccelerator}
         detailsOpen={clusterDetailsOpen}
         onToggleDetails={() => setClusterDetailsOpen((open) => !open)}
@@ -1132,17 +1129,10 @@ export function EndpointClusterGpuResourcesPanel({
           hasGpuResources={hasGpuResources}
           virtualizationEnabled={virtualizationEnabled}
           summaryRows={summaryRows}
-          inset={inset}
           t={t}
         />
       )}
-      <div
-        className={cn(
-          "min-h-0",
-          inset && "px-3 pb-3",
-          clusterDetailsOpen && "mt-4",
-        )}
-      >
+      <div className={cn("min-h-0", clusterDetailsOpen && "mt-4")}>
         <EndpointNodeResources
           nodeResources={resourceInfo.node_resources}
           schedulingNodeResources={schedulingNodeResources}
@@ -1158,14 +1148,12 @@ export function EndpointClusterGpuResourcesPanel({
 
 function ClusterResourcesToolbar({
   title,
-  inset,
   filteredByAccelerator,
   detailsOpen,
   onToggleDetails,
   t,
 }: {
   title: string;
-  inset: boolean;
   filteredByAccelerator?: boolean;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
@@ -1174,10 +1162,7 @@ function ClusterResourcesToolbar({
   return (
     <div
       data-testid="endpoint-cluster-resource-toolbar"
-      className={cn(
-        "flex min-w-0 items-start justify-between gap-3",
-        inset ? "px-3.5 pb-2 pt-3" : "pb-3",
-      )}
+      className="flex min-w-0 items-start justify-between gap-3 pb-3"
     >
       <div className="min-w-0">
         <h3 className="m-0 text-base font-semibold leading-6 text-foreground">
@@ -1226,7 +1211,6 @@ function EndpointClusterGpuResourcesInlineContent({
   hasGpuResources,
   virtualizationEnabled,
   summaryRows,
-  inset,
   t,
 }: {
   resourceInfo: ClusterResourceInfo;
@@ -1235,14 +1219,10 @@ function EndpointClusterGpuResourcesInlineContent({
   hasGpuResources: boolean;
   virtualizationEnabled: boolean;
   summaryRows: ReturnType<typeof buildGpuCardResourceRows>;
-  inset: boolean;
   t: Translate;
 }) {
   return (
-    <div
-      id="endpoint-cluster-resource-details"
-      className={cn("min-h-0", inset && "px-3 pb-3")}
-    >
+    <div id="endpoint-cluster-resource-details" className="min-h-0">
       <div
         data-testid="endpoint-cluster-resource-board"
         className="grid min-w-0 gap-2.5"

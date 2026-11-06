@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { EndpointClusterRef } from "../types";
-import { endpointCacheDashboard, kvCacheUnavailableReason } from "./zcache";
+import {
+  endpointCacheDashboard,
+  isValidKvCacheTimeout,
+  kvCacheUnavailableReason,
+} from "./zcache";
 
 const node = (name: string, capacity_bytes: number, runtime = "Ready") => ({
   name,
@@ -185,4 +189,16 @@ describe("kvCacheUnavailableReason", () => {
       reason && `endpoints.kvCacheSettings.${reason}`,
     );
   });
+});
+
+it.each([
+  [undefined, true],
+  [0.1, true],
+  [60, true],
+  [0, false],
+  [61, false],
+  ["", false],
+  [Number.NaN, false],
+])("isValidKvCacheTimeout(%j) -> %s", (value, expected) => {
+  expect(isValidKvCacheTimeout(value)).toBe(expected);
 });

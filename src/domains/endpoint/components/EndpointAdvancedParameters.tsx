@@ -26,8 +26,10 @@ type ParameterEntries = Record<string, unknown> | null | undefined;
 type EndpointAdvancedParametersProps = {
   engineParameters: ParameterEntries;
   environmentVariables: ParameterEntries;
-  collapsible?: boolean;
-  framed?: boolean;
+  /** "card" is a framed section with every parameter listed, for show pages;
+   * "inline" is an unframed section collapsed to a count, for embedding in a
+   * review that already frames it. */
+  variant?: "card" | "inline";
 };
 
 /** A stated null is shown as written, not as an empty value. */
@@ -184,8 +186,7 @@ function ParameterGroup({
 export function EndpointAdvancedParameters({
   engineParameters,
   environmentVariables,
-  collapsible = false,
-  framed = true,
+  variant = "card",
 }: EndpointAdvancedParametersProps) {
   const { t } = useTranslation();
   const hasEngineParameters = Boolean(
@@ -216,13 +217,13 @@ export function EndpointAdvancedParameters({
     </div>
   );
 
-  if (collapsible) {
+  if (variant === "inline") {
     const engineCount = Object.keys(engineParameters ?? {}).length;
     const environmentCount = Object.keys(environmentVariables ?? {}).length;
     return (
       <ShowPage.Section
         title={t("endpoints.sections.advancedOptions")}
-        framed={framed}
+        framed={false}
       >
         <Disclosure
           variant="plain"
@@ -243,10 +244,7 @@ export function EndpointAdvancedParameters({
   }
 
   return (
-    <ShowPage.Section
-      title={t("endpoints.sections.advancedOptions")}
-      framed={framed}
-    >
+    <ShowPage.Section title={t("endpoints.sections.advancedOptions")}>
       {content}
     </ShowPage.Section>
   );

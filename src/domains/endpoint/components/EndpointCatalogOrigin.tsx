@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   type CatalogOrigin,
+  formatCatalogFeature,
   readCatalogOrigin,
 } from "@/domains/endpoint/lib/catalog-origin";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -42,15 +43,8 @@ export const EndpointCatalogOrigin = ({
           </Badge>
         )}
         {origin.features.map((feature) => (
-          <Badge
-            key={feature.name}
-            variant="outline"
-            className="font-mono"
-            data-feature={feature.name}
-          >
-            {feature.value === undefined
-              ? feature.name
-              : `${feature.name}: ${feature.value}`}
+          <Badge key={feature.name} variant="outline" className="font-mono">
+            {formatCatalogFeature(feature)}
           </Badge>
         ))}
         {origin.featuresUnreadable && (

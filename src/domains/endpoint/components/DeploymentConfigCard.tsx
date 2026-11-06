@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import type {
   DeploymentOptions,
@@ -21,17 +22,9 @@ export default function DeploymentConfigCard({
 }: DeploymentConfigCardProps) {
   const { t } = useTranslation();
 
-  const getSchedulerText = () => {
-    const schedulerType = deploymentOptions?.scheduler?.type;
-    switch (schedulerType) {
-      case "consistent_hash":
-        return t("models.scheduler.consistentHashing");
-      case "roundrobin":
-        return t("models.scheduler.roundRobin");
-      default:
-        return t("models.scheduler.unavailable");
-    }
-  };
+  const schedulerText =
+    schedulerLabel(deploymentOptions?.scheduler?.type, t) ??
+    t("models.scheduler.unavailable");
 
   const content = (
     <div className="grid gap-x-10 gap-y-5 sm:grid-cols-[repeat(2,minmax(0,220px))]">
@@ -39,7 +32,7 @@ export default function DeploymentConfigCard({
         {replicas?.num ?? 1}
       </ShowPage.Row>
       <ShowPage.Row title={t("common.fields.scheduler")}>
-        {getSchedulerText()}
+        {schedulerText}
       </ShowPage.Row>
     </div>
   );

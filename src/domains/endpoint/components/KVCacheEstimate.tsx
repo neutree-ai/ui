@@ -47,6 +47,7 @@ import {
   type LinearStateCheckpointPolicy,
   unreportedFactorKeys as listUnreportedFactorKeys,
   NOTED_KV_CACHE_SOURCES,
+  precisionBytes,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { modelFieldSource } from "@/foundation/types/model-types";
@@ -144,9 +145,6 @@ const percent = new Intl.NumberFormat("en", {
   style: "percent",
   maximumFractionDigits: 0,
 });
-
-const bytesOf = (id: KvCachePrecisionId | ""): number | null =>
-  KV_CACHE_PRECISIONS.find((precision) => precision.id === id)?.bytes ?? null;
 
 /** Provenance is an annotation on a factor, not another factor. Keeping it
  * outside the split tag and at caption weight preserves the distinction without
@@ -669,7 +667,6 @@ export const KVCacheEstimate = ({
   read,
   engineArgs = NO_ENGINE_CACHE_ARGS,
   controls = NO_ENGINE_CACHE_ARG_CONTROLS,
-  stackFields = false,
   onStateChange,
 }: {
   read: ModelInfoRead;
@@ -686,9 +683,6 @@ export const KVCacheEstimate = ({
    * what-if the deployment does not follow.
    */
   controls?: EngineCacheArgControls;
-  /** The estimator is often placed in a narrow persistent rail. Stacking its
-   * fields keeps them readable instead of squeezing three columns into it. */
-  stackFields?: boolean;
   /**
    * Reports what the panel currently works out to — the total and the inputs
    * behind it, or why there is none — as it recomputes. A caller combining it
@@ -734,7 +728,6 @@ export const KVCacheEstimate = ({
       info={read.info}
       engineArgs={engineArgs}
       controls={controls}
-      stackFields={stackFields}
       onStateChange={onStateChange}
     />
   );
@@ -804,13 +797,11 @@ const Estimator = ({
   info,
   engineArgs,
   controls,
-  stackFields,
   onStateChange,
 }: {
   info: ModelInfo;
   engineArgs: EngineCacheArgs;
   controls: EngineCacheArgControls;
-  stackFields: boolean;
   onStateChange?: (state: KVCacheEstimateState) => void;
 }) => {
   const { t } = useTranslation();
@@ -880,9 +871,9 @@ const Estimator = ({
       sequences: parseCount(sequences),
       tokensSource,
       sequencesSource,
-      bytesPerElement: bytesOf(precision),
-      recurrentStateBytesPerElement: bytesOf(recurrentPrecision),
-      indexerBytesPerElement: bytesOf(indexerPrecision),
+      bytesPerElement: precisionBytes(precision),
+      recurrentStateBytesPerElement: precisionBytes(recurrentPrecision),
+      indexerBytesPerElement: precisionBytes(indexerPrecision),
       checkpointPolicy,
       includeLinearState,
       includeDraftKvCache,
@@ -933,14 +924,10 @@ const Estimator = ({
 
   return (
     <Panel state={result.ok ? result.family : result.reason}>
+      {/* The estimator sits in a narrow persistent rail, so its fields stack
+      instead of squeezing three columns into it. */}
       {inputsAffectResult && (
-        <div
-          className={
-            stackFields
-              ? "grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2"
-              : "grid grid-cols-1 gap-3 sm:grid-cols-3"
-          }
-        >
+        <div className="grid grid-cols-2 gap-3 [&>*:last-child]:col-span-2">
           <CountField
             id="kv-cache-tokens"
             label={t(
@@ -997,11 +984,7 @@ const Estimator = ({
 
       {inputsAffectResult && (linear || indexes || drafts) ? (
         <div
-          className={
-            stackFields
-              ? "mt-3 grid grid-cols-1 gap-3"
-              : "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"
-          }
+          className="mt-3 grid grid-cols-1 gap-3"
           data-testid="kv-cache-policy-inputs"
         >
           {linear ? (

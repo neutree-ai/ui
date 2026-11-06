@@ -1,4 +1,9 @@
-import { cloneElement, forwardRef, type ReactElement } from "react";
+import {
+  cloneElement,
+  forwardRef,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import type {
   ControllerRenderProps,
   FieldPath,
@@ -23,6 +28,7 @@ type FieldProps<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = UseControllerProps<TFieldValues, TName> & {
   label?: string;
+  labelAccessory?: ReactNode;
   description?: string;
   required?: boolean;
   className?: string;
@@ -55,6 +61,16 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
               <FormMessage />
             </>
           );
+          const label = (
+            <FormLabel className={formFieldLabelClassName}>
+              {props.label}
+              {props.required ? (
+                <span className="ml-1 text-destructive" aria-hidden="true">
+                  *
+                </span>
+              ) : null}
+            </FormLabel>
+          );
           return (
             <FormItem
               data-testid={`field-${props.name}`}
@@ -76,17 +92,14 @@ export const FormFieldGroup = forwardRef<HTMLDivElement, FieldProps>(
                 </>
               ) : (
                 <>
-                  <FormLabel className={formFieldLabelClassName}>
-                    {props.label}
-                    {props.required ? (
-                      <span
-                        className="ml-1 text-destructive"
-                        aria-hidden="true"
-                      >
-                        *
-                      </span>
-                    ) : null}
-                  </FormLabel>
+                  {props.labelAccessory ? (
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      {label}
+                      {props.labelAccessory}
+                    </div>
+                  ) : (
+                    label
+                  )}
                   {/* The description and error sit closer to the control than
                       FormItem's spacing puts the label. */}
                   <div className="space-y-1">

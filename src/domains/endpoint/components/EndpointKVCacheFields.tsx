@@ -19,21 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  type EndpointCacheManagerStatus,
-  readEndpointCacheManagerStatus,
-} from "@/domains/endpoint/lib/cache-manager-status";
-import {
-  endpointZCacheOptions,
-  kvCacheUnavailableReason,
-} from "@/domains/endpoint/lib/zcache";
+import type { KvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
+import type { EndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
-import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import { cn } from "@/foundation/lib/utils";
 import type { EndpointClusterRef } from "../types";
 
@@ -76,69 +67,27 @@ const CACHE_MANAGER_DISPLAY: Record<
 export function EndpointKVCacheFields({
   form,
   cluster,
-  cacheStatusLoading = false,
-  acceleratorType,
+  availability: { hasZCache, cacheManager, unavailableReason },
   isEdit,
   cacheChanged = false,
-  sectioned = false,
 }: {
   form: UseFormReturn;
   cluster?: EndpointClusterRef;
-  cacheStatusLoading?: boolean;
-  acceleratorType?: string | null;
+  availability: KvCacheAvailability;
   isEdit: boolean;
   cacheChanged?: boolean;
-  sectioned?: boolean;
 }) {
   const { t } = useTranslation();
-  const { systemInfo } = useSystemApi();
-  const hasZCache =
-    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-    true;
-  const zcacheOptions = endpointZCacheOptions(cluster);
-  const versions = useCacheVersions(
-    hasZCache &&
-      cluster?.spec.type === "kubernetes" &&
-      zcacheOptions?.enabled === true,
-  );
   const [configOpen, setConfigOpen] = useState(false);
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
-  const engine = form.watch("spec.engine");
-  const task = form.watch("spec.model.task");
-  const cacheManager = readEndpointCacheManagerStatus(
-    cluster,
-    cacheStatusLoading,
-  );
   const phaseValues =
     "phase" in cacheManager ? { phase: cacheManager.phase } : {};
-  const unavailableReason = kvCacheUnavailableReason({
-    cluster,
-    acceleratorType,
-    engine,
-    task,
-    manager: cacheManager,
-    versions: {
-      isLoading: versions.isLoading,
-      isError: versions.isError,
-      engineVersions: engineVersionsFor(
-        versions.data?.data,
-        zcacheOptions?.version,
-      ),
-    },
-  });
   const supported = unavailableReason === null;
-  form.register("spec.kv_cache", {
-    validate: (value) =>
-      value?.provider !== "zcache" ||
-      !!supported ||
-      t("endpoints.kvCacheSettings.requirements"),
-  });
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
   const cacheSwitch = (
     <Switch
-      {...(!sectioned ? { id: "endpoint-kv-cache-enabled" } : {})}
       aria-label={t("endpoints.kvCacheSettings.enable")}
       checked={enabled}
       disabled={!enabled && !supported}
@@ -178,15 +127,6 @@ export function EndpointKVCacheFields({
       name="spec.kv_cache.options.timeout_seconds"
       label={t("endpoints.kvCacheSettings.timeout")}
       description={t("endpoints.kvCacheSettings.timeoutHint")}
-      rules={{
-        validate: (value) =>
-          !form.getValues("spec.kv_cache.provider") ||
-          value === undefined ||
-          (Number.isFinite(value) &&
-            Number(value) >= 0.1 &&
-            Number(value) <= 60) ||
-          t("endpoints.kvCacheSettings.invalidTimeout"),
-      }}
     >
       <Input
         type="number"
@@ -247,32 +187,18 @@ export function EndpointKVCacheFields({
     );
   const content = (
     <>
-      <div
-        className={cn(
-          "flex flex-wrap items-center justify-between gap-3",
-          !sectioned && "bg-muted/50 px-4 py-3",
-        )}
-      >
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          {sectioned ? (
-            <h2 className="text-base font-semibold leading-6 text-[var(--nt-text-neutral-super)]">
-              {t("endpoints.sections.kvCache")}
-            </h2>
-          ) : (
-            <label
-              htmlFor="endpoint-kv-cache-enabled"
-              className="text-sm font-medium"
-            >
-              {t("endpoints.kvCacheSettings.enable")}
-            </label>
-          )}
+          <h2 className="text-base font-semibold leading-6 text-[var(--nt-text-neutral-super)]">
+            {t("endpoints.sections.kvCache")}
+          </h2>
           <InfoHint
             label={t(
               unavailableReason ?? "endpoints.kvCacheSettings.scheduling",
             )}
           />
         </div>
-        <div className={cn("flex items-center gap-3", sectioned && "ml-auto")}>
+        <div className="ml-auto flex items-center gap-3">
           <Button
             type="button"
             variant="ghost"
@@ -283,41 +209,29 @@ export function EndpointKVCacheFields({
             <Settings2 className="mr-1.5 h-3.5 w-3.5" />
             {t("endpoints.kvCacheSettings.viewConfig")}
           </Button>
-          {!sectioned && cacheSwitch}
         </div>
       </div>
-      {sectioned && (
-        <div className="mt-4 space-y-4">
-          {managerStatus}
-          <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-            <div className="w-fit min-w-0">
-              <FormFieldGroup
-                {...form}
-                name="spec.kv_cache"
-                label={t("endpoints.kvCacheSettings.enableLabel")}
-                className="flex flex-col items-start gap-2 space-y-0"
-              >
-                {cacheSwitch}
-              </FormFieldGroup>
-            </div>
-            {enabled && cacheTimeoutField && (
-              <div className="min-w-0">{cacheTimeoutField}</div>
-            )}
-            {unavailableMessage && (
-              <div className="sm:col-span-2">{unavailableMessage}</div>
-            )}
+      <div className="mt-4 space-y-4">
+        {managerStatus}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div className="w-fit min-w-0">
+            <FormFieldGroup
+              {...form}
+              name="spec.kv_cache"
+              label={t("endpoints.kvCacheSettings.enableLabel")}
+              className="flex flex-col items-start gap-2 space-y-0"
+            >
+              {cacheSwitch}
+            </FormFieldGroup>
           </div>
+          {enabled && cacheTimeoutField && (
+            <div className="min-w-0">{cacheTimeoutField}</div>
+          )}
+          {unavailableMessage && (
+            <div className="sm:col-span-2">{unavailableMessage}</div>
+          )}
         </div>
-      )}
-      {!sectioned && <div className="border-t px-4 py-3">{managerStatus}</div>}
-      {!sectioned && unavailableMessage && (
-        <div className="border-t px-4 py-3">{unavailableMessage}</div>
-      )}
-      {!sectioned && enabled && (
-        <div className="space-y-5 p-4">
-          <div className="max-w-sm">{cacheTimeoutField}</div>
-        </div>
-      )}
+      </div>
       {isEdit && cacheChanged && (
         <p
           role="status"
@@ -387,20 +301,9 @@ export function EndpointKVCacheFields({
     </>
   );
 
-  if (sectioned) {
-    return (
-      <FormCardGrid testId="endpoint-kv-cache-section" variant="section">
-        <div className="col-span-4">{content}</div>
-      </FormCardGrid>
-    );
-  }
-
   return (
-    <section
-      className="overflow-hidden rounded-md border bg-card"
-      data-testid="endpoint-kv-cache"
-    >
-      {content}
-    </section>
+    <FormCardGrid testId="endpoint-kv-cache-section" variant="section">
+      <div className="col-span-4">{content}</div>
+    </FormCardGrid>
   );
 }

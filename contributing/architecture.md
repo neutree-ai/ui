@@ -79,3 +79,16 @@ Pages are thin composition layers — they call an L2 form hook and pass the res
   nothing, so use `[box-shadow:var(--token)]`, or `shadow-[shadow:var(--token)]` when the shadow
   must compose with `ring-*`. `node tools/check-shadow-utilities.cjs` enforces this in the
   pre-commit hook and CI (focus rings silently disappeared this way).
+
+## Form validation lifecycle
+
+- Do not validate untouched fields. Entering a page, changing an option, or revealing a
+  conditional required field must not surface a validation error by itself.
+- Stepwise forms validate only the fields owned by the step being left. Reserve unrestricted
+  validation for the final global submit, then navigate to the first invalid step.
+- Once a field has a visible error, revalidate it on change so the error disappears as soon as
+  the input becomes valid. Derived values follow the same rule: filling an invalid field clears
+  its error, while revealing an untouched field does not create one.
+- A custom resolver must return React Hook Form's nested `FieldErrors` tree. When a domain
+  validator produces dotted paths, convert it with `nestFieldErrors` at the resolver boundary;
+  literal keys such as `"metadata.name"` cannot be cleared by field-level revalidation.

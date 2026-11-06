@@ -1,11 +1,14 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { EndpointEngineRef } from "@/domains/endpoint/types";
+import type {
+  EndpointEngineRef,
+  EndpointEngineVersionRef,
+} from "@/domains/endpoint/types";
 import { useEndpointEngineOptions } from "./use-endpoint-engine-options";
 
 function makeEngine(
   name: string,
-  versions: { version: string; values_schema?: Record<string, unknown> }[],
+  versions: EndpointEngineVersionRef[],
   tasks: string[] | null,
 ): EndpointEngineRef {
   return {
@@ -96,6 +99,34 @@ describe("useEndpointEngineOptions", () => {
 
     expect(result.current.engineValueSchema).toEqual({
       properties: { tensor_parallel: { type: "integer" } },
+    });
+  });
+
+  it("uses the selected version's tasks and exposes its image contract", () => {
+    const versioned = makeEngine(
+      "vllm",
+      [
+        {
+          version: "0.24.0",
+          supported_tasks: ["text-generation"],
+          images: {
+            nvidia_gpu: { image_name: "neutree/vllm-cuda", tag: "0.24.0" },
+          },
+        },
+      ],
+      ["text-generation", "embedding"],
+    );
+    const { result } = renderHook(() =>
+      useEndpointEngineOptions({
+        enginesData: [versioned],
+        engineSpec: { engine: "vllm", version: "0.24.0" },
+      }),
+    );
+
+    expect(result.current.engineTasks.vllm).toContain("embedding");
+    expect(result.current.engineTasksForVersion).toEqual(["text-generation"]);
+    expect(result.current.engineVersion?.images).toEqual({
+      nvidia_gpu: { image_name: "neutree/vllm-cuda", tag: "0.24.0" },
     });
   });
 
