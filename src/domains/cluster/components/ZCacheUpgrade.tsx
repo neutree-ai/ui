@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
+import { useCacheVersions } from "@/domains/cluster/hooks/use-cache-versions";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { type Cluster, zcacheSpec, zcacheStatus } from "../types";
 

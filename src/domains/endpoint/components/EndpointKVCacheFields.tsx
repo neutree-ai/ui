@@ -3,10 +3,10 @@ import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { useCacheVersions } from "@/domains/endpoint/hooks/use-cache-versions";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { EndpointClusterRef } from "../types";
 

@@ -10,7 +10,7 @@ const { mutate, invalidate } = vi.hoisted(() => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (s: string) => s }),
 }));
-vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+vi.mock("@/domains/cluster/hooks/use-cache-versions", () => ({
   useCacheVersions: () => ({
     data: {
       data: [
