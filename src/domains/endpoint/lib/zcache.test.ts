@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { endpointCacheDashboard } from "./zcache";
+import type { EndpointClusterRef } from "../types";
+import { endpointCacheDashboard, zcacheSupport } from "./zcache";
 
 const node = (name: string, capacity_bytes: number, runtime = "Ready") => ({
   name,
@@ -68,5 +69,51 @@ describe("endpointCacheDashboard", () => {
         cacheStatus: observed([node("a", 2048)]),
       }).variables,
     ).toEqual({ Workspace: "default", L1CapacityBytes: "0", L1Nodes: "a^" });
+  });
+});
+
+describe("zcacheSupport", () => {
+  const cluster = (type = "kubernetes", enabled = true) =>
+    ({
+      spec: { type, cache: { provider: "zcache", options: { enabled } } },
+    }) as unknown as EndpointClusterRef;
+  const vllm = (version = "v0.31.0") => ({ engine: "vllm", version });
+
+  it.each([
+    { name: "a supported vLLM version", args: {}, expected: "ok" },
+    {
+      name: "an unsupported vLLM version",
+      args: { engine: vllm("v0.24.0") },
+      expected: "incompatible",
+    },
+    {
+      name: "an SSH cluster",
+      args: { cluster: cluster("ssh") },
+      expected: "requirements",
+    },
+    {
+      name: "a cluster without the cache enabled",
+      args: { cluster: cluster("kubernetes", false) },
+      expected: "requirements",
+    },
+    {
+      name: "a non-vLLM engine",
+      args: { engine: { engine: "llama-cpp", version: "v0.31.0" } },
+      expected: "requirements",
+    },
+    {
+      name: "an embedding task",
+      args: { task: "text-embedding" },
+      expected: "requirements",
+    },
+  ])("$name -> $expected", ({ args, expected }) => {
+    expect(
+      zcacheSupport({
+        cluster: cluster(),
+        engine: vllm(),
+        supportedEngineVersions: ["v0.31.0"],
+        ...args,
+      }),
+    ).toBe(expected);
   });
 });

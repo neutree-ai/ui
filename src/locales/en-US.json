@@ -599,7 +599,6 @@
 			"saved": "Configuration saved; awaiting application",
 			"retryHint": "Save again to retry this failed configuration.",
 			"reportedCapacity": "L1 configured capacity",
-			"configuredVersion": "Cache service version (configured)",
 			"edit": "Edit configuration",
 			"editDescription": "Change cache capacity and selected nodes.",
 			"currentDetails": "Current configuration diagnostics",
@@ -643,6 +642,31 @@
 			"serviceName": "Cache service",
 			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
 			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
+		},
+		"cacheUpgrade": {
+			"title": "Upgrade cache version",
+			"current": "Running version: {{version}}",
+			"target": "Target version: {{version}}",
+			"description": "Upgrade the shared cache first, then update these instances in parallel. Single-replica instances may be briefly unavailable. Paused instances remain paused. Cached data may be lost.",
+			"selectVersion": "Target cache version",
+			"chooseAction": "Choose an action",
+			"keep": "Keep engine and update connection",
+			"engine": "Upgrade engine to {{version}}",
+			"disable": "Keep engine and disable cache",
+			"noInstances": "No inference instances use this cache.",
+			"loadFailed": "Could not load the upgrade plan. Refresh and try again.",
+			"confirm": "Confirm upgrade",
+			"incompatibleTarget": "Incompatible with the target cache version",
+			"phases": {
+				"UpdatingRuntime": "Updating cache runtime",
+				"UpdatingEndpoints": "Updating inference instances",
+				"Succeeded": "Completed",
+				"Failed": "Failed — inspect the reason and retry",
+				"WaitingForRuntime": "Waiting for cache runtime",
+				"Updating": "Updating",
+				"Paused": "Paused",
+				"Removed": "Removed"
+			}
 		}
 	},
 	"model_registries": {
@@ -1558,6 +1582,7 @@
 			"enable": "KV cache",
 			"scheduling": "Inference replicas run on nodes in the cluster cache pool.",
 			"requirements": "Requires vLLM and a Kubernetes cluster with cache enabled.",
+			"incompatibleRuntime": "This engine is incompatible with the cache version. Disable inference cache or upgrade cache from the cluster page.",
 			"timeout": "Cache timeout (seconds)",
 			"invalidTimeout": "Enter a timeout from 0.1 to 60 seconds.",
 			"timeoutHint": "Maximum wait time for a single cache message",

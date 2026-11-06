@@ -10,19 +10,42 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
   }),
 }));
 
+vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+  useCacheVersions: () => ({
+    data: {
+      data: [
+        {
+          version: "v0.5.6-post.1",
+          engine_versions: ["v0.32.0-zcache-enabled"],
+        },
+        { version: "v0.5.0", engine_versions: ["v0.24.0"] },
+      ],
+    },
+  }),
+}));
+
 function Editor({
   cache,
   save,
   supportedCluster = true,
   invalid,
+  engineVersion = "v0.32.0-zcache-enabled",
+  runtimeVersion = "v0.5.6-post.1",
 }: {
   cache: unknown;
+  engineVersion?: string;
+  runtimeVersion?: string;
   save: (value: unknown) => void;
   supportedCluster?: boolean;
   invalid?: (value: unknown) => void;
 }) {
   const form = useForm<FieldValues>({
-    defaultValues: { spec: { kv_cache: cache, engine: { engine: "vllm" } } },
+    defaultValues: {
+      spec: {
+        kv_cache: cache,
+        engine: { engine: "vllm", version: engineVersion },
+      },
+    },
   });
   return (
     <FormProvider {...form}>
@@ -37,7 +60,11 @@ function Editor({
                 type: "kubernetes",
                 cache: {
                   provider: "zcache",
-                  options: { enabled: supportedCluster, target_nodes: ["a"] },
+                  options: {
+                    enabled: supportedCluster,
+                    target_nodes: ["a"],
+                    version: runtimeVersion,
+                  },
                 },
               },
             } as unknown as EndpointClusterRef
@@ -201,4 +228,37 @@ it("blocks cache after switching to an embedding task and allows disabling it", 
   fireEvent.click(screen.getByText("save"));
   await vi.waitFor(() => expect(save).toHaveBeenCalled());
   expect(save.mock.calls[0][0].spec.kv_cache).toBeNull();
+});
+it.each([
+  ["v0.5.6-post.1", "v0.24.0", true],
+  ["v0.5.6-post.1", "v0.32.0-zcache-enabled", false],
+])(
+  "allows cache only for an engine the cluster runtime supports (%s, %s)",
+  (runtimeVersion, engineVersion, disabled) => {
+    render(
+      <Editor
+        cache={null}
+        save={vi.fn()}
+        runtimeVersion={runtimeVersion}
+        engineVersion={engineVersion}
+      />,
+    );
+    expect((screen.getByRole("switch") as HTMLButtonElement).disabled).toBe(
+      disabled,
+    );
+  },
+);
+
+it("names the version mismatch when the cluster runtime does not support the engine", () => {
+  render(
+    <Editor
+      cache={{ provider: "zcache", options: {} }}
+      save={vi.fn()}
+      runtimeVersion="v0.5.6-post.1"
+      engineVersion="v0.24.0"
+    />,
+  );
+  expect(screen.getByRole("alert").textContent).toBe(
+    "endpoints.kvCacheSettings.incompatibleRuntime",
+  );
 });

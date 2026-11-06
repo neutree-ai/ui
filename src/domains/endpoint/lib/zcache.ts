@@ -5,10 +5,11 @@ import type { EndpointClusterRef } from "../types";
 // cluster management UI's control-plane and operation types.
 export function endpointZCacheOptions(
   cluster?: EndpointClusterRef,
-): { enabled: boolean; target_nodes?: string[] } | undefined {
+): { enabled: boolean; version?: string; target_nodes?: string[] } | undefined {
   return cluster?.spec.cache?.provider === "zcache"
     ? (cluster.spec.cache.options as {
         enabled: boolean;
+        version?: string;
         target_nodes?: string[];
       })
     : undefined;
@@ -69,4 +70,35 @@ export function endpointCacheDashboard({
       L1Nodes: JSON.stringify(nodePattern).slice(1, -1),
     },
   };
+}
+
+type ZCacheSupport = "ok" | "requirements" | "incompatible";
+
+/**
+ * Whether an endpoint can use the cluster's ZCache. The structural
+ * requirements (Kubernetes, cache enabled, vLLM text generation) are checked
+ * before the engine version, so "incompatible" only means the engine version
+ * is not one the cluster's cache runtime supports.
+ */
+export function zcacheSupport({
+  cluster,
+  engine,
+  task,
+  supportedEngineVersions,
+}: {
+  cluster?: EndpointClusterRef;
+  engine?: { engine?: string; version?: string };
+  task?: string;
+  supportedEngineVersions: string[];
+}): ZCacheSupport {
+  if (
+    cluster?.spec.type !== "kubernetes" ||
+    !endpointZCacheOptions(cluster)?.enabled ||
+    engine?.engine !== "vllm" ||
+    (task && task !== "text-generation")
+  )
+    return "requirements";
+  return engine.version && supportedEngineVersions.includes(engine.version)
+    ? "ok"
+    : "incompatible";
 }

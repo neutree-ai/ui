@@ -57,7 +57,7 @@ type CacheOptions = {
 
 const makeCluster = (
   options: Partial<CacheOptions> | null,
-  cache: Record<string, unknown>,
+  cache: Record<string, unknown> | null,
 ) =>
   ({
     spec: options
@@ -73,7 +73,9 @@ const makeCluster = (
           },
         }
       : {},
-    status: { cache: { provider: "zcache", conditions: [], ...cache } },
+    status: cache
+      ? { cache: { provider: "zcache", conditions: [], ...cache } }
+      : {},
   }) as unknown as Cluster;
 
 const node = (name: string, gib: number) => ({
@@ -162,7 +164,7 @@ describe("ClusterCacheSection", () => {
     expect(screen.queryByText("API 422")).toBeNull();
     expect(screen.queryByText(/old-operation/)).toBeNull();
     fireEvent.click(
-      screen.getByRole("button", { name: "clusters.zcache.operations" }),
+      screen.getByRole("button", { name: "clusters.zcache.viewReason" }),
     );
     screen.getByText("API 422");
     screen.getByText(/clusters.zcache.notAccepted/);
@@ -310,5 +312,20 @@ describe("ClusterCacheSection", () => {
       />,
     );
     expect(screen.queryByText(/^clusters\.zcache\.readyCount/)).toBeNull();
+  });
+
+  it("shows disabled when cache has never been configured or observed", () => {
+    render(<ClusterCacheSection cluster={makeCluster(null, null)} />);
+    screen.getByText("clusters.zcache.disabled");
+    expect(screen.queryByText("clusters.zcache.reconciling")).toBeNull();
+    expect(screen.queryByText("clusters.zcache.lastObservation")).toBeNull();
+  });
+
+  it("shows pending enablement when the first cache observation is missing", () => {
+    render(
+      <ClusterCacheSection cluster={makeCluster({ l1_size_gib: 1 }, null)} />,
+    );
+    screen.getByText("clusters.zcache.reconciling");
+    screen.getByText("clusters.zcache.waiting");
   });
 });

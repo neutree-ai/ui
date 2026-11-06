@@ -167,12 +167,13 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     queryOptions: { refetchInterval: onBasicTab ? 15000 : false },
   });
   const record = data?.data;
-  const isPaused = record?.status?.phase === "Paused";
+  const inactive =
+    record?.status?.phase === "Paused" || record?.status?.phase === "Deleted";
   const observations = useAcceleratorObservations(
     "endpoints",
     record?.metadata.workspace,
     record?.metadata.name,
-    !isPaused && onBasicTab,
+    !inactive && onBasicTab,
   );
   const allocations = gpuAllocations(record ? [record] : []);
 
@@ -446,36 +447,38 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
-              paused={isPaused}
+              paused={inactive}
             />
-            <div className="space-y-3">
-              <ShowPage.Section
-                title={t("endpoints.sections.runtimeAllocation")}
-                actions={
-                  <EndpointRuntimeResourcesSummary
-                    resources={record.status?.resources}
-                  />
-                }
-              >
-                <div className="space-y-6">
-                  <ObservationStatus status={observations.status} />
-                  <EndpointRuntimeResourcesCard
-                    renderMemory={renderDeviceObservation}
-                    l1CacheByNode={
-                      record.spec.kv_cache?.provider === "zcache"
-                        ? nodeL1CacheByNode(
-                            cacheStatus?.nodes,
-                            observations.samples,
-                          )
-                        : undefined
-                    }
-                    resources={record.status?.resources}
-                    requestedResources={record.spec.resources}
-                    clusterResourceInfo={cluster?.status?.resource_info}
-                  />
-                </div>
-              </ShowPage.Section>
-            </div>
+            {!inactive && (
+              <div className="space-y-3">
+                <ShowPage.Section
+                  title={t("endpoints.sections.runtimeAllocation")}
+                  actions={
+                    <EndpointRuntimeResourcesSummary
+                      resources={record.status?.resources}
+                    />
+                  }
+                >
+                  <div className="space-y-6">
+                    <ObservationStatus status={observations.status} />
+                    <EndpointRuntimeResourcesCard
+                      renderMemory={renderDeviceObservation}
+                      l1CacheByNode={
+                        record.spec.kv_cache?.provider === "zcache"
+                          ? nodeL1CacheByNode(
+                              cacheStatus?.nodes,
+                              observations.samples,
+                            )
+                          : undefined
+                      }
+                      resources={record.status?.resources}
+                      requestedResources={record.spec.resources}
+                      clusterResourceInfo={cluster?.status?.resource_info}
+                    />
+                  </div>
+                </ShowPage.Section>
+              </div>
+            )}
             <EndpointAdvancedParameters
               engineParameters={{
                 ...(record.spec.variables?.engine_args as

@@ -223,6 +223,32 @@ describe("EndpointsShow", () => {
     );
   });
 
+  it.each(["Paused", "Deleted"])(
+    "hides retained runtime allocations once the endpoint is %s",
+    (phase) => {
+      useShowMock.mockReturnValue({
+        query: {
+          data: {
+            data: {
+              ...endpoint,
+              status: {
+                phase,
+                resources: {
+                  replicas: [{ instance_id: "old-worker", devices: [] }],
+                },
+              },
+            },
+          },
+          isLoading: false,
+        },
+      });
+
+      render(<EndpointsShow />);
+
+      expect(screen.queryByTestId("runtime-resources-card")).toBeNull();
+    },
+  );
+
   // A Flex endpoint deploys with no model, so the API omits spec.model.
   it("renders a model-free endpoint", () => {
     useShowMock.mockReturnValue({
