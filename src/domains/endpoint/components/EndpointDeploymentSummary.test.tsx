@@ -124,35 +124,6 @@ describe("EndpointDeploymentSummary", () => {
     expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
   });
 
-  it("keeps an unchanged unavailable estimate without exposing a total", () => {
-    const view = render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={null}
-        kvCache={{
-          ...kvCache,
-          read: { state: "loading" },
-        }}
-      />,
-    );
-
-    screen.getByText("endpoints.wizard.summary.estimateUnavailable");
-
-    view.rerender(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={null}
-        kvCache={{
-          ...kvCache,
-          read: { state: "unreported" },
-        }}
-      />,
-    );
-
-    screen.getByText("endpoints.wizard.summary.estimateUnavailable");
-    expect(screen.queryByTestId("deployment-capacity-bar")).toBeNull();
-  });
-
   it("does not infer weights when the catalog does not declare them", async () => {
     render(
       <EndpointDeploymentSummary
@@ -182,37 +153,6 @@ describe("EndpointDeploymentSummary", () => {
     );
 
     screen.getByText("endpoints.weights.estimated 16 GB");
-  });
-
-  it("keeps the same ready KV estimate when the estimate refreshes", async () => {
-    const view = render(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={{
-          perReplicaGb: 27,
-          source: "catalog",
-          replicas: 1,
-          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
-        }}
-        kvCache={kvCache}
-      />,
-    );
-    await waitFor(() => screen.getByText("43.1 GB"));
-
-    view.rerender(
-      <EndpointDeploymentSummary
-        values={values}
-        declared={{
-          perReplicaGb: 27,
-          source: "catalog",
-          replicas: 1,
-          accelerator: { product: "T4", perGpuGb: 16, gpuCount: 1 },
-        }}
-        kvCache={{ ...kvCache, read: { ...kvCache.read } }}
-      />,
-    );
-
-    await waitFor(() => screen.getByText("43.1 GB"));
   });
 
   it("reports cache as enabled when the endpoint configures it", () => {

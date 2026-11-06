@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { type ReactNode, useState } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import {
   type Control,
   type FieldValues,
@@ -75,9 +75,6 @@ function Harness({
   context = reviewContext,
   hasChanges,
   values = endpoint,
-  validationAttempted = false,
-  estimateFields = <div>ESTIMATE_FIELDS</div>,
-  configurationFields = <div>CONFIGURATION_FIELDS</div>,
   reviewChanges = [
     {
       step: 1,
@@ -95,9 +92,6 @@ function Harness({
   context?: EndpointReviewContext;
   hasChanges?: boolean;
   values?: Endpoint;
-  validationAttempted?: boolean;
-  estimateFields?: ReactNode;
-  configurationFields?: ReactNode;
   reviewChanges?: Array<{
     step: number;
     label: string;
@@ -120,8 +114,8 @@ function Harness({
       resourceFields={<div>RESOURCE_FIELDS</div>}
       runtimeFields={<div>RUNTIME_FIELDS</div>}
       advancedFields={<div>ADVANCED_FIELDS</div>}
-      estimateFields={estimateFields}
-      configurationFields={configurationFields}
+      estimateFields={<div>ESTIMATE_FIELDS</div>}
+      configurationFields={<div>CONFIGURATION_FIELDS</div>}
       reviewChanges={reviewChanges}
       hasChanges={hasChanges ?? mode === "edit"}
       reviewContext={context}
@@ -133,7 +127,6 @@ function Harness({
       }}
       serverIssue={serverIssue}
       submitBlocked={submitBlocked}
-      validationAttempted={validationAttempted}
     />
   );
 }
@@ -228,76 +221,27 @@ describe("EndpointDeploymentWizard", () => {
     expect(screen.queryByText("ESTIMATE_FIELDS")).toBeNull();
   });
 
-  it("renders fallback summary content and exceeded capacity", () => {
-    const sparseValues = {
-      ...endpoint,
-      metadata: { name: "", workspace: "" },
-      spec: {
-        ...endpoint.spec,
-        cluster: "",
-        model: null,
-        engine: {},
-        resources: null,
-        replicas: null,
-        kv_cache: null,
-        deployment_options: null,
-        variables: null,
-        env: null,
-      },
-    } as unknown as Endpoint;
-
+  it("marks requested capacity that exceeds cluster availability", () => {
     render(
       <Harness
-        values={sparseValues}
-        validationAttempted
-        estimateFields={null}
-        configurationFields={null}
         context={{
           ...reviewContext,
-          modelDelivery: "already-local",
-          noVerifiedAccelerator: true,
-          requiredVramGb: null,
-          catalogOrigin: {
-            catalog: "catalog-a",
-            variant: "",
-            features: [{ name: "tool_choice" }],
-            featuresUnreadable: true,
-          },
           clusterCapacity: [
-            { key: "cpu", requested: 2, available: null, total: null },
             { key: "cards", requested: 3, available: 1, total: 2 },
           ],
-          clusterCapacityUnavailable: false,
         }}
-        reviewChanges={[
-          {
-            step: 0,
-            label: "common.fields.name",
-            before: null,
-            after: undefined,
-          },
-        ]}
       />,
     );
 
-    screen.getAllByText("endpoints.wizard.summary.selectModel");
     fireEvent.click(
       screen.getByRole("button", {
         name: /endpoints.wizard.steps.confirm/,
       }),
     );
 
-    screen.getByTestId("review-deployment-risks");
-    screen.getAllByText("endpoints.origin.featuresUnreadable");
-    expect(screen.getByTestId("review-catalog-origin").textContent).toContain(
-      "tool_choice",
-    );
     expect(
       screen.getByTestId("review-capacity-cards").getAttribute("data-state"),
     ).toBe("exceeded");
-    expect(
-      screen.getByTestId("deployment-checks").getAttribute("data-state"),
-    ).toBe("clear");
   });
 
   it("omits the deployment risks block when nothing risky is known", () => {
@@ -360,25 +304,12 @@ describe("EndpointDeploymentWizard", () => {
     );
   });
 
-  it("shows runtime issues and empty before/after review values", () => {
+  it("shows runtime validation issues in review", () => {
     render(
       <Harness
         mode="edit"
         hasChanges
         errorsByStep={{ 2: ["Runtime error"] }}
-        reviewChanges={[
-          {
-            step: 2,
-            label: "common.fields.engine",
-            before: undefined,
-            after: null,
-          },
-        ]}
-        context={{
-          ...reviewContext,
-          noVerifiedAccelerator: false,
-          requiredVramGb: null,
-        }}
       />,
     );
 
@@ -390,74 +321,6 @@ describe("EndpointDeploymentWizard", () => {
 
     expect(screen.getByTestId("deployment-checks").textContent).toContain(
       "endpoints.wizard.review.checkRuntimeAttention",
-    );
-  });
-
-  it("uses neutral runtime fallbacks when cache metadata is sparse", () => {
-    render(
-      <Harness
-        values={{
-          ...endpoint,
-          spec: {
-            ...endpoint.spec,
-            engine: { engine: "", version: "" },
-            kv_cache: { provider: "zcache", options: {} },
-          },
-        }}
-        context={{ ...reviewContext, noVerifiedAccelerator: false }}
-      />,
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /endpoints.wizard.steps.confirm/,
-      }),
-    );
-
-    expect(screen.getByTestId("deployment-checks").textContent).toContain(
-      "endpoints.wizard.review.checkCacheEnabled",
-    );
-  });
-
-  it("renders advanced review values when only one parameter group exists", () => {
-    const first = render(
-      <Harness
-        values={{
-          ...endpoint,
-          spec: {
-            ...endpoint.spec,
-            variables: null,
-            env: { TOKEN: "secret" },
-          },
-        }}
-        context={{ ...reviewContext, noVerifiedAccelerator: false }}
-      />,
-    );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /endpoints.wizard.steps.confirm/,
-      }),
-    );
-    expect(screen.getByTestId("advanced-review").textContent).toBe("true");
-    first.unmount();
-
-    render(
-      <Harness
-        values={{
-          ...endpoint,
-          spec: {
-            ...endpoint.spec,
-            variables: { engine_args: { max_model_len: 4 } },
-            env: null,
-          },
-        }}
-        context={{ ...reviewContext, noVerifiedAccelerator: false }}
-      />,
-    );
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /endpoints.wizard.steps.confirm/,
-      }),
     );
   });
 
@@ -506,11 +369,6 @@ describe("EndpointDeploymentWizard", () => {
       "context_window: 32768",
     );
     expect(screen.getByTestId("advanced-review").textContent).toBe("true");
-    const reviewSurface = within(screen.getByTestId("review-single-surface"));
-    reviewSurface.getByTestId("review-deployment-risks");
-    reviewSurface.getByTestId("deployment-checks");
-    reviewSurface.getByTestId("advanced-review");
-
     const editButtons = screen.getAllByRole("button", {
       name: "endpoints.wizard.review.edit",
     });

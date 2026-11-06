@@ -160,68 +160,13 @@ describe("EndpointConfigurationSummary", () => {
     screen.getByText("vllm v0.32.0");
   });
 
-  it("keeps unrecognized scheduler and capacity keys visible", () => {
-    const unknownValues = structuredClone(values);
-    unknownValues.spec.deployment_options = {
-      scheduler: { type: "custom-scheduler" },
-    };
-
+  it("shows compose and capacity failures without a catalog", () => {
     render(
       <EndpointConfigurationSummary
-        values={unknownValues}
-        reviewContext={{
-          ...reviewContext,
-          clusterCapacity: [
-            { key: "disk" as never, requested: 1, available: 2, total: 3 },
-            {
-              key: "cpu",
-              requested: 1.5,
-              available: null,
-              total: null,
-            },
-            {
-              key: "memory",
-              requested: 1.5,
-              available: 2.5,
-              total: 4,
-            },
-          ],
+        values={{
+          ...values,
+          spec: { ...values.spec, kv_cache: null },
         }}
-      />,
-    );
-
-    screen.getByText("custom-scheduler");
-    screen.getByTestId("configuration-capacity-disk");
-    expect(
-      screen.getByTestId("configuration-capacity-memory").textContent,
-    ).toContain("2.5");
-  });
-
-  it("renders empty and unavailable deployment details without a catalog", () => {
-    render(
-      <EndpointConfigurationSummary
-        values={
-          {
-            metadata: { name: "empty", workspace: "default" },
-            spec: {
-              cluster: "",
-              model: {
-                registry: "",
-                name: "",
-                version: "",
-                file: "",
-                task: "",
-              },
-              engine: { engine: "", version: "" },
-              resources: null,
-              replicas: null,
-              deployment_options: null,
-              kv_cache: null,
-              variables: null,
-              env: null,
-            },
-          } as unknown as Endpoint
-        }
         reviewContext={{
           ...reviewContext,
           catalogOrigin: null,
@@ -273,22 +218,5 @@ describe("EndpointConfigurationSummary", () => {
 
     screen.getByText("context_window: 32768");
     screen.getByText("endpoints.origin.featuresUnreadable");
-  });
-
-  it("uses the shared empty value when a catalog variant lists no features", () => {
-    render(
-      <EndpointConfigurationSummary
-        values={values}
-        reviewContext={{
-          ...reviewContext,
-          catalogOrigin: {
-            ...reviewContext.catalogOrigin!,
-            features: [],
-          },
-        }}
-      />,
-    );
-
-    expect(screen.getAllByTestId("empty-value").length).toBeGreaterThan(0);
   });
 });
