@@ -4,11 +4,13 @@ import {
   useInvalidate,
   useList,
 } from "@refinedev/core";
+import { withProjectLabel } from "@/domains/organization/lib/team";
 import type {
   MemberProfile,
   OrgUnit,
   OrgUnitMember,
   Team,
+  TeamFormValues,
   TeamMember,
 } from "@/domains/organization/types";
 
@@ -204,20 +206,24 @@ const useTeamWrite = () => {
   return { run, isPending: isLoading };
 };
 
-/** Create, rename and delete manual Teams. Synced Teams are read-only. */
+/** Create, edit and delete manual Teams. Synced Teams are read-only. */
 export const useTeamWrites = () => {
   const { run, isPending } = useTeamWrite();
   const byId = (id: number) => `/teams?id=eq.${id}`;
 
   return {
-    create: async (name: string, displayName: string) => {
+    create: async (values: TeamFormValues) => {
       const rows = await run(
         "/teams",
         "post",
         {
           api_version: "v1",
           kind: "Team",
-          metadata: { name, display_name: displayName },
+          metadata: {
+            name: values.name,
+            display_name: values.displayName,
+            labels: withProjectLabel(undefined, values.project),
+          },
           spec: { identity_source: null, external_id: null },
         },
         "team",
@@ -226,11 +232,17 @@ export const useTeamWrites = () => {
     },
     // The whole metadata goes back: PATCH of a composite column nulls the
     // fields it leaves out.
-    rename: (team: Team, displayName: string) =>
+    update: (team: Team, values: Omit<TeamFormValues, "name">) =>
       run(
         byId(team.id),
         "patch",
-        { metadata: { ...team.metadata, display_name: displayName } },
+        {
+          metadata: {
+            ...team.metadata,
+            display_name: values.displayName,
+            labels: withProjectLabel(team.metadata.labels, values.project),
+          },
+        },
         "team",
       ),
     remove: (team: Team) => run(byId(team.id), "delete", undefined, "team"),

@@ -1,6 +1,45 @@
 import { describe, expect, it } from "vitest";
 import type { Team } from "@/domains/organization/types";
-import { isManualTeam, teamSource, validateTeamName } from "./team";
+import {
+  isManualTeam,
+  isProjectTeam,
+  matchesTeamKind,
+  TEAM_KIND_LABEL,
+  teamSource,
+  validateTeamName,
+  withProjectLabel,
+} from "./team";
+
+describe("project label", () => {
+  const team = (labels?: Record<string, string>) =>
+    ({ metadata: { name: "t", labels } }) as unknown as Team;
+
+  it("tells project Teams from others", () => {
+    expect(isProjectTeam(team({ [TEAM_KIND_LABEL]: "project" }))).toBe(true);
+    expect(isProjectTeam(team({ [TEAM_KIND_LABEL]: "other" }))).toBe(false);
+    expect(isProjectTeam(team())).toBe(false);
+  });
+
+  it("filters by kind", () => {
+    const project = team({ [TEAM_KIND_LABEL]: "project" });
+    expect(matchesTeamKind(project, "all")).toBe(true);
+    expect(matchesTeamKind(project, "project")).toBe(true);
+    expect(matchesTeamKind(project, "team")).toBe(false);
+    expect(matchesTeamKind(team(), "team")).toBe(true);
+    expect(matchesTeamKind(team(), "project")).toBe(false);
+  });
+
+  it("sets and removes the label, keeping the others", () => {
+    expect(withProjectLabel({ a: "b" }, true)).toEqual({
+      a: "b",
+      [TEAM_KIND_LABEL]: "project",
+    });
+    expect(
+      withProjectLabel({ a: "b", [TEAM_KIND_LABEL]: "project" }, false),
+    ).toEqual({ a: "b" });
+    expect(withProjectLabel(null, false)).toEqual({});
+  });
+});
 
 describe("isManualTeam", () => {
   it("tells manual Teams from synced ones", () => {

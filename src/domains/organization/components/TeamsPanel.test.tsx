@@ -98,7 +98,7 @@ const manual = {
 
 const writes = {
   create: vi.fn(),
-  rename: vi.fn(),
+  update: vi.fn(),
   remove: vi.fn(),
   isPending: false,
 };
@@ -340,8 +340,76 @@ describe("TeamsPanel", () => {
     });
     fireEvent.click(screen.getByTestId("team-form-save"));
     await waitFor(() =>
-      expect(writes.create).toHaveBeenCalledWith("guild-2", "Guild 2"),
+      expect(writes.create).toHaveBeenCalledWith({
+        name: "guild-2",
+        displayName: "Guild 2",
+        project: false,
+      }),
     );
+  });
+
+  it("creates a team marked as a project", async () => {
+    grant("team:create");
+    writes.create.mockResolvedValue({ ...manual, id: 9 });
+    render(<TeamsPanel />);
+    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.change(screen.getByTestId("team-form-name"), {
+      target: { value: "launch" },
+    });
+    fireEvent.click(screen.getByTestId("team-form-project"));
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(writes.create).toHaveBeenCalledWith({
+        name: "launch",
+        displayName: "",
+        project: true,
+      }),
+    );
+  });
+
+  it("toggles the project mark of a team in the edit dialog", async () => {
+    grant(...ALL);
+    writes.update.mockResolvedValue([manual]);
+    render(<TeamsPanel />, "/o?team=guild");
+    fireEvent.click(screen.getByTestId("team-edit"));
+    expect(screen.getByTestId("team-form-save")).toHaveProperty(
+      "disabled",
+      true,
+    );
+    fireEvent.click(screen.getByTestId("team-form-project"));
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(writes.update).toHaveBeenCalledWith(manual, {
+        name: "guild",
+        displayName: "Guild",
+        project: true,
+      }),
+    );
+  });
+
+  it("marks project teams in the list and the header", () => {
+    const project = {
+      ...manual,
+      id: 3,
+      metadata: {
+        name: "launch",
+        display_name: "Launch",
+        labels: { "neutree.ai/team-kind": "project" },
+      },
+    } as unknown as Team;
+    vi.mocked(useTeams).mockReturnValue({
+      data: { data: [synced, manual, project], total: 3 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useTeams>);
+    render(<TeamsPanel />, "/o?team=launch");
+    const list = screen.getByTestId("team-list");
+    expect(within(list).getAllByTestId("team-project-badge")).toHaveLength(1);
+    expect(
+      within(screen.getByTestId("team-3")).getByTestId("team-project-badge"),
+    ).toBeTruthy();
+    // The selected Team's header shows the mark too.
+    expect(screen.getAllByTestId("team-project-badge")).toHaveLength(2);
   });
 
   it("shows a taken name as a readable error", async () => {

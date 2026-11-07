@@ -2927,7 +2927,10 @@
 			"searchDepartments": "Search by path, e.g. Engineering / Platform",
 			"searchTeams": "Search teams",
 			"allSources": "All identity sources",
-			"showInactive": "Show inactive"
+			"showInactive": "Show inactive",
+			"allTeamKinds": "All teams",
+			"projectsOnly": "Projects",
+			"nonProjects": "Non-project teams"
 		},
 		"departments": {
 			"title": "Departments",
@@ -2944,7 +2947,9 @@
 			"createTitle": "Create Team",
 			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
 			"editTitle": "Edit Team",
-			"editHint": "Change the display name of the team.",
+			"editHint": "Change the display name of the team, or whether it is a project.",
+			"markProject": "Mark as project",
+			"markProjectHint": "A project works like any other team; it is only shown apart.",
 			"namePlaceholder": "e.g. ml-platform",
 			"nameHint": "Lowercase letters, digits, '-' and '.'. It cannot be changed later.",
 			"nameFixed": "The name cannot be changed.",
@@ -3003,6 +3008,7 @@
 		"values": {
 			"manual": "Assigned by hand",
 			"manualTeam": "Manual",
+			"project": "Project",
 			"local": "Local"
 		},
 		"errors": {

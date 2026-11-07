@@ -12,11 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingIcon } from "@/components/ui/loading";
+import { Switch } from "@/components/ui/switch";
 import {
+  isProjectTeam,
   type TeamNameError,
   validateTeamName,
 } from "@/domains/organization/lib/team";
-import type { Team } from "@/domains/organization/types";
+import type { Team, TeamFormValues } from "@/domains/organization/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const NAME_ERROR_KEYS: Record<TeamNameError, string> = {
@@ -32,12 +34,12 @@ type TeamFormDialogProps = {
   team?: Team;
   saving?: boolean;
   error?: string;
-  onSave: (values: { name: string; displayName: string }) => void;
+  onSave: (values: TeamFormValues) => void;
 };
 
 /**
- * Creates a manual Team, or changes its display name: the name is fixed once
- * created. Mount it when opening.
+ * Creates a manual Team, or changes its display name and project mark: the
+ * name is fixed once created. Mount it when opening.
  */
 export function TeamFormDialog({
   onOpenChange,
@@ -51,16 +53,19 @@ export function TeamFormDialog({
   const [displayName, setDisplayName] = useState(
     team?.metadata.display_name ?? "",
   );
+  const [project, setProject] = useState(!!team && isProjectTeam(team));
   const [touched, setTouched] = useState(false);
 
   const nameError = team ? undefined : validateTeamName(name.trim());
   const unchanged =
-    !!team && displayName.trim() === (team.metadata.display_name ?? "").trim();
+    !!team &&
+    displayName.trim() === (team.metadata.display_name ?? "").trim() &&
+    project === isProjectTeam(team);
 
   const submit = () => {
     setTouched(true);
     if (nameError || unchanged) return;
-    onSave({ name: name.trim(), displayName: displayName.trim() });
+    onSave({ name: name.trim(), displayName: displayName.trim(), project });
   };
 
   return (
@@ -118,6 +123,22 @@ export function TeamFormDialog({
               onChange={(event) => setDisplayName(event.target.value)}
               placeholder={t("organization.teams.displayNamePlaceholder")}
               data-testid="team-form-display-name"
+            />
+          </div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="team-project">
+                {t("organization.teams.markProject")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t("organization.teams.markProjectHint")}
+              </p>
+            </div>
+            <Switch
+              id="team-project"
+              checked={project}
+              onCheckedChange={setProject}
+              data-testid="team-form-project"
             />
           </div>
           {error && (

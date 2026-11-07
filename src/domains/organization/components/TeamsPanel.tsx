@@ -2,10 +2,18 @@ import { Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AddTeamMembersDialog } from "@/domains/organization/components/AddTeamMembersDialog";
 import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import { MemberTable } from "@/domains/organization/components/MemberTable";
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
+import { ProjectBadge } from "@/domains/organization/components/ProjectBadge";
 import { TeamFormDialog } from "@/domains/organization/components/TeamFormDialog";
 import { TeamSourceLabel } from "@/domains/organization/components/TeamSourceLabel";
 import {
@@ -22,7 +30,13 @@ import {
   isInactive,
 } from "@/domains/organization/lib/org-tree";
 import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
-import { isManualTeam, teamSource } from "@/domains/organization/lib/team";
+import {
+  isManualTeam,
+  isProjectTeam,
+  matchesTeamKind,
+  type TeamKindFilter,
+  teamSource,
+} from "@/domains/organization/lib/team";
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
@@ -103,6 +117,7 @@ export function TeamsPanel({
 
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [kind, setKind] = useState<TeamKindFilter>("all");
   const [view, updateView] = useOrganizationView();
   const [dialog, setDialog] = useState<OpenDialog>();
   const [dialogError, setDialogError] = useState<string>();
@@ -111,8 +126,11 @@ export function TeamsPanel({
   const { data, isLoading, error } = useTeams();
   const all = data?.data ?? [];
   const teams = useMemo(
-    () => filterTeams(data?.data ?? [], { query, showInactive }),
-    [data, query, showInactive],
+    () =>
+      filterTeams(data?.data ?? [], { query, showInactive }).filter((team) =>
+        matchesTeamKind(team, kind),
+      ),
+    [data, query, showInactive, kind],
   );
   const selected = view.team
     ? all.find((team) => team.metadata.name === view.team)
@@ -173,6 +191,7 @@ export function TeamsPanel({
           selected ? (
             <span className="inline-flex items-center gap-2">
               {displayName(selected.metadata)}
+              {isProjectTeam(selected) && <ProjectBadge />}
               {isInactive(selected) && <InactiveBadge />}
             </span>
           ) : (
@@ -370,7 +389,30 @@ export function TeamsPanel({
         placeholder={t("organization.filters.searchTeams")}
         showInactive={showInactive}
         onShowInactiveChange={setShowInactive}
-      />
+      >
+        <Select
+          value={kind}
+          onValueChange={(value) => setKind(value as TeamKindFilter)}
+        >
+          <SelectTrigger
+            className="w-full sm:w-40"
+            data-testid="team-kind-filter"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              {t("organization.filters.allTeamKinds")}
+            </SelectItem>
+            <SelectItem value="project">
+              {t("organization.filters.projectsOnly")}
+            </SelectItem>
+            <SelectItem value="team">
+              {t("organization.filters.nonProjects")}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </OrganizationToolbar>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <ShowPage.Section
           title={t("organization.teams.title")}
@@ -422,6 +464,7 @@ export function TeamsPanel({
                     <span className="truncate">
                       {displayName(team.metadata)}
                     </span>
+                    {isProjectTeam(team) && <ProjectBadge />}
                     {isInactive(team) && <InactiveBadge />}
                     <span className="ml-auto" />
                     <TeamSourceLabel team={team} />
@@ -444,10 +487,10 @@ export function TeamsPanel({
           onOpenChange={(next) => !next && close()}
           saving={teamWrites.isPending}
           error={dialogError}
-          onSave={({ name, displayName: label }) =>
+          onSave={(values) =>
             attempt(
               async () => {
-                const created = await teamWrites.create(name, label);
+                const created = await teamWrites.create(values);
                 if (created) select(created.metadata.name);
               },
               { creating: true },
@@ -461,8 +504,8 @@ export function TeamsPanel({
           team={selected}
           saving={teamWrites.isPending}
           error={dialogError}
-          onSave={({ displayName: label }) =>
-            attempt(() => teamWrites.rename(selected, label))
+          onSave={(values) =>
+            attempt(() => teamWrites.update(selected, values))
           }
         />
       )}

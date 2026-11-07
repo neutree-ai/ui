@@ -33,22 +33,35 @@ describe("useTeamWrites", () => {
   it("creates a manual team and returns the row", async () => {
     mutateAsync.mockResolvedValue({ data: [team] });
     const { result } = renderHook(() => useTeamWrites());
-    await expect(result.current.create("guild", "Guild")).resolves.toBe(team);
+    await expect(
+      result.current.create({
+        name: "guild",
+        displayName: "Guild",
+        project: true,
+      }),
+    ).resolves.toBe(team);
     expect(mutateAsync.mock.calls[0][0]).toMatchObject({
       url: "/teams",
       method: "post",
       values: {
-        metadata: { name: "guild", display_name: "Guild" },
+        metadata: {
+          name: "guild",
+          display_name: "Guild",
+          labels: { "neutree.ai/team-kind": "project" },
+        },
         spec: { identity_source: null, external_id: null },
       },
       meta: { headers: { Prefer: "return=representation" } },
     });
   });
 
-  it("renames with the whole metadata", async () => {
+  it("updates with the whole metadata", async () => {
     mutateAsync.mockResolvedValue({ data: [team] });
     const { result } = renderHook(() => useTeamWrites());
-    await result.current.rename(team, "Guild 2");
+    await result.current.update(team, {
+      displayName: "Guild 2",
+      project: true,
+    });
     expect(mutateAsync.mock.calls[0][0]).toMatchObject({
       url: "/teams?id=eq.7",
       method: "patch",
@@ -56,7 +69,7 @@ describe("useTeamWrites", () => {
         metadata: {
           name: "guild",
           display_name: "Guild 2",
-          labels: { a: "b" },
+          labels: { a: "b", "neutree.ai/team-kind": "project" },
         },
       },
       meta: { headers: { Prefer: "return=representation" } },

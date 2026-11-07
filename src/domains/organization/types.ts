@@ -36,6 +36,14 @@ export type Team = {
   status?: OrgObjectStatus | null;
 };
 
+/** What the create / edit dialog of a manual Team collects. */
+export type TeamFormValues = {
+  name: string;
+  displayName: string;
+  /** Marked as a project, see TEAM_KIND_LABEL. */
+  project: boolean;
+};
+
 export type MemberProfile = {
   id: string;
   metadata: Metadata;
