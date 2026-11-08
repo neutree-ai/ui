@@ -2121,7 +2121,8 @@
 			"subjectMismatch": "The subject does not match its type. A user policy names a user; a team or department policy names a team or department and no user.",
 			"subjectNotFound": "The selected team or department does not exist.",
 			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator.",
-			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department."
+			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department.",
+			"applicationNoGrants": "Applications cannot hold role grants. Set the team's application permissions instead."
 		},
 		"subjectKinds": {
 			"User": "User",

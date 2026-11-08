@@ -13,6 +13,7 @@ describe("roleAssignmentErrorMessage", () => {
     ["10293", "role_assignments.errors.subjectMismatch"],
     ["10294", "role_assignments.errors.subjectNotFound"],
     ["10297", "role_assignments.errors.delegatedNoTeam"],
+    ["10326", "role_assignments.errors.applicationNoGrants"],
   ])("translates %s", (code, key) => {
     expect(roleAssignmentErrorMessage(t, { code })).toBe(key);
   });
