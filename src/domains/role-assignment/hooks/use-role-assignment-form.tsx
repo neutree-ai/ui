@@ -1,4 +1,4 @@
-import { useCustom, useList, useSelect } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { type ReactElement, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -43,44 +43,16 @@ const SCOPE_OPTION_KEYS: Record<RoleAssignmentScope, string> = {
 // Only a global administrator may grant it; the server refuses anyone else.
 const TEAM_ADMIN_PRESET = "team-admin";
 
-/**
- * The roles an application's Team ceiling allows; undefined when no
- * application is picked or the ceiling cannot be read (the server decides).
- */
-const useServiceAccountCeilingRoles = (accountId: string) => {
-  const account = useList<{ id: string; team_id: number }>({
-    resource: "service_accounts",
-    filters: [{ field: "id", operator: "eq", value: accountId }],
-    meta: { select: "id,team_id" },
-    queryOptions: { enabled: accountId !== "" },
-  });
-  const teamId = account.data?.data[0]?.team_id;
-  const ceiling = useCustom<{ roles: string[] }[]>({
-    url: "/rpc/get_team_service_account_ceiling",
-    method: "post",
-    config: { payload: { p_team_id: teamId } },
-    queryOptions: { enabled: teamId !== undefined, retry: false },
-    successNotification: false,
-    errorNotification: false,
-  });
-  if (!accountId || teamId === undefined) return undefined;
-  const rows = ceiling.data?.data as { roles: string[] }[] | undefined;
-  return rows?.[0]?.roles;
-};
-
 export const useRoleAssignmentForm = ({
   action,
   orgUnitField,
   teamField,
-  serviceAccountField,
 }: {
   action: "create" | "edit";
   /** The department picker, from the organization domain. */
   orgUnitField?: ReactElement;
   /** The Team picker, from the organization domain. */
   teamField?: ReactElement;
-  /** The application picker, from the service-account domain. */
-  serviceAccountField?: ReactElement;
 }) => {
   const { t } = useTranslation();
   const { supportMultiWorkspace } = useLicense();
@@ -133,22 +105,17 @@ export const useRoleAssignmentForm = ({
   const scope = scopeOf(spec);
   const isGlobalAdmin = globalAllowed === true;
   const subjectKind = subjectKindOf(spec);
-  const isServiceAccount = subjectKind === "ServiceAccount";
-  // An application's assignment is global or in a workspace (10322).
   const scopes = availableScopes({
     supportMultiWorkspace,
     delegated,
     canScopeTeam: isGlobalAdmin && !!teamField,
-  }).filter(
-    (value) => !isServiceAccount || value === "global" || value === "workspace",
-  );
+  });
   // An existing Team-scoped assignment keeps its scope on the list.
   if (!scopes.includes(scope)) scopes.push(scope);
 
   const subjectKinds = availableSubjectKinds({
     delegated,
     canReadTeams: canReadTeams === true && !!teamField,
-    canPickServiceAccounts: !delegated && !!serviceAccountField,
   }).filter((kind) => kind !== "OrgUnit" || !!orgUnitField);
   // An existing assignment keeps its kind on the list, e.g. a Team one
   // opened by someone who cannot list teams.
@@ -172,14 +139,6 @@ export const useRoleAssignmentForm = ({
       shouldDirty: true,
     });
     form.setValue("spec.user_id", fields.user_id, { shouldDirty: true });
-    const current = scopeOf(form.getValues("spec"));
-    if (
-      next === "ServiceAccount" &&
-      current !== "global" &&
-      current !== "workspace"
-    ) {
-      setScope("global");
-    }
   };
 
   const setScope = (next: RoleAssignmentScope) => {
@@ -217,17 +176,11 @@ export const useRoleAssignmentForm = ({
   }>({
     resource: "roles",
   });
-  const ceilingRoles = useServiceAccountCeilingRoles(
-    isServiceAccount ? (spec.user_id ?? "") : "",
-  );
   const roleOptions = (roles.query.data?.data || []).filter(
     (role) =>
-      (isGlobalAdmin ||
-        role.spec?.preset_key !== TEAM_ADMIN_PRESET ||
-        role.metadata.name === spec.role) &&
-      (!ceilingRoles ||
-        ceilingRoles.includes(role.metadata.name) ||
-        role.metadata.name === spec.role),
+      isGlobalAdmin ||
+      role.spec?.preset_key !== TEAM_ADMIN_PRESET ||
+      role.metadata.name === spec.role,
   );
 
   return {
@@ -287,24 +240,6 @@ export const useRoleAssignmentForm = ({
             }))}
           />
         </FormFieldGroup>
-        {serviceAccountField && isServiceAccount && (
-          <FormFieldGroup
-            {...form}
-            // A separate mount: the user picker shares spec.user_id.
-            key="service-account"
-            name="spec.user_id"
-            label={t("role_assignments.subjectKinds.ServiceAccount")}
-            description={t("role_assignments.descriptions.serviceAccount")}
-            rules={{
-              validate: (value) =>
-                subjectKindOf(form.getValues("spec")) !== "ServiceAccount" ||
-                !!value ||
-                t("role_assignments.validation.serviceAccountRequired"),
-            }}
-          >
-            {serviceAccountField}
-          </FormFieldGroup>
-        )}
         {groupField && (
           <FormFieldGroup
             {...form}

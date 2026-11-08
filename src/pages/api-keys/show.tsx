@@ -5,7 +5,7 @@ import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerfor
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
-import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountField";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";

@@ -4,13 +4,7 @@ import { serviceAccountErrorMessage } from "./errors";
 const t = (key: string) => key;
 
 describe("serviceAccountErrorMessage", () => {
-  it("names the ceiling for a grant outside it", () => {
-    expect(serviceAccountErrorMessage(t, { code: "10323" }, "fallback")).toBe(
-      "service_accounts.errors.outsideCeiling",
-    );
-  });
-
-  it("explains a management role refused in a ceiling", () => {
+  it("explains a management role refused in application permissions", () => {
     expect(serviceAccountErrorMessage(t, { code: "10325" }, "fallback")).toBe(
       "service_accounts.errors.managementRole",
     );

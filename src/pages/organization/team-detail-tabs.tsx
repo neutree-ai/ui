@@ -37,9 +37,6 @@ export function TeamDetailTabs({
     useHasTeamPermission("service_account:update", team.id).allowed === true;
   const canDelete =
     useHasTeamPermission("service_account:delete", team.id).allowed === true;
-  const canAssign =
-    useHasTeamPermission("service_account:assign-role", team.id).allowed ===
-    true;
   const canReadUsage =
     useHasTeamPermission("team_usage:read", team.id).allowed === true;
   const canEditCeiling =
@@ -82,7 +79,6 @@ export function TeamDetailTabs({
               canCreate,
               canUpdate,
               canDelete,
-              canAssign,
               canEditCeiling,
             }}
             renderKeys={(account) => (

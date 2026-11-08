@@ -4,7 +4,7 @@ import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
-import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountField";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/components/ShowButton";

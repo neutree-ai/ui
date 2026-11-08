@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ServiceAccountCeilingCard } from "@/domains/service-account/components/ServiceAccountCeilingCard";
-import { ServiceAccountRoles } from "@/domains/service-account/components/ServiceAccountRoles";
 import {
   useServiceAccounts,
   useServiceAccountWrites,
@@ -42,8 +41,7 @@ export type ServiceAccountPermissions = {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
-  canAssign: boolean;
-  /** A global policy administrator: edits the Team's ceiling. */
+  /** A global policy administrator: edits the Team's application permissions. */
   canEditCeiling: boolean;
 };
 
@@ -53,7 +51,7 @@ export const accountLabel = (account: ServiceAccount) =>
   account.metadata.display_name || account.metadata.name;
 
 /**
- * The applications of a Team, and one application's keys, roles and usage.
+ * The applications of a Team, and one application's keys, permissions and usage.
  * Keys and usage belong to other domains: the page renders them.
  */
 export function TeamServiceAccounts({
@@ -216,10 +214,7 @@ export function TeamServiceAccounts({
         )}
         {errorAlert}
         {renderKeys(selected)}
-        <ServiceAccountRoles
-          account={selected}
-          canAssign={permissions.canAssign}
-        />
+        <ServiceAccountCeilingCard teamId={selected.team_id} canEdit={false} />
         {renderUsage(selected)}
       </div>
     );

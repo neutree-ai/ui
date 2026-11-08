@@ -2,7 +2,7 @@ import { useShow } from "@refinedev/core";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
-import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountField";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";

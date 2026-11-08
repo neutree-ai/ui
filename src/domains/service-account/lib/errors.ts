@@ -1,6 +1,6 @@
 import { translateApiError } from "@/foundation/lib/api-error-code";
 
-/** Server errors of applications (ServiceAccounts), their keys and roles. */
+/** Server errors of applications (ServiceAccounts), their keys and permissions. */
 const SERVICE_ACCOUNT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10315": "service_accounts.errors.teamHasApplications",
   "10316": "service_accounts.errors.keyHasNoProject",
@@ -9,8 +9,6 @@ const SERVICE_ACCOUNT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10319": "service_accounts.errors.hasKeys",
   "10320": "service_accounts.errors.applicationActor",
   "10321": "service_accounts.errors.subjectMismatch",
-  "10322": "service_accounts.errors.scope",
-  "10323": "service_accounts.errors.outsideCeiling",
   "10324": "service_accounts.errors.ceilingUnknown",
   "10325": "service_accounts.errors.managementRole",
   "23505": "service_accounts.errors.nameTaken",

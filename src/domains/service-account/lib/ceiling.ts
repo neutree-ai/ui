@@ -1,6 +1,6 @@
 /**
  * Permissions that manage access. A role holding one may not be in a Team's
- * application ceiling; the server refuses it with 10325
+ * application permissions; the server refuses it with 10325
  * (api.is_management_role). Keep the two lists the same.
  */
 export const MANAGEMENT_PERMISSIONS: ReadonlySet<string> = new Set([

@@ -8,7 +8,6 @@ import type {
   ServiceAccount,
   ServiceAccountCeiling,
 } from "@/domains/service-account/types";
-import type { Metadata } from "@/foundation/types/basic-types";
 
 const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
 
@@ -84,7 +83,7 @@ export const useServiceAccountWrites = () => {
   };
 };
 
-/** The ceiling in force for a Team: its own, or the default. */
+/** The application permissions in force for a Team: its own, or the default. */
 export const useServiceAccountCeiling = (teamId: number | undefined) => {
   const query = useCustom<ServiceAccountCeiling[]>({
     url: "/rpc/get_team_service_account_ceiling",
@@ -107,7 +106,7 @@ export const useServiceAccountCeiling = (teamId: number | undefined) => {
   };
 };
 
-/** Set a Team's ceiling, or put it back on the default. */
+/** Set a Team's application permissions, or put them back on the default. */
 export const useServiceAccountCeilingWrites = (teamId: number) => {
   const { mutateAsync, isLoading } = useCustomMutation();
   const byTeam = `/team_service_account_ceilings?team_id=eq.${teamId}`;
@@ -137,107 +136,6 @@ export const useServiceAccountCeilingWrites = (teamId: number) => {
           })
         : call(byTeam, "patch", next),
     reset: () => call(byTeam, "delete"),
-    isPending: isLoading,
-  };
-};
-
-export type ServiceAccountRoleAssignment = {
-  id: number;
-  metadata: Metadata;
-  spec: {
-    user_id: string | null;
-    role: string;
-    global: boolean;
-    workspace: string | null;
-  };
-};
-
-/** The role assignments of one application. */
-export const useServiceAccountRoleAssignments = (accountId: string) => {
-  const query = useList<ServiceAccountRoleAssignment>({
-    resource: "role_assignments",
-    pagination: { mode: "off" },
-    filters: [
-      { field: "spec->>subject_kind", operator: "eq", value: "ServiceAccount" },
-      { field: "spec->>user_id", operator: "eq", value: accountId },
-    ],
-    sorters: [{ field: "metadata->name", order: "asc" }],
-  });
-  return {
-    rows: (query.data?.data ?? []).filter(
-      (row) => !row.metadata.deletion_timestamp,
-    ),
-    isLoading: query.isLoading,
-    error: query.error,
-  };
-};
-
-// metadata.name of a new assignment: unique, and valid as a resource name.
-export const roleAssignmentName = (account: ServiceAccount, role: string) => {
-  const slug = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  const suffix = Math.random().toString(36).slice(2, 8);
-  return `app-${slug(account.metadata.name).slice(0, 30)}-${slug(role).slice(0, 20)}-${suffix}`.replace(
-    /-+/g,
-    "-",
-  );
-};
-
-/** Grant a role to an application, or revoke one. */
-export const useServiceAccountRoleWrites = () => {
-  const { mutateAsync, isLoading } = useCustomMutation();
-  const invalidate = useInvalidate();
-  const refresh = () =>
-    invalidate({ resource: "role_assignments", invalidates: ["list"] });
-
-  return {
-    grant: async (
-      account: ServiceAccount,
-      role: string,
-      workspace: string | null,
-    ) => {
-      await mutateAsync({
-        url: "/role_assignments",
-        method: "post",
-        values: {
-          api_version: "v1",
-          kind: "RoleAssignment",
-          metadata: { name: roleAssignmentName(account, role) },
-          spec: {
-            user_id: account.id,
-            subject_kind: "ServiceAccount",
-            subject_name: null,
-            role,
-            global: workspace === null,
-            workspace,
-            org_unit: null,
-            team: null,
-          },
-        },
-        successNotification: false,
-        errorNotification: false,
-      });
-      await refresh();
-    },
-    // A soft delete; composite PATCH needs the whole metadata.
-    revoke: async (assignment: ServiceAccountRoleAssignment) => {
-      await mutateAsync({
-        url: `/role_assignments?id=eq.${assignment.id}`,
-        method: "patch",
-        values: {
-          metadata: {
-            ...assignment.metadata,
-            deletion_timestamp: new Date().toISOString(),
-          },
-        },
-        successNotification: false,
-        errorNotification: false,
-      });
-      await refresh();
-    },
     isPending: isLoading,
   };
 };

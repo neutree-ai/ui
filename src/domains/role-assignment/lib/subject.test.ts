@@ -79,14 +79,4 @@ describe("application subjects", () => {
       }).user_id,
     ).toBe("sa-1");
   });
-
-  it("offers applications only to a caller who can pick them", () => {
-    expect(
-      availableSubjectKinds({
-        delegated: false,
-        canReadTeams: true,
-        canPickServiceAccounts: true,
-      }),
-    ).toEqual(["User", "Team", "OrgUnit", "ServiceAccount"]);
-  });
 });

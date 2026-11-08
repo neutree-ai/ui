@@ -27,7 +27,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /**
- * The roles a Team's applications may hold and the workspaces they may hold
+ * The roles every application of a Team holds, and the workspaces they hold
  * them in. Everyone who reads the applications sees it; `canEdit` (a global
  * policy administrator) changes it.
  */
