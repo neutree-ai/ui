@@ -84,8 +84,8 @@ describe("GroupModelAccess", () => {
     grant("read", "create", "delete");
     withPolicy();
     render(<GroupModelAccess kind="OrgUnit" name="rd" />);
-    expect(screen.getByTestId("group-policy-unrestricted")).toBeTruthy();
-    expect(screen.getByTestId("group-policy-edit")).toBeTruthy();
+    screen.getByTestId("group-policy-unrestricted");
+    screen.getByTestId("group-policy-edit");
     expect(screen.queryByTestId("group-policy-delete")).toBeNull();
   });
 
@@ -110,8 +110,8 @@ describe("GroupModelAccess", () => {
     grant("read", "update", "delete");
     withPolicy({ denied_models: [{ model: "gpt" }] });
     render(<GroupModelAccess kind="Team" name="sre" />);
-    expect(screen.getByTestId("group-policy-edit")).toBeTruthy();
-    expect(screen.getByTestId("group-policy-delete")).toBeTruthy();
+    screen.getByTestId("group-policy-edit");
+    screen.getByTestId("group-policy-delete");
   });
 
   it("shows the token pool with its usage", () => {
@@ -131,9 +131,9 @@ describe("GroupModelAccess", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useGroupTokenPool>);
     render(<GroupModelAccess kind="Team" name="sre" />);
-    expect(screen.getByTestId("group-policy-pool")).toBeTruthy();
-    expect(screen.getByTestId("group-policy-pool-usage")).toBeTruthy();
-    expect(screen.getByText("group_policies.pool.exhausted")).toBeTruthy();
+    screen.getByTestId("group-policy-pool");
+    screen.getByTestId("group-policy-pool-usage");
+    screen.getByText("group_policies.pool.exhausted");
     expect(vi.mocked(useGroupTokenPool)).toHaveBeenCalledWith(
       "Team",
       "sre",

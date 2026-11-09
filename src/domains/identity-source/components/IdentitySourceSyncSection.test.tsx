@@ -106,7 +106,7 @@ describe("IdentitySourceSyncSection", () => {
     expect(screen.getByTestId("identity-source-sync-empty").textContent).toBe(
       "identity_sources.status.syncOff",
     );
-    expect(screen.getByText("identity_sources.values.off")).toBeTruthy();
+    screen.getByText("identity_sources.values.off");
     expect(syncNow().disabled).toBe(true);
   });
 
@@ -120,15 +120,13 @@ describe("IdentitySourceSyncSection", () => {
     expect(screen.getByTestId("identity-source-sync-paused").textContent).toBe(
       "identity_sources.status.syncPaused",
     );
-    expect(screen.getByText("identity_sources.values.paused")).toBeTruthy();
+    screen.getByText("identity_sources.values.paused");
     expect(syncNow().disabled).toBe(true);
   });
 
   it("shows the schedule and an empty state before the first sync", () => {
     renderSection(source());
-    expect(
-      screen.getByText("identity_sources.values.everyMinutes:10"),
-    ).toBeTruthy();
+    screen.getByText("identity_sources.values.everyMinutes:10");
     expect(screen.getByTestId("identity-source-sync-empty").textContent).toBe(
       "identity_sources.status.notSynced",
     );
@@ -174,7 +172,7 @@ describe("IdentitySourceSyncSection", () => {
     expect(
       screen.getByTestId("identity-source-sync-count-deactivated").textContent,
     ).toBe("0");
-    expect(screen.getByText("3 created")).toBeTruthy();
+    screen.getByText("3 created");
     expect(syncNow().disabled).toBe(false);
   });
 
@@ -194,8 +192,8 @@ describe("IdentitySourceSyncSection", () => {
     expect(screen.getByTestId("identity-source-sync-result").textContent).toBe(
       "identity_sources.syncResults.failed",
     );
-    expect(screen.getByText("ldap: connection refused")).toBeTruthy();
-    expect(screen.getByText("2026-10-13T08:00:03Z")).toBeTruthy();
+    screen.getByText("ldap: connection refused");
+    screen.getByText("2026-10-13T08:00:03Z");
     expect(
       screen.getByTestId("identity-source-sync-count-pending").textContent,
     ).toBe("4");
@@ -245,6 +243,6 @@ describe("IdentitySourceLastSync", () => {
     expect(screen.getByTestId("identity-source-sync-result").textContent).toBe(
       "identity_sources.syncResults.failed",
     );
-    expect(screen.getByText("2026-10-13T09:00:02Z")).toBeTruthy();
+    screen.getByText("2026-10-13T09:00:02Z");
   });
 });

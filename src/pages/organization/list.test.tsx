@@ -60,19 +60,19 @@ describe("OrganizationList", () => {
     grant("org_unit:read");
     const { unmount } = render(<OrganizationList />);
     expect(vi.mocked(useHasPermission)).toHaveBeenCalledWith("team:read");
-    expect(screen.getByTestId("departments-panel")).toBeTruthy();
+    screen.getByTestId("departments-panel");
     expect(screen.queryByTestId("organization-teams-tab")).toBeNull();
     unmount();
 
     grant("org_unit:read", "team:read");
     render(<OrganizationList />);
-    expect(screen.getByTestId("organization-teams-tab")).toBeTruthy();
+    screen.getByTestId("organization-teams-tab");
   });
 
   it("opens the Teams tab for a team admin who cannot read departments", () => {
     grant("team:read");
     render(<OrganizationList />);
-    expect(screen.getByTestId("teams-panel")).toBeTruthy();
+    screen.getByTestId("teams-panel");
     expect(screen.queryByText("organization.departments.title")).toBeNull();
   });
 
@@ -82,7 +82,7 @@ describe("OrganizationList", () => {
       <OrganizationList />,
       "/organization?tab=teams&team=guild",
     );
-    expect(screen.getByTestId("teams-panel")).toBeTruthy();
+    screen.getByTestId("teams-panel");
     expect(screen.queryByTestId("departments-panel")).toBeNull();
 
     const departments = screen.getByText("organization.departments.title");
@@ -94,6 +94,6 @@ describe("OrganizationList", () => {
     // Without team:read the Teams tab in a link falls back to Departments.
     grant("org_unit:read");
     render(<OrganizationList />, "/organization?tab=teams");
-    expect(screen.getByTestId("departments-panel")).toBeTruthy();
+    screen.getByTestId("departments-panel");
   });
 });

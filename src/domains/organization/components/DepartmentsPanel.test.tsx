@@ -107,16 +107,14 @@ describe("DepartmentsPanel", () => {
 
   it("groups by identity source, opens the roots and hides Inactive departments", () => {
     render(<DepartmentsPanel />);
-    expect(
-      screen.getByText("organization.departments.fromSource:corp"),
-    ).toBeTruthy();
-    expect(screen.getByTestId("org-unit-2")).toBeTruthy();
+    screen.getByText("organization.departments.fromSource:corp");
+    screen.getByTestId("org-unit-2");
     // Engineering is closed by default, and Finance is Inactive.
     expect(screen.queryByTestId("org-unit-3")).toBeNull();
     expect(screen.queryByTestId("org-unit-4")).toBeNull();
 
     fireEvent.click(screen.getByTestId("organization-show-inactive"));
-    expect(screen.getByTestId("org-unit-4")).toBeTruthy();
+    screen.getByTestId("org-unit-4");
   });
 
   it("opens every match while searching by path", () => {
@@ -124,7 +122,7 @@ describe("DepartmentsPanel", () => {
     fireEvent.change(screen.getByTestId("organization-search"), {
       target: { value: "engineering / plat" },
     });
-    expect(screen.getByTestId("org-unit-3")).toBeTruthy();
+    screen.getByTestId("org-unit-3");
     expect(screen.queryByTestId("org-unit-4")).toBeNull();
 
     fireEvent.change(screen.getByTestId("organization-search"), {
@@ -145,7 +143,7 @@ describe("DepartmentsPanel", () => {
 
     // A shared link to a deep department opens the way down to it.
     render(<DepartmentsPanel />, "/organization?department=ou-3");
-    expect(screen.getByTestId("org-unit-3")).toBeTruthy();
+    screen.getByTestId("org-unit-3");
     expect(vi.mocked(useOrgUnitMembers)).toHaveBeenLastCalledWith(3, false);
   });
 
@@ -155,18 +153,14 @@ describe("DepartmentsPanel", () => {
     expect(vi.mocked(useOrgUnitMembers)).toHaveBeenLastCalledWith(2, false);
 
     const table = screen.getByTestId("members-table");
-    expect(within(table).getByText("Alice")).toBeTruthy();
-    expect(within(table).getByText("organization.values.manual")).toBeTruthy();
+    within(table).getByText("Alice");
+    within(table).getByText("organization.values.manual");
     expect(
       within(table).queryByText("organization.fields.department"),
     ).toBeNull();
 
     fireEvent.click(screen.getByTestId("org-unit-include-subtree"));
     expect(vi.mocked(useOrgUnitMembers)).toHaveBeenLastCalledWith(2, true);
-    expect(
-      within(screen.getByTestId("members-table")).getByText(
-        "Corp / Engineering",
-      ),
-    ).toBeTruthy();
+    within(screen.getByTestId("members-table")).getByText("Corp / Engineering");
   });
 });

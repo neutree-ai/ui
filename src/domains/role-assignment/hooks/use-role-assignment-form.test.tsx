@@ -9,21 +9,6 @@ import React from "react";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-vi.mock("@refinedev/react-hook-form", async () => {
-  const rhf =
-    await vi.importActual<typeof import("react-hook-form")>("react-hook-form");
-  return {
-    useForm: (opts: Record<string, unknown>) => {
-      const { refineCoreProps, warnWhenUnsavedChanges, ...rhfOpts } = opts;
-      return rhf.useForm(rhfOpts);
-    },
-  };
-});
-
 vi.mock("@refinedev/core", () => ({
   useSelect: () => ({
     query: { data: { data: [] }, isLoading: false },
@@ -51,6 +36,7 @@ import {
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { useLicense } from "@/foundation/hooks/use-license";
+import { isHidden } from "@/foundation/testing/interactions";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
 /** Stands in for the organization domain's picker: one click picks "rnd". */
@@ -184,12 +170,8 @@ describe("useRoleAssignmentForm", () => {
           org_unit: null,
         }),
       );
-      expect(screen.getByTestId("field-spec.workspace").className).toContain(
-        "hidden",
-      );
-      expect(screen.getByTestId("field-spec.org_unit").className).toContain(
-        "hidden",
-      );
+      expect(isHidden(screen.getByTestId("field-spec.workspace"))).toBe(true);
+      expect(isHidden(screen.getByTestId("field-spec.org_unit"))).toBe(true);
     });
 
     it("starts global whether or not the license has loaded", () => {
@@ -228,18 +210,14 @@ describe("useRoleAssignmentForm", () => {
       await waitFor(() =>
         expect(spec()).toMatchObject({ global: false, org_unit: null }),
       );
-      expect(
-        screen.getByTestId("field-spec.workspace").className,
-      ).not.toContain("hidden");
+      expect(isHidden(screen.getByTestId("field-spec.workspace"))).toBe(false);
     });
 
     it("builds a subtree spec from the picked department", async () => {
       render(<TestForm />);
       selectScope(SUBTREE);
 
-      expect(screen.getByTestId("field-spec.org_unit").className).not.toContain(
-        "hidden",
-      );
+      expect(isHidden(screen.getByTestId("field-spec.org_unit"))).toBe(false);
       fireEvent.click(screen.getByTestId("org-unit-field-mock"));
 
       await waitFor(() =>
@@ -305,9 +283,7 @@ describe("useRoleAssignmentForm", () => {
       act(() => formRef?.setValue("spec.user_id", "u-1"));
       selectKind(TEAM);
 
-      expect(screen.getByTestId("field-spec.user_id").className).toContain(
-        "hidden",
-      );
+      expect(isHidden(screen.getByTestId("field-spec.user_id"))).toBe(true);
       fireEvent.click(screen.getByTestId("team-field-mock"));
       await waitFor(() =>
         expect(spec()).toMatchObject({

@@ -67,8 +67,8 @@ const grant = ({ global, any }: { global: boolean; any: boolean }) => {
 describe("RoleAssignmentSubjectLabel", () => {
   it("reads a spec without subject_kind as a user", () => {
     render(<RoleAssignmentSubjectLabel spec={{ ...spec, user_id: "u-1" }} />);
-    expect(screen.getByTestId("subject-kind-User")).toBeTruthy();
-    expect(screen.getByText("user:u-1")).toBeTruthy();
+    screen.getByTestId("subject-kind-User");
+    screen.getByText("user:u-1");
   });
 
   it("renders a group through the page's renderer", () => {
@@ -78,8 +78,8 @@ describe("RoleAssignmentSubjectLabel", () => {
         renderTeam={(name) => `team:${name}`}
       />,
     );
-    expect(screen.getByTestId("subject-kind-Team")).toBeTruthy();
-    expect(screen.getByText("team:sre")).toBeTruthy();
+    screen.getByTestId("subject-kind-Team");
+    screen.getByText("team:sre");
   });
 });
 
@@ -102,7 +102,7 @@ describe("GroupRoleAssignments", () => {
     grant({ global: true, any: true });
     render(<GroupRoleAssignments kind="Team" name="sre" />);
     expect(useGroupRoleAssignments).toHaveBeenCalledWith("Team", "sre", true);
-    expect(screen.getByText("sre-viewer")).toBeTruthy();
+    screen.getByText("sre-viewer");
   });
 
   it("hides a Team's assignments from a subtree grant", () => {
@@ -114,7 +114,7 @@ describe("GroupRoleAssignments", () => {
   it("shows a department's assignments to a subtree grant", () => {
     grant({ global: false, any: true });
     render(<GroupRoleAssignments kind="OrgUnit" name="rnd" />);
-    expect(screen.getByTestId("group-role-assignments")).toBeTruthy();
+    screen.getByTestId("group-role-assignments");
   });
 });
 

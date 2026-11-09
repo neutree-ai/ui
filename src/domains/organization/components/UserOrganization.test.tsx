@@ -135,7 +135,7 @@ describe("UserDepartmentSection", () => {
     grant("org_unit:read", "org_unit:assign-member");
     grantGlobal("org_unit:assign-member");
     render(<UserDepartmentSection profile={profile()} />);
-    expect(screen.getByTestId("user-department-empty")).toBeTruthy();
+    screen.getByTestId("user-department-empty");
     expect(screen.queryByTestId("user-department-remove")).toBeNull();
 
     fireEvent.click(screen.getByTestId("user-department-assign"));
@@ -173,7 +173,7 @@ describe("UserDepartmentSection", () => {
     expect(screen.getByTestId("user-department-assign").textContent).toBe(
       "user_profiles.department.change",
     );
-    expect(screen.getByTestId("user-department-remove")).toBeTruthy();
+    screen.getByTestId("user-department-remove");
   });
 
   it("explains a change to a department outside the caller's", async () => {
@@ -233,7 +233,7 @@ describe("UserDepartmentSection", () => {
   it("offers no assignment to a user without a department on a subtree grant", () => {
     grant("org_unit:read", "org_unit:assign-member");
     render(<UserDepartmentSection profile={profile()} />);
-    expect(screen.getByTestId("user-department-empty")).toBeTruthy();
+    screen.getByTestId("user-department-empty");
     expect(screen.queryByTestId("user-department-assign")).toBeNull();
   });
 
@@ -248,7 +248,7 @@ describe("UserDepartmentSection", () => {
     expect(screen.getByTestId("user-department-source").textContent).toBe(
       "corp",
     );
-    expect(screen.getByText("organization.phases.Inactive")).toBeTruthy();
+    screen.getByText("organization.phases.Inactive");
     expect(screen.queryByTestId("user-department-assign")).toBeNull();
     expect(screen.queryByTestId("user-department-remove")).toBeNull();
   });
@@ -256,7 +256,7 @@ describe("UserDepartmentSection", () => {
   it("offers no editing without org_unit:assign-member", () => {
     grant("org_unit:read");
     render(<UserDepartmentSection profile={profile()} />);
-    expect(screen.getByTestId("user-department-empty")).toBeTruthy();
+    screen.getByTestId("user-department-empty");
     expect(screen.queryByTestId("user-department-assign")).toBeNull();
   });
 });

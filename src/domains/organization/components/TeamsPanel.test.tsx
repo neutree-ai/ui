@@ -161,16 +161,14 @@ describe("TeamsPanel", () => {
     unmount();
     grant("team:create");
     render(<TeamsPanel />);
-    expect(screen.getByTestId("team-create")).toBeTruthy();
+    screen.getByTestId("team-create");
   });
 
   it("keeps a synced team read-only", () => {
     grant(...ALL);
     render(<TeamsPanel />);
     fireEvent.click(screen.getByTestId("team-1"));
-    expect(
-      screen.getByText("organization.teams.syncedSource:corp"),
-    ).toBeTruthy();
+    screen.getByText("organization.teams.syncedSource:corp");
     expect(screen.queryByTestId("team-edit")).toBeNull();
     expect(screen.queryByTestId("team-delete")).toBeNull();
     expect(screen.queryByTestId("team-add-members")).toBeNull();
@@ -181,7 +179,7 @@ describe("TeamsPanel", () => {
     grant("team:update");
     const { unmount } = render(<TeamsPanel />);
     fireEvent.click(screen.getByTestId("team-2"));
-    expect(screen.getByTestId("team-edit")).toBeTruthy();
+    screen.getByTestId("team-edit");
     expect(screen.queryByTestId("team-delete")).toBeNull();
     expect(screen.queryByTestId("team-add-members")).toBeNull();
     expect(screen.queryByTestId("team-remove-member-u-1")).toBeNull();
@@ -190,9 +188,9 @@ describe("TeamsPanel", () => {
     grant(...ALL);
     render(<TeamsPanel />);
     fireEvent.click(screen.getByTestId("team-2"));
-    expect(screen.getByTestId("team-delete")).toBeTruthy();
-    expect(screen.getByTestId("team-add-members")).toBeTruthy();
-    expect(screen.getByTestId("team-remove-member-u-1")).toBeTruthy();
+    screen.getByTestId("team-delete");
+    screen.getByTestId("team-add-members");
+    screen.getByTestId("team-remove-member-u-1");
   });
 
   it("deletes a manual team after confirmation", async () => {
@@ -221,7 +219,7 @@ describe("TeamsPanel", () => {
     expect(screen.getByTestId("team-2").getAttribute("aria-pressed")).toBe(
       "true",
     );
-    expect(screen.getByTestId("team-delete")).toBeTruthy();
+    screen.getByTestId("team-delete");
   });
 
   it("says up front that policies block the delete, and disables it", () => {
@@ -236,9 +234,7 @@ describe("TeamsPanel", () => {
     fireEvent.click(screen.getByTestId("team-delete"));
     expect(useDeleteCheck).toHaveBeenLastCalledWith("guild", true);
     const dialog = screen.getByRole("alertdialog");
-    expect(
-      within(dialog).getByText("organization.teams.deleteBlocked"),
-    ).toBeTruthy();
+    within(dialog).getByText("organization.teams.deleteBlocked");
     const confirm = within(dialog).getByRole("button", {
       name: "buttons.delete",
     }) as HTMLButtonElement;
@@ -259,7 +255,7 @@ describe("TeamsPanel", () => {
       within(screen.getByRole("alertdialog")).getByRole("button", {
         name: "buttons.delete",
       }) as HTMLButtonElement;
-    expect(screen.getByTestId("team-delete-checking")).toBeTruthy();
+    screen.getByTestId("team-delete-checking");
     expect(button().disabled).toBe(true);
 
     check = { ...check, isLoading: false };
@@ -268,7 +264,7 @@ describe("TeamsPanel", () => {
         <TeamsPanel useDeleteCheck={() => check} />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId("team-delete-policy")).toBeTruthy();
+    screen.getByTestId("team-delete-policy");
     expect(button().disabled).toBe(false);
   });
 
@@ -327,9 +323,7 @@ describe("TeamsPanel", () => {
       target: { value: "corp-0123456789ab" },
     });
     fireEvent.click(screen.getByTestId("team-form-save"));
-    expect(
-      screen.getByText("organization.errors.reservedTeamName"),
-    ).toBeTruthy();
+    screen.getByText("organization.errors.reservedTeamName");
     expect(writes.create).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByTestId("team-form-name"), {
@@ -405,9 +399,7 @@ describe("TeamsPanel", () => {
     render(<TeamsPanel />, "/o?team=launch");
     const list = screen.getByTestId("team-list");
     expect(within(list).getAllByTestId("team-project-badge")).toHaveLength(1);
-    expect(
-      within(screen.getByTestId("team-3")).getByTestId("team-project-badge"),
-    ).toBeTruthy();
+    within(screen.getByTestId("team-3")).getByTestId("team-project-badge");
     // The selected Team's header shows the mark too.
     expect(screen.getAllByTestId("team-project-badge")).toHaveLength(2);
   });

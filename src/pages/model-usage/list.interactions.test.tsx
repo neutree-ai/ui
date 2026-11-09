@@ -569,7 +569,7 @@ describe("usage by group", () => {
     expect(bob.textContent).toContain("Bob");
     expect(alice.textContent).toContain("Alice");
     expect(alice.textContent).toContain("3");
-    expect(card.getByText("model_usage.group.requests")).toBeDefined();
+    card.getByText("model_usage.group.requests");
   });
 
   it("applies the type filter", () => {
@@ -597,14 +597,16 @@ describe("usage by group", () => {
 
   it("charts the kind picked for the group card", () => {
     renderAsReader();
-    expect(screen.getByText("Daily tokens by API key")).toBeDefined();
+    screen.getByText("model_usage.daily.titleByKey");
 
     openSelect(3);
-    pickOption("Department");
+    pickOption("model_usage.group.kinds.OrgUnit");
 
-    expect(screen.getByText("Daily tokens by Department")).toBeDefined();
+    screen.getByText(
+      "model_usage.daily.titleByGroup:model_usage.group.kinds.OrgUnit",
+    );
     expect(screen.getByTestId("usage-chart-dimension").textContent).toContain(
-      "Department",
+      "model_usage.group.kinds.OrgUnit",
     );
     // Departments overlap, so the chart shows no grand total.
     expect(screen.queryByText("model_usage.daily.totalLabel")).toBeNull();
@@ -619,9 +621,9 @@ describe("usage by group", () => {
     render(<ModelUsageList />);
 
     openSelect(3);
-    pickOption("Team");
+    pickOption("model_usage.group.kinds.Team");
 
-    const [row] = bodyRows(cardFor("By user or group"));
+    const [row] = bodyRows(groupCard());
     expect(row.textContent).toContain("Platform");
     expect(row.textContent).not.toContain("org-ldap-3f9a2c");
   });
@@ -632,15 +634,18 @@ describe("usage by group", () => {
     groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
     render(<ModelUsageList />);
 
-    const card = cardFor("By user or group");
+    const card = groupCard();
     expect(bodyRows(card)[0].textContent).toContain("Alice");
-    expect(screen.getByText(/model_usage\.group\.subtreeOnly/)).toBeDefined();
+    screen.getByText(/model_usage\.group\.subtreeOnly/);
 
     openSelect(3);
     const options = screen
       .getAllByRole("option")
       .map((node) => node.textContent);
-    expect(options).toEqual(["User", "Department"]);
+    expect(options).toEqual([
+      "model_usage.group.kinds.User",
+      "model_usage.group.kinds.OrgUnit",
+    ]);
   });
 
   it("lists departments in tree order with their path", () => {
@@ -660,9 +665,9 @@ describe("usage by group", () => {
     render(<ModelUsageList />);
 
     openSelect(3);
-    pickOption("Department");
+    pickOption("model_usage.group.kinds.OrgUnit");
 
-    const rowsShown = bodyRows(cardFor("By user or group")).map(
+    const rowsShown = bodyRows(groupCard()).map(
       (row: HTMLElement) => row.textContent,
     );
     expect(rowsShown[0]).toContain("Corp");
@@ -683,26 +688,24 @@ describe("usage by group", () => {
     ];
     renderAsReader();
 
-    expect(screen.getByTestId("usage-group-department")).toBeDefined();
+    screen.getByTestId("usage-group-department");
     openSelect(4);
     pickOption("Corp / R&D");
     expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: undefined });
-    expect(
-      screen.getByText(/model_usage\.group\.filters\.subtreeIncluded/),
-    ).toBeDefined();
+    screen.getByText(/model_usage\.group\.filters\.subtreeIncluded/);
 
     openSelect(5);
     pickOption("Infra");
     expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: "org-ldap-7" });
 
     // The rows the server returns are ranked by usage.
-    const [bob, alice] = bodyRows(cardFor("By user or group"));
+    const [bob, alice] = bodyRows(groupCard());
     expect(bob.textContent).toContain("Bob");
     expect(alice.textContent).toContain("Alice");
 
     // Other kinds are not filtered.
     openSelect(3);
-    pickOption("Department");
+    pickOption("model_usage.group.kinds.OrgUnit");
     expect(groupFilters.at(-1)).toEqual({});
     orgUnits = [];
     teams = [];
@@ -720,7 +723,7 @@ describe("usage by group", () => {
     groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
     render(<ModelUsageList />);
 
-    expect(screen.getByTestId("usage-group-department")).toBeDefined();
+    screen.getByTestId("usage-group-department");
     expect(screen.queryByTestId("usage-group-team")).toBeNull();
     openSelect(4);
     pickOption("R&D");
