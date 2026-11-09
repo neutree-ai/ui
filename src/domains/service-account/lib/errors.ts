@@ -13,6 +13,14 @@ const SERVICE_ACCOUNT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "23505": "service_accounts.errors.nameTaken",
 };
 
+/** A PATCH or DELETE that changed no row: the application is gone or hidden. */
+export class ServiceAccountGoneError extends Error {
+  constructor() {
+    super("The application no longer exists or cannot be changed");
+    this.name = "ServiceAccountGoneError";
+  }
+}
+
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 const messageOf = (error: unknown): string => {
@@ -29,5 +37,8 @@ export const serviceAccountErrorMessage = (
   error: unknown,
   fallback: string,
 ): string =>
+  (error instanceof ServiceAccountGoneError
+    ? t("service_accounts.errors.gone")
+    : undefined) ??
   translateApiError(t, error, SERVICE_ACCOUNT_ERROR_KEYS) ??
   (messageOf(error) || fallback);

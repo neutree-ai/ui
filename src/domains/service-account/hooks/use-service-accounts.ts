@@ -1,15 +1,10 @@
-import {
-  useCustom,
-  useCustomMutation,
-  useInvalidate,
-  useList,
-} from "@refinedev/core";
+import { useCustom, useList } from "@refinedev/core";
+import { ServiceAccountGoneError } from "@/domains/service-account/lib/errors";
 import type {
   ServiceAccount,
   ServiceAccountCeiling,
 } from "@/domains/service-account/types";
-
-const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
+import { useRowWrite } from "@/foundation/hooks/use-row-write";
 
 /** The applications of one Team the caller may read. */
 export const useServiceAccounts = (teamId: number | undefined) => {
@@ -38,25 +33,15 @@ export const useAllServiceAccounts = (enabled = true) =>
 
 /** Create, enable / disable and delete the applications of a Team. */
 export const useServiceAccountWrites = () => {
-  const { mutateAsync, isLoading } = useCustomMutation();
-  const invalidate = useInvalidate();
-
+  const { run: write, isPending } = useRowWrite({
+    invalidates: ["service_accounts"],
+    onNoRow: () => new ServiceAccountGoneError(),
+  });
   const run = async (
     url: string,
     method: "post" | "patch" | "delete",
     values?: unknown,
-  ) => {
-    const { data } = await mutateAsync({
-      url,
-      method,
-      values: values as Record<string, unknown>,
-      meta: RETURN_ROWS,
-      successNotification: false,
-      errorNotification: false,
-    });
-    await invalidate({ resource: "service_accounts", invalidates: ["list"] });
-    return (data as ServiceAccount[] | null)?.[0];
-  };
+  ) => ((await write(url, method, values)) as ServiceAccount[] | null)?.[0];
   const byId = (id: string) =>
     `/service_accounts?id=eq.${encodeURIComponent(id)}`;
 
@@ -79,7 +64,7 @@ export const useServiceAccountWrites = () => {
       }),
     // No controller: the row goes at once. The server refuses while keys remain.
     remove: (account: ServiceAccount) => run(byId(account.id), "delete"),
-    isPending: isLoading,
+    isPending,
   };
 };
 
@@ -108,21 +93,10 @@ export const useServiceAccountCeiling = (teamId: number | undefined) => {
 
 /** Set a Team's application permissions, or put them back on the default. */
 export const useServiceAccountCeilingWrites = (teamId: number) => {
-  const { mutateAsync, isLoading } = useCustomMutation();
+  // The card refetches the ceiling RPC after a write. A reset of a ceiling
+  // someone else already reset ends on the default, so no row is fine.
+  const { run: call, isPending } = useRowWrite({ invalidates: [] });
   const byTeam = `/team_service_account_ceilings?team_id=eq.${teamId}`;
-  const call = (
-    url: string,
-    method: "post" | "patch" | "delete",
-    values?: unknown,
-  ) =>
-    mutateAsync({
-      url,
-      method,
-      values: values as Record<string, unknown>,
-      meta: RETURN_ROWS,
-      successNotification: false,
-      errorNotification: false,
-    });
 
   return {
     save: (
@@ -136,6 +110,6 @@ export const useServiceAccountCeilingWrites = (teamId: number) => {
           })
         : call(byTeam, "patch", next),
     reset: () => call(byTeam, "delete"),
-    isPending: isLoading,
+    isPending,
   };
 };

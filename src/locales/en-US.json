@@ -3638,7 +3638,8 @@
 			"applicationActor": "An application cannot create applications or API keys.",
 			"ceilingUnknown": "The application permissions name a role or workspace that does not exist.",
 			"managementRole": "A role that manages access cannot be in the application permissions: one with role, role assignment, user, identity source, department, team, group policy or application management permissions, or system:admin.",
-			"nameTaken": "The name is already taken in this team."
+			"nameTaken": "The name is already taken in this team.",
+			"gone": "The application no longer exists, or you are not allowed to change it. Refresh the page."
 		}
 	}
 }

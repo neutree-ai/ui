@@ -1,9 +1,4 @@
-import {
-  useCustom,
-  useCustomMutation,
-  useInvalidate,
-  useList,
-} from "@refinedev/core";
+import { useCustom, useList } from "@refinedev/core";
 import { withProjectLabel } from "@/domains/organization/lib/team";
 import type {
   MemberProfile,
@@ -13,6 +8,7 @@ import type {
   TeamFormValues,
   TeamMember,
 } from "@/domains/organization/types";
+import { useRowWrite } from "@/foundation/hooks/use-row-write";
 
 // The page builds the tree locally, so it needs every row at once.
 const ALL = { mode: "off" } as const;
@@ -109,10 +105,6 @@ export const useUserTeams = (userId: string, enabled: boolean) => {
 };
 
 /**
- * Hand assignment of a local user's department. identity_source is left out:
- * a row with one belongs to sync, and the write policies refuse it.
- */
-/**
  * RLS hides a membership outside the caller's subtree, so PATCH and DELETE
  * change no row instead of failing.
  */
@@ -123,42 +115,31 @@ export class MembershipOutOfScopeError extends Error {
   }
 }
 
+/**
+ * Hand assignment of a local user's department. identity_source is left out:
+ * a row with one belongs to sync, and the write policies refuse it.
+ */
 export const useAssignOrgUnit = (userId: string) => {
-  const { mutateAsync, isLoading } = useCustomMutation();
-  const invalidate = useInvalidate();
+  const { run, isPending } = useRowWrite({
+    invalidates: ["org_unit_members", "user_profiles"],
+    onNoRow: () => new MembershipOutOfScopeError(),
+  });
   const url = `/org_unit_members?user_id=eq.${encodeURIComponent(userId)}`;
 
-  const run = async (
-    method: "post" | "patch" | "delete",
-    values: Record<string, unknown>,
-  ) => {
-    const { data } = await mutateAsync({
-      url: method === "post" ? "/org_unit_members" : url,
-      method,
-      values,
-      meta:
-        method === "post"
-          ? undefined
-          : { headers: { Prefer: "return=representation" } },
-      successNotification: false,
-      errorNotification: false,
-    });
-    if (method !== "post" && Array.isArray(data) && data.length === 0) {
-      throw new MembershipOutOfScopeError();
-    }
-    await Promise.all(
-      ["org_unit_members", "user_profiles"].map((resource) =>
-        invalidate({ resource, invalidates: ["list"] }),
-      ),
-    );
-  };
-
   return {
-    create: (orgUnitId: number) =>
-      run("post", { user_id: userId, org_unit_id: orgUnitId }),
-    update: (orgUnitId: number) => run("patch", { org_unit_id: orgUnitId }),
-    remove: () => run("delete", {}),
-    isPending: isLoading,
+    create: async (orgUnitId: number) => {
+      await run("/org_unit_members", "post", {
+        user_id: userId,
+        org_unit_id: orgUnitId,
+      });
+    },
+    update: async (orgUnitId: number) => {
+      await run(url, "patch", { org_unit_id: orgUnitId });
+    },
+    remove: async () => {
+      await run(url, "delete", {});
+    },
+    isPending,
   };
 };
 
@@ -173,86 +154,49 @@ export class TeamWriteNoRowError extends Error {
   }
 }
 
-const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
-
-const useTeamWrite = () => {
-  const { mutateAsync, isLoading } = useCustomMutation();
-  const invalidate = useInvalidate();
-
-  const run = async (
-    url: string,
-    method: "post" | "patch" | "delete",
-    values: unknown,
-    target: "team" | "member",
-  ) => {
-    const { data } = await mutateAsync({
-      url,
-      method,
-      values: values as Record<string, unknown>,
-      meta: RETURN_ROWS,
-      successNotification: false,
-      errorNotification: false,
-    });
-    if (method !== "post" && Array.isArray(data) && data.length === 0) {
-      throw new TeamWriteNoRowError(target);
-    }
-    await Promise.all(
-      ["teams", "team_members"].map((resource) =>
-        invalidate({ resource, invalidates: ["list"] }),
-      ),
-    );
-    return data as unknown[] | null;
-  };
-  return { run, isPending: isLoading };
-};
+const useTeamWrite = (target: "team" | "member") =>
+  useRowWrite({
+    invalidates: ["teams", "team_members"],
+    onNoRow: () => new TeamWriteNoRowError(target),
+  });
 
 /** Create, edit and delete manual Teams. Synced Teams are read-only. */
 export const useTeamWrites = () => {
-  const { run, isPending } = useTeamWrite();
+  const { run, isPending } = useTeamWrite("team");
   const byId = (id: number) => `/teams?id=eq.${id}`;
 
   return {
     create: async (values: TeamFormValues) => {
-      const rows = await run(
-        "/teams",
-        "post",
-        {
-          api_version: "v1",
-          kind: "Team",
-          metadata: {
-            name: values.name,
-            display_name: values.displayName,
-            labels: withProjectLabel(undefined, values.project),
-          },
-          spec: { identity_source: null, external_id: null },
+      const rows = await run("/teams", "post", {
+        api_version: "v1",
+        kind: "Team",
+        metadata: {
+          name: values.name,
+          display_name: values.displayName,
+          labels: withProjectLabel(undefined, values.project),
         },
-        "team",
-      );
+        spec: { identity_source: null, external_id: null },
+      });
       return (rows?.[0] as Team | undefined) ?? undefined;
     },
     // The whole metadata goes back: PATCH of a composite column nulls the
     // fields it leaves out.
     update: (team: Team, values: Omit<TeamFormValues, "name">) =>
-      run(
-        byId(team.id),
-        "patch",
-        {
-          metadata: {
-            ...team.metadata,
-            display_name: values.displayName,
-            labels: withProjectLabel(team.metadata.labels, values.project),
-          },
+      run(byId(team.id), "patch", {
+        metadata: {
+          ...team.metadata,
+          display_name: values.displayName,
+          labels: withProjectLabel(team.metadata.labels, values.project),
         },
-        "team",
-      ),
-    remove: (team: Team) => run(byId(team.id), "delete", undefined, "team"),
+      }),
+    remove: (team: Team) => run(byId(team.id), "delete"),
     isPending,
   };
 };
 
 /** Add or remove members of a manual Team. */
 export const useTeamMemberWrites = (teamId: number | undefined) => {
-  const { run, isPending } = useTeamWrite();
+  const { run, isPending } = useTeamWrite("member");
 
   return {
     add: (userIds: string[]) =>
@@ -260,14 +204,11 @@ export const useTeamMemberWrites = (teamId: number | undefined) => {
         "/team_members",
         "post",
         userIds.map((userId) => ({ team_id: teamId, user_id: userId })),
-        "member",
       ),
     remove: (userId: string) =>
       run(
         `/team_members?team_id=eq.${teamId}&user_id=eq.${encodeURIComponent(userId)}`,
         "delete",
-        undefined,
-        "member",
       ),
     isPending,
   };

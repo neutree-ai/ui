@@ -1,9 +1,4 @@
-import {
-  useCustom,
-  useCustomMutation,
-  useInvalidate,
-  useList,
-} from "@refinedev/core";
+import { useCustom, useList } from "@refinedev/core";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   GroupPolicy,
@@ -12,6 +7,7 @@ import type {
   GroupTokenPool,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
+import { useRowWrite } from "@/foundation/hooks/use-row-write";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 
 /** The policy of one group; a group has at most one. */
@@ -44,8 +40,6 @@ export class GroupPolicyGoneError extends Error {
   }
 }
 
-const RETURN_ROWS = { headers: { Prefer: "return=representation" } };
-
 /** The RPCs whose answers derive from group policies. */
 const POLICY_READ_URLS = new Set([
   "/rpc/get_group_token_pools",
@@ -66,40 +60,19 @@ const readsPolicies = (key: readonly unknown[]) =>
   );
 
 export const useGroupPolicyWrites = () => {
-  const { mutateAsync, isLoading } = useCustomMutation();
-  const invalidate = useInvalidate();
   const queryClient = useQueryClient();
-
-  const run = async (
-    url: string,
-    method: "post" | "patch" | "delete",
-    values?: Record<string, unknown>,
-  ) => {
-    const { data } = await mutateAsync({
-      url,
-      method,
-      values: values ?? {},
-      meta: RETURN_ROWS,
-      successNotification: false,
-      errorNotification: false,
-    });
-    if (method !== "post" && Array.isArray(data) && data.length === 0) {
-      throw new GroupPolicyGoneError();
-    }
-    // cancelRefetch: a read already in flight started before the write and
-    // would otherwise land last with the old policy.
-    await Promise.all([
-      invalidate({
-        resource: "group_policies",
-        invalidates: ["list"],
-        invalidationOptions: { cancelRefetch: true },
-      }),
+  // cancelRefetch: a read already in flight started before the write and
+  // would otherwise land last with the old policy.
+  const { run, isPending } = useRowWrite({
+    invalidates: ["group_policies"],
+    onNoRow: () => new GroupPolicyGoneError(),
+    cancelRefetch: true,
+    invalidateMore: () =>
       queryClient.invalidateQueries(
         { predicate: (query) => readsPolicies(query.queryKey) },
         { cancelRefetch: true },
       ),
-    ]);
-  };
+  });
 
   return {
     /** Create when `existing` is absent; otherwise replace its spec. */
@@ -113,8 +86,8 @@ export const useGroupPolicyWrites = () => {
             spec,
           }),
     remove: (policy: GroupPolicy) =>
-      run(`/group_policies?id=eq.${policy.id}`, "delete"),
-    isPending: isLoading,
+      run(`/group_policies?id=eq.${policy.id}`, "delete", {}),
+    isPending,
   };
 };
 

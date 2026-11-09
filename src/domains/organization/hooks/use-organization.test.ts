@@ -20,15 +20,30 @@ describe("useAssignOrgUnit", () => {
 
   const assign = () => renderHook(() => useAssignOrgUnit("u-1")).result.current;
 
-  it("asks for the changed rows on PATCH and DELETE", async () => {
+  it("writes the membership row of the user", async () => {
     mutateAsync.mockResolvedValue({ data: [{ user_id: "u-1" }] });
-    await assign().update(2);
+    await assign().create(2);
+    await assign().update(3);
     await assign().remove();
-    for (const [args] of mutateAsync.mock.calls) {
-      expect(args.meta).toEqual({
-        headers: { Prefer: "return=representation" },
-      });
-    }
+    expect(
+      mutateAsync.mock.calls.map(([{ url, method, values }]) => ({
+        url,
+        method,
+        values,
+      })),
+    ).toEqual([
+      {
+        url: "/org_unit_members",
+        method: "post",
+        values: { user_id: "u-1", org_unit_id: 2 },
+      },
+      {
+        url: "/org_unit_members?user_id=eq.u-1",
+        method: "patch",
+        values: { org_unit_id: 3 },
+      },
+      { url: "/org_unit_members?user_id=eq.u-1", method: "delete", values: {} },
+    ]);
   });
 
   it.each([
@@ -41,9 +56,8 @@ describe("useAssignOrgUnit", () => {
     );
   });
 
-  it("leaves POST as is", async () => {
-    mutateAsync.mockResolvedValue({ data: null });
-    await assign().create(2);
-    expect(mutateAsync.mock.calls[0][0].meta).toBeUndefined();
+  it("never reports a create as out of scope", async () => {
+    mutateAsync.mockResolvedValue({ data: [] });
+    await expect(assign().create(2)).resolves.toBeUndefined();
   });
 });
