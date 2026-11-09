@@ -1,36 +1,9 @@
 import {
-  Activity,
-  BookOpen,
-  Box,
   CheckSquare,
   ChevronDown,
   ChevronRight,
-  Cpu,
-  Database,
-  Download,
-  Eye,
-  FileText,
-  Gauge,
-  Globe,
-  HardDrive,
-  KeyRound,
-  Layers,
   Lock,
-  Network,
-  Package,
-  Pencil,
-  Plus,
-  ScrollText,
-  Server,
-  Settings,
-  ShieldCheck,
   Square,
-  Trash,
-  Upload,
-  UserPlus,
-  Users,
-  UsersRound,
-  Zap,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,48 +14,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  permissionActionIcon,
+  permissionResourceIcon,
+} from "@/domains/role/components/permission-icons";
 import { usePermissionDependencies } from "@/domains/role/hooks/use-permission-dependencies";
 import {
   formatPermission,
   formatResource,
 } from "@/domains/role/lib/format-permission";
 import { cn } from "@/foundation/lib/utils";
-
-const actionIcons: Record<string, React.ReactNode> = {
-  read: <Eye className="h-4 w-4" />,
-  create: <Plus className="h-4 w-4" />,
-  update: <Pencil className="h-4 w-4" />,
-  delete: <Trash className="h-4 w-4" />,
-  push: <Upload className="h-4 w-4" />,
-  pull: <Download className="h-4 w-4" />,
-  "trace-read": <Activity className="h-4 w-4" />,
-  "usage-read": <Gauge className="h-4 w-4" />,
-  "assign-member": <UserPlus className="h-4 w-4" />,
-  "assign-role": <ShieldCheck className="h-4 w-4" />,
-  invoke: <Zap className="h-4 w-4" />,
-};
-
-const resourceIcons: Record<string, React.ReactNode> = {
-  workspace: <Box className="h-5 w-5" />,
-  role: <Users className="h-5 w-5" />,
-  role_assignment: <FileText className="h-5 w-5" />,
-  endpoint: <Server className="h-5 w-5" />,
-  external_endpoint: <Globe className="h-5 w-5" />,
-  image_registry: <Database className="h-5 w-5" />,
-  log_sink: <ScrollText className="h-5 w-5" />,
-  model_registry: <Layers className="h-5 w-5" />,
-  model: <Package className="h-5 w-5" />,
-  engine: <Cpu className="h-5 w-5" />,
-  cluster: <HardDrive className="h-5 w-5" />,
-  model_catalog: <BookOpen className="h-5 w-5" />,
-  system: <Settings className="h-5 w-5" />,
-  user_profile: <Users className="h-5 w-5" />,
-  identity_source: <ShieldCheck className="h-5 w-5" />,
-  org_unit: <Network className="h-5 w-5" />,
-  team: <UsersRound className="h-5 w-5" />,
-  service_account: <KeyRound className="h-5 w-5" />,
-  team_usage: <Gauge className="h-5 w-5" />,
-};
 
 type PermissionsTreeFieldProps = {
   value?: string[];
@@ -172,7 +113,7 @@ const ResourceNode = ({
   const [isOpen, setIsOpen] = useState(true);
   const { actions, selectedActions } = resourceData;
   const sortedActions = [...actions].sort();
-  const resourceIcon = resourceIcons[resource] || <Box className="h-5 w-5" />;
+  const resourceIcon = permissionResourceIcon(resource);
 
   const allSelected = sortedActions.length === selectedActions.length;
   const someSelected = selectedActions.length > 0 && !allSelected;
@@ -272,7 +213,7 @@ const ActionNode = ({
 }) => {
   const { t } = useTranslation();
 
-  const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
+  const actionIcon = permissionActionIcon(action);
 
   const fullPermission = formatPermission(t, `${resource}:${action}`);
 
