@@ -2,33 +2,13 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { CommandGroup, CommandItem } from "@/components/ui/command";
-import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
+import { endpointPhaseClassMapping } from "@/foundation/components/EndpointStatus";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
+import type { WorkspaceModelOption } from "@/foundation/hooks/use-workspace-models";
 import { cn } from "@/foundation/lib/utils";
 
 export const phaseClass = (phase: string | null) =>
-  ({
-    Running:
-      "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-    Failed:
-      "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-    Pending:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    // External endpoints only: serving, but some upstream is unavailable
-    Degraded:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deploying:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    ModelDownloading:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    Deleting:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Paused:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deleted:
-      "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-  })[phase ?? ""] ??
-  "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]";
+  endpointPhaseClassMapping[phase ?? ""] ?? endpointPhaseClassMapping.Deleted;
 
 export const usePhaseLabel = () => {
   const { t } = useTranslation();
@@ -46,13 +26,7 @@ export const useModelOptionMatcher = () => {
       .includes(query.toLowerCase());
 };
 
-/**
- * The model options of a picker: one section per source, in the order the
- * options arrive in (compareWorkspaceModelOptions sorts by source first, so
- * each source's rows are contiguous). Each row is the model name with its
- * endpoint (and workspace, with showWorkspace) and status underneath; the
- * endpoint tells apart two rows for the same model name.
- */
+/** Picker options, one section per source (options arrive sorted by source). */
 export function ModelOptionGroups({
   options,
   onSelect,

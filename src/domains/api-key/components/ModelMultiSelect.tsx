@@ -20,9 +20,9 @@ import {
   phaseClass,
   useModelOptionMatcher,
   usePhaseLabel,
-} from "@/domains/api-key/components/ModelOptionGroups";
-import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
+} from "@/foundation/components/ModelOptionGroups";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import type { WorkspaceModelOption } from "@/foundation/hooks/use-workspace-models";
 import { cn } from "@/foundation/lib/utils";
 
 type Option = WorkspaceModelOption;

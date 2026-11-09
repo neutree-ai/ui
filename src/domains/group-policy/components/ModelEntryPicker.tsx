@@ -24,12 +24,12 @@ import {
 import {
   ModelOptionGroups,
   useModelOptionMatcher,
-} from "@/domains/api-key/components/ModelOptionGroups";
-import { useWorkspaceModels } from "@/domains/api-key/hooks/use-api-key-policy";
+} from "@/foundation/components/ModelOptionGroups";
 import {
   ALL_WORKSPACES,
   useWorkspaceOptions,
 } from "@/foundation/hooks/use-workspace";
+import { useWorkspaceModels } from "@/foundation/hooks/use-workspace-models";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const ALL = "__all__";
