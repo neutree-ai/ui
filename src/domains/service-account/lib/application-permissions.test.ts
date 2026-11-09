@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isManagementRole } from "@/domains/service-account/lib/ceiling";
+import { isManagementRole } from "@/domains/service-account/lib/application-permissions";
 
 describe("isManagementRole", () => {
   it("flags roles that manage access", () => {

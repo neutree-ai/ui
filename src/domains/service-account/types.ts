@@ -16,7 +16,7 @@ export type ServiceAccount = {
 };
 
 /** The roles every application of a Team holds, and where. */
-export type ServiceAccountCeiling = {
+export type TeamApplicationPermissions = {
   roles: string[];
   /** null: every workspace. */
   workspaces: string[] | null;

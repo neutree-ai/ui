@@ -2,7 +2,7 @@ import { useCustom, useList } from "@refinedev/core";
 import { ServiceAccountGoneError } from "@/domains/service-account/lib/errors";
 import type {
   ServiceAccount,
-  ServiceAccountCeiling,
+  TeamApplicationPermissions,
 } from "@/domains/service-account/types";
 import { useRowWrite } from "@/foundation/hooks/use-row-write";
 
@@ -69,22 +69,22 @@ export const useServiceAccountWrites = () => {
 };
 
 /** The application permissions in force for a Team: its own, or the default. */
-export const useServiceAccountCeiling = (teamId: number | undefined) => {
-  const query = useCustom<ServiceAccountCeiling[]>({
-    url: "/rpc/get_team_service_account_ceiling",
+export const useTeamApplicationPermissions = (teamId: number | undefined) => {
+  const query = useCustom<TeamApplicationPermissions[]>({
+    url: "/rpc/get_team_application_permissions",
     method: "post",
     config: { payload: { p_team_id: teamId } },
     queryOptions: {
       enabled: teamId !== undefined,
       retry: false,
-      queryKey: ["team-service-account-ceiling", teamId],
+      queryKey: ["team-application-permissions", teamId],
     },
     successNotification: false,
     errorNotification: false,
   });
-  const rows = query.data?.data as ServiceAccountCeiling[] | undefined;
+  const rows = query.data?.data as TeamApplicationPermissions[] | undefined;
   return {
-    ceiling: rows?.[0],
+    appPermissions: rows?.[0],
     isLoading: teamId !== undefined && query.isLoading,
     error: query.error,
     refetch: query.refetch,
@@ -92,19 +92,19 @@ export const useServiceAccountCeiling = (teamId: number | undefined) => {
 };
 
 /** Set a Team's application permissions, or put them back on the default. */
-export const useServiceAccountCeilingWrites = (teamId: number) => {
-  // The card refetches the ceiling RPC after a write. A reset of a ceiling
-  // someone else already reset ends on the default, so no row is fine.
+export const useTeamApplicationPermissionsWrites = (teamId: number) => {
+  // The card refetches the RPC after a write. Resetting permissions someone
+  // else already reset ends on the default, so no row is fine.
   const { run: call, isPending } = useRowWrite({ invalidates: [] });
-  const byTeam = `/team_service_account_ceilings?team_id=eq.${teamId}`;
+  const byTeam = `/team_application_permissions?team_id=eq.${teamId}`;
 
   return {
     save: (
-      current: ServiceAccountCeiling,
+      current: TeamApplicationPermissions,
       next: { roles: string[]; workspaces: string[] | null },
     ) =>
       current.is_default
-        ? call("/team_service_account_ceilings", "post", {
+        ? call("/team_application_permissions", "post", {
             team_id: teamId,
             ...next,
           })

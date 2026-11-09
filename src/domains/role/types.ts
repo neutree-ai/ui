@@ -86,7 +86,6 @@ export const ALL_PERMISSIONS = [
   "service_account:create",
   "service_account:update",
   "service_account:delete",
-  "service_account:assign-role",
   "team_usage:read",
   "group_policy:read",
   "group_policy:create",

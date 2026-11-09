@@ -3312,8 +3312,7 @@
 		},
 		"labels": {
 			"modelInvoke": "Models:Invoke (call models with an API key; does not show endpoints)"
-		},
-		"assign-role": "Assign Role"
+		}
 	},
 	"systems": {
 		"title": "Systems"
@@ -3608,7 +3607,7 @@
 			"loading": "Loading...",
 			"operationFailed": "The operation failed."
 		},
-		"ceiling": {
+		"appPermissions": {
 			"title": "Application permissions",
 			"hint": "Every application of the team holds these roles, in the selected workspaces only. Group policy decides which models it may call and how much it may use.",
 			"unreadable": "The application permissions cannot be read.",
@@ -3631,7 +3630,7 @@
 			"immutable": "The team of an application and the owner or workspace of a key cannot be changed.",
 			"hasKeys": "The application still has API keys. Delete them first; a deleted key is removed after a short while.",
 			"applicationActor": "An application cannot create applications or API keys.",
-			"ceilingUnknown": "The application permissions name a role or workspace that does not exist.",
+			"appPermissionsUnknown": "The application permissions name a role or workspace that does not exist.",
 			"managementRole": "A role that manages access cannot be in the application permissions: one with role, role assignment, user, identity source, department, team, group policy or application management permissions, or system:admin.",
 			"nameTaken": "The name is already taken in this team.",
 			"gone": "The application no longer exists, or you are not allowed to change it. Refresh the page."

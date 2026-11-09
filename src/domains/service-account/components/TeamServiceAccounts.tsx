@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ServiceAccountCeilingCard } from "@/domains/service-account/components/ServiceAccountCeilingCard";
+import { TeamApplicationPermissionsCard } from "@/domains/service-account/components/TeamApplicationPermissionsCard";
 import {
   useServiceAccounts,
   useServiceAccountWrites,
@@ -44,7 +44,7 @@ type ServiceAccountPermissions = {
   canUpdate: boolean;
   canDelete: boolean;
   /** A global policy administrator: edits the Team's application permissions. */
-  canEditCeiling: boolean;
+  canEditAppPermissions: boolean;
 };
 
 /**
@@ -208,7 +208,10 @@ export function TeamServiceAccounts({
         )}
         {errorAlert}
         {renderKeys(selected)}
-        <ServiceAccountCeilingCard teamId={selected.team_id} canEdit={false} />
+        <TeamApplicationPermissionsCard
+          teamId={selected.team_id}
+          canEdit={false}
+        />
         {renderUsage(selected)}
       </div>
     );
@@ -216,9 +219,9 @@ export function TeamServiceAccounts({
 
   return (
     <div className="space-y-3" data-testid="team-service-accounts">
-      <ServiceAccountCeilingCard
+      <TeamApplicationPermissionsCard
         teamId={teamId}
-        canEdit={permissions.canEditCeiling}
+        canEdit={permissions.canEditAppPermissions}
       />
       <ShowPage.Section
         title={t("service_accounts.title")}

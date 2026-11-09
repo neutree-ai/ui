@@ -41,7 +41,6 @@ const actionIcons: Record<string, ReactNode> = {
   "trace-read": <Activity className="h-4 w-4" />,
   "usage-read": <Gauge className="h-4 w-4" />,
   "assign-member": <UserPlus className="h-4 w-4" />,
-  "assign-role": <ShieldCheck className="h-4 w-4" />,
   invoke: <Zap className="h-4 w-4" />,
 };
 

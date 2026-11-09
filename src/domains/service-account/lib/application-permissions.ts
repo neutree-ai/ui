@@ -28,7 +28,6 @@ const MANAGEMENT_PERMISSIONS: ReadonlySet<string> = new Set([
   "service_account:create",
   "service_account:update",
   "service_account:delete",
-  "service_account:assign-role",
 ]);
 
 export const isManagementRole = (permissions: readonly string[] | undefined) =>

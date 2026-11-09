@@ -37,7 +37,7 @@ export function TeamDetailTabs({
     useHasTeamPermission("service_account:delete", team.id).allowed === true;
   const canReadUsage =
     useHasTeamPermission("team_usage:read", team.id).allowed === true;
-  const canEditCeiling =
+  const canEditAppPermissions =
     useHasGlobalPermission("role_assignment:create").allowed === true;
 
   const current =
@@ -77,7 +77,7 @@ export function TeamDetailTabs({
               canCreate,
               canUpdate,
               canDelete,
-              canEditCeiling,
+              canEditAppPermissions,
             }}
             renderKeys={(account) => (
               <ServiceAccountApiKeys

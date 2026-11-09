@@ -16,12 +16,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { LoadingIcon } from "@/components/ui/loading";
 import {
-  useServiceAccountCeiling,
-  useServiceAccountCeilingWrites,
+  useTeamApplicationPermissions,
+  useTeamApplicationPermissionsWrites,
 } from "@/domains/service-account/hooks/use-service-accounts";
-import { isManagementRole } from "@/domains/service-account/lib/ceiling";
+import { isManagementRole } from "@/domains/service-account/lib/application-permissions";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
-import type { ServiceAccountCeiling } from "@/domains/service-account/types";
+import type { TeamApplicationPermissions } from "@/domains/service-account/types";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
@@ -31,7 +31,7 @@ import type { Metadata } from "@/foundation/types/basic-types";
  * them in. Everyone who reads the applications sees it; `canEdit` (a global
  * policy administrator) changes it.
  */
-export function ServiceAccountCeilingCard({
+export function TeamApplicationPermissionsCard({
   teamId,
   canEdit,
 }: {
@@ -39,22 +39,22 @@ export function ServiceAccountCeilingCard({
   canEdit: boolean;
 }) {
   const { t } = useTranslation();
-  const { ceiling, isLoading, error, refetch } =
-    useServiceAccountCeiling(teamId);
+  const { appPermissions, isLoading, error, refetch } =
+    useTeamApplicationPermissions(teamId);
   const [editing, setEditing] = useState(false);
 
   return (
     <ShowPage.Section
-      title={t("service_accounts.ceiling.title")}
-      description={t("service_accounts.ceiling.hint")}
-      data-testid="service-account-ceiling"
+      title={t("service_accounts.appPermissions.title")}
+      description={t("service_accounts.appPermissions.hint")}
+      data-testid="team-application-permissions"
       actions={
-        canEdit && ceiling ? (
+        canEdit && appPermissions ? (
           <Button
             size="sm"
             variant="outline"
             onClick={() => setEditing(true)}
-            data-testid="service-account-ceiling-edit"
+            data-testid="team-application-permissions-edit"
           >
             <Pencil className="mr-1 h-4 w-4" />
             {t("buttons.edit")}
@@ -66,17 +66,17 @@ export function ServiceAccountCeilingCard({
         <p className="text-sm text-muted-foreground">
           {t("service_accounts.messages.loading")}
         </p>
-      ) : error || !ceiling ? (
+      ) : error || !appPermissions ? (
         <p className="text-sm text-muted-foreground">
-          {t("service_accounts.ceiling.unreadable")}
+          {t("service_accounts.appPermissions.unreadable")}
         </p>
       ) : (
-        <CeilingSummary ceiling={ceiling} />
+        <AppPermissionsSummary appPermissions={appPermissions} />
       )}
-      {editing && ceiling && (
-        <CeilingDialog
+      {editing && appPermissions && (
+        <AppPermissionsDialog
           teamId={teamId}
-          ceiling={ceiling}
+          appPermissions={appPermissions}
           onClose={() => setEditing(false)}
           onSaved={() => {
             setEditing(false);
@@ -88,47 +88,54 @@ export function ServiceAccountCeilingCard({
   );
 }
 
-function CeilingSummary({ ceiling }: { ceiling: ServiceAccountCeiling }) {
+function AppPermissionsSummary({
+  appPermissions,
+}: {
+  appPermissions: TeamApplicationPermissions;
+}) {
   const { t } = useTranslation();
   return (
     <dl className="grid gap-2 text-sm sm:grid-cols-[8rem_1fr]">
       <dt className="text-muted-foreground">
-        {t("service_accounts.ceiling.roles")}
+        {t("service_accounts.appPermissions.roles")}
       </dt>
-      <dd className="flex flex-wrap gap-1" data-testid="ceiling-roles">
-        {ceiling.roles.length ? (
-          ceiling.roles.map((role) => (
+      <dd className="flex flex-wrap gap-1" data-testid="app-permissions-roles">
+        {appPermissions.roles.length ? (
+          appPermissions.roles.map((role) => (
             <Badge key={role} variant="outline">
               {role}
             </Badge>
           ))
         ) : (
           <span className="text-muted-foreground">
-            {t("service_accounts.ceiling.noRoles")}
+            {t("service_accounts.appPermissions.noRoles")}
           </span>
         )}
       </dd>
       <dt className="text-muted-foreground">
-        {t("service_accounts.ceiling.workspaces")}
+        {t("service_accounts.appPermissions.workspaces")}
       </dt>
-      <dd className="flex flex-wrap gap-1" data-testid="ceiling-workspaces">
-        {ceiling.workspaces === null ? (
-          <span>{t("service_accounts.ceiling.allWorkspaces")}</span>
-        ) : ceiling.workspaces.length ? (
-          ceiling.workspaces.map((workspace) => (
+      <dd
+        className="flex flex-wrap gap-1"
+        data-testid="app-permissions-workspaces"
+      >
+        {appPermissions.workspaces === null ? (
+          <span>{t("service_accounts.appPermissions.allWorkspaces")}</span>
+        ) : appPermissions.workspaces.length ? (
+          appPermissions.workspaces.map((workspace) => (
             <Badge key={workspace} variant="outline">
               {workspace}
             </Badge>
           ))
         ) : (
           <span className="text-muted-foreground">
-            {t("service_accounts.ceiling.noWorkspaces")}
+            {t("service_accounts.appPermissions.noWorkspaces")}
           </span>
         )}
       </dd>
-      {ceiling.is_default && (
+      {appPermissions.is_default && (
         <dd className="text-xs text-muted-foreground sm:col-start-2">
-          {t("service_accounts.ceiling.isDefault")}
+          {t("service_accounts.appPermissions.isDefault")}
         </dd>
       )}
     </dl>
@@ -138,24 +145,24 @@ function CeilingSummary({ ceiling }: { ceiling: ServiceAccountCeiling }) {
 const toggle = (list: string[], value: string, on: boolean) =>
   on ? [...new Set([...list, value])] : list.filter((item) => item !== value);
 
-function CeilingDialog({
+function AppPermissionsDialog({
   teamId,
-  ceiling,
+  appPermissions,
   onClose,
   onSaved,
 }: {
   teamId: number;
-  ceiling: ServiceAccountCeiling;
+  appPermissions: TeamApplicationPermissions;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
-  const writes = useServiceAccountCeilingWrites(teamId);
-  const [roles, setRoles] = useState(ceiling.roles);
+  const writes = useTeamApplicationPermissionsWrites(teamId);
+  const [roles, setRoles] = useState(appPermissions.roles);
   const [allWorkspaces, setAllWorkspaces] = useState(
-    ceiling.workspaces === null,
+    appPermissions.workspaces === null,
   );
-  const [workspaces, setWorkspaces] = useState(ceiling.workspaces ?? []);
+  const [workspaces, setWorkspaces] = useState(appPermissions.workspaces ?? []);
   const [error, setError] = useState<string>();
 
   const roleList = useList<{
@@ -174,7 +181,7 @@ function CeilingDialog({
       ...(roleList.data?.data ?? [])
         .filter((role) => !isManagementRole(role.spec?.permissions))
         .map((role) => role.metadata.name),
-      ...ceiling.roles,
+      ...appPermissions.roles,
     ]),
   ].sort();
   const workspaceNames = [
@@ -182,7 +189,7 @@ function CeilingDialog({
       ...(workspaceList.data?.data ?? [])
         .filter((workspace) => !workspace.metadata.deletion_timestamp)
         .map((workspace) => workspace.metadata.name),
-      ...(ceiling.workspaces ?? []),
+      ...(appPermissions.workspaces ?? []),
     ]),
   ].sort();
 
@@ -206,15 +213,17 @@ function CeilingDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("service_accounts.ceiling.editTitle")}</DialogTitle>
+          <DialogTitle>
+            {t("service_accounts.appPermissions.editTitle")}
+          </DialogTitle>
           <DialogDescription>
-            {t("service_accounts.ceiling.editHint")}
+            {t("service_accounts.appPermissions.editHint")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">
-              {t("service_accounts.ceiling.roles")}
+              {t("service_accounts.appPermissions.roles")}
             </legend>
             {roleNames.map((role) => (
               <Label key={role} className="flex items-center gap-2 font-normal">
@@ -223,26 +232,26 @@ function CeilingDialog({
                   onCheckedChange={(on) =>
                     setRoles((list) => toggle(list, role, on === true))
                   }
-                  data-testid={`ceiling-role-${role}`}
+                  data-testid={`app-permissions-role-${role}`}
                 />
                 {role}
               </Label>
             ))}
             <p className="text-xs text-muted-foreground">
-              {t("service_accounts.ceiling.managementHidden")}
+              {t("service_accounts.appPermissions.managementHidden")}
             </p>
           </fieldset>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">
-              {t("service_accounts.ceiling.workspaces")}
+              {t("service_accounts.appPermissions.workspaces")}
             </legend>
             <Label className="flex items-center gap-2 font-normal">
               <Checkbox
                 checked={allWorkspaces}
                 onCheckedChange={(on) => setAllWorkspaces(on === true)}
-                data-testid="ceiling-all-workspaces"
+                data-testid="app-permissions-all-workspaces"
               />
-              {t("service_accounts.ceiling.allWorkspaces")}
+              {t("service_accounts.appPermissions.allWorkspaces")}
             </Label>
             {!allWorkspaces &&
               workspaceNames.map((workspace) => (
@@ -263,7 +272,7 @@ function CeilingDialog({
               ))}
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            {t("service_accounts.ceiling.effectHint")}
+            {t("service_accounts.appPermissions.effectHint")}
           </p>
           {error && (
             <Alert variant="destructive">
@@ -274,10 +283,10 @@ function CeilingDialog({
         <DialogFooter className="gap-2 sm:justify-between">
           <Button
             variant="ghost"
-            disabled={ceiling.is_default || writes.isPending}
+            disabled={appPermissions.is_default || writes.isPending}
             onClick={() => attempt(writes.reset)}
           >
-            {t("service_accounts.ceiling.reset")}
+            {t("service_accounts.appPermissions.reset")}
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
@@ -287,13 +296,13 @@ function CeilingDialog({
               disabled={writes.isPending}
               onClick={() =>
                 attempt(() =>
-                  writes.save(ceiling, {
+                  writes.save(appPermissions, {
                     roles,
                     workspaces: allWorkspaces ? null : workspaces,
                   }),
                 )
               }
-              data-testid="service-account-ceiling-save"
+              data-testid="team-application-permissions-save"
             >
               {writes.isPending && <LoadingIcon className="mr-1 h-4 w-4" />}
               {t("buttons.save")}

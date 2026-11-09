@@ -6,7 +6,7 @@ import { SERVICE_ACCOUNT_ERROR_KEYS } from "@/foundation/lib/service-account-err
 const ERROR_KEYS: Readonly<Record<string, string>> = {
   ...SERVICE_ACCOUNT_ERROR_KEYS,
   "10315": "service_accounts.errors.teamHasApplications",
-  "10324": "service_accounts.errors.ceilingUnknown",
+  "10324": "service_accounts.errors.appPermissionsUnknown",
   "10325": "service_accounts.errors.managementRole",
   "23505": "service_accounts.errors.nameTaken",
 };
