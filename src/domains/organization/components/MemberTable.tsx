@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -52,6 +52,7 @@ export function MemberTable({
   renderActions,
 }: MemberTableProps) {
   const { t } = useTranslation();
+  const sorted = useMemo(() => sortRows(rows), [rows]);
 
   if (isLoading) {
     return (
@@ -92,7 +93,7 @@ export function MemberTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortRows(rows).map((row) => (
+        {sorted.map((row) => (
           <TableRow key={row.key}>
             <TableCell>
               {row.profile ? (

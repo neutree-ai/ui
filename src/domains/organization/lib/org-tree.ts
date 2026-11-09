@@ -87,7 +87,9 @@ export function groupByIdentitySource(roots: OrgTreeNode[]): OrgTreeGroup[] {
   const groups = new Map<string, OrgTreeNode[]>();
   for (const root of roots) {
     const source = root.unit.spec.identity_source;
-    groups.set(source, [...(groups.get(source) ?? []), root]);
+    const list = groups.get(source);
+    if (list) list.push(root);
+    else groups.set(source, [root]);
   }
   return [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))

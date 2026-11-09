@@ -137,16 +137,20 @@ export function DepartmentsPanel({
   const selected =
     selectedId === undefined ? undefined : nodesById.get(selectedId);
   const members = useOrgUnitMembers(selected?.unit.id, includeSubtree);
-  const memberRows: MemberRow[] = members.members.map((m) => ({
-    key: m.user_id,
-    profile: m.user_profiles,
-    department:
-      nodesById.get(m.org_unit_id)?.pathLabel ??
-      m.org_units?.metadata.display_name ??
-      undefined,
-    source: m.identity_source ?? t("organization.values.manual"),
-    since: m.assigned_at,
-  }));
+  const memberRows = useMemo<MemberRow[]>(
+    () =>
+      members.members.map((m) => ({
+        key: m.user_id,
+        profile: m.user_profiles,
+        department:
+          nodesById.get(m.org_unit_id)?.pathLabel ??
+          m.org_units?.metadata.display_name ??
+          undefined,
+        source: m.identity_source ?? t("organization.values.manual"),
+        since: m.assigned_at,
+      })),
+    [members.members, nodesById, t],
+  );
 
   return (
     <div className="space-y-3">

@@ -103,11 +103,12 @@ export function AddTeamMembersDialog({
   }, [users.data, query, unitFilter, unitOfUser]);
 
   const tree = useMemo(() => {
+    if (view !== "tree") return undefined;
     const unitIdOfUser = new Map(
       [...unitOfUser].map(([userId, node]) => [userId, node.unit.id]),
     );
     return buildMemberTree(unitRoots, rows, unitIdOfUser);
-  }, [unitRoots, rows, unitOfUser]);
+  }, [view, unitRoots, rows, unitOfUser]);
 
   const toggle = (id: string, on: boolean) => {
     const next = new Set(selected);
@@ -181,7 +182,7 @@ export function AddTeamMembersDialog({
             <EmptyState variant="inline">
               {t("organization.teams.noUsers")}
             </EmptyState>
-          ) : view === "tree" ? (
+          ) : tree ? (
             <AddTeamMembersTree
               roots={tree.roots}
               unassigned={tree.unassigned}

@@ -22,7 +22,11 @@ export function buildMemberTree<U extends { id: string }>(
   for (const user of users) {
     const unitId = unitIdOfUser.get(user.id);
     if (unitId === undefined) unassigned.push(user);
-    else byUnit.set(unitId, [...(byUnit.get(unitId) ?? []), user]);
+    else {
+      const list = byUnit.get(unitId);
+      if (list) list.push(user);
+      else byUnit.set(unitId, [user]);
+    }
   }
   const visit = (node: OrgTreeNode): MemberTreeNode<U> | null => {
     const children = node.children

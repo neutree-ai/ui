@@ -53,6 +53,11 @@ export const useTeamsByName = (enabled = true) => {
   };
 };
 
+const NO_MEMBERS: OrgUnitMember[] = [];
+
+// The member fields the tables show.
+const MEMBER_PROFILE = "user_profiles(id,metadata,spec)";
+
 /**
  * Members of one OrgUnit, or of its whole subtree (through the
  * org_unit_subtree_members RPC, which runs under the caller's RLS).
@@ -65,11 +70,12 @@ export const useOrgUnitMembers = (
     resource: "org_unit_members",
     pagination: ALL,
     filters: [{ field: "org_unit_id", operator: "eq", value: orgUnitId }],
-    meta: { select: "*,user_profiles(*)" },
+    meta: { select: `*,${MEMBER_PROFILE}` },
     queryOptions: { enabled: orgUnitId !== undefined && !includeSubtree },
   });
   const subtree = useCustom<OrgUnitMember[]>({
-    url: "/rpc/org_unit_subtree_members?select=*,user_profiles(*),org_units(*)",
+    // org_units names a member's department when the tree lacks it.
+    url: `/rpc/org_unit_subtree_members?select=*,${MEMBER_PROFILE},org_units(*)`,
     method: "post",
     config: { payload: { p_org_unit_id: orgUnitId } },
     queryOptions: { enabled: orgUnitId !== undefined && includeSubtree },
@@ -78,7 +84,7 @@ export const useOrgUnitMembers = (
   });
   const query = includeSubtree ? subtree : direct;
   return {
-    members: (query.data?.data ?? []) as OrgUnitMember[],
+    members: (query.data?.data ?? NO_MEMBERS) as OrgUnitMember[],
     isLoading: orgUnitId !== undefined && query.isLoading,
     error: query.error,
   };
