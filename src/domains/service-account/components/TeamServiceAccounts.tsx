@@ -37,6 +37,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { isValidResourceName } from "@/foundation/lib/validate";
 
 type ServiceAccountPermissions = {
   canCreate: boolean;
@@ -45,8 +46,6 @@ type ServiceAccountPermissions = {
   /** A global policy administrator: edits the Team's application permissions. */
   canEditCeiling: boolean;
 };
-
-const NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
 
 /**
  * The applications of a Team, and one application's keys, permissions and usage.
@@ -331,7 +330,7 @@ function CreateServiceAccountDialog({
   const trimmed = name.trim();
   const nameError = !trimmed
     ? t("service_accounts.validation.nameRequired")
-    : trimmed.length > 63 || !NAME_PATTERN.test(trimmed)
+    : trimmed.length > 63 || !isValidResourceName(trimmed)
       ? t("service_accounts.validation.nameFormat")
       : undefined;
 

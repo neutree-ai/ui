@@ -21,3 +21,9 @@ export const isValidStorageQuantity = (value: string): boolean => {
   const storageRegex = /^\d+(\.\d+)?(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$/;
   return storageRegex.test(value);
 };
+
+/** A resource name: lowercase letters, digits, "-" and ".", alphanumeric at both ends. */
+export const RESOURCE_NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
+
+export const isValidResourceName = (name: string): boolean =>
+  RESOURCE_NAME_PATTERN.test(name);

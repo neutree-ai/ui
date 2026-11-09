@@ -12,7 +12,6 @@ import {
   emptyLogSinkFormValues,
   LOG_SINK_ERROR_FIELDS,
   type LogSinkFormValues,
-  NAME_PATTERN,
   S3_DEFAULT_FLUSH_INTERVAL_SECONDS,
   S3_DEFAULT_KEY_PREFIX,
   toLogSinkFormValues,
@@ -33,6 +32,7 @@ import { FormSelect } from "@/foundation/components/FormSelect";
 import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { RESOURCE_NAME_PATTERN } from "@/foundation/lib/validate";
 
 /**
  * A `validate` rule that fails with `message` on a blank value. `when: false`
@@ -168,7 +168,7 @@ export const useLogSinkForm = ({ action }: { action: "create" | "edit" }) => {
           rules={{
             required: t("log_sinks.validation.nameRequired"),
             pattern: {
-              value: NAME_PATTERN,
+              value: RESOURCE_NAME_PATTERN,
               message: t("log_sinks.validation.namePattern"),
             },
           }}
