@@ -1,5 +1,5 @@
 import type { OrgUnit, Team } from "@/domains/organization/types";
-import type { Metadata } from "@/foundation/types/basic-types";
+import { displayName } from "@/foundation/lib/display-name";
 
 export type OrgTreeNode = {
   unit: OrgUnit;
@@ -19,9 +19,6 @@ type OrgTreeFilter = {
   query?: string;
   showInactive?: boolean;
 };
-
-export const displayName = (metadata: Metadata) =>
-  metadata.display_name?.trim() || metadata.name;
 
 export const isInactive = (object: {
   status?: { phase?: string | null } | null;

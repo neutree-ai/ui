@@ -7,11 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { displayName } from "@/domains/organization/lib/org-tree";
 import type { MemberProfile } from "@/domains/organization/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export type MemberRow = {

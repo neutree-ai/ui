@@ -35,6 +35,7 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type ServiceAccountPermissions = {
@@ -46,9 +47,6 @@ type ServiceAccountPermissions = {
 };
 
 const NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
-
-export const accountLabel = (account: ServiceAccount) =>
-  account.metadata.display_name || account.metadata.name;
 
 /**
  * The applications of a Team, and one application's keys, permissions and usage.
@@ -131,7 +129,7 @@ export function TeamServiceAccounts({
             open={deleting?.id === account.id}
             onOpenChange={(next) => setDeleting(next ? account : undefined)}
             title={t("service_accounts.deleteTitle", {
-              name: accountLabel(account),
+              name: displayName(account.metadata),
             })}
             description={t("service_accounts.deleteHint")}
             okText={t("buttons.delete")}
@@ -194,7 +192,7 @@ export function TeamServiceAccounts({
               {t("service_accounts.back")}
             </Button>
             <span className="truncate font-semibold">
-              {accountLabel(selected)}
+              {displayName(selected.metadata)}
             </span>
             {status(selected)}
           </div>
@@ -278,7 +276,7 @@ export function TeamServiceAccounts({
                 >
                   <TableCell>
                     <div className="font-medium text-primary">
-                      {accountLabel(account)}
+                      {displayName(account.metadata)}
                     </div>
                     {account.spec?.description && (
                       <div className="text-xs text-muted-foreground">

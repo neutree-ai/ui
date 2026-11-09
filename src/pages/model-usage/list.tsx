@@ -31,10 +31,7 @@ import {
   useOrgTree,
   useTeamsByName,
 } from "@/domains/organization/hooks/use-organization";
-import {
-  displayName,
-  type OrgTreeNode,
-} from "@/domains/organization/lib/org-tree";
+import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
 import {
   type DateRange,
   DateRangePicker,
@@ -48,6 +45,7 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";

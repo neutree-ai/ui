@@ -1,4 +1,5 @@
 import type { GroupUsageRecord } from "@/domains/api-key/types";
+import { displayName } from "@/foundation/lib/display-name";
 
 export type UsageTotal = {
   key: string;
@@ -47,7 +48,7 @@ export function usageByApplication(rows: GroupUsageRecord[]): UsageTotal[] {
   for (const row of rows) {
     const total = byName.get(row.name) ?? {
       key: row.name,
-      label: row.display_name || row.name,
+      label: displayName(row),
       requests: 0,
       tokens: 0,
     };

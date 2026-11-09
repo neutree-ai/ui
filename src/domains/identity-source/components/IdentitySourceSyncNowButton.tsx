@@ -14,6 +14,7 @@ import {
 } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -34,7 +35,7 @@ export function IdentitySourceSyncNowButton({
 
   if (allowed !== true) return null;
 
-  const name = record.metadata.display_name || record.metadata.name;
+  const name = displayName(record.metadata);
   const enabled = isSyncEnabled(record) && !record.metadata.deletion_timestamp;
   const pending = isSyncRequestPending(record);
 

@@ -24,11 +24,7 @@ import {
   useTeamWrites,
 } from "@/domains/organization/hooks/use-organization";
 import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
-import {
-  displayName,
-  filterTeams,
-  isInactive,
-} from "@/domains/organization/lib/org-tree";
+import { filterTeams, isInactive } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import {
   isManualTeam,
@@ -50,6 +46,7 @@ import {
   isPermissionDenied,
   translateApiErrorOr,
 } from "@/foundation/lib/api-error-code";
+import { displayName } from "@/foundation/lib/display-name";
 import { isDuplicateNameError } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";

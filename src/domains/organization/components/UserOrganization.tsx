@@ -10,7 +10,7 @@ import {
   useUserOrgUnit,
   useUserTeams,
 } from "@/domains/organization/hooks/use-organization";
-import { displayName, isInactive } from "@/domains/organization/lib/org-tree";
+import { isInactive } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
@@ -28,6 +28,7 @@ import {
   isPermissionDenied,
   translateApiErrorOr,
 } from "@/foundation/lib/api-error-code";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 

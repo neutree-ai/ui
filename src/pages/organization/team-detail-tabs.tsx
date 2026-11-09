@@ -7,14 +7,12 @@ import {
 } from "@/domains/api-key/components/TeamUsage";
 import { TeamTokenPool } from "@/domains/group-policy/components/TeamTokenPool";
 import type { Team } from "@/domains/organization/types";
-import {
-  accountLabel,
-  TeamServiceAccounts,
-} from "@/domains/service-account/components/TeamServiceAccounts";
+import { TeamServiceAccounts } from "@/domains/service-account/components/TeamServiceAccounts";
 import {
   useHasGlobalPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type TeamTab = "members" | "applications" | "usage";
@@ -74,7 +72,7 @@ export function TeamDetailTabs({
           <TeamServiceAccounts
             key={team.id}
             teamId={team.id}
-            teamName={team.metadata.display_name || team.metadata.name}
+            teamName={displayName(team.metadata)}
             permissions={{
               canCreate,
               canUpdate,
@@ -84,7 +82,7 @@ export function TeamDetailTabs({
             renderKeys={(account) => (
               <ServiceAccountApiKeys
                 serviceAccountId={account.id}
-                serviceAccountName={accountLabel(account)}
+                serviceAccountName={displayName(account.metadata)}
                 canCreate={canCreate && !account.spec?.disabled}
                 canUpdate={canUpdate}
                 canDelete={canDelete}

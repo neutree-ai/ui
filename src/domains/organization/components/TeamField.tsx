@@ -3,9 +3,10 @@ import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { TeamSourceLabel } from "@/domains/organization/components/TeamSourceLabel";
 import { useTeamsByName } from "@/domains/organization/hooks/use-organization";
-import { displayName, isInactive } from "@/domains/organization/lib/org-tree";
+import { isInactive } from "@/domains/organization/lib/org-tree";
 import type { Team } from "@/domains/organization/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 

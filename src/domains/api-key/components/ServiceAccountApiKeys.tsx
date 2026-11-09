@@ -38,6 +38,7 @@ import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
+import { displayName } from "@/foundation/lib/display-name";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
 type ServiceAccountApiKeysProps = {
@@ -210,7 +211,7 @@ export function ServiceAccountApiKeys({
                 <TableRow key={key.id} data-testid={`sa-api-key-${key.id}`}>
                   <TableCell>
                     <div className="font-medium">
-                      {key.metadata.display_name || key.metadata.name}
+                      {displayName(key.metadata)}
                     </div>
                     {key.spec.description && (
                       <div className="text-xs text-muted-foreground">
@@ -289,8 +290,7 @@ export function ServiceAccountApiKeys({
                             setDeleting(next ? key : undefined)
                           }
                           title={t("api_keys.serviceAccount.deleteTitle", {
-                            name:
-                              key.metadata.display_name || key.metadata.name,
+                            name: displayName(key.metadata),
                           })}
                           description={t("api_keys.serviceAccount.deleteHint")}
                           okText={t("buttons.delete")}
