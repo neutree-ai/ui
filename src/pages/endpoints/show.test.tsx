@@ -1,8 +1,14 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
 import type { Endpoint } from "@/domains/endpoint/types";
+
+const copyMock = vi.fn();
+
+vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
+  useCopyToClipboard: () => ({ copy: copyMock, copied: false }),
+}));
 
 const {
   advancedParametersProps,
@@ -202,6 +208,7 @@ const clusterResourceInfo = {
 
 describe("EndpointsShow", () => {
   beforeEach(() => {
+    copyMock.mockClear();
     runtimeCardProps.current = null;
     advancedParametersProps.current = null;
     systemApiState.clusterCacheProviders = [];
@@ -389,7 +396,7 @@ describe("EndpointsShow", () => {
     expect(advancedParametersProps.current?.engineParameters).toEqual({});
   });
 
-  it("shows all discovered served model names", () => {
+  it.each(["chat-primary", "chat-alias"])("copies served model %s", (model) => {
     useShowMock.mockReturnValue({
       query: {
         data: {
@@ -406,6 +413,15 @@ describe("EndpointsShow", () => {
     render(<EndpointsShow />);
     screen.getByText("chat-primary");
     screen.getByText("chat-alias");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `${model} api_keys.buttons.copy`,
+      }),
+    );
+    expect(copyMock).toHaveBeenCalledWith(model, {
+      successMessage: "components.apiKey.copySuccess",
+      errorMessage: "components.apiKey.errors.copyFailed",
+    });
   });
 
   it("shows a placeholder while served models have not been discovered", () => {

@@ -4,10 +4,8 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { Check, Copy } from "lucide-react";
 import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import { type Cluster, zcacheStatus } from "@/domains/cluster/types";
@@ -27,6 +25,7 @@ import {
   EndpointSaveAsCatalogProvider,
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
+import { ServedModelName } from "@/domains/endpoint/components/ServedModelName";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
@@ -49,7 +48,6 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { nodeL1CacheByNode } from "@/foundation/lib/accelerator-observations";
 import {
@@ -139,7 +137,6 @@ const RayDashboardTab = ({
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
-  const { copy, copied } = useCopyToClipboard();
   const { grafanaUrl, systemInfo } = useSystemApi();
   // Live observations and the polling that feeds them only serve the basic
   // tab, so the other tabs do not keep refetching and re-rendering the page.
@@ -267,31 +264,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
           className="flex h-full flex-col"
         >
           <ShowPage.ObjectHeader
-            title={
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <span className="truncate">{record.metadata.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  title={t("api_keys.buttons.copy")}
-                  aria-label={`${record.metadata.name} ${t("api_keys.buttons.copy")}`}
-                  onClick={() =>
-                    copy(record.metadata.name, {
-                      successMessage: t("components.apiKey.copySuccess"),
-                      errorMessage: t("components.apiKey.errors.copyFailed"),
-                    })
-                  }
-                >
-                  {copied ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Copy className="size-4" />
-                  )}
-                </Button>
-              </span>
-            }
+            title={record.metadata.name}
             descriptionClassName="max-w-none"
             description={
               <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
@@ -342,12 +315,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.status?.served_models?.length ? (
                     <span className="inline-flex flex-wrap gap-1">
                       {record.status.served_models.map((model) => (
-                        <code
-                          key={model}
-                          className="break-all font-mono text-xs"
-                        >
-                          {model}
-                        </code>
+                        <ServedModelName key={model} name={model} />
                       ))}
                     </span>
                   ) : (
