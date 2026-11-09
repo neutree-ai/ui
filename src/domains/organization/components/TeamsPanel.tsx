@@ -62,30 +62,28 @@ type OpenDialog =
  * Teams synced from identity sources (read-only) and Teams created in
  * Neutree, which global team:create / update / delete / assign-member manage.
  * A manual Team is always Active, so there is no phase switch.
- * `renderRoleAssignments` lists the selected Team's role assignments.
  */
-const noDeleteCheck = (): TeamDeleteCheck | undefined => undefined;
-
 export function TeamsPanel({
   renderRoleAssignments,
   renderTeamDetail,
-  useDeleteCheck = noDeleteCheck,
+  useDeleteCheck,
 }: {
-  renderRoleAssignments?: (teamName: string, label: string) => ReactNode;
+  /** Lists the selected Team's role assignments. */
+  renderRoleAssignments: (teamName: string, label: string) => ReactNode;
   /**
    * Wraps the selected Team's members section, e.g. in tabs with the Team's
    * API keys and usage, which belong to other domains.
    */
-  renderTeamDetail?: (team: Team, members: ReactNode) => ReactNode;
+  renderTeamDetail: (team: Team, members: ReactNode) => ReactNode;
   /**
    * Reads what blocks deleting the Team while the delete dialog is open; a
    * hook, as the reads belong to other domains.
    */
-  useDeleteCheck?: (
+  useDeleteCheck: (
     teamName: string,
     enabled: boolean,
   ) => TeamDeleteCheck | undefined;
-} = {}) {
+}) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
     if (!error) return undefined;
@@ -373,7 +371,7 @@ export function TeamsPanel({
         )}
       </ShowPage.Section>
       {selected &&
-        renderRoleAssignments?.(
+        renderRoleAssignments(
           selected.metadata.name,
           displayName(selected.metadata),
         )}
@@ -475,7 +473,7 @@ export function TeamsPanel({
         </ShowPage.Section>
 
         <div className="min-w-0 space-y-3">
-          {selected && renderTeamDetail
+          {selected
             ? renderTeamDetail(selected, membersSection)
             : membersSection}
         </div>

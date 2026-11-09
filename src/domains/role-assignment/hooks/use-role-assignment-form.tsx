@@ -50,9 +50,9 @@ export const useRoleAssignmentForm = ({
 }: {
   action: "create" | "edit";
   /** The department picker, from the organization domain. */
-  orgUnitField?: ReactElement;
+  orgUnitField: ReactElement;
   /** The Team picker, from the organization domain. */
-  teamField?: ReactElement;
+  teamField: ReactElement;
 }) => {
   const { t } = useTranslation();
   const { supportMultiWorkspace } = useLicense();
@@ -108,15 +108,15 @@ export const useRoleAssignmentForm = ({
   const scopes = availableScopes({
     supportMultiWorkspace,
     delegated,
-    canScopeTeam: isGlobalAdmin && !!teamField,
+    canScopeTeam: isGlobalAdmin,
   });
   // An existing Team-scoped assignment keeps its scope on the list.
   if (!scopes.includes(scope)) scopes.push(scope);
 
   const subjectKinds = availableSubjectKinds({
     delegated,
-    canReadTeams: canReadTeams === true && !!teamField,
-  }).filter((kind) => kind !== "OrgUnit" || !!orgUnitField);
+    canReadTeams: canReadTeams === true,
+  });
   // An existing assignment keeps its kind on the list, e.g. a Team one
   // opened by someone who cannot list teams.
   if (!subjectKinds.includes(subjectKind)) subjectKinds.push(subjectKind);
@@ -313,23 +313,21 @@ export const useRoleAssignmentForm = ({
         >
           <WorkspaceField />
         </FormFieldGroup>
-        {orgUnitField && (
-          <FormFieldGroup
-            {...form}
-            name="spec.org_unit"
-            label={t("role_assignments.fields.subtreeRoot")}
-            className={scope === "org_unit" ? "" : "hidden"}
-            rules={{
-              validate: (value) =>
-                typeof value !== "string" ||
-                value.trim() !== "" ||
-                t("role_assignments.validation.orgUnitRequired"),
-            }}
-          >
-            {orgUnitField}
-          </FormFieldGroup>
-        )}
-        {teamField && scope === "team" && (
+        <FormFieldGroup
+          {...form}
+          name="spec.org_unit"
+          label={t("role_assignments.fields.subtreeRoot")}
+          className={scope === "org_unit" ? "" : "hidden"}
+          rules={{
+            validate: (value) =>
+              typeof value !== "string" ||
+              value.trim() !== "" ||
+              t("role_assignments.validation.orgUnitRequired"),
+          }}
+        >
+          {orgUnitField}
+        </FormFieldGroup>
+        {scope === "team" && (
           <FormFieldGroup
             {...form}
             name="spec.team"

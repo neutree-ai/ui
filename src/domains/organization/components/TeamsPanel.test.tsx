@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -144,10 +144,19 @@ beforeEach(() => {
 
 const ALL = ["team:create", "team:update", "team:delete", "team:assign-member"];
 
+const Panel = (props: Partial<ComponentProps<typeof TeamsPanel>>) => (
+  <TeamsPanel
+    renderRoleAssignments={() => null}
+    renderTeamDetail={(_, members) => members}
+    useDeleteCheck={() => undefined}
+    {...props}
+  />
+);
+
 describe("TeamsPanel", () => {
   it("marks each team with its source", () => {
     grant();
-    render(<TeamsPanel />);
+    render(<Panel />);
     expect(screen.getByTestId("team-1").textContent).toContain("corp");
     expect(screen.getByTestId("team-2").textContent).toContain(
       "organization.values.manualTeam",
@@ -156,17 +165,17 @@ describe("TeamsPanel", () => {
 
   it("offers create only with team:create", () => {
     grant();
-    const { unmount } = render(<TeamsPanel />);
+    const { unmount } = render(<Panel />);
     expect(screen.queryByTestId("team-create")).toBeNull();
     unmount();
     grant("team:create");
-    render(<TeamsPanel />);
+    render(<Panel />);
     screen.getByTestId("team-create");
   });
 
   it("keeps a synced team read-only", () => {
     grant(...ALL);
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-1"));
     screen.getByText("organization.teams.syncedSource:corp");
     expect(screen.queryByTestId("team-edit")).toBeNull();
@@ -177,7 +186,7 @@ describe("TeamsPanel", () => {
 
   it("offers each action on a manual team by its permission", () => {
     grant("team:update");
-    const { unmount } = render(<TeamsPanel />);
+    const { unmount } = render(<Panel />);
     fireEvent.click(screen.getByTestId("team-2"));
     screen.getByTestId("team-edit");
     expect(screen.queryByTestId("team-delete")).toBeNull();
@@ -186,7 +195,7 @@ describe("TeamsPanel", () => {
     unmount();
 
     grant(...ALL);
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-2"));
     screen.getByTestId("team-delete");
     screen.getByTestId("team-add-members");
@@ -196,7 +205,7 @@ describe("TeamsPanel", () => {
   it("deletes a manual team after confirmation", async () => {
     grant(...ALL);
     writes.remove.mockResolvedValue([manual]);
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-2"));
     fireEvent.click(screen.getByTestId("team-delete"));
     expect(writes.remove).not.toHaveBeenCalled();
@@ -210,12 +219,12 @@ describe("TeamsPanel", () => {
 
   it("keeps the selected team in the URL and restores it from there", () => {
     grant(...ALL);
-    const { unmount } = render(<TeamsPanel />);
+    const { unmount } = render(<Panel />);
     fireEvent.click(screen.getByTestId("team-2"));
     expect(search()).toBe("?team=guild");
     unmount();
 
-    render(<TeamsPanel />, "/organization?tab=teams&team=guild");
+    render(<Panel />, "/organization?tab=teams&team=guild");
     expect(screen.getByTestId("team-2").getAttribute("aria-pressed")).toBe(
       "true",
     );
@@ -229,7 +238,7 @@ describe("TeamsPanel", () => {
         ? { roleAssignments: 2, hasPolicy: true, isLoading: false }
         : undefined,
     );
-    render(<TeamsPanel useDeleteCheck={useDeleteCheck} />, "/o?team=guild");
+    render(<Panel useDeleteCheck={useDeleteCheck} />, "/o?team=guild");
     expect(useDeleteCheck).toHaveBeenLastCalledWith("guild", false);
     fireEvent.click(screen.getByTestId("team-delete"));
     expect(useDeleteCheck).toHaveBeenLastCalledWith("guild", true);
@@ -247,7 +256,7 @@ describe("TeamsPanel", () => {
     grant(...ALL);
     let check = { roleAssignments: 0, hasPolicy: true, isLoading: true };
     const { rerender } = render(
-      <TeamsPanel useDeleteCheck={() => check} />,
+      <Panel useDeleteCheck={() => check} />,
       "/o?team=guild",
     );
     fireEvent.click(screen.getByTestId("team-delete"));
@@ -261,7 +270,7 @@ describe("TeamsPanel", () => {
     check = { ...check, isLoading: false };
     rerender(
       <MemoryRouter initialEntries={["/o?team=guild"]}>
-        <TeamsPanel useDeleteCheck={() => check} />
+        <Panel useDeleteCheck={() => check} />
       </MemoryRouter>,
     );
     screen.getByTestId("team-delete-policy");
@@ -272,7 +281,7 @@ describe("TeamsPanel", () => {
     grant(...ALL);
     writes.remove.mockRejectedValue({ code: "10295", hint: "1" });
     render(
-      <TeamsPanel
+      <Panel
         renderRoleAssignments={(name) => (
           <div data-testid="team-role-assignments">{name}</div>
         )}
@@ -298,7 +307,7 @@ describe("TeamsPanel", () => {
   it("explains a removal that changed no row", async () => {
     grant(...ALL);
     memberWrites.remove.mockRejectedValue(new TeamWriteNoRowError("member"));
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-2"));
     fireEvent.click(screen.getByTestId("team-remove-member-u-1"));
     fireEvent.click(
@@ -317,7 +326,7 @@ describe("TeamsPanel", () => {
   it("creates a team and refuses a reserved name before sending", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-create"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "corp-0123456789ab" },
@@ -345,7 +354,7 @@ describe("TeamsPanel", () => {
   it("creates a team marked as a project", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-create"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "launch" },
@@ -364,7 +373,7 @@ describe("TeamsPanel", () => {
   it("toggles the project mark of a team in the edit dialog", async () => {
     grant(...ALL);
     writes.update.mockResolvedValue([manual]);
-    render(<TeamsPanel />, "/o?team=guild");
+    render(<Panel />, "/o?team=guild");
     fireEvent.click(screen.getByTestId("team-edit"));
     expect(screen.getByTestId("team-form-save")).toHaveProperty(
       "disabled",
@@ -396,7 +405,7 @@ describe("TeamsPanel", () => {
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useTeams>);
-    render(<TeamsPanel />, "/o?team=launch");
+    render(<Panel />, "/o?team=launch");
     const list = screen.getByTestId("team-list");
     expect(within(list).getAllByTestId("team-project-badge")).toHaveLength(1);
     within(screen.getByTestId("team-3")).getByTestId("team-project-badge");
@@ -410,7 +419,7 @@ describe("TeamsPanel", () => {
       code: "23505",
       message: "duplicate key",
     });
-    render(<TeamsPanel />);
+    render(<Panel />);
     fireEvent.click(screen.getByTestId("team-create"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "guild" },
