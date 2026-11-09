@@ -46,11 +46,13 @@ describe("getRouteStrategyError", () => {
   });
 
   it.each([
+    { limit: undefined, error: undefined },
+    { limit: 0, error: undefined },
     { limit: 1, error: undefined },
     { limit: 2147483647, error: undefined },
-    ...[undefined, 0, -1, 1.5, 2147483648].map((limit) => ({
+    ...[-1, 1.5, 2147483648, Number.NaN].map((limit) => ({
       limit,
-      error: "external_endpoints.messages.primaryCapacityRequired",
+      error: "external_endpoints.messages.maxInflightRequestsInvalid",
     })),
   ])("primary capacity $limit -> $error", ({ limit, error }) => {
     expect(getRouteStrategyError(priority([0, limit], [1, undefined]))).toBe(
