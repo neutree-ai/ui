@@ -21,6 +21,7 @@ import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAc
 import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList";
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
@@ -250,7 +251,7 @@ export function UserGroupModelAccess({
                               group.allowed_models,
                               workspace,
                             )}
-                            emptyText="-"
+                            emptyText={EMPTY_VALUE}
                           />
                         </TableCell>
                         <TableCell>
@@ -259,7 +260,7 @@ export function UserGroupModelAccess({
                               group.denied_models,
                               workspace,
                             )}
-                            emptyText="-"
+                            emptyText={EMPTY_VALUE}
                           />
                         </TableCell>
                       </TableRow>

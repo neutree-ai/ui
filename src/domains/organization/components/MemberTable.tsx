@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import type { MemberProfile } from "@/domains/organization/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
@@ -106,12 +107,16 @@ export function MemberTable({
                   )}
                 </div>
               ) : (
-                "-"
+                <EmptyValue />
               )}
             </TableCell>
-            <TableCell>{row.profile?.spec?.email || "-"}</TableCell>
-            {showDepartment && <TableCell>{row.department || "-"}</TableCell>}
-            {showSource && <TableCell>{row.source || "-"}</TableCell>}
+            <TableCell>{row.profile?.spec?.email || <EmptyValue />}</TableCell>
+            {showDepartment && (
+              <TableCell>{row.department || <EmptyValue />}</TableCell>
+            )}
+            {showSource && (
+              <TableCell>{row.source || <EmptyValue />}</TableCell>
+            )}
             <TableCell>
               <Timestamp timestamp={row.since} relative />
             </TableCell>

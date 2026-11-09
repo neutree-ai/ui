@@ -34,6 +34,7 @@ import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-
 import type { ApiKey } from "@/domains/api-key/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -146,7 +147,7 @@ export function ServiceAccountApiKeys({
         )}`,
       );
     }
-    return parts.length ? parts.join(" · ") : "-";
+    return parts.length ? parts.join(" · ") : EMPTY_VALUE;
   };
 
   return (
@@ -215,7 +216,9 @@ export function ServiceAccountApiKeys({
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{key.metadata.workspace ?? "-"}</TableCell>
+                  <TableCell>
+                    {key.metadata.workspace ?? <EmptyValue />}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={disabled ? "destructive" : "outline"}>
                       {disabled

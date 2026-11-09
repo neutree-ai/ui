@@ -7,6 +7,7 @@ import type {
   IdentitySource,
   IdentitySourceSyncStatus,
 } from "@/domains/identity-source/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -23,7 +24,7 @@ const COUNTS = [
 ] as const satisfies readonly (keyof IdentitySourceSyncStatus)[];
 
 const time = (value?: string | null) =>
-  value ? <Timestamp timestamp={value} relative /> : "-";
+  value ? <Timestamp timestamp={value} relative /> : <EmptyValue />;
 
 /** Organization sync of an LDAP source: its schedule and the last outcome. */
 export function IdentitySourceSyncSection({
@@ -63,10 +64,14 @@ export function IdentitySourceSyncSection({
           )}
         </ShowPage.Row>
         <ShowPage.Row title={t("identity_sources.fields.syncSchedule")}>
-          {enabled ? t(interval.key, { count: interval.count }) : "-"}
+          {enabled ? (
+            t(interval.key, { count: interval.count })
+          ) : (
+            <EmptyValue />
+          )}
         </ShowPage.Row>
         <ShowPage.Row title={t("identity_sources.fields.lastSyncResult")}>
-          {result ? <SyncResultPill result={result} /> : "-"}
+          {result ? <SyncResultPill result={result} /> : <EmptyValue />}
         </ShowPage.Row>
         <ShowPage.Row title={t("identity_sources.fields.lastSuccess")}>
           {time(last?.last_success_time)}
@@ -105,7 +110,7 @@ export function IdentitySourceSyncSection({
           <div className="lg:col-span-4">
             <ShowPage.Row title={t("common.fields.message")}>
               <span className="whitespace-pre-wrap break-words">
-                {last.message?.trim() || "-"}
+                {last.message?.trim() || <EmptyValue />}
               </span>
             </ShowPage.Row>
           </div>

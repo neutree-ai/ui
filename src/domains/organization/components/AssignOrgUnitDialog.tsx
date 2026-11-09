@@ -19,6 +19,7 @@ import {
   type OrgTreeNode,
 } from "@/domains/organization/lib/org-tree";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type AssignOrgUnitDialogProps = {
@@ -116,7 +117,7 @@ export function AssignOrgUnitDialog({
             className="ms-1 text-foreground"
             data-testid="assign-org-unit-selected"
           >
-            {selected?.pathLabel ?? "-"}
+            {selected?.pathLabel ?? <EmptyValue />}
           </span>
         </div>
         {error && (

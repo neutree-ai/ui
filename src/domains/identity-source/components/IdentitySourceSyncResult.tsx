@@ -1,5 +1,6 @@
 import { isSyncRequestPending } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -41,7 +42,11 @@ export function SyncResultPill({ result }: { result: SyncResult }) {
 export function IdentitySourceLastSync({ record }: { record: IdentitySource }) {
   const result = syncResultOf(record);
   if (!result) {
-    return <span data-testid="identity-source-sync-result">-</span>;
+    return (
+      <span data-testid="identity-source-sync-result">
+        <EmptyValue />
+      </span>
+    );
   }
   const finishedAt = record.status?.last_sync?.finished_at;
   return (
