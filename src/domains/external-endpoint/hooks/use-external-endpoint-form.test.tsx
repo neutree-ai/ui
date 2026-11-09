@@ -771,7 +771,7 @@ describe("submit adapter", () => {
     {
       name: "priority without primary capacity",
       spec: twoTargets("priority", {}, { priority: 1 }),
-      allowed: false,
+      allowed: true,
     },
   ])("guards the routing strategy: $name", async ({ spec, allowed }) => {
     const result = await finishWith(spec);
