@@ -50,9 +50,9 @@ type ServiceAccountApiKeysProps = {
 };
 
 /**
- * The API keys of an application. They call models with the application's
- * roles and its Team's model access and token pool, and keep working when
- * their creator leaves the Team.
+ * The API keys of an application. They call models with the Team's
+ * application permissions, model access and token pool, and keep working
+ * when their creator leaves the Team.
  */
 export function ServiceAccountApiKeys({
   serviceAccountId,
@@ -63,7 +63,6 @@ export function ServiceAccountApiKeys({
 }: ServiceAccountApiKeysProps) {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
-  const [session, setSession] = useState(0);
   const [deleting, setDeleting] = useState<ApiKey>();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
@@ -163,10 +162,7 @@ export function ServiceAccountApiKeys({
         {canCreate && (
           <Button
             size="sm"
-            onClick={() => {
-              setSession((value) => value + 1);
-              setCreating(true);
-            }}
+            onClick={() => setCreating(true)}
             data-testid="sa-api-key-create"
           >
             <Plus className="mr-1 h-4 w-4" />
@@ -338,12 +334,14 @@ export function ServiceAccountApiKeys({
               })}
             </DialogDescription>
           </DialogHeader>
-          <CreateApiKeyForm
-            key={session}
-            serviceAccountId={serviceAccountId}
-            onClose={() => setCreating(false)}
-            onCreated={refresh}
-          />
+          {/* Mounted per opening, so each starts from an empty form. */}
+          {creating && (
+            <CreateApiKeyForm
+              serviceAccountId={serviceAccountId}
+              onClose={() => setCreating(false)}
+              onCreated={refresh}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </ShowPage.Section>

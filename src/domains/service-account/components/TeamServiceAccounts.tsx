@@ -137,11 +137,10 @@ export function TeamServiceAccounts({
             okButtonVariant="destructive"
             loading={writes.isPending}
             onConfirm={async () => {
-              if (await attempt(() => writes.remove(account))) {
-                setDeleting(undefined);
-                if (selectedId === account.id) setSelectedId(undefined);
-              } else {
-                setDeleting(undefined);
+              const removed = await attempt(() => writes.remove(account));
+              setDeleting(undefined);
+              if (removed && selectedId === account.id) {
+                setSelectedId(undefined);
               }
             }}
           >

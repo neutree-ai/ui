@@ -111,11 +111,10 @@ export const CreateApiKeyForm = ({
     setSubmitError("");
     try {
       const limits = buildApiKeyLimits(formValue as ApiKeyPolicyFormValues);
-      const { data } = await mutateAsync(
+      const { url, values } =
         serviceAccountId === undefined
           ? {
               url: "/rpc/create_api_key",
-              method: "post",
               values: {
                 p_workspace: formValue.workspace,
                 p_name: null,
@@ -125,12 +124,9 @@ export const CreateApiKeyForm = ({
                 p_quota: 0,
                 p_limits: limits,
               },
-              successNotification: false,
-              errorNotification: false,
             }
           : {
               url: "/rpc/create_service_account_api_key",
-              method: "post",
               values: {
                 p_service_account_id: serviceAccountId,
                 p_workspace: formValue.workspace,
@@ -138,10 +134,14 @@ export const CreateApiKeyForm = ({
                 p_description: formValue.description,
                 p_limits: limits,
               },
-              successNotification: false,
-              errorNotification: false,
-            },
-      );
+            };
+      const { data } = await mutateAsync({
+        url,
+        method: "post",
+        values,
+        successNotification: false,
+        errorNotification: false,
+      });
       await invalidate({
         resource: "api_keys",
         invalidates: ["list"],
