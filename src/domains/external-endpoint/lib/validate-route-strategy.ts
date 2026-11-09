@@ -16,20 +16,19 @@ export function getRouteStrategyError(route: ModelRoute) {
     )
       return "external_endpoints.messages.weightTotalInvalid";
   }
+  if (
+    route.targets.some(
+      ({ max_inflight_requests: limit }) =>
+        limit != null &&
+        (!Number.isInteger(limit) || limit < 0 || limit > 2147483647),
+    )
+  )
+    return "external_endpoints.messages.maxInflightRequestsInvalid";
   if (route.strategy === "priority") {
     const primary = route.targets.filter(
       (target) => (target.priority ?? 0) === 0,
     );
     if (!primary.length)
       return "external_endpoints.messages.primaryTargetRequired";
-    if (
-      primary.some(
-        ({ max_inflight_requests: limit }) =>
-          !Number.isInteger(limit) ||
-          (limit ?? 0) < 1 ||
-          (limit ?? 0) > 2147483647,
-      )
-    )
-      return "external_endpoints.messages.primaryCapacityRequired";
   }
 }

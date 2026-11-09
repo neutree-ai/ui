@@ -169,8 +169,8 @@ describe("targets", () => {
     { strategy: "fixed", target: 0, value: "-1", valid: false },
     { strategy: "fixed", target: 0, value: "1.5", valid: false },
     { strategy: "fixed", target: 0, value: "2147483648", valid: false },
-    { strategy: "priority", target: 0, value: "", valid: false },
-    { strategy: "priority", target: 0, value: "0", valid: false },
+    { strategy: "priority", target: 0, value: "", valid: true },
+    { strategy: "priority", target: 0, value: "0", valid: true },
     { strategy: "priority", target: 1, value: "", valid: true },
   ] as const)(
     "$strategy target $target, limit $value -> valid: $valid",
