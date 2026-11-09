@@ -2110,7 +2110,7 @@
 		"errors": {
 			"saveFailed": "Failed to save the policy",
 			"workspaceUnsupported": "Workspace policies are not supported. Use a global policy.",
-			"orgUnitUnsupported": "Organization subtree policies need the enterprise edition. Use a global policy.",
+			"orgUnitUnsupported": "This server does not support organization subtree policies. Use a global policy.",
 			"orgUnitScopeConflict": "An organization subtree policy cannot also be global or bound to a workspace.",
 			"orgUnitNotFound": "The selected department does not exist.",
 			"delegatedOrgUnitOnly": "You can only grant or revoke organization subtree policies.",

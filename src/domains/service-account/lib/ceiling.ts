@@ -3,7 +3,7 @@
  * application permissions; the server refuses it with 10325
  * (api.is_management_role). Keep the two lists the same.
  */
-export const MANAGEMENT_PERMISSIONS: ReadonlySet<string> = new Set([
+const MANAGEMENT_PERMISSIONS: ReadonlySet<string> = new Set([
   "system:admin",
   "role:create",
   "role:update",

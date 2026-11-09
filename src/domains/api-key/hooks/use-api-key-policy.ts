@@ -10,8 +10,8 @@ import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import {
   type ExternalModelSourceSpec,
   type ModelSource,
-  modelSourceFromWorkspaceModelRow,
   modelSourceRank,
+  parseStoredModelSource,
   resolveExternalModelSource,
   SELF_HOSTED_MODEL_SOURCE,
 } from "@/foundation/lib/model-source";
@@ -568,8 +568,8 @@ export function invokableModelOptions(
       type,
       source:
         type === "internal"
-          ? resolveModelSource("internal")
-          : (modelSourceFromWorkspaceModelRow(row) ?? seen?.source),
+          ? SELF_HOSTED_MODEL_SOURCE
+          : (parseStoredModelSource(row.source_label) ?? seen?.source),
       phase: row.phase ?? seen?.phase ?? null,
       workspace,
     });

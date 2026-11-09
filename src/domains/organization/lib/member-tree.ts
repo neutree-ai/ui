@@ -44,7 +44,7 @@ export function buildMemberTree<U extends { id: string }>(
 }
 
 /** The users of a group that can still be picked, i.e. not yet members. */
-export const selectableIds = (
+const selectableIds = (
   userIds: string[],
   memberIds: ReadonlySet<string>,
 ) => userIds.filter((id) => !memberIds.has(id));

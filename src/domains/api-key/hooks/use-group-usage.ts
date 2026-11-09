@@ -4,7 +4,7 @@ import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useUsageRpc } from "./use-usage-by-dimension";
 
 /** Narrows get_usage_by_group; the server never widens what the caller reads. */
-export type GroupUsageFilter = {
+type GroupUsageFilter = {
   /** An OrgUnit's metadata.name: usage recorded under it or its subtree. */
   orgUnit?: string;
   /** A Team's metadata.name. Needs a global workspace:usage-read. */

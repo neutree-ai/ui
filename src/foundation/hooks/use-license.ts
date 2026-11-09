@@ -28,9 +28,6 @@ export const useLicense = () => {
 
   const license = licenseData?.data;
 
-  // Only the enterprise neutree-api serves /license; community answers 404.
-  const isEnterprise = !!license;
-
   // Check if license supports multiple workspaces
   const supportMultiWorkspace = useMemo(() => {
     const workspaceLimit = license?.status?.usage?.Workspace?.limit;
@@ -85,7 +82,6 @@ export const useLicense = () => {
     refetch,
     updateLicense: handleUpdateLicense,
     supportMultiWorkspace,
-    isEnterprise,
     licenseNotAvailable,
   };
 };

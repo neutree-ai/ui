@@ -37,7 +37,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-export type ServiceAccountPermissions = {
+type ServiceAccountPermissions = {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;

@@ -125,22 +125,6 @@ describe("useLicense", () => {
     });
   });
 
-  describe("isEnterprise", () => {
-    it("is true when /license answers with a license", async () => {
-      mockLicenseData = makeLicense(1);
-      const { result } = await licenseHook();
-
-      expect(result.current.isEnterprise).toBe(true);
-    });
-
-    it("is false when /license is not served (community)", async () => {
-      mockError = { statusCode: 404 };
-      const { result } = await licenseHook();
-
-      expect(result.current.isEnterprise).toBe(false);
-    });
-  });
-
   describe("licenseNotAvailable", () => {
     it("returns true when error statusCode is 404", async () => {
       mockError = { statusCode: 404 };
