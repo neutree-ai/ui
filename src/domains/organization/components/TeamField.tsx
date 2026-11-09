@@ -1,29 +1,13 @@
-import { forwardRef, useMemo } from "react";
+import { forwardRef } from "react";
 import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { TeamSourceLabel } from "@/domains/organization/components/TeamSourceLabel";
-import { useTeams } from "@/domains/organization/hooks/use-organization";
+import { useTeamsByName } from "@/domains/organization/hooks/use-organization";
 import { displayName, isInactive } from "@/domains/organization/lib/org-tree";
 import type { Team } from "@/domains/organization/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-
-const useTeamsByName = () => {
-  const teams = useTeams();
-  return useMemo(() => {
-    const list = [...(teams.data?.data ?? [])].sort(
-      (a, b) =>
-        Number(isInactive(a)) - Number(isInactive(b)) ||
-        displayName(a.metadata).localeCompare(displayName(b.metadata)),
-    );
-    return {
-      list,
-      byName: new Map(list.map((team) => [team.metadata.name, team])),
-      isLoading: teams.isLoading,
-    };
-  }, [teams.data, teams.isLoading]);
-};
 
 type TeamFieldProps = {
   /** metadata.name of the selected Team. */

@@ -8,7 +8,9 @@ import {
   groupByIdentitySource,
   indexNodes,
   type OrgTreeNode,
+  orgTreeIndex,
   orgUnitPathLabel,
+  teamIndex,
 } from "./org-tree";
 
 const unit = (
@@ -199,5 +201,25 @@ describe("orgUnitPathLabel", () => {
     expect(orgUnitPathLabel({ ...corp[2], path: "" }, new Map())).toBe(
       "Platform",
     );
+  });
+});
+
+describe("orgTreeIndex", () => {
+  it("looks nodes up by id and name, and builds once per list", () => {
+    const units = [unit(1, "/1/", "Root"), unit(2, "/1/2/", "Child")];
+    const index = orgTreeIndex(units);
+    expect(index.byName.get("ou-2")?.pathLabel).toBe("Root / Child");
+    expect(index.byId.get(1)?.children).toHaveLength(1);
+    expect(orgTreeIndex(units)).toBe(index);
+  });
+});
+
+describe("teamIndex", () => {
+  it("lists Active Teams first, by display name, and builds once per list", () => {
+    const teams = [team(1, "B"), team(2, "A", true), team(3, "C")];
+    const index = teamIndex(teams);
+    expect(index.list.map((t) => t.id)).toEqual([1, 3, 2]);
+    expect(index.byName.get("team-2")?.id).toBe(2);
+    expect(teamIndex(teams)).toBe(index);
   });
 });

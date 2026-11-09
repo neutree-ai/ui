@@ -23,10 +23,10 @@ import { AddTeamMembersTree } from "@/domains/organization/components/AddTeamMem
 import {
   useAllOrgUnitMembers,
   useAllUsers,
-  useOrgUnits,
+  useOrgTree,
 } from "@/domains/organization/hooks/use-organization";
 import { buildMemberTree } from "@/domains/organization/lib/member-tree";
-import { buildOrgTree, indexNodes } from "@/domains/organization/lib/org-tree";
+import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
@@ -66,25 +66,17 @@ export function AddTeamMembersDialog({
   const [unitFilter, setUnitFilter] = useState(ALL_UNITS);
   const [view, setView] = useState<ViewMode>("list");
   // Departments the caller cannot read stay unknown: no path, no filter match.
-  const orgUnits = useOrgUnits();
+  const { roots: unitRoots, byId: unitsById } = useOrgTree();
   const memberships = useAllOrgUnitMembers(true);
-  const unitRoots = useMemo(
-    () => buildOrgTree(orgUnits.data?.data ?? []),
-    [orgUnits.data],
-  );
-  const unitNodes = useMemo(
-    () => [...indexNodes(unitRoots).values()],
-    [unitRoots],
-  );
+  const unitNodes = useMemo(() => [...unitsById.values()], [unitsById]);
   const unitOfUser = useMemo(() => {
-    const byId = new Map(unitNodes.map((node) => [node.unit.id, node]));
-    const map = new Map<string, (typeof unitNodes)[number]>();
+    const map = new Map<string, OrgTreeNode>();
     for (const row of memberships.data?.data ?? []) {
-      const node = byId.get(row.org_unit_id);
+      const node = unitsById.get(row.org_unit_id);
       if (node) map.set(row.user_id, node);
     }
     return map;
-  }, [unitNodes, memberships.data]);
+  }, [unitsById, memberships.data]);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();

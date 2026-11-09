@@ -16,16 +16,14 @@ import {
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
 import { OrgUnitTree } from "@/domains/organization/components/OrgUnitTree";
 import {
+  useOrgTree,
   useOrgUnitMembers,
-  useOrgUnits,
 } from "@/domains/organization/hooks/use-organization";
 import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
 import {
-  buildOrgTree,
   expandableIds,
   filterOrgTree,
   groupByIdentitySource,
-  indexNodes,
 } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { EmptyState } from "@/foundation/components/EmptyState";
@@ -62,28 +60,25 @@ export function DepartmentsPanel({
   // searching); a list once the user toggles a node.
   const [view, updateView] = useOrganizationView();
 
-  const { data, isLoading, error } = useOrgUnits();
-  const tree = useMemo(() => buildOrgTree(data?.data ?? []), [data]);
-  const nodesById = useMemo(() => indexNodes(tree), [tree]);
-  const idsByName = useMemo(
-    () =>
-      new Map(
-        [...nodesById.values()].map((n) => [n.unit.metadata.name, n.unit.id]),
-      ),
-    [nodesById],
-  );
+  const {
+    roots: tree,
+    byId: nodesById,
+    byName: nodesByName,
+    isLoading,
+    error,
+  } = useOrgTree();
   const selectedId = view.department
-    ? idsByName.get(view.department)
+    ? nodesByName.get(view.department)?.unit.id
     : undefined;
   const expanded = useMemo(
     () =>
       view.expanded &&
       new Set(
         view.expanded
-          .map((name) => idsByName.get(name))
+          .map((name) => nodesByName.get(name)?.unit.id)
           .filter((id): id is number => id !== undefined),
       ),
-    [view.expanded, idsByName],
+    [view.expanded, nodesByName],
   );
   const groups = useMemo(() => groupByIdentitySource(tree), [tree]);
   const visibleGroups = useMemo(

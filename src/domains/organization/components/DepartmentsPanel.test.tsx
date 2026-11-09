@@ -38,10 +38,23 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 
-vi.mock("@/domains/organization/hooks/use-organization", () => ({
-  useOrgUnits: vi.fn(),
-  useOrgUnitMembers: vi.fn(),
-}));
+vi.mock("@/domains/organization/hooks/use-organization", async () => {
+  const { orgTreeIndex } = await import("@/domains/organization/lib/org-tree");
+  const NONE: never[] = [];
+  const useOrgUnits = vi.fn();
+  return {
+    useOrgUnits,
+    useOrgUnitMembers: vi.fn(),
+    useOrgTree: (enabled?: boolean) => {
+      const query = useOrgUnits(enabled);
+      return {
+        ...orgTreeIndex(query?.data?.data ?? NONE),
+        isLoading: query?.isLoading,
+        error: query?.error,
+      };
+    },
+  };
+});
 
 import {
   useOrgUnitMembers,

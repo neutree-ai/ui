@@ -248,10 +248,19 @@ let teams: Array<{
   id: number;
   metadata: { name: string; display_name?: string };
 }> = [];
-vi.mock("@/domains/organization/hooks/use-organization", () => ({
-  useOrgUnits: () => ({ data: { data: orgUnits } }),
-  useTeams: () => ({ data: { data: teams } }),
-}));
+vi.mock("@/domains/organization/hooks/use-organization", async () => {
+  const { orgTreeIndex, teamIndex } = await import(
+    "@/domains/organization/lib/org-tree"
+  );
+  return {
+    useOrgTree: () => ({
+      ...orgTreeIndex(orgUnits as never),
+      isLoading: false,
+      error: null,
+    }),
+    useTeamsByName: () => ({ ...teamIndex(teams as never), isLoading: false }),
+  };
+});
 
 const groupFilters: Array<{ orgUnit?: string; team?: string } | undefined> = [];
 

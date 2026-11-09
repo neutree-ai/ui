@@ -31,13 +31,26 @@ vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: vi.fn(),
 }));
 
-vi.mock("@/domains/organization/hooks/use-organization", () => ({
-  MembershipOutOfScopeError: class extends Error {},
-  useOrgUnits: vi.fn(),
-  useUserOrgUnit: vi.fn(),
-  useUserTeams: vi.fn(),
-  useAssignOrgUnit: vi.fn(),
-}));
+vi.mock("@/domains/organization/hooks/use-organization", async () => {
+  const { orgTreeIndex } = await import("@/domains/organization/lib/org-tree");
+  const NONE: never[] = [];
+  const useOrgUnits = vi.fn();
+  return {
+    MembershipOutOfScopeError: class extends Error {},
+    useOrgUnits,
+    useUserOrgUnit: vi.fn(),
+    useUserTeams: vi.fn(),
+    useAssignOrgUnit: vi.fn(),
+    useOrgTree: (enabled?: boolean) => {
+      const query = useOrgUnits(enabled);
+      return {
+        ...orgTreeIndex(query?.data?.data ?? NONE),
+        isLoading: query?.isLoading,
+        error: query?.error,
+      };
+    },
+  };
+});
 
 import {
   MembershipOutOfScopeError,

@@ -7,10 +7,33 @@ vi.mock("@/foundation/lib/i18n", () => ({
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasPermission: () => ({ allowed: true, isLoading: false }),
 }));
-vi.mock("@/domains/organization/hooks/use-organization", () => ({
-  useOrgUnits: vi.fn(),
-  useTeams: vi.fn(),
-}));
+vi.mock("@/domains/organization/hooks/use-organization", async () => {
+  const { orgTreeIndex, teamIndex } = await import(
+    "@/domains/organization/lib/org-tree"
+  );
+  const NONE: never[] = [];
+  const useOrgUnits = vi.fn();
+  const useTeams = vi.fn();
+  return {
+    useOrgUnits,
+    useTeams,
+    useOrgTree: (enabled?: boolean) => {
+      const query = useOrgUnits(enabled);
+      return {
+        ...orgTreeIndex(query?.data?.data ?? NONE),
+        isLoading: query?.isLoading,
+        error: query?.error,
+      };
+    },
+    useTeamsByName: (enabled?: boolean) => {
+      const query = useTeams(enabled);
+      return {
+        ...teamIndex(query?.data?.data ?? NONE),
+        isLoading: query?.isLoading,
+      };
+    },
+  };
+});
 
 import {
   useOrgUnits,

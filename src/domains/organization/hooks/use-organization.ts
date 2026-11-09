@@ -1,4 +1,5 @@
 import { useCustom, useList } from "@refinedev/core";
+import { orgTreeIndex, teamIndex } from "@/domains/organization/lib/org-tree";
 import { withProjectLabel } from "@/domains/organization/lib/team";
 import type {
   MemberProfile,
@@ -13,19 +14,44 @@ import { useRowWrite } from "@/foundation/hooks/use-row-write";
 // The page builds the tree locally, so it needs every row at once.
 const ALL = { mode: "off" } as const;
 
+// Departments and Teams change rarely; many labels on a page read them.
+const STALE_TIME = 60_000;
+
 export const useOrgUnits = (enabled = true) =>
   useList<OrgUnit>({
     resource: "org_units",
     pagination: ALL,
-    queryOptions: { enabled },
+    queryOptions: { enabled, staleTime: STALE_TIME },
   });
 
 export const useTeams = (enabled = true) =>
   useList<Team>({
     resource: "teams",
     pagination: ALL,
-    queryOptions: { enabled },
+    queryOptions: { enabled, staleTime: STALE_TIME },
   });
+
+const NO_UNITS: OrgUnit[] = [];
+const NO_TEAMS: Team[] = [];
+
+/** The department forest the caller can read, with lookups by id and name. */
+export const useOrgTree = (enabled = true) => {
+  const { data, isLoading, error } = useOrgUnits(enabled);
+  return {
+    ...orgTreeIndex(data?.data ?? NO_UNITS),
+    isLoading: enabled && isLoading,
+    error,
+  };
+};
+
+/** Teams, Active first and then by display name, with a lookup by name. */
+export const useTeamsByName = (enabled = true) => {
+  const { data, isLoading } = useTeams(enabled);
+  return {
+    ...teamIndex(data?.data ?? NO_TEAMS),
+    isLoading: enabled && isLoading,
+  };
+};
 
 /**
  * Members of one OrgUnit, or of its whole subtree (through the

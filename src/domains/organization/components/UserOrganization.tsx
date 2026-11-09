@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
@@ -6,16 +6,11 @@ import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import {
   MembershipOutOfScopeError,
   useAssignOrgUnit,
-  useOrgUnits,
+  useOrgTree,
   useUserOrgUnit,
   useUserTeams,
 } from "@/domains/organization/hooks/use-organization";
-import {
-  buildOrgTree,
-  displayName,
-  isInactive,
-  orgUnitPathLabel,
-} from "@/domains/organization/lib/org-tree";
+import { displayName, isInactive } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
@@ -88,15 +83,7 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
       ? canEdit === true
       : mode === "create" && canAssignNew === true;
   // The tree is needed for the path and, when editable, for the picker.
-  const units = useOrgUnits(canRead === true);
-  const tree = useMemo(
-    () => buildOrgTree(units.data?.data ?? []),
-    [units.data],
-  );
-  const unitsById = useMemo(
-    () => new Map((units.data?.data ?? []).map((u) => [u.id, u])),
-    [units.data],
-  );
+  const units = useOrgTree(canRead === true);
 
   const assign = useAssignOrgUnit(profile.id);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -201,7 +188,7 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
             )}
           >
             <span data-testid="user-department-path">
-              {orgUnitPathLabel(unit, unitsById)}
+              {units.byId.get(unit.id)?.pathLabel ?? displayName(unit.metadata)}
             </span>
             {isInactive(unit) && <InactiveBadge />}
           </dd>
@@ -235,7 +222,7 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
         <AssignOrgUnitDialog
           open
           onOpenChange={setDialogOpen}
-          tree={tree}
+          tree={units.roots}
           currentId={membership?.org_unit_id}
           saving={assign.isPending}
           error={saveError}

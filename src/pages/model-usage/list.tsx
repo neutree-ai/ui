@@ -28,13 +28,11 @@ import type {
   GroupUsageRecord,
 } from "@/domains/api-key/types";
 import {
-  useOrgUnits,
-  useTeams,
+  useOrgTree,
+  useTeamsByName,
 } from "@/domains/organization/hooks/use-organization";
 import {
-  buildOrgTree,
   displayName,
-  indexNodes,
   type OrgTreeNode,
 } from "@/domains/organization/lib/org-tree";
 import {
@@ -166,31 +164,30 @@ export const ModelUsageList = () => {
   );
   // Departments are listed in tree order with their path. Without
   // org_unit:read the list is empty and the rows keep the usage order.
-  const orgUnits = useOrgUnits(
+  const { byId: orgUnitsById } = useOrgTree(
     canReadGroups && (groupKind === "OrgUnit" || byUser),
   );
-  const teams = useTeams(canReadAllGroups && byUser);
+  const { list: teams } = useTeamsByName(canReadAllGroups && byUser);
   const teamOptions = useMemo(
     () =>
-      (teams.data?.data ?? [])
+      teams
         .map((team) => ({
           name: team.metadata.name,
           label: displayName(team.metadata),
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
-    [teams.data],
+    [teams],
   );
-  const orgNodes = useMemo(() => {
-    const nodes = [
-      ...indexNodes(buildOrgTree(orgUnits.data?.data ?? [])).values(),
-    ];
-    return new Map<string, { position: number; node: OrgTreeNode }>(
-      nodes.map((node, position) => [
-        node.unit.metadata.name,
-        { position, node },
-      ]),
-    );
-  }, [orgUnits.data]);
+  const orgNodes = useMemo(
+    () =>
+      new Map<string, { position: number; node: OrgTreeNode }>(
+        [...orgUnitsById.values()].map((node, position) => [
+          node.unit.metadata.name,
+          { position, node },
+        ]),
+      ),
+    [orgUnitsById],
+  );
 
   // Picking a day in the chart narrows the range itself to that day — there is
   // no second "focused day" state, so every panel on the page follows the same

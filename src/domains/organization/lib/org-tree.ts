@@ -156,3 +156,52 @@ export function filterTeams(
       displayName(a.metadata).localeCompare(displayName(b.metadata)),
     );
 }
+
+type OrgTreeIndex = {
+  roots: OrgTreeNode[];
+  byId: ReadonlyMap<number, OrgTreeNode>;
+  byName: ReadonlyMap<string, OrgTreeNode>;
+};
+
+// Keyed by the cached rows, so every consumer of one fetch shares one index.
+const orgTreeIndexes = new WeakMap<OrgUnit[], OrgTreeIndex>();
+
+/** The forest with lookups; built once per fetched list. */
+export const orgTreeIndex = (units: OrgUnit[]): OrgTreeIndex => {
+  let index = orgTreeIndexes.get(units);
+  if (!index) {
+    const roots = buildOrgTree(units);
+    const byId = indexNodes(roots);
+    index = {
+      roots,
+      byId,
+      byName: new Map(
+        [...byId.values()].map((node) => [node.unit.metadata.name, node]),
+      ),
+    };
+    orgTreeIndexes.set(units, index);
+  }
+  return index;
+};
+
+type TeamIndex = { list: Team[]; byName: ReadonlyMap<string, Team> };
+
+const teamIndexes = new WeakMap<Team[], TeamIndex>();
+
+/** Teams, Active first then by display name; built once per fetched list. */
+export const teamIndex = (teams: Team[]): TeamIndex => {
+  let index = teamIndexes.get(teams);
+  if (!index) {
+    const list = [...teams].sort(
+      (a, b) =>
+        Number(isInactive(a)) - Number(isInactive(b)) ||
+        displayName(a.metadata).localeCompare(displayName(b.metadata)),
+    );
+    index = {
+      list,
+      byName: new Map(list.map((team) => [team.metadata.name, team])),
+    };
+    teamIndexes.set(teams, index);
+  }
+  return index;
+};
