@@ -27,6 +27,13 @@ type UsageRow = Pick<
   "usage" | "prompt_tokens" | "completion_tokens"
 > & { requests?: number };
 
+/** `part` as a percentage of `whole`; 0 when there is nothing to share. */
+export const shareOf = (part: number, whole: number) =>
+  whole > 0 ? (part / whole) * 100 : 0;
+
+export const formatShare = (part: number, whole: number) =>
+  whole > 0 ? `${shareOf(part, whole).toFixed(1)}%` : "0%";
+
 // Sums usage into one series per key, biggest total first.
 export function aggregateSeries<R extends UsageRow>(
   rows: R[],

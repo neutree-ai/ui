@@ -45,6 +45,19 @@ export function orgUnitPathLabel(
 }
 
 /**
+ * The readable nodes along a node's path, from the top down to the node
+ * itself; ancestors the user cannot read (absent from nodesById) are skipped.
+ */
+export function orgUnitAncestors(
+  node: OrgTreeNode,
+  nodesById: ReadonlyMap<number, OrgTreeNode>,
+): OrgTreeNode[] {
+  return pathIds(node.unit.path)
+    .map((id) => (id === node.unit.id ? node : nodesById.get(id)))
+    .filter((ancestor): ancestor is OrgTreeNode => !!ancestor);
+}
+
+/**
  * Builds the department forest from the OrgUnits the user can read. A user
  * bound to a subtree cannot read its ancestors, so a node whose parent is not
  * in the list hangs under its nearest readable ancestor, or becomes a root.
