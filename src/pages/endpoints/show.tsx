@@ -25,6 +25,7 @@ import {
   EndpointSaveAsCatalogProvider,
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
+import { ServedModelName } from "@/domains/endpoint/components/ServedModelName";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
@@ -314,12 +315,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                   {record.status?.served_models?.length ? (
                     <span className="inline-flex flex-wrap gap-1">
                       {record.status.served_models.map((model) => (
-                        <code
-                          key={model}
-                          className="break-all font-mono text-xs"
-                        >
-                          {model}
-                        </code>
+                        <ServedModelName key={model} name={model} />
                       ))}
                     </span>
                   ) : (
