@@ -39,4 +39,21 @@ describe("DeleteConfirmDialog", () => {
     fireEvent.click(deleteButton());
     expect(onConfirm).toHaveBeenCalledWith(false);
   });
+
+  it("takes a custom label, extra content and a disabled state", () => {
+    render(
+      <DeleteConfirmDialog
+        open
+        allowForceDelete={false}
+        okText="remove"
+        okDisabled
+        extraContent={<p>checking</p>}
+        onConfirm={() => {}}
+      />,
+    );
+    screen.getByText("checking");
+    expect(
+      screen.getByRole("button", { name: /remove/ }).hasAttribute("disabled"),
+    ).toBe(true);
+  });
 });

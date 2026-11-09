@@ -1,6 +1,7 @@
 import {
   type PropsWithChildren,
   type ReactElement,
+  type ReactNode,
   useEffect,
   useId,
   useState,
@@ -29,6 +30,12 @@ interface DeleteConfirmDialogProps
   title?: string;
   description?: string;
   errorMessage?: string;
+  /** Replaces the Delete label, e.g. for removing a member. */
+  okText?: string;
+  /** Keeps the confirm button disabled, e.g. while a pre-check runs. */
+  okDisabled?: boolean;
+  /** Shown above the force-delete option. */
+  extraContent?: ReactNode;
   onConfirm: (forceDelete: boolean) => void;
 }
 
@@ -40,6 +47,9 @@ export function DeleteConfirmDialog({
   title,
   description,
   errorMessage,
+  okText,
+  okDisabled = false,
+  extraContent,
   onConfirm,
   confirmName,
   allowForceDelete = true,
@@ -73,58 +83,65 @@ export function DeleteConfirmDialog({
       loading={loading}
       title={title ?? t("dialogs.delete.title")}
       description={description ?? t("dialogs.delete.description")}
-      okText={t("buttons.delete")}
+      okText={okText ?? t("buttons.delete")}
       cancelText={t("buttons.cancel")}
       okButtonVariant="destructive"
-      okDisabled={Boolean(confirmName) && typedName !== confirmName}
+      okDisabled={
+        okDisabled || (Boolean(confirmName) && typedName !== confirmName)
+      }
       onConfirm={handleConfirm}
       content={
-        <div className="space-y-4">
-          {errorMessage && (
-            <div className="rounded-md bg-destructive/10 p-3 max-h-40 overflow-y-auto">
-              <div className="text-sm font-medium text-destructive mb-1">
-                {t("dialogs.delete.currentError")}
+        (extraContent || errorMessage || confirmName || allowForceDelete) && (
+          <div className="space-y-4">
+            {extraContent}
+            {errorMessage && (
+              <div className="rounded-md bg-destructive/10 p-3 max-h-40 overflow-y-auto">
+                <div className="text-sm font-medium text-destructive mb-1">
+                  {t("dialogs.delete.currentError")}
+                </div>
+                <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                  {errorMessage}
+                </pre>
               </div>
-              <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
-                {errorMessage}
-              </pre>
-            </div>
-          )}
-          {confirmName && (
-            <div className="space-y-2">
-              <label htmlFor={typedNameId} className="text-sm">
-                {t("dialogs.delete.typeNameToConfirm", { name: confirmName })}
-              </label>
-              <Input
-                id={typedNameId}
-                value={typedName}
-                autoComplete="off"
-                data-testid="delete-confirm-name"
-                onChange={(e) => setTypedName(e.target.value)}
-              />
-            </div>
-          )}
-          {allowForceDelete && (
-            <div className="flex items-start space-x-3">
-              <Checkbox
-                id={checkboxId}
-                checked={forceDelete}
-                onCheckedChange={(checked) => setForceDelete(checked === true)}
-              />
-              <label
-                htmlFor={checkboxId}
-                className="text-sm leading-none cursor-pointer"
-              >
-                <div className="font-medium mb-1">
-                  {t("dialogs.delete.forceDelete.label")}
-                </div>
-                <div className="text-muted-foreground">
-                  {t("dialogs.delete.forceDelete.description")}
-                </div>
-              </label>
-            </div>
-          )}
-        </div>
+            )}
+            {confirmName && (
+              <div className="space-y-2">
+                <label htmlFor={typedNameId} className="text-sm">
+                  {t("dialogs.delete.typeNameToConfirm", { name: confirmName })}
+                </label>
+                <Input
+                  id={typedNameId}
+                  value={typedName}
+                  autoComplete="off"
+                  data-testid="delete-confirm-name"
+                  onChange={(e) => setTypedName(e.target.value)}
+                />
+              </div>
+            )}
+            {allowForceDelete && (
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id={checkboxId}
+                  checked={forceDelete}
+                  onCheckedChange={(checked) =>
+                    setForceDelete(checked === true)
+                  }
+                />
+                <label
+                  htmlFor={checkboxId}
+                  className="text-sm leading-none cursor-pointer"
+                >
+                  <div className="font-medium mb-1">
+                    {t("dialogs.delete.forceDelete.label")}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {t("dialogs.delete.forceDelete.description")}
+                  </div>
+                </label>
+              </div>
+            )}
+          </div>
+        )
       }
     >
       {children as ReactElement}

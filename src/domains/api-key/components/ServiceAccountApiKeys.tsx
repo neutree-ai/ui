@@ -32,7 +32,7 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
@@ -283,7 +283,8 @@ export function ServiceAccountApiKeys({
                         </>
                       )}
                       {canDelete && (
-                        <ConfirmDialog
+                        <DeleteConfirmDialog
+                          allowForceDelete={false}
                           open={deleting?.id === key.id}
                           onOpenChange={(next) =>
                             setDeleting(next ? key : undefined)
@@ -292,9 +293,6 @@ export function ServiceAccountApiKeys({
                             name: displayName(key.metadata),
                           })}
                           description={t("api_keys.serviceAccount.deleteHint")}
-                          okText={t("buttons.delete")}
-                          cancelText={t("buttons.cancel")}
-                          okButtonVariant="destructive"
                           loading={pending}
                           onConfirm={() => remove(key)}
                         >
@@ -308,7 +306,7 @@ export function ServiceAccountApiKeys({
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </ConfirmDialog>
+                        </DeleteConfirmDialog>
                       )}
                     </div>
                   </TableCell>

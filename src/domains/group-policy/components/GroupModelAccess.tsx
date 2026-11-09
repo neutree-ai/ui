@@ -21,7 +21,7 @@ import type {
   GroupTokenPool,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
@@ -142,14 +142,12 @@ export function GroupModelAccess({
             </Button>
           )}
           {policy && canDelete && (
-            <ConfirmDialog
+            <DeleteConfirmDialog
+              allowForceDelete={false}
               open={confirming}
               onOpenChange={setConfirming}
               title={t("group_policies.deleteTitle")}
               description={t("group_policies.deleteHint", { group: name })}
-              okText={t("buttons.delete")}
-              cancelText={t("buttons.cancel")}
-              okButtonVariant="destructive"
               loading={writes.isPending}
               onConfirm={async () => {
                 setActionError(undefined);
@@ -170,7 +168,7 @@ export function GroupModelAccess({
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
-            </ConfirmDialog>
+            </DeleteConfirmDialog>
           )}
         </div>
       }

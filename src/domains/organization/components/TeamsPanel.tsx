@@ -33,7 +33,7 @@ import {
   teamSource,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
@@ -230,7 +230,8 @@ export function TeamsPanel({
                 </Button>
               )}
               {canDelete && (
-                <ConfirmDialog
+                <DeleteConfirmDialog
+                  allowForceDelete={false}
                   open={dialog?.kind === "delete"}
                   onOpenChange={(next) =>
                     next ? open({ kind: "delete" }) : close()
@@ -247,7 +248,7 @@ export function TeamsPanel({
                           count: members.members.length,
                         })
                   }
-                  content={
+                  extraContent={
                     deleteCheck?.isLoading ? (
                       <p
                         className="text-sm text-muted-foreground"
@@ -267,9 +268,6 @@ export function TeamsPanel({
                       )
                     )
                   }
-                  okText={t("buttons.delete")}
-                  cancelText={t("buttons.cancel")}
-                  okButtonVariant="destructive"
                   okDisabled={deleteBlocked || !!deleteCheck?.isLoading}
                   loading={teamWrites.isPending}
                   onConfirm={() =>
@@ -291,7 +289,7 @@ export function TeamsPanel({
                     <Trash2 className="mr-1 h-4 w-4" />
                     {t("buttons.delete")}
                   </Button>
-                </ConfirmDialog>
+                </DeleteConfirmDialog>
               )}
             </div>
           )
@@ -310,7 +308,8 @@ export function TeamsPanel({
             renderActions={
               manual && canAssign
                 ? (row) => (
-                    <ConfirmDialog
+                    <DeleteConfirmDialog
+                      allowForceDelete={false}
                       open={
                         dialog?.kind === "remove-member" &&
                         dialog.userId === row.key
@@ -331,8 +330,6 @@ export function TeamsPanel({
                         team: displayName(selected.metadata),
                       })}
                       okText={t("organization.teams.removeMember")}
-                      cancelText={t("buttons.cancel")}
-                      okButtonVariant="destructive"
                       loading={memberWrites.isPending}
                       onConfirm={() =>
                         attempt(() => memberWrites.remove(row.key), {
@@ -350,7 +347,7 @@ export function TeamsPanel({
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                    </ConfirmDialog>
+                    </DeleteConfirmDialog>
                   )
                 : undefined
             }

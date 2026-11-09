@@ -30,7 +30,7 @@ import {
 } from "@/domains/service-account/hooks/use-service-accounts";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { ServiceAccount } from "@/domains/service-account/types";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -124,16 +124,14 @@ export function TeamServiceAccounts({
           </Button>
         )}
         {permissions.canDelete && (
-          <ConfirmDialog
+          <DeleteConfirmDialog
+            allowForceDelete={false}
             open={deleting?.id === account.id}
             onOpenChange={(next) => setDeleting(next ? account : undefined)}
             title={t("service_accounts.deleteTitle", {
               name: displayName(account.metadata),
             })}
             description={t("service_accounts.deleteHint")}
-            okText={t("buttons.delete")}
-            cancelText={t("buttons.cancel")}
-            okButtonVariant="destructive"
             loading={writes.isPending}
             onConfirm={async () => {
               const removed = await attempt(() => writes.remove(account));
@@ -154,7 +152,7 @@ export function TeamServiceAccounts({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          </ConfirmDialog>
+          </DeleteConfirmDialog>
         )}
       </div>
     );

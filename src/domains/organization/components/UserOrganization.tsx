@@ -14,7 +14,7 @@ import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization
 import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
 import type { MemberProfile } from "@/domains/organization/types";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
+import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
@@ -132,14 +132,12 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
         editable && (
           <div className="flex items-center gap-2">
             {mode === "update" && (
-              <ConfirmDialog
+              <DeleteConfirmDialog
+                allowForceDelete={false}
                 open={confirmRemove}
                 onOpenChange={setConfirmRemove}
                 title={t("user_profiles.department.removeTitle")}
                 description={t("user_profiles.department.removeHint")}
-                okText={t("buttons.delete")}
-                cancelText={t("buttons.cancel")}
-                okButtonVariant="destructive"
                 loading={assign.isPending}
                 onConfirm={onRemove}
               >
@@ -150,7 +148,7 @@ export function UserDepartmentSection({ profile }: { profile: MemberProfile }) {
                 >
                   {t("user_profiles.department.remove")}
                 </Button>
-              </ConfirmDialog>
+              </DeleteConfirmDialog>
             )}
             <Button
               size="sm"
