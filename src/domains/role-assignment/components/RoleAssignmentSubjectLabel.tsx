@@ -1,4 +1,4 @@
-import { AppWindow, Network, User, Users } from "lucide-react";
+import { Network, User, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import UserCell from "@/domains/role-assignment/components/UserCell";
 import { subjectKindOf } from "@/domains/role-assignment/lib/subject";
@@ -12,22 +12,18 @@ import { useTranslation } from "@/foundation/lib/i18n";
 export type GroupRenderers = {
   renderTeam?: (name: string) => ReactNode;
   renderOrgUnit?: (name: string) => ReactNode;
-  /** Renders an application by its id. */
-  renderServiceAccount?: (id: string) => ReactNode;
 };
 
 const ICONS = {
   User,
   Team: Users,
   OrgUnit: Network,
-  ServiceAccount: AppWindow,
 } as const;
 
 export const SUBJECT_KIND_KEYS: Record<RoleAssignmentSubjectKind, string> = {
   User: "role_assignments.subjectKinds.User",
   Team: "role_assignments.subjectKinds.Team",
   OrgUnit: "role_assignments.subjectKinds.OrgUnit",
-  ServiceAccount: "role_assignments.subjectKinds.ServiceAccount",
 };
 
 export function SubjectKindIcon({ kind }: { kind: RoleAssignmentSubjectKind }) {
@@ -52,7 +48,6 @@ export function RoleAssignmentSubjectLabel({
   spec,
   renderTeam = (name) => name,
   renderOrgUnit = (name) => name,
-  renderServiceAccount = (id) => id,
 }: { spec: RoleAssignmentSpec } & GroupRenderers) {
   const kind = subjectKindOf(spec);
   const name = spec.subject_name ?? "";
@@ -64,11 +59,9 @@ export function RoleAssignmentSubjectLabel({
       <SubjectKindIcon kind={kind} />
       {kind === "User"
         ? spec.user_id && <UserCell id={spec.user_id} />
-        : kind === "ServiceAccount"
-          ? spec.user_id && renderServiceAccount(spec.user_id)
-          : kind === "Team"
-            ? renderTeam(name)
-            : renderOrgUnit(name)}
+        : kind === "Team"
+          ? renderTeam(name)
+          : renderOrgUnit(name)}
     </span>
   );
 }

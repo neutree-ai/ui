@@ -1,17 +1,12 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /**
- * Who holds a role assignment: a user, every member of a group, or an
- * application (ServiceAccount, whose id is in user_id).
+ * Who holds a role assignment: a user or every member of a group.
  */
-export type RoleAssignmentSubjectKind =
-  | "User"
-  | "Team"
-  | "OrgUnit"
-  | "ServiceAccount";
+export type RoleAssignmentSubjectKind = "User" | "Team" | "OrgUnit";
 
 export interface RoleAssignmentSpec {
-  /** Set for a User or ServiceAccount subject, null for a group. */
+  /** Set for a User subject, null for a group. */
   user_id: string | null;
   workspace: string | null;
   global: boolean;

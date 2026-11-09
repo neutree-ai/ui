@@ -2127,8 +2127,7 @@
 		"subjectKinds": {
 			"User": "User",
 			"Team": "Team",
-			"OrgUnit": "Department",
-			"ServiceAccount": "Application"
+			"OrgUnit": "Department"
 		},
 		"group": {
 			"title": "Policies",
@@ -3637,7 +3636,6 @@
 			"immutable": "The team of an application and the owner or workspace of a key cannot be changed.",
 			"hasKeys": "The application still has API keys. Delete them first; a deleted key is removed after a short while.",
 			"applicationActor": "An application cannot create applications or API keys.",
-			"subjectMismatch": "The subject does not match its type.",
 			"ceilingUnknown": "The application permissions name a role or workspace that does not exist.",
 			"managementRole": "A role that manages access cannot be in the application permissions: one with role, role assignment, user, identity source, department, team, group policy or application management permissions, or system:admin.",
 			"nameTaken": "The name is already taken in this team."

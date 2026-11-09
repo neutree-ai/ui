@@ -8,7 +8,6 @@ const SERVICE_ACCOUNT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10318": "service_accounts.errors.immutable",
   "10319": "service_accounts.errors.hasKeys",
   "10320": "service_accounts.errors.applicationActor",
-  "10321": "service_accounts.errors.subjectMismatch",
   "10324": "service_accounts.errors.ceilingUnknown",
   "10325": "service_accounts.errors.managementRole",
   "23505": "service_accounts.errors.nameTaken",

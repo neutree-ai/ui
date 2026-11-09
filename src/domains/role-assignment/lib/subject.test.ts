@@ -59,24 +59,3 @@ describe("availableSubjectKinds", () => {
     ).toEqual(["User", "OrgUnit"]);
   });
 });
-
-describe("application subjects", () => {
-  it("keeps the application id in user_id, with no subject_name", () => {
-    expect(
-      subjectFields("ServiceAccount", {
-        user_id: "u-1",
-        subject_kind: "User",
-      }),
-    ).toEqual({
-      subject_kind: "ServiceAccount",
-      subject_name: null,
-      user_id: "",
-    });
-    expect(
-      subjectFields("ServiceAccount", {
-        user_id: "sa-1",
-        subject_kind: "ServiceAccount",
-      }).user_id,
-    ).toBe("sa-1");
-  });
-});

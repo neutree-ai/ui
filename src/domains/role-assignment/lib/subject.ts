@@ -21,7 +21,7 @@ export const subjectFields = (
   current: SubjectFields,
 ): Required<SubjectFields> => {
   const same = subjectKindOf(current) === kind;
-  if (kind === "User" || kind === "ServiceAccount") {
+  if (kind === "User") {
     return {
       subject_kind: kind,
       subject_name: null,
