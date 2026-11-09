@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import {
   type MemberRow,
   MemberTable,
@@ -27,6 +26,7 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { translateApiErrorOr } from "@/foundation/lib/api-error-code";

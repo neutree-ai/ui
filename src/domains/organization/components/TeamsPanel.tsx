@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddTeamMembersDialog } from "@/domains/organization/components/AddTeamMembersDialog";
-import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import { MemberTable } from "@/domains/organization/components/MemberTable";
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
 import { ProjectBadge } from "@/domains/organization/components/ProjectBadge";
@@ -36,6 +35,7 @@ import {
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import {

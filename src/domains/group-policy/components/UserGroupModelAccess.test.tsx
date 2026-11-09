@@ -120,7 +120,7 @@ describe("UserGroupModelAccess", () => {
     );
     const row = screen.getByTestId("user-model-access-group-OrgUnit-rd");
     expect(row.textContent).toContain("dept:rd");
-    expect(row.textContent).toContain("group_policies.effective.inactive");
+    expect(row.textContent).toContain("organization.phases.Inactive");
     // The entry pinned to ws2 does not apply in ws1.
     expect(row.textContent).not.toContain("other");
   });

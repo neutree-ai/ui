@@ -1,5 +1,4 @@
 import { useGetIdentity } from "@refinedev/core";
-import { Network, Users } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,6 +21,8 @@ import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
+import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
@@ -213,7 +214,6 @@ export function UserGroupModelAccess({
                 </TableHeader>
                 <TableBody>
                   {groups.map((group) => {
-                    const Icon = group.kind === "Team" ? Users : Network;
                     return (
                       <TableRow
                         key={`${group.kind}/${group.name}`}
@@ -221,27 +221,19 @@ export function UserGroupModelAccess({
                       >
                         <TableCell>
                           <span className="inline-flex items-center gap-1.5">
-                            <Icon
-                              className="h-4 w-4 shrink-0 text-muted-foreground"
-                              aria-label={
-                                group.kind === "Team"
-                                  ? t("group_policies.kinds.Team")
-                                  : t("group_policies.kinds.OrgUnit")
-                              }
+                            <GroupKindIcon
+                              kind={group.kind}
+                              label={t(`group_policies.kinds.${group.kind}`)}
                             />
                             {group.kind === "Team"
                               ? renderTeam(group.name, group.display_name)
                               : renderOrgUnit(group.name, group.display_name)}
                             {!group.active && (
-                              <Badge
-                                variant="secondary"
-                                className="shrink-0 px-1.5 py-0 font-normal"
+                              <InactiveBadge
                                 title={t(
                                   "group_policies.effective.inactiveHint",
                                 )}
-                              >
-                                {t("group_policies.effective.inactive")}
-                              </Badge>
+                              />
                             )}
                           </span>
                         </TableCell>

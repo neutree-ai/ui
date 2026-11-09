@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
-import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import {
   MembershipOutOfScopeError,
   useAssignOrgUnit,
@@ -17,6 +16,7 @@ import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit"
 import type { MemberProfile } from "@/domains/organization/types";
 import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";

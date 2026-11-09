@@ -4,8 +4,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { cn } from "@/foundation/lib/utils";
 
 type OrgUnitTreeProps = {

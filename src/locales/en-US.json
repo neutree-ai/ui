@@ -3074,7 +3074,6 @@
 			"noneDenied": "None",
 			"noGroups": "None of this user's groups has a model access policy.",
 			"group": "Group",
-			"inactive": "Inactive",
 			"inactiveHint": "The group is inactive, but its policy still applies.",
 			"noWorkspace": "You cannot see any workspace, so the merged result per workspace is not shown. Each group's rules are listed below; an entry limited to a workspace names it."
 		},

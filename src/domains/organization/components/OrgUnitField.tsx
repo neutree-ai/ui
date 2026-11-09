@@ -1,9 +1,9 @@
 import { forwardRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
-import { InactiveBadge } from "@/domains/organization/components/InactiveBadge";
 import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { useOrgTree } from "@/domains/organization/hooks/use-organization";
+import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
