@@ -80,8 +80,6 @@ const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
 const SUBTREE_GROUP_KINDS: GroupUsageKind[] = ["User", "OrgUnit"];
 // The "no filter" value of the department and team selects by user.
 const ALL_GROUPS = "__all__";
-// What the chart's series are: API keys, or users / groups of one kind.
-type ChartDimension = "ApiKey" | GroupUsageKind;
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -123,13 +121,11 @@ export const ModelUsageList = () => {
     : "User";
   // The group card's kind drives the chart too, so both show the same
   // breakdown; picking an API key goes back to the per-key chart.
-  const [chartDimension, setChartDimension] =
-    useState<ChartDimension>("ApiKey");
-  const chartGroupKind =
-    canReadGroups && chartDimension !== "ApiKey" ? groupKind : null;
+  const [chartByGroup, setChartByGroup] = useState(false);
+  const chartGroupKind = canReadGroups && chartByGroup ? groupKind : null;
   const pickGroupKind = (kind: GroupUsageKind) => {
     setGroupKind(kind);
-    setChartDimension(kind);
+    setChartByGroup(true);
     // Groups overlap (a department holds its sub-departments, a user may be
     // in several teams), so a stacked bar would overstate the total.
     setChartType("line");
@@ -474,7 +470,7 @@ export const ModelUsageList = () => {
                 value={chartGroupKind ?? "ApiKey"}
                 onValueChange={(v) =>
                   v === "ApiKey"
-                    ? setChartDimension("ApiKey")
+                    ? setChartByGroup(false)
                     : pickGroupKind(v as GroupUsageKind)
                 }
               >
@@ -524,7 +520,7 @@ export const ModelUsageList = () => {
           onValueChange={(v) => {
             const next = v === "all" ? "" : v;
             setApiKeyId(next);
-            setChartDimension("ApiKey");
+            setChartByGroup(false);
             // A single key reads best as a stacked bar of its daily model mix;
             // "All keys" reads best as per-key trend lines.
             setChartType(next ? "bar" : "line");
@@ -612,101 +608,34 @@ export const ModelUsageList = () => {
       </div>
 
       {canReadGroups ? (
-        <div className="mt-4">
-          <UsageTable
-            title={
-              <div className="flex flex-wrap items-center gap-2">
-                <span>
-                  {scopeTitle(
-                    t("model_usage.group.title"),
-                    t("model_usage.group.titleOnDay", { date: range.start }),
-                  )}
-                </span>
-                <Select
-                  value={groupKind}
-                  onValueChange={(v) => pickGroupKind(v as GroupUsageKind)}
-                >
-                  <SelectTrigger
-                    className="h-7 w-[140px]"
-                    aria-label={t("model_usage.group.kind")}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groupKinds.map((kind) => (
-                      <SelectItem key={kind} value={kind}>
-                        {t(`model_usage.group.kinds.${kind}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {byUser && orgNodes.size > 0 ? (
-                  <Select value={unitFilter} onValueChange={setUnitFilter}>
-                    <SelectTrigger
-                      className="h-7 w-[200px]"
-                      aria-label={t("model_usage.group.filters.department")}
-                      data-testid="usage-group-department"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_GROUPS}>
-                        {t("model_usage.group.filters.allDepartments")}
-                      </SelectItem>
-                      {[...orgNodes.entries()].map(([name, { node }]) => (
-                        <SelectItem key={name} value={name}>
-                          {node.pathLabel}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                {byUser && canReadAllGroups && teamOptions.length > 0 ? (
-                  <Select value={teamFilter} onValueChange={setTeamFilter}>
-                    <SelectTrigger
-                      className="h-7 w-[160px]"
-                      aria-label={t("model_usage.group.filters.team")}
-                      data-testid="usage-group-team"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_GROUPS}>
-                        {t("model_usage.group.filters.allTeams")}
-                      </SelectItem>
-                      {teamOptions.map((team) => (
-                        <SelectItem key={team.name} value={team.name}>
-                          {team.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                <span className="text-xs font-normal text-muted-foreground">
-                  {byUser && groupFilter.orgUnit
-                    ? `${t("model_usage.group.filters.subtreeIncluded")} `
-                    : ""}
-                  {groupKind === "OrgUnit"
-                    ? t("model_usage.group.subtreeHint")
-                    : t("model_usage.group.historyHint")}
-                  {canReadAllGroups
-                    ? ""
-                    : ` ${t("model_usage.group.subtreeOnly")}`}
-                  {apiKeyId ? ` ${t("model_usage.group.apiKeyIgnored")}` : ""}
-                </span>
-              </div>
-            }
-            nameHeader={t(`model_usage.group.kinds.${groupKind}`)}
-            rows={byGroup}
-            resetKey={groupScopeKey}
-            showRequests
-          />
-          {groupUsage.error ? (
-            <div className="mt-2 text-sm text-destructive">
-              {groupUsage.error.message}
-            </div>
-          ) : null}
-        </div>
+        <GroupUsageCard
+          title={scopeTitle(
+            t("model_usage.group.title"),
+            t("model_usage.group.titleOnDay", { date: range.start }),
+          )}
+          groupKind={groupKind}
+          groupKinds={groupKinds}
+          onGroupKindChange={pickGroupKind}
+          departments={byUser ? orgNodes : undefined}
+          unitFilter={unitFilter}
+          onUnitFilterChange={setUnitFilter}
+          teams={byUser && canReadAllGroups ? teamOptions : undefined}
+          teamFilter={teamFilter}
+          onTeamFilterChange={setTeamFilter}
+          hint={[
+            byUser && groupFilter.orgUnit
+              ? `${t("model_usage.group.filters.subtreeIncluded")} `
+              : "",
+            groupKind === "OrgUnit"
+              ? t("model_usage.group.subtreeHint")
+              : t("model_usage.group.historyHint"),
+            canReadAllGroups ? "" : ` ${t("model_usage.group.subtreeOnly")}`,
+            apiKeyId ? ` ${t("model_usage.group.apiKeyIgnored")}` : "",
+          ].join("")}
+          rows={byGroup}
+          resetKey={groupScopeKey}
+          error={groupUsage.error}
+        />
       ) : null}
 
       <div className="mt-4">
@@ -859,6 +788,124 @@ const UsageTable = ({
         />
       ) : null}
     </section>
+  );
+};
+
+/** Usage per user or group, with the kind and the department / team filters. */
+const GroupUsageCard = ({
+  title,
+  groupKind,
+  groupKinds,
+  onGroupKindChange,
+  departments,
+  unitFilter,
+  onUnitFilterChange,
+  teams,
+  teamFilter,
+  onTeamFilterChange,
+  hint,
+  rows,
+  resetKey,
+  error,
+}: {
+  title: ReactNode;
+  groupKind: GroupUsageKind;
+  groupKinds: GroupUsageKind[];
+  onGroupKindChange: (kind: GroupUsageKind) => void;
+  /** The department filter's options; absent hides the filter. */
+  departments?: ReadonlyMap<string, { node: OrgTreeNode }>;
+  unitFilter: string;
+  onUnitFilterChange: (value: string) => void;
+  /** The team filter's options; absent hides the filter. */
+  teams?: { name: string; label: string }[];
+  teamFilter: string;
+  onTeamFilterChange: (value: string) => void;
+  hint: string;
+  rows: UsageSeries[];
+  resetKey: string;
+  error?: { message: string } | null;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-4">
+      <UsageTable
+        title={
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{title}</span>
+            <Select
+              value={groupKind}
+              onValueChange={(v) => onGroupKindChange(v as GroupUsageKind)}
+            >
+              <SelectTrigger
+                className="h-7 w-[140px]"
+                aria-label={t("model_usage.group.kind")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {groupKinds.map((kind) => (
+                  <SelectItem key={kind} value={kind}>
+                    {t(`model_usage.group.kinds.${kind}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {departments && departments.size > 0 ? (
+              <Select value={unitFilter} onValueChange={onUnitFilterChange}>
+                <SelectTrigger
+                  className="h-7 w-[200px]"
+                  aria-label={t("model_usage.group.filters.department")}
+                  data-testid="usage-group-department"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_GROUPS}>
+                    {t("model_usage.group.filters.allDepartments")}
+                  </SelectItem>
+                  {[...departments.entries()].map(([name, { node }]) => (
+                    <SelectItem key={name} value={name}>
+                      {node.pathLabel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {teams && teams.length > 0 ? (
+              <Select value={teamFilter} onValueChange={onTeamFilterChange}>
+                <SelectTrigger
+                  className="h-7 w-[160px]"
+                  aria-label={t("model_usage.group.filters.team")}
+                  data-testid="usage-group-team"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_GROUPS}>
+                    {t("model_usage.group.filters.allTeams")}
+                  </SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.name} value={team.name}>
+                      {team.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <span className="text-xs font-normal text-muted-foreground">
+              {hint}
+            </span>
+          </div>
+        }
+        nameHeader={t(`model_usage.group.kinds.${groupKind}`)}
+        rows={rows}
+        resetKey={resetKey}
+        showRequests
+      />
+      {error ? (
+        <div className="mt-2 text-sm text-destructive">{error.message}</div>
+      ) : null}
+    </div>
   );
 };
 

@@ -87,6 +87,52 @@ function Totals({ requests, tokens }: { requests: number; tokens: number }) {
   );
 }
 
+/** Totals and the per-model table of a usage summary, or its load state. */
+function UsageBreakdown({
+  summary,
+  isLoading,
+  error,
+  testIdPrefix,
+}: {
+  summary: ReturnType<typeof summarizeUsage>;
+  isLoading: boolean;
+  error: unknown;
+  testIdPrefix: string;
+}) {
+  const { t } = useTranslation();
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-6">
+        <Loader className="w-10 text-muted-foreground" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <EmptyState variant="inline" className="text-destructive">
+        {t("api_keys.team.usageFailed")}
+      </EmptyState>
+    );
+  }
+  return (
+    <>
+      <Totals requests={summary.requests} tokens={summary.tokens} />
+      {summary.models.length ? (
+        <TotalsTable
+          rows={summary.models}
+          firstColumn={t("api_keys.fields.model")}
+          detailed
+          testId={`${testIdPrefix}-models`}
+        />
+      ) : (
+        <EmptyState variant="inline" data-testid={`${testIdPrefix}-empty`}>
+          {t("api_keys.team.usageEmpty")}
+        </EmptyState>
+      )}
+    </>
+  );
+}
+
 /**
  * Usage of one Team in every workspace: its members' personal keys and its
  * applications' keys, then split by application.
@@ -121,31 +167,12 @@ export function TeamUsage({ teamName }: { teamName: string }) {
         </p>
         <DateRangePicker className="h-8" value={range} onChange={setRange} />
       </div>
-      {team.isLoading && !team.usageData.length ? (
-        <div className="flex justify-center py-6">
-          <Loader className="w-10 text-muted-foreground" />
-        </div>
-      ) : team.error ? (
-        <EmptyState variant="inline" className="text-destructive">
-          {t("api_keys.team.usageFailed")}
-        </EmptyState>
-      ) : (
-        <>
-          <Totals requests={summary.requests} tokens={summary.tokens} />
-          {summary.models.length ? (
-            <TotalsTable
-              rows={summary.models}
-              firstColumn={t("api_keys.fields.model")}
-              detailed
-              testId="team-usage-models"
-            />
-          ) : (
-            <EmptyState variant="inline" data-testid="team-usage-empty">
-              {t("api_keys.team.usageEmpty")}
-            </EmptyState>
-          )}
-        </>
-      )}
+      <UsageBreakdown
+        summary={summary}
+        isLoading={team.isLoading && !team.usageData.length}
+        error={team.error}
+        testIdPrefix="team-usage"
+      />
       <ShowPage.Section
         title={t("api_keys.team.byApplication")}
         description={t("api_keys.team.byApplicationHint")}
@@ -203,31 +230,12 @@ export function ServiceAccountUsage({
         <DateRangePicker className="h-8" value={range} onChange={setRange} />
       }
     >
-      {isLoading && !usageData.length ? (
-        <div className="flex justify-center py-6">
-          <Loader className="w-10 text-muted-foreground" />
-        </div>
-      ) : error ? (
-        <EmptyState variant="inline" className="text-destructive">
-          {t("api_keys.team.usageFailed")}
-        </EmptyState>
-      ) : (
-        <>
-          <Totals requests={summary.requests} tokens={summary.tokens} />
-          {summary.models.length ? (
-            <TotalsTable
-              rows={summary.models}
-              firstColumn={t("api_keys.fields.model")}
-              detailed
-              testId="sa-usage-models"
-            />
-          ) : (
-            <EmptyState variant="inline">
-              {t("api_keys.team.usageEmpty")}
-            </EmptyState>
-          )}
-        </>
-      )}
+      <UsageBreakdown
+        summary={summary}
+        isLoading={isLoading && !usageData.length}
+        error={error}
+        testIdPrefix="sa-usage"
+      />
     </ShowPage.Section>
   );
 }
