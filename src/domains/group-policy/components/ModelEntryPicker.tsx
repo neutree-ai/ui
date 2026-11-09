@@ -35,12 +35,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 const ALL = "__all__";
 
 /**
- * Adds entries to one policy list: pick the workspace scope, then a model.
- * Models are suggested from the workspace (from every workspace for "all"),
- * listed as in the API key picker: grouped by source, one row per endpoint.
- * A name served by several endpoints shows a row for each; any of them adds
- * the same name, since a rule matches by name. Any typed name can be added,
- * since a model may be deployed later.
+ * Adds a model name to one policy list, scoped to a workspace or all. A rule
+ * matches by name, so any typed name can be added, e.g. one not deployed yet.
  */
 export function ModelEntryPicker({
   onAdd,

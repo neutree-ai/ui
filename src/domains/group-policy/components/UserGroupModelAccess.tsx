@@ -67,6 +67,10 @@ const Names = ({
     </div>
   );
 
+type GroupRenderer = (name: string, displayName?: string | null) => ReactNode;
+const plainLabel: GroupRenderer = (name, displayName) =>
+  displayName?.trim() || name;
+
 /**
  * How the user's groups limit the models they can call in a workspace: the
  * merged result, then each group's share. Shown to the user and to holders of
@@ -74,10 +78,6 @@ const Names = ({
  * users); hidden when the server refuses. A reader who sees no workspace gets
  * each group's rules without the merged result.
  */
-type GroupRenderer = (name: string, displayName?: string | null) => ReactNode;
-const plainLabel: GroupRenderer = (name, displayName) =>
-  displayName?.trim() || name;
-
 export function UserGroupModelAccess({
   userId,
   initialWorkspace,

@@ -1,11 +1,6 @@
 import { translateApiError } from "@/foundation/lib/api-error-code";
 
-/**
- * Role assignment write errors → i18n keys. 10041, 10280-10282,
- * 10292-10294 and 10298 come from the write triggers, 10283-10286 and 10297
- * from the checks on delegated grants. 10326: an application holds no role
- * assignments of its own.
- */
+/** Role assignment write and delegated-grant errors → i18n keys. */
 const ROLE_ASSIGNMENT_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10041": "role_assignments.errors.workspaceUnsupported",
   "10280": "role_assignments.errors.orgUnitUnsupported",

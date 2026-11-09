@@ -1,11 +1,8 @@
 import { translateApiError } from "@/foundation/lib/api-error-code";
 
 /**
- * Identity source write errors → i18n keys. 10250-10259 come from the
- * identity_sources write trigger; 10261 is neutree-api's own validation of an
- * identity source write; 10262 the sync settings check of the write trigger;
- * 10263-10264 and 10304 come from request_identity_source_sync. 10260 belongs to user
- * profiles (external email is read-only) and is not mapped here.
+ * Identity source write and sync-request errors → i18n keys. 10260 belongs to
+ * user profiles and is not mapped here.
  */
 const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10250": "identity_sources.errors.invalidName",

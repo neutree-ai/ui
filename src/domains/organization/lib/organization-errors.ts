@@ -1,8 +1,4 @@
-/**
- * OrgUnit, Team and member write errors → i18n keys. They come from the
- * write triggers of the organization tables; 10295 and 10296 guard the role
- * assignments that groups hold.
- */
+/** OrgUnit, Team and member write errors → i18n keys. */
 export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10270": "organization.errors.noWorkspace",
   "10271": "organization.errors.identityRequired",
