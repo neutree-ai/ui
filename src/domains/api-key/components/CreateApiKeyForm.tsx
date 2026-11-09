@@ -17,10 +17,7 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import {
-  apiKeyActionErrorMessage,
-  serviceAccountKeyErrorMessage,
-} from "@/domains/api-key/lib/create-api-key-error";
+import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
@@ -31,6 +28,7 @@ import {
   useWorkspace,
   useWorkspaceOptions,
 } from "@/foundation/hooks/use-workspace";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 
 type FormValues = {
   name: string;
@@ -153,7 +151,7 @@ export const CreateApiKeyForm = ({
     } catch (cause) {
       setSubmitError(
         serviceAccountId === undefined
-          ? apiKeyActionErrorMessage(cause, t("api_keys.messages.createFailed"))
+          ? getErrorMessage(cause, t("api_keys.messages.createFailed"))
           : serviceAccountKeyErrorMessage(
               t,
               cause,

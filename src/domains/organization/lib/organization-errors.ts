@@ -1,5 +1,3 @@
-import { translateApiError } from "@/foundation/lib/api-error-code";
-
 /**
  * OrgUnit, Team and member write errors → i18n keys. They come from the
  * write triggers of the organization tables; 10295 and 10296 guard the role
@@ -24,10 +22,3 @@ export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10296": "organization.errors.memberGrantExceeds",
   "10315": "organization.errors.teamHasApplications",
 };
-
-type Translate = (key: string, options?: Record<string, unknown>) => string;
-
-export const organizationErrorMessage = (
-  t: Translate,
-  error: unknown,
-): string | undefined => translateApiError(t, error, ORGANIZATION_ERROR_KEYS);

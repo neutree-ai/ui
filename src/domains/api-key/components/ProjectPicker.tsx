@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKeyProject } from "@/domains/api-key/types";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 
 // PostgREST surfaces the raised SQLSTATE as the error code. Matching on that
 // rather than on the message text keeps this working when the backend wording
@@ -84,7 +84,7 @@ export function ProjectPicker({
       setError(
         isDuplicateName(e)
           ? t("api_keys.projects.duplicateName")
-          : apiKeyActionErrorMessage(e, t("api_keys.messages.operationFailed")),
+          : getErrorMessage(e, t("api_keys.messages.operationFailed")),
       );
     } finally {
       setSaving(false);

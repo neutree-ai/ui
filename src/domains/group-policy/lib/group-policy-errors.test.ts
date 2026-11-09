@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { groupPolicyErrorMessage } from "./group-policy-errors";
+import { GROUP_POLICY_ERROR_KEYS } from "./group-policy-errors";
 
-const t = (key: string) => key;
-
-describe("groupPolicyErrorMessage", () => {
+describe("GROUP_POLICY_ERROR_KEYS", () => {
   it.each([
     ["10294", "group_policies.errors.groupNotFound"],
     ["10299", "group_policies.errors.workspaceNotAllowed"],
@@ -12,10 +10,10 @@ describe("groupPolicyErrorMessage", () => {
     ["10302", "group_policies.errors.invalidModels"],
     ["23505", "group_policies.errors.alreadyExists"],
   ])("maps %s", (code, key) => {
-    expect(groupPolicyErrorMessage(t, { code })).toBe(key);
+    expect(GROUP_POLICY_ERROR_KEYS[code]).toBe(key);
   });
 
   it("leaves other codes to the caller", () => {
-    expect(groupPolicyErrorMessage(t, { code: "10041" })).toBeUndefined();
+    expect(GROUP_POLICY_ERROR_KEYS["10041"]).toBeUndefined();
   });
 });

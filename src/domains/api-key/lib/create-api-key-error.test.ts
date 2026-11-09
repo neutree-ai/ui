@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { apiKeyActionErrorMessage } from "./create-api-key-error";
+import { serviceAccountKeyErrorMessage } from "./create-api-key-error";
 
-const FALLBACK = "Failed to create API key. Please try again.";
+const t = (key: string) => key;
 
-describe("apiKeyActionErrorMessage", () => {
+describe("serviceAccountKeyErrorMessage", () => {
   it.each([
-    [
-      "a nested structured message",
-      { message: { message: "Disabled" } },
-      "Disabled",
-    ],
-    ["an Error instance", new Error("boom"), "boom"],
-    ["an unknown error", { reason: "unknown" }, FALLBACK],
-    ["an empty message", { message: "" }, FALLBACK],
-  ])("reads %s", (_case, error, message) => {
-    expect(apiKeyActionErrorMessage(error, FALLBACK)).toBe(message);
+    ["10044", "api_keys.serviceAccount.errors.workspace"],
+    ["10317", "service_accounts.errors.inactive"],
+  ])("translates %s", (code, key) => {
+    expect(serviceAccountKeyErrorMessage(t, { code }, "fallback")).toBe(key);
+  });
+
+  it("falls back to the server text, then to the fallback", () => {
+    expect(
+      serviceAccountKeyErrorMessage(t, { message: { message: "x" } }, "f"),
+    ).toBe("x");
+    expect(serviceAccountKeyErrorMessage(t, {}, "fallback")).toBe("fallback");
   });
 });

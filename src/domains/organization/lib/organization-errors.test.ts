@@ -1,58 +1,25 @@
 import { describe, expect, it } from "vitest";
-import {
-  ORGANIZATION_ERROR_KEYS,
-  organizationErrorMessage,
-} from "./organization-errors";
+import { ORGANIZATION_ERROR_KEYS } from "./organization-errors";
 
-const t = (key: string, options?: Record<string, unknown>) =>
-  options?.hint ? `${key}|${options.hint}` : key;
-
-describe("organizationErrorMessage", () => {
-  it("maps every organization code 10270-10278", () => {
-    for (let code = 10270; code <= 10278; code++) {
-      expect(ORGANIZATION_ERROR_KEYS[String(code)]).toMatch(
-        /^organization\.errors\./,
-      );
-    }
-  });
-
-  it("maps 10287, a non-global assigner changing the user", () => {
-    expect(organizationErrorMessage(t, { code: "10287" })).toBe(
-      "organization.errors.globalAssignerOnly",
+describe("ORGANIZATION_ERROR_KEYS", () => {
+  it.each([
+    ...Array.from({ length: 9 }, (_, i) => 10270 + i),
+    ...Array.from({ length: 4 }, (_, i) => 10288 + i),
+  ])("maps the organization code %s", (code) => {
+    expect(ORGANIZATION_ERROR_KEYS[String(code)]).toMatch(
+      /^organization\.errors\./,
     );
   });
 
-  it("maps the manual Team codes 10288-10291", () => {
-    for (let code = 10288; code <= 10291; code++) {
-      expect(ORGANIZATION_ERROR_KEYS[String(code)]).toMatch(
-        /^organization\.errors\./,
-      );
-    }
+  it.each([
+    ["10287", "organization.errors.globalAssignerOnly"],
+    ["10295", "organization.errors.teamHasRoleAssignments"],
+    ["10296", "organization.errors.memberGrantExceeds"],
+  ])("maps %s", (code, key) => {
+    expect(ORGANIZATION_ERROR_KEYS[code]).toBe(key);
   });
 
-  it("maps the group role assignment guards 10295 and 10296", () => {
-    expect(organizationErrorMessage(t, { code: "10295" })).toBe(
-      "organization.errors.teamHasRoleAssignments",
-    );
-    expect(organizationErrorMessage(t, { code: "10296" })).toBe(
-      "organization.errors.memberGrantExceeds",
-    );
-  });
-
-  it("translates a database error and passes the hint on", () => {
-    expect(
-      organizationErrorMessage(t, {
-        code: "10275",
-        message: "spec.parent does not name an OrgUnit",
-        hint: "Sync the parent first, or leave spec.parent empty for a root",
-      }),
-    ).toBe(
-      "organization.errors.invalidParent|Sync the parent first, or leave spec.parent empty for a root",
-    );
-  });
-
-  it("leaves other errors to the caller", () => {
-    expect(organizationErrorMessage(t, { code: "10250" })).toBeUndefined();
-    expect(organizationErrorMessage(t, new Error("x"))).toBeUndefined();
+  it("leaves other codes to the caller", () => {
+    expect(ORGANIZATION_ERROR_KEYS["10250"]).toBeUndefined();
   });
 });

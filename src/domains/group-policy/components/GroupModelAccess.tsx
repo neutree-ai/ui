@@ -11,7 +11,7 @@ import {
   useGroupPolicyWrites,
   useGroupTokenPool,
 } from "@/domains/group-policy/hooks/use-group-policies";
-import { groupPolicyErrorMessage } from "@/domains/group-policy/lib/group-policy-errors";
+import { GROUP_POLICY_ERROR_KEYS } from "@/domains/group-policy/lib/group-policy-errors";
 import {
   buildGroupPolicySpec,
   hasRules,
@@ -25,7 +25,7 @@ import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 
@@ -106,8 +106,12 @@ export function GroupModelAccess({
   const errorText = (err: unknown) =>
     err instanceof GroupPolicyGoneError
       ? t("group_policies.errors.gone")
-      : (groupPolicyErrorMessage(t, err) ??
-        getErrorMessage(err, t("common.errors.unknown")));
+      : translateApiErrorOr(
+          t,
+          err,
+          GROUP_POLICY_ERROR_KEYS,
+          "common.errors.unknown",
+        );
 
   const canEdit = policy ? canUpdate : canCreate;
   const allowed = policy?.spec.allowed_models ?? [];

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   getApiErrorCode,
   getApiErrorHint,
+  isPermissionDenied,
   translateApiError,
+  translateApiErrorOr,
 } from "./api-error-code";
 
 describe("api-error-code", () => {
@@ -27,5 +29,29 @@ describe("api-error-code", () => {
       "user_profiles.errors.externalEmailReadOnly:h",
     );
     expect(translateApiError(t, { code: "10255" }, table)).toBeUndefined();
+  });
+
+  it("tells a permission refusal by its code or HTTP status", () => {
+    expect(isPermissionDenied({ code: "42501" })).toBe(true);
+    expect(isPermissionDenied({ statusCode: 403 })).toBe(true);
+    expect(isPermissionDenied({ code: "10260", statusCode: 400 })).toBe(false);
+    expect(isPermissionDenied(null)).toBe(false);
+  });
+
+  it("falls back to the server text, then to the fallback key", () => {
+    const t = (key: string) => key;
+    const table = { "10260": "known" };
+    expect(translateApiErrorOr(t, { code: "10260" }, table, "unknown")).toBe(
+      "known",
+    );
+    expect(
+      translateApiErrorOr(
+        t,
+        { message: { message: "boom" } },
+        table,
+        "unknown",
+      ),
+    ).toBe("boom");
+    expect(translateApiErrorOr(t, {}, table, "unknown")).toBe("unknown");
   });
 });

@@ -15,6 +15,12 @@ describe("getErrorMessage", () => {
     ).toBe("spec must be a mapping");
   });
 
+  it("should read a nested message", () => {
+    expect(
+      getErrorMessage({ message: { message: "Disabled" } }, "fallback"),
+    ).toBe("Disabled");
+  });
+
   it("should return a thrown string as-is", () => {
     expect(getErrorMessage("boom", "fallback")).toBe("boom");
   });

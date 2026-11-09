@@ -3,7 +3,7 @@ import type {
   EffectiveRoleAssignment,
   RoleAssignment,
 } from "@/domains/role-assignment/types";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
+import { isPermissionDenied } from "@/foundation/lib/api-error-code";
 
 /** The assignments a Team or an OrgUnit holds, as the caller's RLS allows. */
 export const useGroupRoleAssignments = (
@@ -28,10 +28,6 @@ export const useGroupRoleAssignments = (
   };
 };
 
-const isDenied = (error: unknown) =>
-  getApiErrorCode(error) === "42501" ||
-  (error as { statusCode?: number } | null)?.statusCode === 403;
-
 /**
  * The assignments that apply to a user, each with the group it comes
  * through. `denied` when the caller lacks role_assignment:read on the user.
@@ -48,7 +44,7 @@ export const useUserEffectiveRoleAssignments = (
     successNotification: false,
     errorNotification: false,
   });
-  const denied = isDenied(query.error);
+  const denied = isPermissionDenied(query.error);
   return {
     rows: (query.data?.data ?? []) as EffectiveRoleAssignment[],
     isLoading: enabled && query.isLoading,

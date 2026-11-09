@@ -27,11 +27,11 @@ import {
   groupByIdentitySource,
   indexNodes,
 } from "@/domains/organization/lib/org-tree";
-import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
+import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const ALL_SOURCES = "__all__";
@@ -45,8 +45,12 @@ export function DepartmentsPanel({
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
     error
-      ? (organizationErrorMessage(t, error) ??
-        getErrorMessage(error, t("common.errors.unknown")))
+      ? translateApiErrorOr(
+          t,
+          error,
+          ORGANIZATION_ERROR_KEYS,
+          "common.errors.unknown",
+        )
       : undefined;
 
   const [query, setQuery] = useState("");

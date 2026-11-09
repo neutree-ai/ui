@@ -2377,11 +2377,7 @@
 			"modelsHint": "Listed: the models this application may call in the workspace. An empty list means the team's application permissions hold no role that calls models there; the key can be created but cannot call models.",
 			"usageTitle": "Usage",
 			"errors": {
-				"workspace": "Pick an existing workspace.",
-				"noProject": "An application's API key has no project.",
-				"inactive": "Keys can be created only for an enabled application of an active team.",
-				"immutable": "The owner and workspace of a key cannot be changed.",
-				"applicationActor": "An application cannot create API keys."
+				"workspace": "Pick an existing workspace."
 			}
 		}
 	},

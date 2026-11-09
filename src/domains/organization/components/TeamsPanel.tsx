@@ -29,7 +29,7 @@ import {
   filterTeams,
   isInactive,
 } from "@/domains/organization/lib/org-tree";
-import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
+import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import {
   isManualTeam,
   isProjectTeam,
@@ -46,11 +46,11 @@ import {
   useHasGlobalPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import {
-  getErrorMessage,
-  isDuplicateNameError,
-} from "@/foundation/lib/error-message";
+  isPermissionDenied,
+  translateApiErrorOr,
+} from "@/foundation/lib/api-error-code";
+import { isDuplicateNameError } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
@@ -102,12 +102,14 @@ export function TeamsPanel({
     if (creating && isDuplicateNameError(error)) {
       return t("organization.teams.errors.nameTaken");
     }
-    if (getApiErrorCode(error) === "42501") {
+    if (isPermissionDenied(error)) {
       return t("organization.teams.errors.denied");
     }
-    return (
-      organizationErrorMessage(t, error) ??
-      getErrorMessage(error, t("common.errors.unknown"))
+    return translateApiErrorOr(
+      t,
+      error,
+      ORGANIZATION_ERROR_KEYS,
+      "common.errors.unknown",
     );
   };
 

@@ -8,7 +8,7 @@ import type {
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
 import { useRowWrite } from "@/foundation/hooks/use-row-write";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
+import { isPermissionDenied } from "@/foundation/lib/api-error-code";
 
 /** The policy of one group; a group has at most one. */
 export const useGroupPolicy = (
@@ -91,10 +91,6 @@ export const useGroupPolicyWrites = () => {
   };
 };
 
-const isDenied = (error: unknown) =>
-  getApiErrorCode(error) === "42501" ||
-  (error as { statusCode?: number } | null)?.statusCode === 403;
-
 /**
  * A user's merged group policy in a workspace. With workspace null, only the
  * groups and pools (no merged lists); "" waits. `denied` when the caller
@@ -114,7 +110,7 @@ export const useUserGroupPolicy = (
     successNotification: false,
     errorNotification: false,
   });
-  const denied = isDenied(query.error);
+  const denied = isPermissionDenied(query.error);
   return {
     policy: query.data?.data as UserGroupPolicy | undefined,
     isLoading: ready && query.isLoading,

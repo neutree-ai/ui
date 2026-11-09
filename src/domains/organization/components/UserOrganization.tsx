@@ -16,7 +16,7 @@ import {
   isInactive,
   orgUnitPathLabel,
 } from "@/domains/organization/lib/org-tree";
-import { organizationErrorMessage } from "@/domains/organization/lib/organization-errors";
+import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
 import type { MemberProfile } from "@/domains/organization/types";
@@ -29,8 +29,10 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import {
+  isPermissionDenied,
+  translateApiErrorOr,
+} from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 
@@ -46,10 +48,12 @@ const useErrorText = () => {
     if (error instanceof MembershipOutOfScopeError) {
       return t("user_profiles.department.errors.currentOutsideScope");
     }
-    if (deniedKey && getApiErrorCode(error) === "42501") return t(deniedKey);
-    return (
-      organizationErrorMessage(t, error) ??
-      getErrorMessage(error, t("common.errors.unknown"))
+    if (deniedKey && isPermissionDenied(error)) return t(deniedKey);
+    return translateApiErrorOr(
+      t,
+      error,
+      ORGANIZATION_ERROR_KEYS,
+      "common.errors.unknown",
     );
   };
 };
