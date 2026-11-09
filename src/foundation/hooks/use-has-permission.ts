@@ -1,4 +1,5 @@
-import { useCustom, useGetIdentity } from "@refinedev/core";
+import { useCustom, useDataProvider, useGetIdentity } from "@refinedev/core";
+import { useQueries } from "@tanstack/react-query";
 
 type PermissionState = {
   /** Undefined while it is still being checked. */
@@ -60,6 +61,52 @@ const usePermissionRpc = (
  */
 export const useHasPermission = (permission?: string): PermissionState =>
   usePermissionRpc("/rpc/has_permission_in_any_scope", permission);
+
+/**
+ * Like useHasPermission, for any one of several permissions: allowed as soon
+ * as one is held. A single permission, or none, behaves as useHasPermission.
+ */
+export const useHasAnyPermission = (
+  permissions?: string | readonly string[],
+): PermissionState => {
+  const list =
+    permissions === undefined
+      ? []
+      : typeof permissions === "string"
+        ? [permissions]
+        : permissions;
+  const { data: identity, isLoading: identityLoading } = useGetIdentity<{
+    id?: string;
+  }>();
+  const userId = identity?.id;
+  const dataProvider = useDataProvider();
+  const results = useQueries({
+    queries: list.map((permission) => ({
+      queryKey: ["has_permission_in_any_scope", userId, permission],
+      queryFn: async () => {
+        // biome-ignore lint/style/noNonNullAssertion: the data provider defines custom
+        const { data } = await dataProvider().custom!({
+          url: "/rpc/has_permission_in_any_scope",
+          method: "post",
+          payload: { user_uuid: userId, required_permission: permission },
+        });
+        return (data as unknown) === true;
+      },
+      enabled: !!userId,
+      retry: false,
+      staleTime: 60_000,
+    })),
+  });
+
+  if (!list.length) return { allowed: true, isLoading: false };
+  if (results.some((result) => result.data === true)) {
+    return { allowed: true, isLoading: false };
+  }
+  if (identityLoading || (!!userId && results.some((r) => r.isLoading))) {
+    return { allowed: undefined, isLoading: true };
+  }
+  return { allowed: false, isLoading: false };
+};
 
 /**
  * Like useHasPermission, but only a global grant counts (has_permission with

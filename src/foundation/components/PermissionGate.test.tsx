@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasPermission: vi.fn(),
+  useHasAnyPermission: vi.fn(),
 }));
 
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasAnyPermission } from "@/foundation/hooks/use-has-permission";
 import { PermissionGate } from "./PermissionGate";
 
 const gate = () =>
@@ -17,7 +17,7 @@ const gate = () =>
 
 describe("PermissionGate", () => {
   it("renders the page for a permitted user", () => {
-    vi.mocked(useHasPermission).mockReturnValue({
+    vi.mocked(useHasAnyPermission).mockReturnValue({
       allowed: true,
       isLoading: false,
     });
@@ -26,7 +26,7 @@ describe("PermissionGate", () => {
   });
 
   it("shows the no-permission state otherwise", () => {
-    vi.mocked(useHasPermission).mockReturnValue({
+    vi.mocked(useHasAnyPermission).mockReturnValue({
       allowed: false,
       isLoading: false,
     });
@@ -38,7 +38,7 @@ describe("PermissionGate", () => {
   });
 
   it("renders nothing of the page while checking", () => {
-    vi.mocked(useHasPermission).mockReturnValue({
+    vi.mocked(useHasAnyPermission).mockReturnValue({
       allowed: undefined,
       isLoading: true,
     });

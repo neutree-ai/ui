@@ -31,7 +31,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
 }));
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasPermission: vi.fn(),
+  useHasAnyPermission: vi.fn(),
 }));
 
 const settingsMenu = vi.hoisted(() => ({
@@ -64,18 +64,20 @@ vi.mock("@refinedev/core", () => ({
   useResource: () => ({ resources: [] }),
 }));
 
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasAnyPermission } from "@/foundation/hooks/use-has-permission";
 import { AppSidebar } from "./AppSidebar";
 
 const permissionState = (granted: Record<string, boolean | undefined>) =>
-  vi.mocked(useHasPermission).mockImplementation((permission?: string) =>
-    permission
-      ? {
-          allowed: granted[permission],
-          isLoading: granted[permission] === undefined,
-        }
-      : { allowed: true, isLoading: false },
-  );
+  vi
+    .mocked(useHasAnyPermission)
+    .mockImplementation((permission?: string | readonly string[]) =>
+      typeof permission === "string"
+        ? {
+            allowed: granted[permission],
+            isLoading: granted[permission] === undefined,
+          }
+        : { allowed: true, isLoading: false },
+    );
 
 const renderSidebar = () =>
   render(
@@ -85,7 +87,7 @@ const renderSidebar = () =>
   );
 
 describe("AppSidebar permission gating", () => {
-  beforeEach(() => vi.mocked(useHasPermission).mockReset());
+  beforeEach(() => vi.mocked(useHasAnyPermission).mockReset());
 
   it("lists a gated resource for a user holding its permission", () => {
     permissionState({ "identity_source:read": true });
