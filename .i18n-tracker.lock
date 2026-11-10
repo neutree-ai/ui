@@ -33,7 +33,7 @@
   "src/pages/endpoints/create.tsx": "f9818904dc5ec803f5773914feae99f1",
   "src/pages/endpoints/edit.tsx": "294ee7e013085f6cb8ef4ca91b2782dd",
   "src/pages/endpoints/list.tsx": "74ae1fda1411a31fa8ddcab05f4d7162",
-  "src/pages/endpoints/show.tsx": "5fb2b0e9b38bf7be5c9f6bce66bd2a0e",
+  "src/pages/endpoints/show.tsx": "ee83b049c1937669bb1d2e3c8fbdd0eb",
   "src/pages/dashboard/Dashboard.tsx": "5c949e1cfe926f6538294445610940ce",
   "src/pages/clusters/create.tsx": "2e019fc4a0e9b0a2fa52bcb5b44906b1",
   "src/pages/clusters/edit.tsx": "bfb67faeac1f09a71a10f782b7cb9d59",
@@ -603,5 +603,6 @@
   "src/foundation/components/GroupKindIcon.tsx": "87c02b2b08dbf4457ebe65a06f69f9eb",
   "src/foundation/components/InactiveBadge.tsx": "5cc59e4a5cb5ef71fffb20c2d87826a3",
   "src/domains/service-account/lib/application-permissions.ts": "3cea45f3f4cd1d5e12a472f95c902bbb",
-  "src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": "8db46ec46f1102acd812e49111b684c3"
+  "src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": "8db46ec46f1102acd812e49111b684c3",
+  "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54"
 }
