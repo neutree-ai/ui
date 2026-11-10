@@ -298,7 +298,7 @@
   "src/domains/api-key/components/ApiKeyPolicyFields.tsx": "8877c60140516b3322f8bbd479d21ea6",
   "src/domains/api-key/components/ApiKeyRankingOverview.tsx": "f62f221d91e71fee6d8365e60b79684e",
   "src/domains/api-key/components/ModelMultiSelect.tsx": "0a3caca23e3343d95ea2d398ae3731c3",
-  "src/domains/api-key/hooks/use-api-key-policy.ts": "a663109bbd798cc8445c6a0f640d213c",
+  "src/domains/api-key/hooks/use-api-key-policy.ts": "6276aa9c186bfc7b502914d7887a0d69",
   "src/foundation/components/resource-form-submit-context.ts": "7c5c5b5f94416e940786f87a98b3a9f8",
   "src/pages/model-catalogs/edit.tsx": "9057ab03900c192d470752977e62673a",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
@@ -594,7 +594,7 @@
   "src/domains/service-account/types.ts": "a2dbb35071dcf5680955523bae078644",
   "src/domains/organization/components/ProjectBadge.tsx": "a040ef6726a325d862d0eebb786684c2",
   "src/domains/service-account/components/ServiceAccountLabel.tsx": "e6cf21cc3a48931845c80aba8bb4e145",
-  "src/foundation/hooks/use-workspace-models.ts": "5ab795ff9f90326fb667913bd8fafb33",
+  "src/foundation/hooks/use-workspace-models.ts": "0072fdbe9ee2d15c52fc0c2d93b97f7c",
   "src/foundation/components/ModelOptionGroups.tsx": "38c9cb695b153a7f9f5452e1985e1e62",
   "src/foundation/hooks/use-row-write.ts": "5f66e4e056e503f875fc1015f4cce4b3",
   "src/foundation/lib/service-account-errors.ts": "0a41044c7e5dae428f973574d1f64529",
@@ -604,5 +604,6 @@
   "src/foundation/components/InactiveBadge.tsx": "5cc59e4a5cb5ef71fffb20c2d87826a3",
   "src/domains/service-account/lib/application-permissions.ts": "3cea45f3f4cd1d5e12a472f95c902bbb",
   "src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": "8db46ec46f1102acd812e49111b684c3",
-  "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54"
+  "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54",
+  "src/foundation/lib/endpoint-availability.ts": "89a4a6fc251f6eb84aa68281b1d8cd79"
 }

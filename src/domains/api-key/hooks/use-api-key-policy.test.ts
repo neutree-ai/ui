@@ -566,6 +566,17 @@ describe("useWorkspaceModelMap", () => {
 });
 
 describe("invokableModelOptions", () => {
+  it("leaves out rows whose endpoint is being deleted", () => {
+    const row = {
+      model: "qwen",
+      type: "internal",
+      endpoint_name: "ep-qwen",
+      source_label: null,
+      phase: "Deleting",
+    };
+    expect(invokableModelOptions([row], [], "default")).toEqual([]);
+  });
+
   it("builds options from list_invokable_models with phases when known", () => {
     const options = invokableModelOptions(
       [

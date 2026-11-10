@@ -211,6 +211,27 @@ describe("useWorkspaceModels", () => {
     useListMock.mockReset();
   });
 
+  it("leaves withdrawn endpoints out of both lists", () => {
+    const endpoints = [
+      {
+        metadata: { name: "deleting" },
+        status: { phase: "Deleting", served_models: ["stale"] },
+      },
+    ];
+    const externalEndpoints = [
+      {
+        metadata: { name: "deleted" },
+        status: { phase: "Deleted" },
+        spec: { upstreams: [{ model_mapping: { stale: "provider" } }] },
+      },
+    ];
+    useListMock.mockImplementation(({ resource }) => ({
+      data: { data: resource === "endpoints" ? endpoints : externalEndpoints },
+    }));
+    const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
+    expect(result.current).toEqual([]);
+  });
+
   it.each([
     { names: ["z-first", "a-second"], models: ["z-first"] },
     { names: [" model "], models: [" model "] },
