@@ -1,4 +1,4 @@
-import type { GroupUsageKind, GroupUsageRecord } from "@/domains/api-key/types";
+import type { GroupUsageRecord } from "@/domains/api-key/types";
 import { displayName } from "@/foundation/lib/display-name";
 
 export type UsageTotal = {
@@ -42,13 +42,10 @@ export function summarizeUsage(rows: GroupUsageRecord[], name?: string) {
   };
 }
 
-function totalsByName(
-  rows: GroupUsageRecord[],
-  kind: GroupUsageKind,
-): UsageTotal[] {
+/** Totals per row name; each query returns a single kind (User or ServiceAccount). */
+export function usageByName(rows: GroupUsageRecord[]): UsageTotal[] {
   const byName = new Map<string, UsageTotal>();
   for (const row of rows) {
-    if (row.kind !== kind) continue;
     const total = byName.get(row.name) ?? {
       key: row.name,
       label: displayName(row),
@@ -61,11 +58,3 @@ function totalsByName(
   }
   return [...byName.values()].sort((a, b) => b.tokens - a.tokens);
 }
-
-/** Totals per application (ServiceAccount usage rows). */
-export const usageByApplication = (rows: GroupUsageRecord[]): UsageTotal[] =>
-  totalsByName(rows, "ServiceAccount");
-
-/** Totals per user of their personal keys; application rows are skipped. */
-export const usageByMember = (rows: GroupUsageRecord[]): UsageTotal[] =>
-  totalsByName(rows, "User");

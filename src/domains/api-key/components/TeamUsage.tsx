@@ -12,8 +12,7 @@ import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import {
   summarizeUsage,
   type UsageTotal,
-  usageByApplication,
-  usageByMember,
+  usageByName,
 } from "@/domains/api-key/lib/usage-summary";
 import {
   type DateRange,
@@ -208,13 +207,10 @@ export function TeamUsage({ teamName }: { teamName: string }) {
     [team.usageData, teamName],
   );
   const byMember = useMemo(
-    () => usageByMember(members.usageData),
+    () => usageByName(members.usageData),
     [members.usageData],
   );
-  const byApp = useMemo(
-    () => usageByApplication(apps.usageData),
-    [apps.usageData],
-  );
+  const byApp = useMemo(() => usageByName(apps.usageData), [apps.usageData]);
 
   return (
     <div className="space-y-3" data-testid="team-usage">
