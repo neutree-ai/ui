@@ -8,7 +8,6 @@ import type {
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   compareWorkspaceModelOptions,
-  isWorkspaceEndpointUnavailable,
   modelOptionValue,
   nonBlankModelName,
   useWorkspaceModels,
@@ -16,6 +15,7 @@ import {
 } from "@/foundation/hooks/use-workspace-models";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
 import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
+import { isEndpointPhaseWithdrawn } from "@/foundation/lib/endpoint-availability";
 import {
   type ModelSource,
   parseStoredModelSource,
@@ -412,7 +412,7 @@ export function invokableModelOptions(
     const value = modelOptionValue(type, endpointName, model);
     const seen = byValue.get(value);
     const phase = row.phase ?? seen?.phase ?? null;
-    if (isWorkspaceEndpointUnavailable({ status: { phase } })) continue;
+    if (isEndpointPhaseWithdrawn(phase)) continue;
     options.push({
       value,
       label: model,

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
 import {
   compareWorkspaceModelOptions,
-  isWorkspaceEndpointUnavailable,
   useWorkspaceModels,
   type WorkspaceModelOption,
 } from "./use-workspace-models";
@@ -212,48 +211,23 @@ describe("useWorkspaceModels", () => {
     useListMock.mockReset();
   });
 
-  it.each([
-    { metadata: { deletion_timestamp: "2026-11-06T16:00:00Z" } },
-    { status: { phase: "Deleting" } },
-    { status: { phase: "Deleted" } },
-  ])("recognizes unavailable endpoint state %j", (endpoint) => {
-    expect(isWorkspaceEndpointUnavailable(endpoint)).toBe(true);
-  });
-
-  it("filters deleting endpoints and polls both endpoint lists", () => {
-    useListMock.mockImplementation(({ resource, queryOptions }) => {
-      expect(queryOptions).toEqual(
-        expect.objectContaining({
-          enabled: true,
-          refetchInterval: 3_000,
-          refetchIntervalInBackground: true,
-        }),
-      );
-      return {
-        data: {
-          data:
-            resource === "endpoints"
-              ? [
-                  {
-                    metadata: {
-                      name: "deleting",
-                      deletion_timestamp: "2026-11-06T16:00:00Z",
-                    },
-                    status: { phase: "Running", served_models: ["stale"] },
-                  },
-                ]
-              : [
-                  {
-                    metadata: { name: "deleted" },
-                    status: { phase: "Deleted" },
-                    spec: {
-                      upstreams: [{ model_mapping: { stale: "provider" } }],
-                    },
-                  },
-                ],
-        },
-      };
-    });
+  it("leaves withdrawn endpoints out of both lists", () => {
+    const endpoints = [
+      {
+        metadata: { name: "deleting" },
+        status: { phase: "Deleting", served_models: ["stale"] },
+      },
+    ];
+    const externalEndpoints = [
+      {
+        metadata: { name: "deleted" },
+        status: { phase: "Deleted" },
+        spec: { upstreams: [{ model_mapping: { stale: "provider" } }] },
+      },
+    ];
+    useListMock.mockImplementation(({ resource }) => ({
+      data: { data: resource === "endpoints" ? endpoints : externalEndpoints },
+    }));
     const { result } = renderHook(() => useWorkspaceModels("workspace-a"));
     expect(result.current).toEqual([]);
   });

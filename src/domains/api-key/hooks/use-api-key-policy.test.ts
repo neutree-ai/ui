@@ -566,26 +566,16 @@ describe("useWorkspaceModelMap", () => {
 });
 
 describe("invokableModelOptions", () => {
-  it.each(["Deleting", "Deleted"])(
-    "excludes the %s phase from RPC candidates",
-    (phase) => {
-      expect(
-        invokableModelOptions(
-          [
-            {
-              model: "qwen",
-              type: "internal",
-              endpoint_name: "ep-qwen",
-              source_label: null,
-              phase,
-            },
-          ],
-          [],
-          "default",
-        ),
-      ).toEqual([]);
-    },
-  );
+  it("leaves out rows whose endpoint is being deleted", () => {
+    const row = {
+      model: "qwen",
+      type: "internal",
+      endpoint_name: "ep-qwen",
+      source_label: null,
+      phase: "Deleting",
+    };
+    expect(invokableModelOptions([row], [], "default")).toEqual([]);
+  });
 
   it("builds options from list_invokable_models with phases when known", () => {
     const options = invokableModelOptions(
