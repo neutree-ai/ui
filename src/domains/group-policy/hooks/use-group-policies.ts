@@ -5,12 +5,18 @@ import type {
   GroupPolicySpec,
   GroupPolicySubjectKind,
   GroupTokenPool,
+  PolicyScope,
+  ScopeSubjectPolicy,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
+import {
+  useHasOrgUnitPermission,
+  useHasTeamPermission,
+} from "@/foundation/hooks/use-has-permission";
 import { useRowWrite } from "@/foundation/hooks/use-row-write";
 import { isPermissionDenied } from "@/foundation/lib/api-error-code";
 
-/** The policy of one group; a group has at most one. */
+/** The policy of one group; a group has at most one. Subject policies never match. */
 export const useGroupPolicy = (
   kind: GroupPolicySubjectKind,
   name: string,
@@ -44,6 +50,7 @@ export class GroupPolicyGoneError extends Error {
 const POLICY_READ_URLS = new Set([
   "/rpc/get_group_token_pools",
   "/rpc/get_user_group_policy",
+  "/rpc/get_scope_subject_policies",
 ]);
 
 // refine keys a custom query by its url: a plain segment in the legacy key
@@ -58,6 +65,9 @@ const readsPolicies = (key: readonly unknown[]) =>
       ),
     ),
   );
+
+const byName = (name: string) =>
+  `/group_policies?metadata->>name=eq.${encodeURIComponent(name)}`;
 
 export const useGroupPolicyWrites = () => {
   const queryClient = useQueryClient();
@@ -87,12 +97,24 @@ export const useGroupPolicyWrites = () => {
           }),
     remove: (policy: GroupPolicy) =>
       run(`/group_policies?id=eq.${policy.id}`, "delete", {}),
+    /** Create when `name` is null; otherwise replace the spec of the policy named so. */
+    saveByName: (name: string | null, spec: GroupPolicySpec) =>
+      name
+        ? run(byName(name), "patch", { spec })
+        : run("/group_policies", "post", {
+            api_version: "v1",
+            kind: "GroupPolicy",
+            metadata: {},
+            spec,
+          }),
+    removeByName: (name: string) => run(byName(name), "delete", {}),
     isPending,
   };
 };
 
 /**
- * A user's merged group policy in a workspace. With workspace null, only the
+ * A user's or application's merged group policy in a workspace (`userId` may
+ * be a ServiceAccount id). With workspace null, only the
  * groups and pools (no merged lists); "" waits. `denied` when the caller
  * holds no group_policy:read on the user and is not the user.
  */
@@ -140,3 +162,60 @@ export const useGroupTokenPool = (
     isLoading: enabled && name !== "" && query.isLoading,
   };
 };
+
+/**
+ * Every user (and, in a Team, every application) a scope manages, with its
+ * policy in that scope. `denied` when the caller holds no group_policy:read on
+ * the scope.
+ */
+export const useScopeSubjectPolicies = (
+  scope: Pick<PolicyScope, "kind" | "name">,
+  enabled: boolean,
+) => {
+  const ready = enabled && scope.name !== "";
+  const query = useCustom<ScopeSubjectPolicy[]>({
+    url: "/rpc/get_scope_subject_policies",
+    method: "post",
+    config: {
+      payload: { p_scope_kind: scope.kind, p_scope_name: scope.name },
+    },
+    queryOptions: { enabled: ready, retry: false },
+    successNotification: false,
+    errorNotification: false,
+  });
+  const denied = isPermissionDenied(query.error);
+  return {
+    rows: query.data?.data as ScopeSubjectPolicy[] | undefined,
+    isLoading: ready && query.isLoading,
+    denied,
+    error: denied ? null : query.error,
+  };
+};
+
+/**
+ * What the caller may do with the subject policies of a scope: globally, or
+ * through a role assignment on that Team or OrgUnit (and, for an OrgUnit, its
+ * ancestors). The server checks every write regardless.
+ */
+const useScopePermission = (
+  permission: string,
+  scope: PolicyScope | undefined,
+) => {
+  // Both run; the one for the other kind skips its check.
+  const onTeam = useHasTeamPermission(
+    permission,
+    scope?.kind === "Team" ? scope.id : undefined,
+  );
+  const onUnit = useHasOrgUnitPermission(
+    permission,
+    scope?.kind === "OrgUnit" ? scope.id : undefined,
+  );
+  return onTeam.allowed === true || onUnit.allowed === true;
+};
+
+export const useScopePolicyAccess = (scope: PolicyScope | undefined) => ({
+  canRead: useScopePermission("group_policy:read", scope),
+  canCreate: useScopePermission("group_policy:create", scope),
+  canUpdate: useScopePermission("group_policy:update", scope),
+  canDelete: useScopePermission("group_policy:delete", scope),
+});

@@ -69,6 +69,7 @@ describe("useGroupPolicyWrites", () => {
     const keys = [
       legacy("/rpc/get_group_token_pools"),
       current("/rpc/get_user_group_policy"),
+      current("/rpc/get_scope_subject_policies"),
       legacy("/rpc/get_workspace_models"),
     ];
     for (const key of keys) queryClient.setQueryData(key, { data: [] });
@@ -77,7 +78,7 @@ describe("useGroupPolicyWrites", () => {
     await result.current.save(policy, spec);
     expect(
       keys.map((key) => queryClient.getQueryState(key)?.isInvalidated),
-    ).toEqual([true, true, false]);
+    ).toEqual([true, true, true, false]);
   });
 
   it("patches the whole spec, both lists included", async () => {
@@ -97,5 +98,18 @@ describe("useGroupPolicyWrites", () => {
       GroupPolicyGoneError,
     );
     expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  it("writes a subject policy by its name", async () => {
+    mutateAsync.mockResolvedValue({ data: [policy] });
+    const { result } = renderWrites();
+    await result.current.saveByName("user-u1-team-sre", spec);
+    await result.current.removeByName("user-u1-team-sre");
+    expect(
+      mutateAsync.mock.calls.map(([call]) => [call.method, call.url]),
+    ).toEqual([
+      ["patch", "/group_policies?metadata->>name=eq.user-u1-team-sre"],
+      ["delete", "/group_policies?metadata->>name=eq.user-u1-team-sre"],
+    ]);
   });
 });

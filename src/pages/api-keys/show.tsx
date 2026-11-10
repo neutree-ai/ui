@@ -81,12 +81,14 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace ?? ""}
             />
-            {record.user_id && record.metadata.workspace && (
-              <ApiKeyGroupPolicyHint
-                userId={record.user_id}
-                workspace={record.metadata.workspace}
-              />
-            )}
+            {(record.user_id || serviceAccountId) &&
+              record.metadata.workspace && (
+                <ApiKeyGroupPolicyHint
+                  userId={record.user_id ?? undefined}
+                  serviceAccountId={serviceAccountId}
+                  workspace={record.metadata.workspace}
+                />
+              )}
             <ApiKeyLimitsCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace ?? ""}

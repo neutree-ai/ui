@@ -57,12 +57,18 @@ export function TeamServiceAccounts({
   permissions,
   renderKeys,
   renderUsage,
+  extraColumn,
 }: {
   teamId: number;
   teamName: string;
   permissions: ServiceAccountPermissions;
   renderKeys: (account: ServiceAccount) => ReactNode;
   renderUsage: (account: ServiceAccount) => ReactNode;
+  /** A column another domain fills in, e.g. each application's limits. */
+  extraColumn?: {
+    header: string;
+    render: (account: ServiceAccount) => ReactNode;
+  };
 }) {
   const { t } = useTranslation();
   const { rows, isLoading, error } = useServiceAccounts(teamId);
@@ -262,6 +268,7 @@ export function TeamServiceAccounts({
                 <TableHead>{t("common.fields.name")}</TableHead>
                 <TableHead>{t("common.fields.status")}</TableHead>
                 <TableHead>{t("common.fields.createdAt")}</TableHead>
+                {extraColumn && <TableHead>{extraColumn.header}</TableHead>}
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -290,6 +297,9 @@ export function TeamServiceAccounts({
                       relative
                     />
                   </TableCell>
+                  {extraColumn && (
+                    <TableCell>{extraColumn.render(account)}</TableCell>
+                  )}
                   <TableCell>{actions(account)}</TableCell>
                 </TableRow>
               ))}

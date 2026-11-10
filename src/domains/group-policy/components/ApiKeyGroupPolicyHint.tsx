@@ -10,28 +10,36 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /**
- * Says that the owner's group policies narrow the key's models further, when
- * any of the owner's groups has one. Links to the owner's page when the caller
- * can read it.
+ * Says that the owner's policies narrow the key's models further, when any
+ * applies: one of a group of the owner, or one set on the owner itself. The
+ * owner is a user or an application. Links to a user owner's page when the
+ * caller can read it.
  */
 export function ApiKeyGroupPolicyHint({
   userId,
+  serviceAccountId,
   workspace,
 }: {
-  userId: string;
+  userId?: string;
+  serviceAccountId?: string;
   workspace: string;
 }) {
   const { t } = useTranslation();
-  const { policy } = useUserGroupPolicy(userId, workspace, userId !== "");
+  const owner = userId || serviceAccountId || "";
+  const { policy } = useUserGroupPolicy(owner, workspace, owner !== "");
+  const applies =
+    !!policy &&
+    (policy.groups.length > 0 ||
+      (policy.subject_policies ?? []).some((own) => own.in_scope));
   const { data: profiles } = useList<{ metadata: Metadata }>({
     resource: "user_profiles",
     filters: [{ field: "id", operator: "eq", value: userId }],
-    queryOptions: { enabled: (policy?.groups.length ?? 0) > 0 },
+    queryOptions: { enabled: applies && !!userId },
   });
 
-  if (!policy || policy.groups.length === 0) return null;
+  if (!applies) return null;
 
-  const profileName = profiles?.data?.[0]?.metadata?.name;
+  const profileName = userId ? profiles?.data?.[0]?.metadata?.name : undefined;
   const href = profileName
     ? `/user-profiles/show/${encodeURIComponent(profileName)}?${USER_MODEL_ACCESS_WORKSPACE_PARAM}=${encodeURIComponent(workspace)}#${USER_MODEL_ACCESS_ANCHOR}`
     : undefined;

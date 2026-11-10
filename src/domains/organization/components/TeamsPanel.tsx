@@ -10,7 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddTeamMembersDialog } from "@/domains/organization/components/AddTeamMembersDialog";
-import { MemberTable } from "@/domains/organization/components/MemberTable";
+import {
+  type MemberColumn,
+  MemberTable,
+} from "@/domains/organization/components/MemberTable";
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
 import { ProjectBadge } from "@/domains/organization/components/ProjectBadge";
 import { TeamFormDialog } from "@/domains/organization/components/TeamFormDialog";
@@ -58,6 +61,8 @@ type OpenDialog =
   | { kind: "delete" }
   | { kind: "remove-member"; userId: string };
 
+const noMemberColumn = () => undefined;
+
 /**
  * Teams synced from identity sources (read-only) and Teams created in
  * Neutree, which global team:create / update / delete / assign-member manage.
@@ -67,6 +72,7 @@ export function TeamsPanel({
   renderRoleAssignments,
   renderTeamDetail,
   useDeleteCheck,
+  useMemberColumn = noMemberColumn,
 }: {
   /** Lists the selected Team's role assignments. */
   renderRoleAssignments: (teamName: string, label: string) => ReactNode;
@@ -83,6 +89,8 @@ export function TeamsPanel({
     teamName: string,
     enabled: boolean,
   ) => TeamDeleteCheck | undefined;
+  /** An extra member column for the selected Team; a hook, as it belongs to other domains. */
+  useMemberColumn?: (team: Team | undefined) => MemberColumn | undefined;
 }) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
@@ -137,6 +145,7 @@ export function TeamsPanel({
   const canAssign =
     useHasTeamPermission("team:assign-member", selectedId).allowed === true;
   const members = useTeamMembers(selected?.id);
+  const memberColumn = useMemberColumn(selected);
   const deleteCheck = useDeleteCheck(
     selected?.metadata.name ?? "",
     !!selected && dialog?.kind === "delete",
@@ -305,6 +314,7 @@ export function TeamsPanel({
             isLoading={members.isLoading}
             error={errorText(members.error)}
             sinceLabel={t("organization.fields.joinedAt")}
+            extraColumn={memberColumn}
             renderActions={
               manual && canAssign
                 ? (row) => (

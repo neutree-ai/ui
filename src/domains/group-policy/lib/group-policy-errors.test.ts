@@ -8,6 +8,8 @@ describe("GROUP_POLICY_ERROR_KEYS", () => {
     ["10300", "group_policies.errors.invalidSubjectKind"],
     ["10301", "group_policies.errors.groupFixed"],
     ["10302", "group_policies.errors.invalidModels"],
+    ["10328", "group_policies.errors.scopeMismatch"],
+    ["10329", "group_policies.errors.notInScope"],
     ["23505", "group_policies.errors.alreadyExists"],
   ])("maps %s", (code, key) => {
     expect(GROUP_POLICY_ERROR_KEYS[code]).toBe(key);

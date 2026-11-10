@@ -25,6 +25,12 @@ export type MemberRow = {
   since: string;
 };
 
+/** A column another domain fills in, e.g. each member's limits. */
+export type MemberColumn = {
+  header: string;
+  render: (row: MemberRow) => ReactNode;
+};
+
 type MemberTableProps = {
   rows: MemberRow[];
   isLoading?: boolean;
@@ -32,6 +38,7 @@ type MemberTableProps = {
   showDepartment?: boolean;
   showSource?: boolean;
   sinceLabel: string;
+  extraColumn?: MemberColumn;
   /** A trailing cell per row, e.g. a remove button. */
   renderActions?: (row: MemberRow) => ReactNode;
 };
@@ -50,6 +57,7 @@ export function MemberTable({
   showDepartment,
   showSource,
   sinceLabel,
+  extraColumn,
   renderActions,
 }: MemberTableProps) {
   const { t } = useTranslation();
@@ -90,6 +98,7 @@ export function MemberTable({
             <TableHead>{t("organization.fields.source")}</TableHead>
           )}
           <TableHead>{sinceLabel}</TableHead>
+          {extraColumn && <TableHead>{extraColumn.header}</TableHead>}
           {renderActions && <TableHead className="w-0" />}
         </TableRow>
       </TableHeader>
@@ -120,6 +129,7 @@ export function MemberTable({
             <TableCell>
               <Timestamp timestamp={row.since} relative />
             </TableCell>
+            {extraColumn && <TableCell>{extraColumn.render(row)}</TableCell>}
             {renderActions && (
               <TableCell className="text-right">{renderActions(row)}</TableCell>
             )}

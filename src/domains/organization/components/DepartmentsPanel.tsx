@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
+  type MemberColumn,
   type MemberRow,
   MemberTable,
 } from "@/domains/organization/components/MemberTable";
@@ -34,11 +35,21 @@ import { useTranslation } from "@/foundation/lib/i18n";
 
 const ALL_SOURCES = "__all__";
 
-/** `renderRoleAssignments` lists the selected department's role assignments. */
+const noMemberColumn = () => undefined;
+
+/**
+ * `renderRoleAssignments` lists the selected department's role assignments;
+ * `useMemberColumn` adds a member column for it (a hook, as it belongs to
+ * other domains).
+ */
 export function DepartmentsPanel({
   renderRoleAssignments,
+  useMemberColumn = noMemberColumn,
 }: {
   renderRoleAssignments?: (orgUnitName: string, label: string) => ReactNode;
+  useMemberColumn?: (
+    department: { id: number; name: string; label: string } | undefined,
+  ) => MemberColumn | undefined;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
@@ -137,6 +148,13 @@ export function DepartmentsPanel({
   const selected =
     selectedId === undefined ? undefined : nodesById.get(selectedId);
   const members = useOrgUnitMembers(selected?.unit.id, includeSubtree);
+  const memberColumn = useMemberColumn(
+    selected && {
+      id: selected.unit.id,
+      name: selected.unit.metadata.name,
+      label: selected.label,
+    },
+  );
   const memberRows = useMemo<MemberRow[]>(
     () =>
       members.members.map((m) => ({
@@ -268,6 +286,7 @@ export function DepartmentsPanel({
                 showDepartment={includeSubtree}
                 showSource
                 sinceLabel={t("organization.fields.assignedAt")}
+                extraColumn={memberColumn}
               />
             ) : (
               <EmptyState variant="inline">
