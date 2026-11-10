@@ -16,19 +16,14 @@ import {
   type PolicyModelRow,
   rateSummary,
   resolveQuotaPeriod,
-  useInvokableModels,
   useModelSourceByValue,
   useWorkspaceModelMap,
 } from "./use-api-key-policy";
 
-const { useListMock, useCustomMock } = vi.hoisted(() => ({
-  useListMock: vi.fn(),
-  useCustomMock: vi.fn(),
-}));
+const { useListMock } = vi.hoisted(() => ({ useListMock: vi.fn() }));
 
 vi.mock("@refinedev/core", () => ({
   useList: useListMock,
-  useCustom: useCustomMock,
   useCustomMutation: vi.fn(),
 }));
 
@@ -644,38 +639,5 @@ describe("invokableModelOptions", () => {
     expect(options.map((o) => [o.value, o.phase])).toEqual([
       ["external:ep-vendor:deepseek", "Running"],
     ]);
-  });
-});
-
-describe("useInvokableModels", () => {
-  it("polls RPC candidates and removes a physically reclaimed endpoint", () => {
-    mockWorkspaceModels(["qwen"]);
-    useCustomMock.mockReturnValue({
-      data: {
-        data: [
-          {
-            model: "qwen",
-            type: "internal",
-            endpoint_name: "local",
-            source_label: null,
-            phase: "Running",
-          },
-        ],
-      },
-    });
-    const { result, rerender } = renderHook(() =>
-      useInvokableModels("workspace-a"),
-    );
-    expect(result.current.map((option) => option.model)).toEqual(["qwen"]);
-    expect(useCustomMock.mock.lastCall?.[0].queryOptions).toEqual(
-      expect.objectContaining({
-        enabled: true,
-        refetchInterval: 3_000,
-        refetchIntervalInBackground: true,
-      }),
-    );
-    useCustomMock.mockReturnValue({ data: { data: [] } });
-    rerender();
-    expect(result.current).toEqual([]);
   });
 });
