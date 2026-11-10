@@ -1,5 +1,6 @@
 import { Globe, Users } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { Card } from "@/components/ui/card";
 import { OrgUnitTree } from "@/domains/organization/components/OrgUnitTree";
 import {
   filterTeams,
@@ -82,78 +83,80 @@ export const UsageScopePanel = ({
   const teamList = filterTeams(teams, { showInactive: true });
 
   return (
-    <aside className="rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-3">
-      <div className="mb-2 px-1 text-sm font-medium">
-        {t("model_usage.scope.title")}
-      </div>
-      {canReadPlatform ? (
-        <div className="mb-0.5">
-          <ScopeButton
-            selected={scope.type === "platform"}
-            icon={<Globe className="size-4 shrink-0 text-muted-foreground" />}
-            label={t("model_usage.scope.platform")}
-            onClick={() => onScopeChange({ type: "platform" })}
-          />
+    <aside>
+      <Card className="p-3">
+        <div className="mb-2 px-1 text-sm font-medium">
+          {t("model_usage.scope.title")}
         </div>
-      ) : null}
-      <OrgUnitTree
-        roots={roots}
-        expanded={openIds}
-        onExpandedChange={(id, open) => {
-          const next = new Set(openIds);
-          if (open) next.add(id);
-          else next.delete(id);
-          setExpanded(next);
-        }}
-        selectedId={selectedId}
-        onSelect={(id) => {
-          const node = nodesById.get(id);
-          if (node) {
-            onScopeChange({ type: "orgUnit", name: node.unit.metadata.name });
-            // Selecting a department shows its children in the tree too.
-            if (node.children.length && !openIds.has(id)) {
-              setExpanded(new Set([...openIds, id]));
-            }
-          }
-        }}
-      />
-      {teamList.length > 0 ? (
-        <section
-          className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-3"
-          aria-label={t("model_usage.scope.teams")}
-        >
-          <div className="mb-1 px-1 text-xs font-medium text-muted-foreground">
-            {t("model_usage.scope.teams")}
+        {canReadPlatform ? (
+          <div className="mb-0.5">
+            <ScopeButton
+              selected={scope.type === "platform"}
+              icon={<Globe className="size-4 shrink-0 text-muted-foreground" />}
+              label={t("model_usage.scope.platform")}
+              onClick={() => onScopeChange({ type: "platform" })}
+            />
           </div>
-          <ul className="space-y-0.5">
-            {teamList.map((team) => {
-              const label = displayName(team.metadata);
-              return (
-                <li key={team.id}>
-                  <ScopeButton
-                    selected={selectedTeam === team.metadata.name}
-                    icon={
-                      <Users className="size-4 shrink-0 text-muted-foreground" />
-                    }
-                    label={label}
-                    inactive={isInactive(team)}
-                    onClick={() =>
-                      onScopeChange({
-                        type: "team",
-                        name: team.metadata.name,
-                        label,
-                      })
-                    }
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
-      <p className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] px-1 pt-3 text-xs text-muted-foreground">
-        {t("model_usage.scope.hint")}
-      </p>
+        ) : null}
+        <OrgUnitTree
+          roots={roots}
+          expanded={openIds}
+          onExpandedChange={(id, open) => {
+            const next = new Set(openIds);
+            if (open) next.add(id);
+            else next.delete(id);
+            setExpanded(next);
+          }}
+          selectedId={selectedId}
+          onSelect={(id) => {
+            const node = nodesById.get(id);
+            if (node) {
+              onScopeChange({ type: "orgUnit", name: node.unit.metadata.name });
+              // Selecting a department shows its children in the tree too.
+              if (node.children.length && !openIds.has(id)) {
+                setExpanded(new Set([...openIds, id]));
+              }
+            }
+          }}
+        />
+        {teamList.length > 0 ? (
+          <section
+            className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-3"
+            aria-label={t("model_usage.scope.teams")}
+          >
+            <div className="mb-1 px-1 text-xs font-medium text-muted-foreground">
+              {t("model_usage.scope.teams")}
+            </div>
+            <ul className="space-y-0.5">
+              {teamList.map((team) => {
+                const label = displayName(team.metadata);
+                return (
+                  <li key={team.id}>
+                    <ScopeButton
+                      selected={selectedTeam === team.metadata.name}
+                      icon={
+                        <Users className="size-4 shrink-0 text-muted-foreground" />
+                      }
+                      label={label}
+                      inactive={isInactive(team)}
+                      onClick={() =>
+                        onScopeChange({
+                          type: "team",
+                          name: team.metadata.name,
+                          label,
+                        })
+                      }
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+        <p className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] px-1 pt-3 text-xs text-muted-foreground">
+          {t("model_usage.scope.hint")}
+        </p>
+      </Card>
     </aside>
   );
 };

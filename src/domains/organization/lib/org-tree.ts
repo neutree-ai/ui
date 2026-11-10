@@ -37,10 +37,9 @@ export function orgUnitPathLabel(
   unit: OrgUnit,
   unitsById: ReadonlyMap<number, OrgUnit>,
 ): string {
-  const labels = pathIds(unit.path)
-    .map((id) => (id === unit.id ? unit : unitsById.get(id)))
-    .filter((ancestor): ancestor is OrgUnit => !!ancestor)
-    .map((ancestor) => displayName(ancestor.metadata));
+  const labels = alongPath(unit, unit, unitsById).map((ancestor) =>
+    displayName(ancestor.metadata),
+  );
   return labels.length ? labels.join(" / ") : displayName(unit.metadata);
 }
 
@@ -52,9 +51,18 @@ export function orgUnitAncestors(
   node: OrgTreeNode,
   nodesById: ReadonlyMap<number, OrgTreeNode>,
 ): OrgTreeNode[] {
-  return pathIds(node.unit.path)
-    .map((id) => (id === node.unit.id ? node : nodesById.get(id)))
-    .filter((ancestor): ancestor is OrgTreeNode => !!ancestor);
+  return alongPath(node.unit, node, nodesById);
+}
+
+// The readable entries along a unit's path, top down, ending with `self`.
+function alongPath<T>(
+  unit: OrgUnit,
+  self: T,
+  byId: ReadonlyMap<number, T>,
+): T[] {
+  return pathIds(unit.path)
+    .map((id) => (id === unit.id ? self : byId.get(id)))
+    .filter((entry): entry is T => entry !== undefined);
 }
 
 /**

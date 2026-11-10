@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import {
@@ -371,7 +372,7 @@ export const UsageChart = ({
   ];
 
   return (
-    <div className="rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-4">
+    <Card className="p-4">
       <div className="flex items-baseline justify-between mb-2 gap-3">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className="text-sm font-medium">{title}</span>
@@ -549,6 +550,6 @@ export const UsageChart = ({
           </ResponsiveContainer>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
