@@ -4,12 +4,15 @@ import type { ApiUsageRecord } from "@/domains/api-key/types";
 
 export const POLL_INTERVAL_MS = 60_000;
 
-// useUsageByDimension polls the get_usage_by_dimension RPC and returns the rows.
+// useUsageRpc polls a usage RPC and returns the rows.
 // Pass null to disable fetching (before a required id/workspace is known).
 // `params` MUST be a stable (memoized) reference — it keys both the fetch and
 // the 60s poll, so an unmemoized object would refetch on every render.
-export function useUsageByDimension(params: Record<string, unknown> | null) {
-  const [usageData, setUsageData] = useState<ApiUsageRecord[]>([]);
+export function useUsageRpc<T>(
+  url: string,
+  params: Record<string, unknown> | null,
+) {
+  const [usageData, setUsageData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { mutateAsync } = useCustomMutation();
@@ -21,11 +24,11 @@ export function useUsageByDimension(params: Record<string, unknown> | null) {
     setError(null);
     try {
       const res = await mutateAsync({
-        url: "/rpc/get_usage_by_dimension",
+        url,
         method: "post",
         values: params,
       });
-      setUsageData(res.data as ApiUsageRecord[]);
+      setUsageData(res.data as T[]);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
       // Drop the previous rows on failure: a failed refresh/poll must not leave
@@ -34,7 +37,7 @@ export function useUsageByDimension(params: Record<string, unknown> | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [params, mutateAsync]);
+  }, [url, params, mutateAsync]);
 
   useEffect(() => {
     fetchUsageData();
@@ -46,4 +49,9 @@ export function useUsageByDimension(params: Record<string, unknown> | null) {
   }, [fetchUsageData]);
 
   return { usageData, isLoading, error, refetch: fetchUsageData };
+}
+
+// useUsageByDimension polls the get_usage_by_dimension RPC; see useUsageRpc.
+export function useUsageByDimension(params: Record<string, unknown> | null) {
+  return useUsageRpc<ApiUsageRecord>("/rpc/get_usage_by_dimension", params);
 }

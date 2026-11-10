@@ -17,13 +17,18 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
-import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
+import {
+  ALL_WORKSPACES,
+  useWorkspace,
+  useWorkspaceOptions,
+} from "@/foundation/hooks/use-workspace";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 
 type FormValues = {
   name: string;
@@ -36,11 +41,14 @@ export const CreateApiKeyForm = ({
   onClose,
   initialWorkspace = "",
   initialProjectId = "",
+  serviceAccountId,
   onCreated,
 }: {
   onClose?: () => void;
   initialWorkspace?: string;
   initialProjectId?: string;
+  /** Creates a key of this application, which has no project. */
+  serviceAccountId?: string;
   onCreated?: () => void | Promise<void>;
 }) => {
   const { t } = useTranslation();
@@ -70,6 +78,18 @@ export const CreateApiKeyForm = ({
   // first page of 10 workspaces either (NEU-505). FormCombobox filters what it
   // is given locally, so the page size is the reach here.
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceOptions();
+  // A Team admin may hold no workspace:read; the current workspace, or the
+  // default one, is then the one choice.
+  const { current: currentWorkspace } = useWorkspace();
+  const workspaceNames = workspaces.length
+    ? workspaces.map((workspace) => workspace.metadata.name)
+    : serviceAccountId !== undefined
+      ? [
+          currentWorkspace && currentWorkspace !== ALL_WORKSPACES
+            ? currentWorkspace
+            : "default",
+        ]
+      : [];
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
@@ -90,18 +110,35 @@ export const CreateApiKeyForm = ({
     // spec.limits, so create_api_key takes the whole limits object.
     setSubmitError("");
     try {
+      const limits = buildApiKeyLimits(formValue as ApiKeyPolicyFormValues);
+      const { url, values } =
+        serviceAccountId === undefined
+          ? {
+              url: "/rpc/create_api_key",
+              values: {
+                p_workspace: formValue.workspace,
+                p_name: null,
+                p_display_name: formValue.name,
+                p_project_id: formValue.project_id || null,
+                p_description: formValue.description,
+                p_quota: 0,
+                p_limits: limits,
+              },
+            }
+          : {
+              url: "/rpc/create_service_account_api_key",
+              values: {
+                p_service_account_id: serviceAccountId,
+                p_workspace: formValue.workspace,
+                p_display_name: formValue.name,
+                p_description: formValue.description,
+                p_limits: limits,
+              },
+            };
       const { data } = await mutateAsync({
-        url: "/rpc/create_api_key",
+        url,
         method: "post",
-        values: {
-          p_workspace: formValue.workspace,
-          p_name: null,
-          p_display_name: formValue.name,
-          p_project_id: formValue.project_id || null,
-          p_description: formValue.description,
-          p_quota: 0,
-          p_limits: buildApiKeyLimits(formValue as ApiKeyPolicyFormValues),
-        },
+        values,
         successNotification: false,
         errorNotification: false,
       });
@@ -113,7 +150,13 @@ export const CreateApiKeyForm = ({
       setApiKey(data as ApiKey);
     } catch (cause) {
       setSubmitError(
-        apiKeyActionErrorMessage(cause, t("api_keys.messages.createFailed")),
+        serviceAccountId === undefined
+          ? getErrorMessage(cause, t("api_keys.messages.createFailed"))
+          : serviceAccountKeyErrorMessage(
+              t,
+              cause,
+              t("api_keys.messages.createFailed"),
+            ),
       );
     }
   };
@@ -184,25 +227,27 @@ export const CreateApiKeyForm = ({
           <FormCombobox
             placeholder={t("api_keys.placeholders.selectWorkspace")}
             disabled={Boolean(initialWorkspace) || isLoadingWorkspaces}
-            options={workspaces.map((workspace) => ({
-              label: workspace.metadata.name,
-              value: workspace.metadata.name,
+            options={workspaceNames.map((name) => ({
+              label: name,
+              value: name,
             }))}
           />
         </FormFieldGroup>
-        <FormFieldGroup
-          {...form}
-          name="project_id"
-          label={t("api_keys.fields.project")}
-        >
-          <ProjectPicker
-            workspace={selectedWorkspace}
-            value={form.watch("project_id")}
-            onChange={(id) => {
-              form.setValue("project_id", id, { shouldValidate: true });
-            }}
-          />
-        </FormFieldGroup>
+        {serviceAccountId === undefined && (
+          <FormFieldGroup
+            {...form}
+            name="project_id"
+            label={t("api_keys.fields.project")}
+          >
+            <ProjectPicker
+              workspace={selectedWorkspace}
+              value={form.watch("project_id")}
+              onChange={(id) => {
+                form.setValue("project_id", id, { shouldValidate: true });
+              }}
+            />
+          </FormFieldGroup>
+        )}
         <FormFieldGroup
           {...form}
           name="name"
@@ -230,7 +275,11 @@ export const CreateApiKeyForm = ({
         <div className="pt-1 text-sm font-medium">
           {t("api_keys.limits.sectionTitle")}
         </div>
-        <ApiKeyPolicyFields form={form} workspace={selectedWorkspace} />
+        <ApiKeyPolicyFields
+          form={form}
+          workspace={selectedWorkspace}
+          serviceAccountId={serviceAccountId}
+        />
 
         {submitError && (
           <p className="text-sm text-destructive">{submitError}</p>

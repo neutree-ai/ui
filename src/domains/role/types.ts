@@ -1,6 +1,6 @@
 import type { Metadata } from "@/foundation/types/basic-types";
 
-type RolePreset = "admin" | "workspace_user";
+type RolePreset = "admin" | "workspace_user" | "team-admin" | "model-invoker";
 
 export interface RoleSpec {
   preset_key: RolePreset | null;
@@ -34,6 +34,7 @@ export const ALL_PERMISSIONS = [
   "endpoint:update",
   "endpoint:delete",
   "endpoint:trace-read",
+  "model:invoke",
   "image_registry:read",
   "image_registry:create",
   "image_registry:update",
@@ -76,4 +77,18 @@ export const ALL_PERMISSIONS = [
   "identity_source:create",
   "identity_source:update",
   "identity_source:delete",
+  "org_unit:read",
+  "org_unit:assign-member",
+  "org_unit:usage-read",
+  "team:read",
+  "team:assign-member",
+  "service_account:read",
+  "service_account:create",
+  "service_account:update",
+  "service_account:delete",
+  "team_usage:read",
+  "group_policy:read",
+  "group_policy:create",
+  "group_policy:update",
+  "group_policy:delete",
 ];

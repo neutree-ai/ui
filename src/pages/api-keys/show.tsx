@@ -4,6 +4,8 @@ import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard"
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
+import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
+import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
@@ -13,12 +15,17 @@ export const ApiKeysShow = () => {
   const {
     query: { data, isLoading, refetch },
   } = useShow();
-  const record = data?.data;
+  const record = data?.data as ApiKey | undefined;
+  const serviceAccountId = record?.service_account_id ?? undefined;
   const {
     data: projects,
     isLoading: isProjectLoading,
     error: projectError,
-  } = useApiKeyProjects(record?.metadata.workspace);
+  } = useApiKeyProjects(
+    serviceAccountId === undefined
+      ? (record?.metadata.workspace ?? undefined)
+      : undefined,
+  );
   const project = projects.find(
     (candidate) => candidate.id === record?.spec.project_id,
   );
@@ -33,11 +40,7 @@ export const ApiKeysShow = () => {
 
   return (
     <div className="w-full h-full">
-      <ShowPage
-        record={record as ApiKey}
-        canEdit={false}
-        showCurrentBreadcrumb={false}
-      >
+      <ShowPage record={record} canEdit={false} showCurrentBreadcrumb={false}>
         <ShowPage.ObjectHeader
           title={record.metadata.display_name || record.metadata.name}
           description={
@@ -53,15 +56,21 @@ export const ApiKeysShow = () => {
               <ShowPage.Meta label={t("api_keys.fields.usage")}>
                 {record.status?.usage ?? <EmptyValue />}
               </ShowPage.Meta>
-              <ShowPage.Meta label={t("api_keys.fields.project")}>
-                {!record.spec.project_id
-                  ? t("api_keys.projects.ungrouped")
-                  : isProjectLoading
-                    ? t("api_keys.messages.loading")
-                    : projectError
-                      ? t("api_keys.projects.loadFailed")
-                      : (project?.metadata.name ?? <EmptyValue />)}
-              </ShowPage.Meta>
+              {serviceAccountId !== undefined ? (
+                <ShowPage.Meta label={t("api_keys.fields.application")}>
+                  <ServiceAccountLabel id={serviceAccountId} />
+                </ShowPage.Meta>
+              ) : (
+                <ShowPage.Meta label={t("api_keys.fields.project")}>
+                  {!record.spec.project_id
+                    ? t("api_keys.projects.ungrouped")
+                    : isProjectLoading
+                      ? t("api_keys.messages.loading")
+                      : projectError
+                        ? t("api_keys.projects.loadFailed")
+                        : (project?.metadata.name ?? <EmptyValue />)}
+                </ShowPage.Meta>
+              )}
               <MetadataTimestampMeta metadata={record.metadata} />
             </span>
           }
@@ -70,14 +79,21 @@ export const ApiKeysShow = () => {
           <div className="mt-4 space-y-3">
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}
-              workspace={record.metadata.workspace}
+              workspace={record.metadata.workspace ?? ""}
             />
+            {record.user_id && record.metadata.workspace && (
+              <ApiKeyGroupPolicyHint
+                userId={record.user_id}
+                workspace={record.metadata.workspace}
+              />
+            )}
             <ApiKeyLimitsCard
               apiKeyId={String(record.id)}
-              workspace={record.metadata.workspace}
+              workspace={record.metadata.workspace ?? ""}
               projectId={record.spec.project_id ?? null}
               displayName={record.metadata.display_name || record.metadata.name}
               description={record.spec.description ?? ""}
+              serviceAccountId={serviceAccountId}
               onSaved={refetch}
             />
           </div>

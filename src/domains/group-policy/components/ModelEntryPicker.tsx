@@ -1,0 +1,133 @@
+import { CaretSortIcon, PlusIcon } from "@radix-ui/react-icons";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ModelOptionGroups,
+  useModelOptionMatcher,
+} from "@/foundation/components/ModelOptionGroups";
+import {
+  ALL_WORKSPACES,
+  useWorkspaceOptions,
+} from "@/foundation/hooks/use-workspace";
+import { useWorkspaceModels } from "@/foundation/hooks/use-workspace-models";
+import { useTranslation } from "@/foundation/lib/i18n";
+
+const ALL = "__all__";
+
+/**
+ * Adds a model name to one policy list, scoped to a workspace or all. A rule
+ * matches by name, so any typed name can be added, e.g. one not deployed yet.
+ */
+export function ModelEntryPicker({
+  onAdd,
+  "data-testid": testId,
+}: {
+  onAdd: (model: string, workspace: string) => void;
+  "data-testid"?: string;
+}) {
+  const { t } = useTranslation();
+  const [scope, setScope] = useState(ALL);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const { workspaces } = useWorkspaceOptions();
+  const workspaceNames = workspaces.map(
+    (workspace) => workspace.metadata.name as string,
+  );
+  const options = useWorkspaceModels(scope === ALL ? ALL_WORKSPACES : scope);
+  const matches = useModelOptionMatcher();
+
+  const query = search.trim();
+  const visible = query ? options.filter((o) => matches(o, query)) : options;
+  const canAddTyped =
+    query !== "" && !options.some(({ model }) => model === query);
+
+  const add = (model: string) => {
+    onAdd(model, scope === ALL ? "" : scope);
+    setSearch("");
+  };
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row" data-testid={testId}>
+      <Select value={scope} onValueChange={setScope}>
+        <SelectTrigger
+          className="sm:w-48"
+          aria-label={t("common.fields.workspace")}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>
+            {t("group_policies.allWorkspaces")}
+          </SelectItem>
+          {workspaceNames.map((name) => (
+            <SelectItem key={name} value={name}>
+              {name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Popover open={open} onOpenChange={setOpen} modal>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="flex-1 justify-between text-muted-foreground"
+          >
+            <span className="truncate">{t("group_policies.addModel")}</span>
+            <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] p-0">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder={t("group_policies.searchModel")}
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList className="max-h-60">
+              <CommandEmpty>{t("group_policies.noModels")}</CommandEmpty>
+              {canAddTyped && (
+                <CommandGroup>
+                  <CommandItem
+                    value={`typed:${query}`}
+                    onSelect={() => add(query)}
+                  >
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    {t("group_policies.addTyped", { model: query })}
+                  </CommandItem>
+                </CommandGroup>
+              )}
+              <ModelOptionGroups
+                options={visible}
+                onSelect={(o) => add(o.model)}
+                showWorkspace={scope === ALL}
+              />
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useId, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
-import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type {
+  ApiUsageRecord,
+  GroupUsageKind,
+  GroupUsageRecord,
+} from "@/domains/api-key/types";
+import {
+  useOrgTree,
+  useTeamsByName,
+} from "@/domains/organization/hooks/use-organization";
+import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
 import {
   type DateRange,
   DateRangePicker,
@@ -31,6 +41,11 @@ import {
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
+import {
+  useHasGlobalPermission,
+  useHasPermission,
+} from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
@@ -42,6 +57,7 @@ import {
   aggregateSeries,
   buildTrend,
   foldRemainder,
+  orderSeries,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
@@ -58,6 +74,12 @@ const TOP_K = 8;
 // per-record table is where people hunt for a specific request, so it shows 50.
 const CARD_PAGE_SIZE = 10;
 const DETAIL_PAGE_SIZE = 50;
+const GROUP_KINDS: GroupUsageKind[] = ["User", "Team", "OrgUnit"];
+// org_unit:usage-read alone reads users and departments of the caller's
+// subtree; Team totals stay with a global workspace:usage-read.
+const SUBTREE_GROUP_KINDS: GroupUsageKind[] = ["User", "OrgUnit"];
+// The "no filter" value of the department and team selects by user.
+const ALL_GROUPS = "__all__";
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -82,6 +104,83 @@ export const ModelUsageList = () => {
     workspace,
     range.start,
     range.end,
+  );
+
+  // Group totals include other users' usage: a global workspace:usage-read
+  // reads every group, org_unit:usage-read the users and departments of the
+  // caller's subtree. Nobody else gets the card or the call.
+  const canReadAllGroups =
+    useHasGlobalPermission("workspace:usage-read").allowed === true;
+  const canReadSubtree =
+    useHasPermission("org_unit:usage-read").allowed === true;
+  const canReadGroups = canReadAllGroups || canReadSubtree;
+  const groupKinds = canReadAllGroups ? GROUP_KINDS : SUBTREE_GROUP_KINDS;
+  const [pickedGroupKind, setGroupKind] = useState<GroupUsageKind>("User");
+  const groupKind = groupKinds.includes(pickedGroupKind)
+    ? pickedGroupKind
+    : "User";
+  // The group card's kind drives the chart too, so both show the same
+  // breakdown; picking an API key goes back to the per-key chart.
+  const [chartByGroup, setChartByGroup] = useState(false);
+  const chartGroupKind = canReadGroups && chartByGroup ? groupKind : null;
+  const pickGroupKind = (kind: GroupUsageKind) => {
+    setGroupKind(kind);
+    setChartByGroup(true);
+    // Groups overlap (a department holds its sub-departments, a user may be
+    // in several teams), so a stacked bar would overstate the total.
+    setChartType("line");
+  };
+  // By user, the rows can be narrowed to one department (with its
+  // sub-departments) or, for a global reader, one team. The server only
+  // narrows: a department admin still reads only the units they manage.
+  const [unitFilter, setUnitFilter] = useState(ALL_GROUPS);
+  const [teamFilter, setTeamFilter] = useState(ALL_GROUPS);
+  const byUser = groupKind === "User";
+  const groupFilter = useMemo(
+    () =>
+      byUser
+        ? {
+            orgUnit: unitFilter === ALL_GROUPS ? undefined : unitFilter,
+            team:
+              canReadAllGroups && teamFilter !== ALL_GROUPS
+                ? teamFilter
+                : undefined,
+          }
+        : {},
+    [byUser, unitFilter, teamFilter, canReadAllGroups],
+  );
+  const groupUsage = useGroupUsage(
+    canReadGroups ? workspace : undefined,
+    range.start,
+    range.end,
+    groupKind,
+    groupFilter,
+  );
+  // Departments are listed in tree order with their path. Without
+  // org_unit:read the list is empty and the rows keep the usage order.
+  const { byId: orgUnitsById } = useOrgTree(
+    canReadGroups && (groupKind === "OrgUnit" || byUser),
+  );
+  const { list: teams } = useTeamsByName(canReadAllGroups && byUser);
+  const teamOptions = useMemo(
+    () =>
+      teams
+        .map((team) => ({
+          name: team.metadata.name,
+          label: displayName(team.metadata),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [teams],
+  );
+  const orgNodes = useMemo(
+    () =>
+      new Map<string, { position: number; node: OrgTreeNode }>(
+        [...orgUnitsById.values()].map((node, position) => [
+          node.unit.metadata.name,
+          { position, node },
+        ]),
+      ),
+    [orgUnitsById],
   );
 
   // Picking a day in the chart narrows the range itself to that day — there is
@@ -190,34 +289,72 @@ export const ModelUsageList = () => {
     [groupByModel],
   );
 
+  // The group RPC has no API key column, so only the type and model filters
+  // apply to it.
+  const groupRows = useMemo(
+    () =>
+      groupUsage.usageData.filter(
+        (r: GroupUsageRecord) =>
+          (!endpointType || r.endpoint_type === endpointType) &&
+          (!model ||
+            (r.model_name ?? "")
+              .toLowerCase()
+              .includes(model.trim().toLowerCase())),
+      ),
+    [groupUsage.usageData, endpointType, model],
+  );
+  const groupMeta = useCallback(
+    (r: GroupUsageRecord) => {
+      if (r.kind === "OrgUnit") {
+        const node = orgNodes.get(r.name)?.node;
+        return {
+          name: r.display_name || node?.label || r.name,
+          description:
+            node && node.pathLabel !== node.label ? node.pathLabel : null,
+        };
+      }
+      // A synced Team's name is an internal hash (org-ldap-…), so it is not
+      // shown, as for departments.
+      return { name: r.display_name || r.name, description: null };
+    },
+    [orgNodes],
+  );
+
   // Multi-day: the top TOP_K series each get a line, the rest fold into one
   // "other" series. A single key's models are few enough to show in full.
-  const series = useMemo(
-    () =>
-      foldRemainder(
-        aggregateSeries(filtered, seriesKey, seriesMeta),
-        groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
-        (count) => t("model_usage.daily.otherKeys", { n: count }),
-      ),
-    [filtered, groupByModel, seriesKey, seriesMeta, t],
-  );
+  const series = useMemo(() => {
+    if (chartGroupKind) {
+      return foldRemainder(
+        aggregateSeries(groupRows, (r) => r.name, groupMeta),
+        TOP_K,
+        (count) => t("model_usage.daily.otherGroups", { n: count }),
+      );
+    }
+    return foldRemainder(
+      aggregateSeries(filtered, seriesKey, seriesMeta),
+      groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
+      (count) => t("model_usage.daily.otherKeys", { n: count }),
+    );
+  }, [
+    chartGroupKind,
+    groupRows,
+    groupMeta,
+    filtered,
+    groupByModel,
+    seriesKey,
+    seriesMeta,
+    t,
+  ]);
   const trendData = useMemo(
-    () => buildTrend(filtered, series, seriesKey),
-    [filtered, series, seriesKey],
+    () =>
+      chartGroupKind
+        ? buildTrend(groupRows, series, (r) => r.name)
+        : buildTrend(filtered, series, seriesKey),
+    [chartGroupKind, groupRows, filtered, series, seriesKey],
   );
   // Single day: same folding, but the chart shows one bar per series with its
   // prompt/completion split.
-  const dayCategories = useMemo(
-    () =>
-      isSingleDay
-        ? foldRemainder(
-            aggregateSeries(filtered, seriesKey, seriesMeta),
-            groupByModel ? Number.POSITIVE_INFINITY : TOP_K,
-            (count) => t("model_usage.daily.otherKeys", { n: count }),
-          )
-        : [],
-    [filtered, groupByModel, isSingleDay, seriesKey, seriesMeta, t],
-  );
+  const dayCategories = isSingleDay ? series : [];
 
   const byKey = useMemo(
     () =>
@@ -241,6 +378,13 @@ export const ModelUsageList = () => {
     [filtered],
   );
 
+  const byGroup = useMemo(() => {
+    const series = aggregateSeries(groupRows, (r) => r.name, groupMeta);
+    return groupKind === "OrgUnit"
+      ? orderSeries(series, (key) => orgNodes.get(key)?.position)
+      : series;
+  }, [groupRows, groupMeta, groupKind, orgNodes]);
+
   const detailRows = useMemo(
     () =>
       [...filtered].sort(
@@ -251,12 +395,25 @@ export const ModelUsageList = () => {
   );
 
   const totalTokens = filtered.reduce((sum, r) => sum + (r.usage ?? 0), 0);
+  // A user's usage counts once; Teams and departments overlap, so their sum
+  // is no total and the chart leaves it out.
+  const chartTotal = !chartGroupKind
+    ? totalTokens
+    : chartGroupKind === "User"
+      ? groupRows.reduce((sum, r) => sum + (r.usage ?? 0), 0)
+      : null;
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
   // throw the reader back to page 1.
   const scopeKey = [range.start, range.end, apiKeyId, endpointType, model].join(
     "|",
   );
+  const groupScopeKey = [
+    scopeKey,
+    groupKind,
+    groupFilter.orgUnit,
+    groupFilter.team,
+  ].join("|");
 
   const onToggleSeries = (key: string) => {
     if (!key) return;
@@ -284,7 +441,10 @@ export const ModelUsageList = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetch()}
+          onClick={() => {
+            refetch();
+            if (canReadGroups) groupUsage.refetch();
+          }}
           disabled={isLoading}
         >
           <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
@@ -298,12 +458,56 @@ export const ModelUsageList = () => {
         dayCategories={dayCategories}
         isSingleDay={isSingleDay}
         groupByModel={groupByModel}
+        groupKindLabel={
+          chartGroupKind
+            ? t(`model_usage.group.kinds.${chartGroupKind}`)
+            : undefined
+        }
+        headerExtra={
+          canReadGroups ? (
+            <>
+              <Select
+                value={chartGroupKind ?? "ApiKey"}
+                onValueChange={(v) =>
+                  v === "ApiKey"
+                    ? setChartByGroup(false)
+                    : pickGroupKind(v as GroupUsageKind)
+                }
+              >
+                <SelectTrigger
+                  className="h-7 w-[140px]"
+                  aria-label={t("model_usage.daily.dimension")}
+                  data-testid="usage-chart-dimension"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ApiKey">
+                    {groupByModel
+                      ? t("model_usage.model")
+                      : t("model_usage.apiKey")}
+                  </SelectItem>
+                  {groupKinds.map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {t(`model_usage.group.kinds.${kind}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {chartGroupKind && apiKeyId ? (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {t("model_usage.group.apiKeyIgnored")}
+                </span>
+              ) : null}
+            </>
+          ) : undefined
+        }
         chartType={chartType}
         onChartTypeChange={setChartType}
         hidden={hidden}
         onToggleSeries={onToggleSeries}
-        totalTokens={totalTokens}
-        isLoading={isLoading}
+        totalTokens={chartTotal}
+        isLoading={chartGroupKind ? groupUsage.isLoading : isLoading}
         backLabel={backLabel}
         onPickDay={pickDay}
         onResetRange={resetRange}
@@ -316,6 +520,7 @@ export const ModelUsageList = () => {
           onValueChange={(v) => {
             const next = v === "all" ? "" : v;
             setApiKeyId(next);
+            setChartByGroup(false);
             // A single key reads best as a stacked bar of its daily model mix;
             // "All keys" reads best as per-key trend lines.
             setChartType(next ? "bar" : "line");
@@ -402,6 +607,37 @@ export const ModelUsageList = () => {
         />
       </div>
 
+      {canReadGroups ? (
+        <GroupUsageCard
+          title={scopeTitle(
+            t("model_usage.group.title"),
+            t("model_usage.group.titleOnDay", { date: range.start }),
+          )}
+          groupKind={groupKind}
+          groupKinds={groupKinds}
+          onGroupKindChange={pickGroupKind}
+          departments={byUser ? orgNodes : undefined}
+          unitFilter={unitFilter}
+          onUnitFilterChange={setUnitFilter}
+          teams={byUser && canReadAllGroups ? teamOptions : undefined}
+          teamFilter={teamFilter}
+          onTeamFilterChange={setTeamFilter}
+          hint={[
+            byUser && groupFilter.orgUnit
+              ? `${t("model_usage.group.filters.subtreeIncluded")} `
+              : "",
+            groupKind === "OrgUnit"
+              ? t("model_usage.group.subtreeHint")
+              : t("model_usage.group.historyHint"),
+            canReadAllGroups ? "" : ` ${t("model_usage.group.subtreeOnly")}`,
+            apiKeyId ? ` ${t("model_usage.group.apiKeyIgnored")}` : "",
+          ].join("")}
+          rows={byGroup}
+          resetKey={groupScopeKey}
+          error={groupUsage.error}
+        />
+      ) : null}
+
       <div className="mt-4">
         <DetailTable rows={detailRows} resetKey={scopeKey} />
       </div>
@@ -461,11 +697,13 @@ const UsageTable = ({
   nameHeader,
   rows,
   resetKey,
+  showRequests = false,
 }: {
-  title: string;
+  title: ReactNode;
   nameHeader: string;
   rows: UsageSeries[];
   resetKey: string;
+  showRequests?: boolean;
 }) => {
   const { t } = useTranslation();
   const { page, pageCount, setPage, pagedRows } = usePagedRows(
@@ -489,6 +727,11 @@ const UsageTable = ({
         <TableHeader>
           <TableRow>
             <TableHead>{nameHeader}</TableHead>
+            {showRequests ? (
+              <TableHead className="w-[120px] text-right">
+                {t("model_usage.group.requests")}
+              </TableHead>
+            ) : null}
             <TableHead className="w-[160px] text-right">
               {t("model_usage.promptTokens")}
             </TableHead>
@@ -504,7 +747,7 @@ const UsageTable = ({
           {rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={showRequests ? 5 : 4}
                 className="text-center py-8 text-muted-foreground"
               >
                 {t("model_usage.empty")}
@@ -516,6 +759,11 @@ const UsageTable = ({
                 <TableCell className="max-w-[160px]">
                   <ApiKeyLabel name={r.name} description={r.description} />
                 </TableCell>
+                {showRequests ? (
+                  <TableCell className="text-right font-mono text-xs">
+                    {(r.requests ?? 0).toLocaleString()}
+                  </TableCell>
+                ) : null}
                 <TableCell className="text-right font-mono text-xs">
                   {formatTokens(r.prompt)}
                 </TableCell>
@@ -540,6 +788,124 @@ const UsageTable = ({
         />
       ) : null}
     </section>
+  );
+};
+
+/** Usage per user or group, with the kind and the department / team filters. */
+const GroupUsageCard = ({
+  title,
+  groupKind,
+  groupKinds,
+  onGroupKindChange,
+  departments,
+  unitFilter,
+  onUnitFilterChange,
+  teams,
+  teamFilter,
+  onTeamFilterChange,
+  hint,
+  rows,
+  resetKey,
+  error,
+}: {
+  title: ReactNode;
+  groupKind: GroupUsageKind;
+  groupKinds: GroupUsageKind[];
+  onGroupKindChange: (kind: GroupUsageKind) => void;
+  /** The department filter's options; absent hides the filter. */
+  departments?: ReadonlyMap<string, { node: OrgTreeNode }>;
+  unitFilter: string;
+  onUnitFilterChange: (value: string) => void;
+  /** The team filter's options; absent hides the filter. */
+  teams?: { name: string; label: string }[];
+  teamFilter: string;
+  onTeamFilterChange: (value: string) => void;
+  hint: string;
+  rows: UsageSeries[];
+  resetKey: string;
+  error?: { message: string } | null;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-4">
+      <UsageTable
+        title={
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{title}</span>
+            <Select
+              value={groupKind}
+              onValueChange={(v) => onGroupKindChange(v as GroupUsageKind)}
+            >
+              <SelectTrigger
+                className="h-7 w-[140px]"
+                aria-label={t("model_usage.group.kind")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {groupKinds.map((kind) => (
+                  <SelectItem key={kind} value={kind}>
+                    {t(`model_usage.group.kinds.${kind}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {departments && departments.size > 0 ? (
+              <Select value={unitFilter} onValueChange={onUnitFilterChange}>
+                <SelectTrigger
+                  className="h-7 w-[200px]"
+                  aria-label={t("model_usage.group.filters.department")}
+                  data-testid="usage-group-department"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_GROUPS}>
+                    {t("model_usage.group.filters.allDepartments")}
+                  </SelectItem>
+                  {[...departments.entries()].map(([name, { node }]) => (
+                    <SelectItem key={name} value={name}>
+                      {node.pathLabel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {teams && teams.length > 0 ? (
+              <Select value={teamFilter} onValueChange={onTeamFilterChange}>
+                <SelectTrigger
+                  className="h-7 w-[160px]"
+                  aria-label={t("model_usage.group.filters.team")}
+                  data-testid="usage-group-team"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_GROUPS}>
+                    {t("model_usage.group.filters.allTeams")}
+                  </SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.name} value={team.name}>
+                      {team.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <span className="text-xs font-normal text-muted-foreground">
+              {hint}
+            </span>
+          </div>
+        }
+        nameHeader={t(`model_usage.group.kinds.${groupKind}`)}
+        rows={rows}
+        resetKey={resetKey}
+        showRequests
+      />
+      {error ? (
+        <div className="mt-2 text-sm text-destructive">{error.message}</div>
+      ) : null}
+    </div>
   );
 };
 

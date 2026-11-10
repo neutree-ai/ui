@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasAnyPermission } from "@/foundation/hooks/use-has-permission";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import {
   buildMenuItemPaths,
@@ -42,10 +42,12 @@ type AppSidebarMenuItemProps = {
 // A resource whose meta names a requiredPermission is listed only for users
 // holding it (and not while that is still being checked, to avoid a flash).
 function AppSidebarMenuItem(props: AppSidebarMenuItemProps) {
+  // Any one listed permission lists the entry, e.g. a Team admin on the organization.
   const requiredPermission = props.item.meta?.requiredPermission as
     | string
+    | string[]
     | undefined;
-  const { allowed } = useHasPermission(requiredPermission);
+  const { allowed } = useHasAnyPermission(requiredPermission);
   if (!allowed) {
     return null;
   }

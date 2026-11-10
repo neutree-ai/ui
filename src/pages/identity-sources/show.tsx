@@ -1,6 +1,8 @@
 import { useShow } from "@refinedev/core";
 import { IdentitySourceEnabledSwitch } from "@/domains/identity-source/components/IdentitySourceEnabledSwitch";
 import { IdentitySourceStatus } from "@/domains/identity-source/components/IdentitySourceStatus";
+import { IdentitySourceSyncSection } from "@/domains/identity-source/components/IdentitySourceSyncSection";
+import { isSyncRequestPending } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
@@ -15,7 +17,13 @@ export const IdentitySourcesShow = () => {
   const { t } = useTranslation();
   const {
     query: { data, isLoading },
-  } = useShow<IdentitySource>({ queryOptions: { refetchInterval: 10_000 } });
+  } = useShow<IdentitySource>({
+    queryOptions: {
+      // Faster while a requested sync has not reported back.
+      refetchInterval: (data) =>
+        data?.data && isSyncRequestPending(data.data) ? 3_000 : 10_000,
+    },
+  });
   const record = data?.data;
 
   if (isLoading) {
@@ -112,6 +120,7 @@ export const IdentitySourcesShow = () => {
             </div>
           </ShowPage.Section>
         )}
+        {type === "ldap" && <IdentitySourceSyncSection record={record} />}
         {type === "oidc" && oidc && (
           <ShowPage.Section title={t("identity_sources.sections.oidcProvider")}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">

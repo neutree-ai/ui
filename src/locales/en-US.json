@@ -2014,7 +2014,8 @@
 		"edit": "Edit User",
 		"fields": {
 			"confirmPassword": "Confirm Password",
-			"displayName": "Display Name"
+			"displayName": "Display Name",
+			"identitySource": "Identity Source"
 		},
 		"hints": {
 			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
@@ -2025,10 +2026,35 @@
 		},
 		"sections": {
 			"globalRoles": "Global Roles",
-			"joinedWorkspaces": "Joined Workspaces"
+			"joinedWorkspaces": "Joined Workspaces",
+			"department": "Department",
+			"teams": "Teams",
+			"departmentRoles": "Department Roles",
+			"effectiveRoles": "Effective Policies"
 		},
 		"validation": {
 			"passwordMinLength": "Password must be at least 6 characters"
+		},
+		"values": {
+			"local": "Local"
+		},
+		"department": {
+			"assign": "Assign",
+			"change": "Change",
+			"remove": "Remove",
+			"assignTitle": "Assign Department",
+			"assignHint": "Pick an active department. It replaces the user's current department.",
+			"selected": "Selected:",
+			"removeTitle": "Remove the department?",
+			"removeHint": "The user will not belong to any department.",
+			"none": "Not in a department.",
+			"errors": {
+				"targetOutsideScope": "The target department is outside the departments you manage.",
+				"currentOutsideScope": "This user's department is outside the departments you manage."
+			}
+		},
+		"teams": {
+			"none": "Not in a team."
 		}
 	},
 	"roles": {
@@ -2047,19 +2073,75 @@
 		"title": "Workspace Policies",
 		"fields": {
 			"policy": "Policy",
-			"policyScope": "Policy Scope"
+			"policyScope": "Policy Scope",
+			"scope": "Scope",
+			"subject": "Subject",
+			"subjectKind": "Subject Type",
+			"subtreeRoot": "Subtree root department",
+			"scopeTeam": "Scoped team"
 		},
 		"placeholders": {
 			"policyName": "Workspace Policy Name",
 			"selectUser": "Select A User",
-			"selectRole": "Select A Role"
+			"selectRole": "Select A Role",
+			"selectTeam": "Select A Team"
 		},
 		"descriptions": {
-			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace."
+			"policyScope": "Global policies apply to all workspaces. Workspace policies only apply to the selected workspace. Organization subtree policies apply to the users of the selected department and its sub-departments. Team policies apply to the selected team only.",
+			"scopeTeam": "The role applies to this team only. Only global administrators can grant team-admin: a team cannot appoint its own administrators, so permissions are not handed down level by level."
 		},
 		"options": {
 			"global": "Global",
-			"workspace": "Workspace"
+			"workspace": "Workspace",
+			"orgUnit": "Organization subtree",
+			"team": "Team"
+		},
+		"scope": {
+			"workspace": "Workspace:",
+			"orgUnit": "Subtree:",
+			"team": "Team:"
+		},
+		"validation": {
+			"orgUnitRequired": "Select a department",
+			"userRequired": "Select a user",
+			"workspaceRequired": "Select a workspace",
+			"teamRequired": "Select a team"
+		},
+		"errors": {
+			"saveFailed": "Failed to save the policy",
+			"workspaceUnsupported": "Workspace policies are not supported. Use a global policy.",
+			"orgUnitUnsupported": "This server does not support organization subtree policies. Use a global policy.",
+			"orgUnitScopeConflict": "An organization subtree policy cannot also be global or bound to a workspace.",
+			"orgUnitNotFound": "The selected department does not exist.",
+			"delegatedOrgUnitOnly": "You can only grant or revoke organization subtree policies.",
+			"outsideScope": "The user or the department is outside the departments you manage.",
+			"roleNotFound": "The role does not exist.",
+			"roleExceedsGrant": "The role grants permissions you do not hold on this department. Pick a role whose permissions you hold yourself.",
+			"invalidSubjectKind": "The subject type must be user, team or department.",
+			"subjectMismatch": "The subject does not match its type. A user policy names a user; a team or department policy names a team or department and no user.",
+			"subjectNotFound": "The selected team or department does not exist.",
+			"delegatedNoTeam": "You can grant policies only to users and departments. A team policy needs a global policy administrator.",
+			"noScope": "A policy needs a scope. Make it global, or choose a workspace or a department.",
+			"applicationNoGrants": "Applications cannot hold role grants. Set the team's application permissions instead."
+		},
+		"subjectKinds": {
+			"User": "User",
+			"Team": "Team",
+			"OrgUnit": "Department"
+		},
+		"group": {
+			"title": "Policies",
+			"hint": {
+				"Team": "Every member of this team holds these roles.",
+				"OrgUnit": "Every member of this department and its sub-departments holds these roles."
+			},
+			"empty": "No policies are granted to this team or department."
+		},
+		"effective": {
+			"hint": "The policies that apply to this user: granted to the user, or through a team or a department.",
+			"source": "Granted Through",
+			"direct": "This user",
+			"empty": "No policies apply to this user."
 		}
 	},
 	"api_keys": {
@@ -2084,7 +2166,8 @@
 			"status": "Status",
 			"createdAt": "Created at",
 			"apiKeyAndDescription": "API key / description",
-			"projectAndDescription": "Project / description"
+			"projectAndDescription": "Project / description",
+			"application": "Application"
 		},
 		"placeholders": {
 			"selectWorkspace": "Select A Workspace",
@@ -2265,7 +2348,38 @@
 			"selectAllInProject": "Select all API keys in {{name}}",
 			"deleteMany": "Delete {{count}} API keys?"
 		},
-		"detailsTitle": "API key details"
+		"detailsTitle": "API key details",
+		"team": {
+			"usageTab": "Usage",
+			"usageHint": "Token usage of the team: its members' personal keys and its applications' keys.",
+			"usageFailed": "Failed to load the team usage.",
+			"usageEmpty": "No usage in this period.",
+			"totalTokens": "Total tokens",
+			"totalRequests": "Requests",
+			"requests": "Requests",
+			"byApplication": "By application",
+			"byApplicationHint": "Usage of each application's keys, part of the team total.",
+			"application": "Application"
+		},
+		"serviceAccount": {
+			"title": "API Keys",
+			"hint": "Keys of {{name}}. Copy a key's secret when you create it: it is shown only once.",
+			"empty": "This application has no API keys yet.",
+			"models": "Models",
+			"limits": "Limits",
+			"modelCount": "{{count}} models",
+			"allTeamModels": "All allowed models",
+			"editLimits": "Edit limits",
+			"deleteTitle": "Delete API key {{name}}?",
+			"deleteHint": "Programs using this key can no longer call models. This cannot be undone.",
+			"createTitle": "Create Application API Key",
+			"createHint": "The key belongs to {{name}}, not to you. Copy the secret key after creating it: it is shown only once.",
+			"modelsHint": "Listed: the models this application may call in the workspace. An empty list means the team's application permissions hold no role that calls models there; the key can be created but cannot call models.",
+			"usageTitle": "Usage",
+			"errors": {
+				"workspace": "Pick an existing workspace."
+			}
+		}
 	},
 	"infrastructure": {
 		"title": "Infrastructure"
@@ -2625,7 +2739,11 @@
 		"status": {
 			"lastTestOk": "Last connection test succeeded:",
 			"lastTestFailed": "Last connection test failed:",
-			"notTested": "Not tested yet"
+			"notTested": "Not tested yet",
+			"notSynced": "Not synced yet.",
+			"syncOff": "Organization sync is off. Turn it on in the settings to read departments, teams and users from the directory.",
+			"syncPaused": "The identity source is disabled, so organization sync is paused. Enable the source to resume it.",
+			"syncWaiting": "Sync requested. Waiting for the result."
 		},
 		"values": {
 			"yes": "Yes",
@@ -2633,7 +2751,16 @@
 			"testOk": "Succeeded",
 			"testFailed": "Failed",
 			"caConfigured": "Custom CA",
-			"systemTrust": "System trust store"
+			"systemTrust": "System trust store",
+			"on": "On",
+			"off": "Off",
+			"paused": "Paused",
+			"everyHours_one": "Every hour",
+			"everyHours_other": "Every {{count}} hours",
+			"everyMinutes_one": "Every minute",
+			"everyMinutes_other": "Every {{count}} minutes",
+			"everySeconds_one": "Every second",
+			"everySeconds_other": "Every {{count}} seconds"
 		},
 		"sections": {
 			"state": "State",
@@ -2642,7 +2769,9 @@
 			"ldapUsers": "User Lookup",
 			"oidcProvider": "Provider",
 			"oidcRedirects": "Redirects",
-			"oidcClaims": "Claims"
+			"oidcClaims": "Claims",
+			"orgSync": "Organization Sync",
+			"orgSyncAdvanced": "Advanced sync settings"
 		},
 		"fields": {
 			"displayName": "Display Name",
@@ -2670,7 +2799,26 @@
 			"allowedRedirects": "Allowed UI Redirects",
 			"claimUsername": "Username Claim",
 			"claimDisplayName": "Display Name Claim",
-			"claimEmail": "Email Claim"
+			"claimEmail": "Email Claim",
+			"syncEnabled": "Sync Organization",
+			"syncInterval": "Sync Interval (seconds)",
+			"orgUnitBaseDn": "Department Base DN",
+			"orgUnitFilter": "Department Filter",
+			"orgUnitNameAttribute": "Department Name Attribute",
+			"groupBaseDn": "Group Base DN",
+			"groupFilter": "Group Filter",
+			"groupNameAttribute": "Group Name Attribute",
+			"groupMemberAttribute": "Group Member Attribute",
+			"userListFilter": "User List Filter",
+			"disabledUserFilter": "Disabled User Filter",
+			"pageSize": "Page Size",
+			"lastSync": "Last Sync",
+			"lastSyncResult": "Last Result",
+			"lastSuccess": "Last Successful Sync",
+			"syncRequestedAt": "Last Requested",
+			"syncStartedAt": "Started",
+			"syncFinishedAt": "Finished",
+			"syncSchedule": "Schedule"
 		},
 		"hints": {
 			"name": "1-32 lowercase letters, digits or '-'. It identifies this source's users and cannot be changed later.",
@@ -2687,7 +2835,17 @@
 			"scopes": "Separated by spaces. Must include openid; empty means openid profile email.",
 			"redirectUrl": "The public URL of neutree's OIDC callback. Register exactly this URL with the provider.",
 			"allowedRedirects": "One URL per line. Where a login may return to; must include this UI's address.",
-			"adminEquivalent": "Whoever can create or change an identity source decides who its users are. Treat these permissions as administrator access."
+			"adminEquivalent": "Whoever can create or change an identity source decides who its users are. Treat these permissions as administrator access.",
+			"syncEnabled": "Reads the whole directory on a schedule and creates departments, teams and users from it. Users disabled or removed in the directory are deactivated.",
+			"syncInterval": "At least 60. Empty means 3600 (one hour).",
+			"orgUnitBaseDn": "Organizational units under this DN become departments. Empty syncs no departments.",
+			"groupBaseDn": "Groups under this DN become teams. Empty syncs no teams.",
+			"disabledUserFilter": "Selects the users disabled in the directory. For Active Directory use (userAccountControl:1.2.840.113556.1.4.803:=2). Empty treats no user as disabled.",
+			"groupMemberAttribute": "Use uniqueMember for groupOfUniqueNames.",
+			"userListFilter": "Selects every user to sync. Empty uses the user filter with {username} replaced by *.",
+			"pageSize": "Entries per page when reading the directory. Empty means 500.",
+			"syncNowDisabled": "Turn on organization sync in the settings first.",
+			"syncNowPaused": "Enable the identity source first. Its sync is paused while it is disabled."
 		},
 		"validation": {
 			"required": "This field is required",
@@ -2700,17 +2858,24 @@
 			"httpUrl": "Enter an absolute http:// or https:// URL",
 			"scopes": "Scopes must include openid",
 			"allowedRedirectsRequired": "Add at least one URL",
-			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment"
+			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment",
+			"syncInterval": "Enter a whole number of seconds, 60 or more",
+			"pageSize": "Enter a whole number, 0 or more",
+			"userListFilter": "The user list filter must not contain {username}"
 		},
 		"actions": {
-			"toggleEnabled": "Enable {{name}}"
+			"toggleEnabled": "Enable {{name}}",
+			"syncNow": "Sync now",
+			"syncing": "Syncing"
 		},
 		"messages": {
 			"enabled": "{{name}} enabled",
 			"disabled": "{{name}} disabled",
 			"toggleFailed": "Could not change {{name}}",
 			"createFailed": "Could not create the identity source",
-			"saveFailed": "Could not save the identity source"
+			"saveFailed": "Could not save the identity source",
+			"syncRequested": "Sync of {{name}} requested",
+			"syncRequestFailed": "Could not request a sync of {{name}}"
 		},
 		"errors": {
 			"invalidName": "The name must be 1-32 lowercase letters, digits or inner '-'.",
@@ -2723,7 +2888,217 @@
 			"missingPlaceholder": "The LDAP user filter must contain {username}, and OIDC scopes must include openid. {{hint}}",
 			"invalidTls": "The TLS or timeout settings are not valid. {{hint}}",
 			"secretsUnavailable": "The server cannot store secrets right now. Contact your administrator.",
-			"invalid": "The identity source is not valid: {{hint}}"
+			"invalid": "The identity source is not valid: {{hint}}",
+			"invalidSync": "The organization sync settings are not valid. {{hint}}",
+			"notFound": "The identity source no longer exists.",
+			"syncNotEnabled": "Organization sync is not enabled for this identity source. Turn it on in the settings first.",
+			"syncPaused": "The identity source is disabled, so its sync is paused. Enable the source first."
+		},
+		"syncResults": {
+			"ok": "Succeeded",
+			"failed": "Failed",
+			"pending": "Requested"
+		},
+		"syncCounts": {
+			"created": "Created",
+			"updated": "Updated",
+			"reactivated": "Reactivated",
+			"deactivated": "Deactivated",
+			"memberships": "Membership changes",
+			"pending": "Not applied"
+		}
+	},
+	"organization": {
+		"title": "Organization",
+		"readOnlyHint": "Departments and synced teams come from identity sources; change them in the directory. Teams created in Neutree are managed here.",
+		"phases": {
+			"Inactive": "Inactive"
+		},
+		"filters": {
+			"searchDepartments": "Search by path, e.g. Engineering / Platform",
+			"searchTeams": "Search teams",
+			"allSources": "All identity sources",
+			"showInactive": "Show inactive",
+			"allTeamKinds": "All teams",
+			"projectsOnly": "Projects",
+			"nonProjects": "Non-project teams"
+		},
+		"departments": {
+			"title": "Departments",
+			"fromSource": "From {{source}}",
+			"empty": "No departments have been synced yet.",
+			"noMatch": "No departments match the filter.",
+			"noPermission": "You do not have permission to view departments."
+		},
+		"teams": {
+			"title": "Teams",
+			"empty": "No teams yet.",
+			"noMatch": "No teams match the filter.",
+			"create": "Create Team",
+			"createTitle": "Create Team",
+			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
+			"editTitle": "Edit Team",
+			"editHint": "Change the display name of the team, or whether it is a project.",
+			"markProject": "Mark as project",
+			"markProjectHint": "A project works like any other team; it is only shown apart.",
+			"namePlaceholder": "e.g. ml-platform",
+			"nameHint": "Lowercase letters, digits, '-' and '.'. It cannot be changed later.",
+			"nameFixed": "The name cannot be changed.",
+			"displayNamePlaceholder": "e.g. ML Platform",
+			"manualSource": "Created in Neutree · {{name}}",
+			"syncedSource": "Synced from {{source}} · read-only",
+			"addMembers": "Add Members",
+			"addMembersTitle": "Add Members",
+			"addMembersHint": "Select the users to add to {{team}}.",
+			"searchUsers": "Search by name or email",
+			"filterDepartment": "Department",
+			"allDepartments": "All departments",
+			"noUsers": "No users match.",
+			"alreadyMember": "Member",
+			"addSelected": "Add ({{count}})",
+			"viewMode": "View",
+			"viewList": "List",
+			"viewTree": "Tree",
+			"noDepartment": "No department",
+			"removeMember": "Remove from team",
+			"removeMemberTitle": "Remove the member?",
+			"removeMemberHint": "{{user}} will no longer be a member of {{team}}.",
+			"deleteTitle": "Delete team {{team}}?",
+			"deleteHint": "The team is deleted together with its member list ({{count}} members). This cannot be undone.",
+			"deleteBlocked": "{{count}} policies still grant roles to this team. Delete them in Workspace Policies first, then delete the team.",
+			"deleteChecking": "Checking the policies granted to this team…",
+			"deletePolicyHint": "Its model access and token pool are deleted with it.",
+			"validation": {
+				"nameRequired": "Enter a name.",
+				"nameFormat": "Use lowercase letters, digits, '-' and '.', starting and ending with a letter or digit.",
+				"nameTooLong": "The name can have at most 63 characters."
+			},
+			"errors": {
+				"nameTaken": "A team with this name already exists. Choose another name.",
+				"teamGone": "The team no longer exists, or you are not allowed to change it. Refresh the page.",
+				"memberGone": "The user is no longer a member of the team, or you are not allowed to change it. Refresh the page.",
+				"denied": "You are not allowed to change teams."
+			}
+		},
+		"members": {
+			"title": "Members",
+			"selectDepartment": "Select a department to see its members.",
+			"selectTeam": "Select a team to see its members.",
+			"includeSubtree": "Include sub-departments",
+			"empty": "No members."
+		},
+		"fields": {
+			"user": "User",
+			"email": "Email",
+			"department": "Department",
+			"source": "Source",
+			"assignedAt": "Assigned",
+			"joinedAt": "Joined",
+			"displayName": "Display Name"
+		},
+		"values": {
+			"manual": "Assigned by hand",
+			"manualTeam": "Manual",
+			"project": "Project",
+			"local": "Local"
+		},
+		"errors": {
+			"noWorkspace": "A department or team is global and cannot belong to a workspace.",
+			"identityRequired": "A department or team needs its identity source and directory ID. {{hint}}",
+			"unknownIdentitySource": "The identity source does not exist. {{hint}}",
+			"identityImmutable": "The name, identity source and directory ID cannot be changed. {{hint}}",
+			"invalidPhase": "The status must be Active or Inactive.",
+			"invalidParent": "The change to the department tree is not allowed. {{hint}}",
+			"cycle": "A department cannot be placed under itself or one of its sub-departments.",
+			"inactiveOrgUnit": "Users cannot be added to an inactive department.",
+			"externalUserOrgUnit": "The department of a user from an identity source comes from that source. Only local accounts can be assigned by hand.",
+			"globalAssignerOnly": "Only a global administrator can move a department assignment to another user.",
+			"reservedTeamName": "Names ending in '-' and 12 hexadecimal digits are reserved for synced teams. Choose another name.",
+			"syncedTeamReadOnly": "A team synced from an identity source is read-only. Change it in the directory.",
+			"syncedTeamMembersReadOnly": "The members of a team synced from an identity source are read-only. Change the group in the directory, or use a team created in Neutree.",
+			"manualTeamAlwaysActive": "A team created in Neutree is always Active. Delete the team instead.",
+			"teamHasRoleAssignments": "Policies are still granted to this team. Delete those policies first, then delete the team.",
+			"memberGrantExceeds": "This change would give the user the policies of the team or department, and you cannot grant all of them. Ask an administrator who can.",
+			"teamHasApplications": "The team still has applications. Delete them first."
+		},
+		"picker": {
+			"title": "Select Department",
+			"hint": "Pick an active department.",
+			"placeholder": "Select a department"
+		}
+	},
+	"org_units": {
+		"title": "Departments"
+	},
+	"teams": {
+		"title": "Teams"
+	},
+	"group_policies": {
+		"title": "Model Access",
+		"permissionTitle": "Model access policy",
+		"groupHint": {
+			"Team": "Limits the models every member of this team can call. Teams of a user combine: a model allowed by any team is allowed.",
+			"OrgUnit": "Limits the models every member of this department and its sub-departments can call. A sub-department cannot allow more than its parents."
+		},
+		"userHint": "The models this user can call in a workspace, as the policies of their teams and departments allow.",
+		"mergeRules": "Departments on the user's path intersect. Teams unite, then intersect with the departments. A denied model is always denied. An API key's own allowed models narrow this further. Policies of inactive groups still apply. Changes take effect within about 10 seconds.",
+		"unrestricted": "No limit",
+		"noRule": "None",
+		"allWorkspaces": "All workspaces",
+		"addModel": "Add a model",
+		"searchModel": "Search or type a model name",
+		"noModels": "No models found.",
+		"addTyped": "Add \"{{model}}\"",
+		"editTitle": "Model access of {{group}}",
+		"editHint": "Each entry applies in one workspace, or in all workspaces. An empty list sets no rule.",
+		"deleteTitle": "Delete model access policy?",
+		"deleteHint": "Members of {{group}} are no longer limited by this group. Other groups still apply.",
+		"viewDetails": "View details",
+		"apiKeyHint": "The models this key can call are also limited by the policies of its owner's groups.",
+		"fields": {
+			"allowed": "Allowed models",
+			"denied": "Denied models"
+		},
+		"hints": {
+			"allowed": "Members can call only these models. Leave empty to allow any model.",
+			"denied": "Members can never call these models, whatever other groups allow."
+		},
+		"kinds": {
+			"Team": "Team",
+			"OrgUnit": "Department"
+		},
+		"effective": {
+			"allowed": "Allowed models",
+			"denied": "Denied models",
+			"noneAllowed": "No model is allowed",
+			"noneDenied": "None",
+			"noGroups": "None of this user's groups has a model access policy.",
+			"group": "Group",
+			"inactiveHint": "The group is inactive, but its policy still applies.",
+			"noWorkspace": "You cannot see any workspace, so the merged result per workspace is not shown. Each group's rules are listed below; an entry limited to a workspace names it."
+		},
+		"errors": {
+			"groupNotFound": "The team or department does not exist.",
+			"workspaceNotAllowed": "A group policy cannot belong to a workspace. Limit an entry to a workspace instead.",
+			"invalidSubjectKind": "The group type must be team or department.",
+			"groupFixed": "The group of a policy cannot change. Delete the policy and create one for the other group.",
+			"invalidModels": "A model list has an invalid entry. Each entry needs a model name.",
+			"alreadyExists": "This group already has a model access policy. Refresh and edit it.",
+			"gone": "The policy no longer exists. Refresh the page.",
+			"invalidTokenPool": "The token pool needs a positive whole number of tokens and a daily, weekly, monthly or yearly period."
+		},
+		"pool": {
+			"title": "Token pool",
+			"hint": "One token budget shared by every member, across all workspaces. When it runs out, members' API keys are rejected until the period resets. Leave empty for no pool.",
+			"placeholder": "No pool",
+			"invalid": "Must resolve to a positive whole number of tokens",
+			"limit": "{{limit}} tokens, {{period}}",
+			"usage": "{{used}} used, {{remaining}} left. Resets on {{resetsAt}}.",
+			"exhausted": "Used up",
+			"userTitle": "Token pools",
+			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over.",
+			"none": "This team has no token pool.",
+			"unreadable": "You cannot read this team's token pool."
 		}
 	},
 	"oem_configs": {
@@ -2928,7 +3303,16 @@
 		"trace-read": "Access Log Read",
 		"usage-read": "Usage Read",
 		"requiredBy": "Required by: {{actions}}",
-		"dependenciesAdded": "Added required permissions: {{actions}}"
+		"dependenciesAdded": "Added required permissions: {{actions}}",
+		"assign-member": "Assign Member",
+		"invoke": "Invoke",
+		"resources": {
+			"team_usage": "Team Usage",
+			"service_account": "Applications"
+		},
+		"labels": {
+			"modelInvoke": "Models:Invoke (call models with an API key; does not show endpoints)"
+		}
 	},
 	"systems": {
 		"title": "Systems"
@@ -3037,6 +3421,10 @@
 			"titleDayByKey": "Tokens by API key · single day",
 			"titleDayByModel": "Tokens by model · single day",
 			"otherKeys": "Other {{n}} API keys",
+			"otherGroups": "Other {{n}}",
+			"titleByGroup": "Daily tokens by {{kind}}",
+			"titleDayByGroup": "Tokens by {{kind}} · single day",
+			"dimension": "Chart by",
 			"otherAxisLabel": "Other {{n}} (total)",
 			"clickHint": "Click a day to scope the page to that day",
 			"backToPreset": "Back to last {{days}} days",
@@ -3055,7 +3443,29 @@
 			"bar": "Bar chart"
 		},
 		"byApiKeyOnDay": "By API key · {{date}}",
-		"byModelOnDay": "By model · {{date}}"
+		"byModelOnDay": "By model · {{date}}",
+		"group": {
+			"title": "By user or group",
+			"titleOnDay": "By user or group · {{date}}",
+			"kind": "Group by",
+			"kinds": {
+				"User": "User",
+				"Team": "Team",
+				"OrgUnit": "Department"
+			},
+			"requests": "Requests",
+			"historyHint": "Usage counts toward the groups the user was in at the time.",
+			"subtreeHint": "A department includes its sub-departments. Usage counts toward the department the user was in at the time.",
+			"apiKeyIgnored": "The API key filter does not apply here.",
+			"subtreeOnly": "Only the departments you manage: usage a user had in another department is not included.",
+			"filters": {
+				"department": "Department",
+				"allDepartments": "All departments",
+				"team": "Team",
+				"allTeams": "All teams",
+				"subtreeIncluded": "Includes its sub-departments."
+			}
+		}
 	},
 	"observations": {
 		"actualMemory": "Actual VRAM",
@@ -3165,5 +3575,65 @@
 		"absent": "Absent",
 		"overAllocation": "Actual usage exceeds allocation",
 		"fp16": "FP16 compute (TFLOPS)"
+	},
+	"service_accounts": {
+		"tab": "Applications",
+		"title": "Applications",
+		"hint": "Applications of {{team}}. Each one calls models with its own API keys, holds the team's application permissions, stays within the team's model access and token pool, and keeps working when members leave.",
+		"empty": "This team has no applications yet.",
+		"create": "Create Application",
+		"createTitle": "Create Application",
+		"createHint": "An application belongs to the team, not to you. It holds the team's application permissions at once.",
+		"back": "Applications",
+		"disabledHint": "This application is disabled: its API keys cannot call models. Enable it to resume.",
+		"deleteTitle": "Delete application {{name}}?",
+		"deleteHint": "Delete its API keys first. This cannot be undone.",
+		"fields": {
+			"displayName": "Display name"
+		},
+		"status": {
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		},
+		"actions": {
+			"enable": "Enable",
+			"disable": "Disable"
+		},
+		"validation": {
+			"nameRequired": "Enter a name.",
+			"nameFormat": "Use up to 63 lowercase letters, digits, '-' or '.', starting and ending with a letter or digit."
+		},
+		"messages": {
+			"loading": "Loading...",
+			"operationFailed": "The operation failed."
+		},
+		"appPermissions": {
+			"title": "Application permissions",
+			"hint": "Every application of the team holds these roles, in the selected workspaces only. Group policy decides which models it may call and how much it may use.",
+			"unreadable": "The application permissions cannot be read.",
+			"roles": "Roles",
+			"workspaces": "Workspaces",
+			"allWorkspaces": "All workspaces",
+			"noRoles": "No role: the team's applications cannot call models.",
+			"noWorkspaces": "No workspace",
+			"isDefault": "Default: model-invoker in all workspaces.",
+			"editTitle": "Edit application permissions",
+			"editHint": "Every application of the team holds these roles, in these workspaces only.",
+			"managementHidden": "Roles that manage access (roles, role assignments, users, identity sources, departments, teams, group policies or applications) are not listed.",
+			"effectHint": "Changes take effect at once for all of the team's applications.",
+			"reset": "Restore default"
+		},
+		"errors": {
+			"teamHasApplications": "The team still has applications. Delete them first.",
+			"keyHasNoProject": "An application's API key has no project.",
+			"inactive": "The application is disabled or its team is inactive. Enable it first.",
+			"immutable": "The team of an application and the owner or workspace of a key cannot be changed.",
+			"hasKeys": "The application still has API keys. Delete them first; a deleted key is removed after a short while.",
+			"applicationActor": "An application cannot create applications or API keys.",
+			"appPermissionsUnknown": "The application permissions name a role or workspace that does not exist.",
+			"managementRole": "A role that manages access cannot be in the application permissions: one with role, role assignment, user, identity source, department, team, group policy or application management permissions, or system:admin.",
+			"nameTaken": "The name is already taken in this team.",
+			"gone": "The application no longer exists, or you are not allowed to change it. Refresh the page."
+		}
 	}
 }

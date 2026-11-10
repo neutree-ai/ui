@@ -1,36 +1,31 @@
 import { Edit, Trash2 } from "lucide-react";
-import UserCell from "@/domains/role-assignment/components/UserCell";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
+import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
+import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { defaultSorters, Table } from "@/foundation/components/Table";
+import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const useRoleAssignmentColumns = () => {
   const { t } = useTranslation();
   return {
-    workspace: (
+    scope: (
       <Table.Column
-        header={t("common.fields.workspace")}
+        header={t("role_assignments.fields.scope")}
         accessorKey="spec.workspace"
-        id="workspace"
+        id="scope"
         enableHiding
-        cell={({ row }) => {
-          const { global, workspace } = row.original.spec;
-          if (global) {
-            return "*";
-          }
-          return (
-            <ShowButton
-              recordItemId={workspace}
-              meta={{}}
-              variant="link"
-              resource="workspaces"
-            >
-              {workspace}
-            </ShowButton>
-          );
-        }}
+        cell={({ row }) => (
+          <RoleAssignmentScopeLabel
+            spec={row.original.spec}
+            renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+            renderTeam={(name) => <TeamLabel name={name} />}
+          />
+        )}
       />
     ),
     role: (
@@ -54,16 +49,19 @@ const useRoleAssignmentColumns = () => {
         }}
       />
     ),
-    user: (
+    subject: (
       <Table.Column
-        header={t("common.fields.user")}
-        accessorKey="spec.user_id"
-        id="user"
+        header={t("role_assignments.fields.subject")}
+        accessorKey="spec.subject_name"
+        id="subject"
         enableHiding
-        cell={({ row }) => {
-          const { user_id } = row.original.spec;
-          return <UserCell id={user_id} />;
-        }}
+        cell={({ row }) => (
+          <RoleAssignmentSubjectLabel
+            spec={row.original.spec}
+            renderTeam={(name) => <TeamLabel name={name} />}
+            renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+          />
+        )}
       />
     ),
     action: (
@@ -101,9 +99,11 @@ const useRoleAssignmentColumns = () => {
 export const RoleAssignmentsList = () => {
   const metadataColumns = useMetadataColumns();
   const roleAssignmentColumns = useRoleAssignmentColumns();
+  // Any scope: a department admin may grant subtree policies.
+  const { allowed: canCreate } = useHasPermission("role_assignment:create");
 
   return (
-    <ListPage>
+    <ListPage canCreate={canCreate === true}>
       <Table
         enableSorting
         enableFilters
@@ -114,9 +114,9 @@ export const RoleAssignmentsList = () => {
         }}
       >
         {metadataColumns.name}
-        {roleAssignmentColumns.workspace}
+        {roleAssignmentColumns.scope}
         {roleAssignmentColumns.role}
-        {roleAssignmentColumns.user}
+        {roleAssignmentColumns.subject}
         {metadataColumns.creation_timestamp}
         {roleAssignmentColumns.action}
       </Table>

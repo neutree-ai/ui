@@ -26,6 +26,8 @@ vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
 }));
 
 vi.mock("@/foundation/hooks/use-workspace", () => ({
+  ALL_WORKSPACES: "_all_",
+  useWorkspace: () => ({ current: "_all_", isLoading: false }),
   useWorkspaceOptions: () => ({ workspaces: [], isLoading: false }),
 }));
 
@@ -57,6 +59,38 @@ describe("CreateApiKeyForm", () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({ url: "/rpc/create_api_key" }),
+      );
+    });
+  });
+
+  it("creates an application key without a project", async () => {
+    render(
+      <CreateApiKeyForm
+        onClose={vi.fn()}
+        serviceAccountId="sa-7"
+        initialWorkspace="default"
+      />,
+    );
+
+    expect(screen.queryByTestId("field-project_id")).toBeNull();
+    const name = screen
+      .getByTestId("field-name")
+      .querySelector("input") as HTMLInputElement;
+    fireEvent.change(name, { target: { value: "app-key" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "api_keys.buttons.create" }),
+    );
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "/rpc/create_service_account_api_key",
+          values: expect.objectContaining({
+            p_service_account_id: "sa-7",
+            p_workspace: "default",
+            p_display_name: "app-key",
+          }),
+        }),
       );
     });
   });

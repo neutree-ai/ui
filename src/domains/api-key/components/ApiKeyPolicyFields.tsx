@@ -12,7 +12,7 @@ import {
   overlappingModelRowValues,
   type PolicyModelRow,
   resolveQuotaPeriod,
-  useWorkspaceModels,
+  useInvokableModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import {
@@ -26,6 +26,8 @@ type ApiKeyPolicyFieldsProps = {
   form: UseFormReturn<any>;
   // Workspace whose available models populate the allowed-models dropdown.
   workspace: string;
+  // Set for an application's key: the models that application may call.
+  serviceAccountId?: string;
 };
 
 // API-key limits editor: allowed models (each with an optional per-model token
@@ -39,9 +41,10 @@ type ApiKeyPolicyFieldsProps = {
 export const ApiKeyPolicyFields = ({
   form,
   workspace,
+  serviceAccountId,
 }: ApiKeyPolicyFieldsProps) => {
   const { t } = useTranslation();
-  const modelOptions = useWorkspaceModels(workspace);
+  const modelOptions = useInvokableModels(workspace, serviceAccountId);
   const sourceByValue = useMemo(
     () => new Map(modelOptions.map((o) => [o.value, o.source])),
     [modelOptions],
@@ -105,6 +108,14 @@ export const ApiKeyPolicyFields = ({
         <p className="text-xs text-muted-foreground">
           {t("api_keys.limits.allowedModelsHint")}
         </p>
+        {serviceAccountId !== undefined && (
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="service-account-models-hint"
+          >
+            {t("api_keys.serviceAccount.modelsHint")}
+          </p>
+        )}
         <FormField
           control={form.control}
           name="models"

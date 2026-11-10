@@ -65,6 +65,12 @@ export type ApiKey = {
   metadata: Metadata;
   spec: ApiKeySpec;
   status: ApiKeyStatus | null;
+  /** The owner of a personal key; null for an application's key. */
+  user_id?: string | null;
+  /** The owning application (ServiceAccount); null for a personal key. */
+  service_account_id?: string | null;
+  /** Who created the key. */
+  created_by?: string | null;
 };
 
 export type ApiKeyProject = {
@@ -112,6 +118,25 @@ export type ApiUsageRecord = {
   endpoint_name: string;
   model_name: string | null;
   workspace: string;
+  usage: number;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+};
+
+export type GroupUsageKind = "User" | "Team" | "OrgUnit" | "ServiceAccount";
+
+// One row of get_usage_by_group. name is the user id or the group's
+// metadata.name; an OrgUnit row covers its whole subtree.
+export type GroupUsageRecord = {
+  date: string;
+  kind: GroupUsageKind;
+  name: string;
+  display_name: string | null;
+  workspace: string;
+  endpoint_type: string | null;
+  endpoint_name: string;
+  model_name: string | null;
+  requests: number;
   usage: number;
   prompt_tokens: number | null;
   completion_tokens: number | null;

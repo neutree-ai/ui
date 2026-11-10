@@ -1,0 +1,115 @@
+import { describe, expect, it } from "vitest";
+import { availableScopes, scopeFields, scopeOf } from "./scope";
+
+describe("scopeOf", () => {
+  it("reads each scope", () => {
+    expect(scopeOf({ global: true, workspace: null, org_unit: null })).toBe(
+      "global",
+    );
+    expect(scopeOf({ global: false, workspace: "ws", org_unit: null })).toBe(
+      "workspace",
+    );
+    expect(scopeOf({ global: false, workspace: null, org_unit: "rnd" })).toBe(
+      "org_unit",
+    );
+  });
+
+  it("treats a missing org_unit (older server) as no subtree", () => {
+    expect(scopeOf({ global: false, workspace: "ws" })).toBe("workspace");
+  });
+
+  it("reads a Team scope, even before a Team is picked", () => {
+    expect(
+      scopeOf({ global: false, workspace: null, org_unit: null, team: "ml" }),
+    ).toBe("team");
+    expect(
+      scopeOf({ global: false, workspace: null, org_unit: null, team: "" }),
+    ).toBe("team");
+  });
+
+  it("keeps the subtree scope while no department is picked yet", () => {
+    expect(scopeOf({ global: false, workspace: null, org_unit: "" })).toBe(
+      "org_unit",
+    );
+  });
+});
+
+describe("scopeFields", () => {
+  const subtree = { global: false, workspace: null, org_unit: "rnd" };
+  const workspace = { global: false, workspace: "ws", org_unit: null };
+
+  it("leaves exactly one scope set", () => {
+    expect(scopeFields("global", subtree)).toEqual({
+      global: true,
+      workspace: null,
+      org_unit: null,
+      team: null,
+    });
+    expect(scopeFields("workspace", subtree)).toEqual({
+      global: false,
+      workspace: "",
+      org_unit: null,
+      team: null,
+    });
+    expect(scopeFields("org_unit", workspace)).toEqual({
+      global: false,
+      workspace: null,
+      org_unit: "",
+      team: null,
+    });
+    expect(scopeFields("team", subtree)).toEqual({
+      global: false,
+      workspace: null,
+      org_unit: null,
+      team: "",
+    });
+  });
+
+  it("keeps the value of the scope already selected", () => {
+    expect(scopeFields("workspace", workspace).workspace).toBe("ws");
+    expect(scopeFields("org_unit", subtree).org_unit).toBe("rnd");
+  });
+});
+
+describe("availableScopes", () => {
+  it("limits a delegated administrator to the subtree scope", () => {
+    expect(
+      availableScopes({
+        supportMultiWorkspace: true,
+        delegated: true,
+      }),
+    ).toEqual(["org_unit"]);
+  });
+
+  it("offers the workspace scope only with multi-workspace", () => {
+    expect(
+      availableScopes({
+        supportMultiWorkspace: true,
+        delegated: false,
+      }),
+    ).toEqual(["global", "workspace", "org_unit"]);
+    expect(
+      availableScopes({
+        supportMultiWorkspace: false,
+        delegated: false,
+      }),
+    ).toEqual(["global", "org_unit"]);
+  });
+
+  it("offers the Team scope only to a global administrator", () => {
+    expect(
+      availableScopes({
+        supportMultiWorkspace: false,
+        delegated: false,
+        canScopeTeam: true,
+      }),
+    ).toEqual(["global", "org_unit", "team"]);
+    expect(
+      availableScopes({
+        supportMultiWorkspace: false,
+        delegated: true,
+        canScopeTeam: true,
+      }),
+    ).toEqual(["org_unit"]);
+  });
+});

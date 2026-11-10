@@ -255,8 +255,6 @@ export function toLogSinkPayload(
 // Validation. Each returns an error kind, or undefined when valid.
 // ---------------------------------------------------------------------------
 
-export const NAME_PATTERN = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
-
 type UrlError = "required" | "invalid" | "scheme" | "host" | "queryOrFragment";
 
 /** An http(s) URL with a host, or why the value is not one. */

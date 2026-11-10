@@ -1,22 +1,22 @@
-type ErrorRecord = Record<string, unknown>;
+import { translateApiError } from "@/foundation/lib/api-error-code";
+import { getErrorMessage } from "@/foundation/lib/error-message";
+import { SERVICE_ACCOUNT_ERROR_KEYS } from "@/foundation/lib/service-account-errors";
 
-function isRecord(value: unknown): value is ErrorRecord {
-  return typeof value === "object" && value !== null;
-}
+const SERVICE_ACCOUNT_KEY_ERROR_KEYS: Readonly<Record<string, string>> = {
+  ...SERVICE_ACCOUNT_ERROR_KEYS,
+  "10044": "api_keys.serviceAccount.errors.workspace",
+};
 
-function errorText(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (value instanceof Error) return errorText(value.message);
-  if (isRecord(value) && "message" in value) return errorText(value.message);
-  return "";
-}
+type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-// PostgREST errors arrive nested ({ message: { message } }), so rendering the
-// cause directly yields "[object Object]". Pull out the deepest string and fall
-// back to a caller-supplied (translated) message when there is none.
-export function apiKeyActionErrorMessage(
+/** A readable message for a failed key action, with text for application keys. */
+export function serviceAccountKeyErrorMessage(
+  t: Translate,
   cause: unknown,
   fallback: string,
 ): string {
-  return errorText(cause) || fallback;
+  return (
+    translateApiError(t, cause, SERVICE_ACCOUNT_KEY_ERROR_KEYS) ??
+    getErrorMessage(cause, fallback)
+  );
 }

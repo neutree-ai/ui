@@ -1,0 +1,20 @@
+/** OrgUnit, Team and member write errors → i18n keys. */
+export const ORGANIZATION_ERROR_KEYS: Readonly<Record<string, string>> = {
+  "10270": "organization.errors.noWorkspace",
+  "10271": "organization.errors.identityRequired",
+  "10272": "organization.errors.unknownIdentitySource",
+  "10273": "organization.errors.identityImmutable",
+  "10274": "organization.errors.invalidPhase",
+  "10275": "organization.errors.invalidParent",
+  "10276": "organization.errors.cycle",
+  "10277": "organization.errors.inactiveOrgUnit",
+  "10278": "organization.errors.externalUserOrgUnit",
+  "10287": "organization.errors.globalAssignerOnly",
+  "10288": "organization.errors.reservedTeamName",
+  "10289": "organization.errors.syncedTeamReadOnly",
+  "10290": "organization.errors.syncedTeamMembersReadOnly",
+  "10291": "organization.errors.manualTeamAlwaysActive",
+  "10295": "organization.errors.teamHasRoleAssignments",
+  "10296": "organization.errors.memberGrantExceeds",
+  "10315": "organization.errors.teamHasApplications",
+};

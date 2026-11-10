@@ -69,9 +69,10 @@ export const isValidTokenQuota = (
   return toTokenCount(amount, unit) !== null;
 };
 
-// Split a stored token count into the largest unit that divides it exactly, so
-// a round-trip through the edit form never loses precision: 200000000 → 200 M,
-// 12345 → 12345 tokens.
+// Split a stored token count into the largest unit it reaches with at most two
+// decimals, the way a person would write it: 1500000 → 1.5 M, 200000000 →
+// 200 M, 12345 → 12345 tokens. The amount × unit is still exact, so a
+// round-trip through the edit form never loses precision.
 export const splitTokenQuota = (
   value: number,
 ): { amount: number; unit: TokenQuotaUnit } => {
@@ -80,13 +81,15 @@ export const splitTokenQuota = (
   }
   for (const unit of ["B", "M", "K"] as const) {
     const factor = TOKEN_QUOTA_FACTORS[unit];
-    if (value % factor === 0) return { amount: value / factor, unit };
+    if (value >= factor && value % (factor / 100) === 0) {
+      return { amount: value / factor, unit };
+    }
   }
   return { amount: value, unit: "tokens" };
 };
 
-// Render a token count the way it would have been entered: an exact multiple of
-// a unit shows as "200M", anything else as a grouped integer "1,234,123".
+// Render a token count the way it would have been entered: "200M", "1.5M", or
+// a grouped integer "1,234,123" when no unit fits.
 export const formatTokenQuota = (value: number | null | undefined): string => {
   if (value == null || !Number.isFinite(value)) return "";
   if (value <= 0) return groupFormatter.format(value);

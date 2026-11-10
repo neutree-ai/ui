@@ -1,7 +1,9 @@
 import { useShow } from "@refinedev/core";
-import UserCell from "@/domains/role-assignment/components/UserCell";
+import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
+import { TeamLabel } from "@/domains/organization/components/TeamField";
+import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
+import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/components/ShowButton";
@@ -23,9 +25,16 @@ export const RoleAssignmentsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
+  const subject = (
+    <RoleAssignmentSubjectLabel
+      spec={record.spec}
+      renderTeam={(name) => <TeamLabel name={name} />}
+      renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+    />
+  );
+
   const isAdminGlobalAssignment =
     record.metadata.name === "admin-global-role-assignment";
-  const workspaceValue = record.spec.global ? "*" : record.spec.workspace;
 
   return (
     <ShowPage
@@ -38,14 +47,18 @@ export const RoleAssignmentsShow = () => {
         title={record.metadata.name}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.workspace")}>
-              {workspaceValue || <EmptyValue />}
+            <ShowPage.Meta label={t("role_assignments.fields.scope")}>
+              <RoleAssignmentScopeLabel
+                spec={record.spec}
+                renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
+                renderTeam={(name) => <TeamLabel name={name} />}
+              />
             </ShowPage.Meta>
             <ShowPage.Meta label={t("common.fields.role")}>
               {record.spec.role}
             </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.user")}>
-              <UserCell id={record.spec.user_id} />
+            <ShowPage.Meta label={t("role_assignments.fields.subject")}>
+              {subject}
             </ShowPage.Meta>
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
@@ -64,8 +77,8 @@ export const RoleAssignmentsShow = () => {
                 {record.spec.role}
               </ShowButton>
             </ShowPage.Row>
-            <ShowPage.Row title={t("common.fields.user")}>
-              <UserCell id={record.spec.user_id} />
+            <ShowPage.Row title={t("role_assignments.fields.subject")}>
+              {subject}
             </ShowPage.Row>
           </div>
         </ShowPage.Section>

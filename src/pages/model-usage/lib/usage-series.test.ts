@@ -5,6 +5,7 @@ import {
   buildTrend,
   foldRemainder,
   OTHER_SERIES_KEY,
+  orderSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
 const record = (
@@ -156,5 +157,24 @@ describe("buildTrend", () => {
       { date: "2026-09-01", big: 100, [OTHER_SERIES_KEY]: 50 },
       { date: "2026-09-02", big: 0, [OTHER_SERIES_KEY]: 12 },
     ]);
+  });
+});
+
+describe("orderSeries", () => {
+  const series = (key: string, total: number) => ({
+    key,
+    name: key,
+    description: null,
+    prompt: 0,
+    completion: 0,
+    total,
+  });
+
+  it("puts known positions first and keeps the rest in order", () => {
+    const ordered = orderSeries(
+      [series("x", 90), series("b", 50), series("y", 40), series("a", 10)],
+      (key) => ({ a: 0, b: 1 })[key],
+    );
+    expect(ordered.map((s) => s.key)).toEqual(["a", "b", "x", "y"]);
   });
 });

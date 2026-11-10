@@ -94,6 +94,14 @@ describe("splitTokenQuota", () => {
     expect(splitTokenQuota(10_000)).toEqual({ amount: 10, unit: "K" });
   });
 
+  it("takes a larger unit with up to two decimals", () => {
+    expect(splitTokenQuota(1_500_000)).toEqual({ amount: 1.5, unit: "M" });
+    expect(splitTokenQuota(1_250_000)).toEqual({ amount: 1.25, unit: "M" });
+    expect(splitTokenQuota(2_500_000_000)).toEqual({ amount: 2.5, unit: "B" });
+    expect(splitTokenQuota(1_125_000)).toEqual({ amount: 1125, unit: "K" });
+    expect(splitTokenQuota(500_000)).toEqual({ amount: 500, unit: "K" });
+  });
+
   it("falls back to raw tokens when nothing divides evenly", () => {
     expect(splitTokenQuota(12_345)).toEqual({ amount: 12345, unit: "tokens" });
     expect(splitTokenQuota(1)).toEqual({ amount: 1, unit: "tokens" });
@@ -109,7 +117,10 @@ describe("splitTokenQuota", () => {
   });
 
   it("round-trips through toTokenCount without losing precision", () => {
-    for (const n of [1, 999, 12_345, 10_000, 1_500_000, 200_000_000]) {
+    for (const n of [
+      1, 999, 12_345, 10_000, 1_500_000, 1_230_000, 1_125_000, 200_000_000,
+      2_010_000_000,
+    ]) {
       const { amount, unit } = splitTokenQuota(n);
       expect(toTokenCount(String(amount), unit)).toBe(n);
     }
@@ -122,6 +133,7 @@ describe("formatTokenQuota", () => {
     expect(formatTokenQuota(200_000_000)).toBe("200M");
     expect(formatTokenQuota(2_000_000_000)).toBe("2B");
     expect(formatTokenQuota(10_000)).toBe("10K");
+    expect(formatTokenQuota(1_500_000)).toBe("1.5M");
   });
 
   it("shows a grouped integer otherwise", () => {

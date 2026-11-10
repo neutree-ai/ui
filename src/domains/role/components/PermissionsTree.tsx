@@ -1,52 +1,17 @@
-import {
-  BookOpen,
-  Box,
-  ChevronDown,
-  ChevronRight,
-  Cpu,
-  Database,
-  Eye,
-  FileText,
-  HardDrive,
-  Layers,
-  LayoutTemplate,
-  Pencil,
-  Plus,
-  ScrollText,
-  Server,
-  ShieldCheck,
-  Trash,
-  UserCheck,
-} from "lucide-react";
-import type React from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { formatPermission } from "@/domains/role/lib/format-permission";
+import {
+  permissionActionIcon,
+  permissionResourceIcon,
+} from "@/domains/role/components/permission-icons";
+import {
+  formatPermission,
+  formatResource,
+} from "@/domains/role/lib/format-permission";
 import { sortPermissionResources } from "@/domains/role/lib/permission-resource-order";
 import type { Role } from "@/domains/role/types";
-import { getResourcePlural } from "@/foundation/lib/plural";
-
-const actionIcons: Record<string, React.ReactNode> = {
-  read: <Eye className="h-4 w-4" />,
-  create: <Plus className="h-4 w-4" />,
-  update: <Pencil className="h-4 w-4" />,
-  delete: <Trash className="h-4 w-4" />,
-};
-
-const resourceIcons: Record<string, React.ReactNode> = {
-  workspace: <LayoutTemplate className="h-5 w-5" />,
-  role: <UserCheck className="h-5 w-5" />,
-  role_assignment: <FileText className="h-5 w-5" />,
-  endpoint: <Server className="h-5 w-5" />,
-  image_registry: <Database className="h-5 w-5" />,
-  log_sink: <ScrollText className="h-5 w-5" />,
-  model_registry: <Layers className="h-5 w-5" />,
-  engine: <Cpu className="h-5 w-5" />,
-  cluster: <HardDrive className="h-5 w-5" />,
-  model_catalog: <BookOpen className="h-5 w-5" />,
-  identity_source: <ShieldCheck className="h-5 w-5" />,
-};
 
 const hiddenResources = new Set(["static_node_cluster", "static_node"]);
 
@@ -110,12 +75,9 @@ const ResourceNode = ({
 
   const [isOpen, setIsOpen] = useState(true);
   const sortedActions = actions.sort();
-  const resourceIcon = resourceIcons[resource] || <Box className="h-5 w-5" />;
+  const resourceIcon = permissionResourceIcon(resource);
 
-  const formatResourceName = (name: string) => {
-    const plural = getResourcePlural(name);
-    return t(`${plural}.title`);
-  };
+  const formatResourceName = (name: string) => formatResource(t, name);
 
   return (
     <div className="border border-border rounded-md mb-2 overflow-hidden">
@@ -164,7 +126,7 @@ const ActionNode = ({
 }) => {
   const { t } = useTranslation();
 
-  const actionIcon = actionIcons[action] || <Eye className="h-4 w-4" />;
+  const actionIcon = permissionActionIcon(action);
 
   const fullPermission = formatPermission(t, `${resource}:${action}`);
 

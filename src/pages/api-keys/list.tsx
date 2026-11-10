@@ -57,7 +57,6 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type {
   AllowedModel,
   ApiKey,
@@ -72,6 +71,7 @@ import { ShowButton } from "@/foundation/components/ShowButton";
 import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
@@ -255,6 +255,8 @@ export const ApiKeysList = () => {
   const { data: keysData } = useList<ApiKey>({
     resource: "api_keys",
     pagination: { mode: "off" },
+    // Application keys the caller may read are listed on their application.
+    filters: [{ field: "service_account_id", operator: "null", value: true }],
     meta: { workspace, workspaced: true },
     queryOptions: { enabled: Boolean(workspace) },
   });
@@ -395,7 +397,7 @@ export const ApiKeysList = () => {
       await refresh();
     } catch (cause) {
       setActionError(
-        apiKeyActionErrorMessage(cause, t("api_keys.messages.operationFailed")),
+        getErrorMessage(cause, t("api_keys.messages.operationFailed")),
       );
     } finally {
       setCreatingProject(false);
@@ -424,9 +426,7 @@ export const ApiKeysList = () => {
       });
       await refresh();
     } catch (cause) {
-      setActionError(
-        apiKeyActionErrorMessage(cause, t("api_keys.move.failed")),
-      );
+      setActionError(getErrorMessage(cause, t("api_keys.move.failed")));
     }
   };
   const startEdit = (project: ApiKeyProject) => {
@@ -453,7 +453,7 @@ export const ApiKeysList = () => {
       await refresh();
     } catch (cause) {
       setActionError(
-        apiKeyActionErrorMessage(cause, t("api_keys.messages.operationFailed")),
+        getErrorMessage(cause, t("api_keys.messages.operationFailed")),
       );
     }
   };
@@ -761,7 +761,7 @@ export const ApiKeysList = () => {
                   })
                   .catch((cause) =>
                     setActionError(
-                      apiKeyActionErrorMessage(
+                      getErrorMessage(
                         cause,
                         t("api_keys.messages.operationFailed"),
                       ),

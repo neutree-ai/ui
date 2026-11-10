@@ -8,10 +8,11 @@
  * @param fallback - Shown when no usable message can be read off the value
  */
 export const getErrorMessage = (error: unknown, fallback: string): string => {
-  const message =
-    typeof error === "string"
-      ? error
-      : (error as { message?: unknown } | null | undefined)?.message;
+  let message: unknown = error;
+  // PostgREST errors can arrive nested as { message: { message } }.
+  for (let depth = 0; depth < 5 && typeof message === "object"; depth++) {
+    message = (message as { message?: unknown } | null)?.message;
+  }
 
   return typeof message === "string" && message.trim()
     ? message.trim()

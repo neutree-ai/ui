@@ -7,7 +7,11 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type {
+  ApiUsageRecord,
+  GroupUsageKind,
+  GroupUsageRecord,
+} from "@/domains/api-key/types";
 import { openMenu } from "@/foundation/testing/interactions";
 import { ModelUsageList } from "@/pages/model-usage/list";
 
@@ -225,6 +229,60 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: () => ({ ...hookState, refetch }),
 }));
 
+let canReadGroups = false;
+let canReadSubtree = false;
+let groupRows: GroupUsageRecord[] = [];
+const groupKinds: Array<string | undefined> = [];
+
+vi.mock("@/foundation/hooks/use-has-permission", () => ({
+  useHasGlobalPermission: () => ({ allowed: canReadGroups, isLoading: false }),
+  useHasPermission: () => ({ allowed: canReadSubtree, isLoading: false }),
+}));
+
+let orgUnits: Array<{
+  id: number;
+  path: string;
+  metadata: { name: string; display_name?: string };
+}> = [];
+let teams: Array<{
+  id: number;
+  metadata: { name: string; display_name?: string };
+}> = [];
+vi.mock("@/domains/organization/hooks/use-organization", async () => {
+  const { orgTreeIndex, teamIndex } = await import(
+    "@/domains/organization/lib/org-tree"
+  );
+  return {
+    useOrgTree: () => ({
+      ...orgTreeIndex(orgUnits as never),
+      isLoading: false,
+      error: null,
+    }),
+    useTeamsByName: () => ({ ...teamIndex(teams as never), isLoading: false }),
+  };
+});
+
+const groupFilters: Array<{ orgUnit?: string; team?: string } | undefined> = [];
+
+vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
+  useGroupUsage: (
+    workspace: string | undefined,
+    _start: string,
+    _end: string,
+    kind: GroupUsageKind,
+    filter?: { orgUnit?: string; team?: string },
+  ) => {
+    groupKinds.push(workspace ? kind : undefined);
+    groupFilters.push(filter);
+    return {
+      usageData: workspace ? groupRows.filter((r) => r.kind === kind) : [],
+      isLoading: false,
+      error: null,
+      refetch,
+    };
+  },
+}));
+
 const cardFor = (title: string) =>
   within(screen.getByRole("region", { name: title }));
 
@@ -248,6 +306,10 @@ const pickOption = (label: string) => {
 
 beforeEach(() => {
   refetch.mockClear();
+  canReadGroups = false;
+  canReadSubtree = false;
+  groupKinds.length = 0;
+  groupFilters.length = 0;
   hookState = { usageData: rows, isLoading: false, error: null };
   render(<ModelUsageList />);
 });
@@ -462,5 +524,220 @@ describe("model usage states", () => {
     renderWith({ usageData: [], error: new Error("usage rpc failed") });
 
     screen.getByText("usage rpc failed");
+  });
+});
+
+describe("usage by group", () => {
+  const groupRow = (
+    kind: GroupUsageKind,
+    name: string,
+    displayName: string | null,
+    endpointType: string,
+    requests: number,
+    usage: number,
+  ): GroupUsageRecord => ({
+    date: "2026-09-01",
+    kind,
+    name,
+    display_name: displayName,
+    workspace: "design-lab",
+    endpoint_type: endpointType,
+    endpoint_name: "ep",
+    model_name: "m",
+    requests,
+    usage,
+    prompt_tokens: usage,
+    completion_tokens: 0,
+  });
+
+  const renderAsReader = () => {
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("User", "u-1", "Alice", "endpoint", 2, 30),
+      groupRow("User", "u-1", "Alice", "external-endpoint", 1, 5),
+      groupRow("User", "u-2", "Bob", "endpoint", 1, 100),
+      groupRow("OrgUnit", "dept-a", "Dept A", "endpoint", 3, 35),
+    ];
+    render(<ModelUsageList />);
+  };
+
+  it("is hidden without a global workspace:usage-read", () => {
+    expect(screen.queryByText("model_usage.group.title")).toBeNull();
+    expect(groupKinds.every((kind) => kind === undefined)).toBe(true);
+  });
+
+  const groupCard = () =>
+    within(screen.getByRole("region", { name: /^model_usage\.group\.title/ }));
+
+  it("sums requests and tokens per user", () => {
+    renderAsReader();
+
+    const card = groupCard();
+    const [bob, alice] = bodyRows(card);
+    expect(bob.textContent).toContain("Bob");
+    expect(alice.textContent).toContain("Alice");
+    expect(alice.textContent).toContain("3");
+    card.getByText("model_usage.group.requests");
+  });
+
+  it("applies the type filter", () => {
+    renderAsReader();
+
+    openSelect(2);
+    pickOption("model_usage.detail.external");
+
+    const rowsShown = bodyRows(groupCard());
+    expect(rowsShown).toHaveLength(1);
+    expect(rowsShown[0].textContent).toContain("Alice");
+  });
+
+  it("switches to departments", () => {
+    renderAsReader();
+
+    openSelect(3);
+    pickOption("model_usage.group.kinds.OrgUnit");
+
+    expect(groupKinds.at(-1)).toBe("OrgUnit");
+    const rowsShown = bodyRows(groupCard());
+    expect(rowsShown).toHaveLength(1);
+    expect(rowsShown[0].textContent).toContain("Dept A");
+  });
+
+  it("charts the kind picked for the group card", () => {
+    renderAsReader();
+    screen.getByText("model_usage.daily.titleByKey");
+
+    openSelect(3);
+    pickOption("model_usage.group.kinds.OrgUnit");
+
+    screen.getByText(
+      "model_usage.daily.titleByGroup:model_usage.group.kinds.OrgUnit",
+    );
+    expect(screen.getByTestId("usage-chart-dimension").textContent).toContain(
+      "model_usage.group.kinds.OrgUnit",
+    );
+    // Departments overlap, so the chart shows no grand total.
+    expect(screen.queryByText("model_usage.daily.totalLabel")).toBeNull();
+  });
+
+  it("shows a team by its display name, not its internal name", () => {
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("Team", "org-ldap-3f9a2c", "Platform", "endpoint", 1, 10),
+    ];
+    render(<ModelUsageList />);
+
+    openSelect(3);
+    pickOption("model_usage.group.kinds.Team");
+
+    const [row] = bodyRows(groupCard());
+    expect(row.textContent).toContain("Platform");
+    expect(row.textContent).not.toContain("org-ldap-3f9a2c");
+  });
+
+  it("offers users and departments only to a subtree reader", () => {
+    cleanup();
+    canReadSubtree = true;
+    groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
+    render(<ModelUsageList />);
+
+    const card = groupCard();
+    expect(bodyRows(card)[0].textContent).toContain("Alice");
+    screen.getByText(/model_usage\.group\.subtreeOnly/);
+
+    openSelect(3);
+    const options = screen
+      .getAllByRole("option")
+      .map((node) => node.textContent);
+    expect(options).toEqual([
+      "model_usage.group.kinds.User",
+      "model_usage.group.kinds.OrgUnit",
+    ]);
+  });
+
+  it("lists departments in tree order with their path", () => {
+    orgUnits = [
+      { id: 1, path: "1", metadata: { name: "org-1", display_name: "Corp" } },
+      { id: 2, path: "1/2", metadata: { name: "org-2", display_name: "R&D" } },
+      { id: 3, path: "1/3", metadata: { name: "org-3", display_name: "Ops" } },
+    ];
+    cleanup();
+    canReadGroups = true;
+    groupRows = [
+      groupRow("OrgUnit", "org-2", "R&D", "endpoint", 1, 10),
+      groupRow("OrgUnit", "org-1", "Corp", "endpoint", 3, 50),
+      groupRow("OrgUnit", "org-3", "Ops", "endpoint", 2, 40),
+      groupRow("OrgUnit", "org-gone", "Gone", "endpoint", 1, 90),
+    ];
+    render(<ModelUsageList />);
+
+    openSelect(3);
+    pickOption("model_usage.group.kinds.OrgUnit");
+
+    const rowsShown = bodyRows(groupCard()).map(
+      (row: HTMLElement) => row.textContent,
+    );
+    expect(rowsShown[0]).toContain("Corp");
+    expect(rowsShown[1]).toContain("Corp / Ops");
+    expect(rowsShown[2]).toContain("Corp / R&D");
+    expect(rowsShown[3]).toContain("Gone");
+    expect(rowsShown.join()).not.toContain("org-");
+    orgUnits = [];
+  });
+
+  it("narrows users to a department subtree and a team", () => {
+    orgUnits = [
+      { id: 1, path: "1", metadata: { name: "org-1", display_name: "Corp" } },
+      { id: 2, path: "1/2", metadata: { name: "rnd", display_name: "R&D" } },
+    ];
+    teams = [
+      { id: 7, metadata: { name: "org-ldap-7", display_name: "Infra" } },
+    ];
+    renderAsReader();
+
+    screen.getByTestId("usage-group-department");
+    openSelect(4);
+    pickOption("Corp / R&D");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: undefined });
+    screen.getByText(/model_usage\.group\.filters\.subtreeIncluded/);
+
+    openSelect(5);
+    pickOption("Infra");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: "org-ldap-7" });
+
+    // The rows the server returns are ranked by usage.
+    const [bob, alice] = bodyRows(groupCard());
+    expect(bob.textContent).toContain("Bob");
+    expect(alice.textContent).toContain("Alice");
+
+    // Other kinds are not filtered.
+    openSelect(3);
+    pickOption("model_usage.group.kinds.OrgUnit");
+    expect(groupFilters.at(-1)).toEqual({});
+    orgUnits = [];
+    teams = [];
+  });
+
+  it("offers a subtree reader the department filter but no team filter", () => {
+    orgUnits = [
+      { id: 2, path: "1/2", metadata: { name: "rnd", display_name: "R&D" } },
+    ];
+    teams = [
+      { id: 7, metadata: { name: "org-ldap-7", display_name: "Infra" } },
+    ];
+    cleanup();
+    canReadSubtree = true;
+    groupRows = [groupRow("User", "u-1", "Alice", "endpoint", 2, 30)];
+    render(<ModelUsageList />);
+
+    screen.getByTestId("usage-group-department");
+    expect(screen.queryByTestId("usage-group-team")).toBeNull();
+    openSelect(4);
+    pickOption("R&D");
+    expect(groupFilters.at(-1)).toEqual({ orgUnit: "rnd", team: undefined });
+    orgUnits = [];
+    teams = [];
   });
 });

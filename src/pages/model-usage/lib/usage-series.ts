@@ -10,6 +10,8 @@ export type UsageSeries = {
   prompt: number;
   completion: number;
   total: number;
+  // Only set when the rows carry a request count (usage by group).
+  requests?: number;
   // Only set on the folded "other" series: how many series it stands for.
   hiddenCount?: number;
 };
@@ -20,11 +22,16 @@ export const OTHER_SERIES_KEY = "__other";
 
 type SeriesMeta = { name: string; description: string | null };
 
+type UsageRow = Pick<
+  ApiUsageRecord,
+  "usage" | "prompt_tokens" | "completion_tokens"
+> & { requests?: number };
+
 // Sums usage into one series per key, biggest total first.
-export function aggregateSeries(
-  rows: ApiUsageRecord[],
-  keyOf: (r: ApiUsageRecord) => string,
-  metaOf: (r: ApiUsageRecord) => SeriesMeta,
+export function aggregateSeries<R extends UsageRow>(
+  rows: R[],
+  keyOf: (r: R) => string,
+  metaOf: (r: R) => SeriesMeta,
 ): UsageSeries[] {
   const byKey = new Map<string, UsageSeries>();
   for (const r of rows) {
@@ -45,8 +52,26 @@ export function aggregateSeries(
     series.prompt += r.prompt_tokens ?? 0;
     series.completion += r.completion_tokens ?? 0;
     series.total += r.usage ?? 0;
+    if (r.requests !== undefined) {
+      series.requests = (series.requests ?? 0) + r.requests;
+    }
   }
   return [...byKey.values()].sort((a, b) => b.total - a.total);
+}
+
+// Puts the series with a known position first, in that order; the others
+// follow in their current order.
+export function orderSeries(
+  series: UsageSeries[],
+  positionOf: (key: string) => number | undefined,
+): UsageSeries[] {
+  const rank = (s: UsageSeries) =>
+    positionOf(s.key) ?? Number.POSITIVE_INFINITY;
+  return [...series].sort((a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    return ra === rb ? 0 : ra < rb ? -1 : 1;
+  });
 }
 
 // Keeps the `limit` biggest series and folds the rest into one "other" series
@@ -79,10 +104,10 @@ export function foldRemainder(
 // Rows for the multi-day trend chart: one row per date with a numeric field per
 // series. Days a series did not use get 0 rather than a gap, so every line stays
 // continuous across the window.
-export function buildTrend(
-  rows: ApiUsageRecord[],
+export function buildTrend<R extends Pick<ApiUsageRecord, "date" | "usage">>(
+  rows: R[],
   series: UsageSeries[],
-  keyOf: (r: ApiUsageRecord) => string,
+  keyOf: (r: R) => string,
 ): Array<Record<string, number | string>> {
   const byDate = new Map<string, Record<string, number>>();
   for (const r of rows) {

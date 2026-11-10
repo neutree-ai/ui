@@ -39,6 +39,13 @@ const ALL_RULES: PermissionDependencyRule[] = [
   // one-way extension of workspace:read: it is meaningless without the ability
   // to see the workspace, so selecting it auto-selects and locks workspace:read.
   { action: "workspace:usage-read", deps: ["workspace:read"] },
+  // The key form and key list need the workspace, so a role that only calls
+  // models still reads it.
+  { action: "model:invoke", deps: ["workspace:read"] },
+  // Assigning goes through PostgREST, which reads the member row first and so
+  // needs the org_unit:read policy too.
+  { action: "org_unit:assign-member", deps: ["org_unit:read"] },
+  { action: "team:assign-member", deps: ["team:read"] },
 ];
 
 type PermissionsTreeData = Record<

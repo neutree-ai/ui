@@ -1,16 +1,17 @@
 import type { PropsWithChildren } from "react";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { useHasAnyPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 
-/** Renders its children only for a user holding `permission`. */
+/** Renders its children only for a user holding `permission`, or any one listed. */
 export function PermissionGate({
   permission,
   children,
-}: PropsWithChildren<{ permission: string }>) {
+}: PropsWithChildren<{ permission: string | readonly string[] }>) {
   const { t } = useTranslation();
-  const { allowed, isLoading } = useHasPermission(permission);
+  const { allowed: held, isLoading } = useHasAnyPermission(permission);
+  const allowed = held === true;
 
   if (isLoading) {
     return (

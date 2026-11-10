@@ -1,9 +1,14 @@
 import type { BaseRecord, HttpError } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
-import { ShieldAlert } from "lucide-react";
+import { ChevronDown, ShieldAlert } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +24,8 @@ import {
   isLdapUrl,
   isPemBundleOrEmpty,
   isValidIdentitySourceName,
+  isValidPageSize,
+  isValidSyncInterval,
   scopesIncludeOpenid,
   toFormValues,
   toIdentitySourcePayload,
@@ -94,6 +101,8 @@ export const useIdentitySourceForm = ({
   const insecureSkipVerify =
     form.watch("spec.ldap.insecure_skip_verify") === true;
   const enabled = form.watch("spec.enabled") === true;
+  const syncEnabled = form.watch("spec.sync.enabled") === true;
+  const userFilter = form.watch("spec.ldap.user_filter") ?? "";
 
   const secretDescription = (createHint: string) =>
     isEdit ? t("identity_sources.hints.keepSecret") : createHint;
@@ -122,6 +131,151 @@ export const useIdentitySourceForm = ({
         }
       />
     </FormFieldGroup>
+  );
+
+  const syncText = (
+    name: string,
+    label: string,
+    placeholder: string,
+    description?: string,
+    validate?: (value: string) => true | string,
+  ) => (
+    <FormFieldGroup
+      {...form}
+      name={`spec.ldap.sync.${name}`}
+      label={label}
+      description={description}
+      className="col-span-2"
+      rules={validate ? { validate } : undefined}
+    >
+      <Input placeholder={placeholder} />
+    </FormFieldGroup>
+  );
+
+  const syncFields = (
+    <FormCardGrid
+      title={t("identity_sources.sections.orgSync")}
+      testId="identity-source-sync-section"
+    >
+      <FormFieldGroup
+        {...form}
+        name="spec.sync.enabled"
+        label={t("identity_sources.fields.syncEnabled")}
+        description={t("identity_sources.hints.syncEnabled")}
+        className="col-span-2"
+      >
+        <Switch
+          checked={syncEnabled}
+          className="flex !my-3.5"
+          onCheckedChange={(value) =>
+            form.setValue("spec.sync.enabled", value, { shouldDirty: true })
+          }
+        />
+      </FormFieldGroup>
+      {/* Hidden, not cleared, while off: the settings come back when it is
+      turned on again, and are saved either way. */}
+      {syncEnabled && (
+        <>
+          <FormFieldGroup
+            {...form}
+            name="spec.sync.interval"
+            label={t("identity_sources.fields.syncInterval")}
+            description={t("identity_sources.hints.syncInterval")}
+            className="col-span-2"
+            rules={{
+              validate: (value: unknown) =>
+                isValidSyncInterval(value) ||
+                t("identity_sources.validation.syncInterval"),
+            }}
+          >
+            <Input type="number" min={60} placeholder="3600" />
+          </FormFieldGroup>
+          {syncText(
+            "org_unit_base_dn",
+            t("identity_sources.fields.orgUnitBaseDn"),
+            "ou=departments,dc=example,dc=org",
+            t("identity_sources.hints.orgUnitBaseDn"),
+          )}
+          {syncText(
+            "group_base_dn",
+            t("identity_sources.fields.groupBaseDn"),
+            "ou=groups,dc=example,dc=org",
+            t("identity_sources.hints.groupBaseDn"),
+          )}
+          {syncText(
+            "disabled_user_filter",
+            t("identity_sources.fields.disabledUserFilter"),
+            "(pwdAccountLockedTime=*)",
+            t("identity_sources.hints.disabledUserFilter"),
+          )}
+          <Collapsible
+            className="col-span-4"
+            data-testid="identity-source-sync-advanced"
+          >
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="group inline-flex items-center gap-1 text-sm font-medium text-[var(--nt-text-neutral-secondary)]"
+              >
+                {t("identity_sources.sections.orgSyncAdvanced")}
+                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 grid grid-cols-4 gap-x-5 gap-y-4 xs:grid-cols-1">
+              {syncText(
+                "org_unit_filter",
+                t("identity_sources.fields.orgUnitFilter"),
+                "(objectClass=organizationalUnit)",
+              )}
+              {syncText(
+                "org_unit_name_attribute",
+                t("identity_sources.fields.orgUnitNameAttribute"),
+                "ou",
+              )}
+              {syncText(
+                "group_filter",
+                t("identity_sources.fields.groupFilter"),
+                "(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=group))",
+              )}
+              {syncText(
+                "group_name_attribute",
+                t("identity_sources.fields.groupNameAttribute"),
+                "cn",
+              )}
+              {syncText(
+                "group_member_attribute",
+                t("identity_sources.fields.groupMemberAttribute"),
+                "member",
+                t("identity_sources.hints.groupMemberAttribute"),
+              )}
+              {syncText(
+                "user_list_filter",
+                t("identity_sources.fields.userListFilter"),
+                userFilter.replaceAll("{username}", "*"),
+                t("identity_sources.hints.userListFilter"),
+                (value) =>
+                  !hasUsernamePlaceholder(value ?? "") ||
+                  t("identity_sources.validation.userListFilter"),
+              )}
+              <FormFieldGroup
+                {...form}
+                name="spec.ldap.sync.page_size"
+                label={t("identity_sources.fields.pageSize")}
+                description={t("identity_sources.hints.pageSize")}
+                className="col-span-2"
+                rules={{
+                  validate: (value: unknown) =>
+                    isValidPageSize(value) ||
+                    t("identity_sources.validation.pageSize"),
+                }}
+              >
+                <Input type="number" min={0} placeholder="500" />
+              </FormFieldGroup>
+            </CollapsibleContent>
+          </Collapsible>
+        </>
+      )}
+    </FormCardGrid>
   );
 
   // Keyed so switching type mounts fresh fields instead of renaming the
@@ -290,6 +444,7 @@ export const useIdentitySourceForm = ({
           <Input placeholder="memberOf" />
         </FormFieldGroup>
       </FormCardGrid>
+      {syncFields}
     </Fragment>
   );
 

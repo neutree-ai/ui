@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
-  CommandItem,
   CommandList,
 } from "@/components/ui/command";
 import {
@@ -17,38 +15,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { WorkspaceModelOption } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
-  ModelSourceBadge,
-  useModelSourceLabel,
-} from "@/foundation/components/ModelSourceBadge";
+  ModelOptionGroups,
+  phaseClass,
+  useModelOptionMatcher,
+  usePhaseLabel,
+} from "@/foundation/components/ModelOptionGroups";
+import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import type { WorkspaceModelOption } from "@/foundation/hooks/use-workspace-models";
 import { cn } from "@/foundation/lib/utils";
 
 type Option = WorkspaceModelOption;
-
-const phaseClass = (phase: string | null) =>
-  ({
-    Running:
-      "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-    Failed:
-      "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-    Pending:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    // External endpoints only: serving, but some upstream is unavailable
-    Degraded:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deploying:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    ModelDownloading:
-      "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]",
-    Deleting:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Paused:
-      "border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deleted:
-      "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-  })[phase ?? ""] ??
-  "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]";
 
 // Multi-select dropdown for the allowed-models field: pick any number of models
 // from one dropdown (no per-row "Add model"); selections show as removable
@@ -81,33 +58,16 @@ export const ModelMultiSelect = ({
     onChange(options.filter((option) => next.has(option.value)));
   };
   const optionFor = (v: string) => options.find((o) => o.value === v);
-  const phaseLabel = (phase: string | null) =>
-    phase ? t(`status.phases.endpoint.${phase}`) : t("api_keys.models.unknown");
-  const sourceLabel = useModelSourceLabel();
+  const phaseLabel = usePhaseLabel();
+  const matches = useModelOptionMatcher();
 
   // cmdk's built-in filter re-orders items by match score, which would discard
   // the Running-first ordering the options already arrive in. Disable it
   // (shouldFilter={false}) and filter here so the incoming order is preserved.
-  const query = search.trim().toLowerCase();
+  const query = search.trim();
   const visibleOptions = query
-    ? options.filter((o) =>
-        `${o.model} ${o.endpointName} ${sourceLabel(o.source)} ${phaseLabel(o.phase)}`
-          .toLowerCase()
-          .includes(query),
-      )
+    ? options.filter((o) => matches(o, query))
     : options;
-
-  // One section per source, in the order the options already arrive in
-  // (compareWorkspaceModelOptions sorts by source first, so each source's rows
-  // are contiguous). The heading is what makes the source obvious at a glance;
-  // the endpoint name under each row is what still tells apart two rows for the
-  // same model name served by different endpoints.
-  const groups: { source: Option["source"]; options: Option[] }[] = [];
-  for (const option of visibleOptions) {
-    const last = groups[groups.length - 1];
-    if (last && last.source === option.source) last.options.push(option);
-    else groups.push({ source: option.source, options: [option] });
-  }
 
   return (
     <div className="space-y-2">
@@ -144,47 +104,18 @@ export const ModelMultiSelect = ({
             />
             <CommandList className="max-h-60">
               <CommandEmpty>{t("api_keys.limits.noModels")}</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup
-                  key={group.source ?? "__unspecified__"}
-                  heading={sourceLabel(group.source)}
-                >
-                  {group.options.map((o) => (
-                    <CommandItem
-                      key={o.value}
-                      value={o.value}
-                      onSelect={() => toggle(o.value)}
-                      className="group items-start gap-2"
-                    >
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="truncate text-sm font-medium">
-                          {o.model}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                          <span className="truncate max-w-[180px]">
-                            {o.endpointName}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "h-5 font-normal",
-                              phaseClass(o.phase),
-                            )}
-                          >
-                            {phaseLabel(o.phase)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CheckIcon
-                        className={cn(
-                          "mt-1 ml-auto h-4 w-4",
-                          selected.has(o.value) ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
+              <ModelOptionGroups
+                options={visibleOptions}
+                onSelect={(o) => toggle(o.value)}
+                trailing={(o) => (
+                  <CheckIcon
+                    className={cn(
+                      "mt-1 ml-auto h-4 w-4",
+                      selected.has(o.value) ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                )}
+              />
             </CommandList>
           </Command>
         </PopoverContent>

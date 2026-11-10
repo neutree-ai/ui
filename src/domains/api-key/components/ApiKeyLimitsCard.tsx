@@ -27,17 +27,17 @@ import {
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
   limitsToForm,
-  modelOptionValue,
   resolveQuotaPeriod,
   useApiKeyDisable,
   useApiKeyLimits,
   useModelSourceByValue,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { apiKeyActionErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
+import { modelOptionValue } from "@/foundation/hooks/use-workspace-models";
+import { getErrorMessage } from "@/foundation/lib/error-message";
 import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
@@ -52,6 +52,7 @@ export const ApiKeyLimitsCard = ({
   projectId,
   displayName,
   description,
+  serviceAccountId,
   onSaved,
 }: {
   apiKeyId: string;
@@ -59,6 +60,8 @@ export const ApiKeyLimitsCard = ({
   projectId: string | null;
   displayName: string;
   description: string;
+  /** Set for an application's key, which has no project. */
+  serviceAccountId?: string;
   onSaved?: () => unknown;
 }) => {
   const { t } = useTranslation();
@@ -127,10 +130,7 @@ export const ApiKeyLimitsCard = ({
       // without this a failed save looked exactly like a successful one.
       openNotification?.({
         type: "error",
-        message: apiKeyActionErrorMessage(
-          cause,
-          t("api_keys.limits.saveError"),
-        ),
+        message: getErrorMessage(cause, t("api_keys.limits.saveError")),
       });
     }
   };
@@ -252,19 +252,21 @@ export const ApiKeyLimitsCard = ({
             >
               <Textarea />
             </FormFieldGroup>
-            <FormFieldGroup
-              {...form}
-              name="project_id"
-              label={t("api_keys.fields.project")}
-            >
-              <ProjectPicker
-                workspace={workspace}
-                value={form.watch("project_id")}
-                onChange={(id) =>
-                  form.setValue("project_id", id, { shouldValidate: true })
-                }
-              />
-            </FormFieldGroup>
+            {serviceAccountId === undefined && (
+              <FormFieldGroup
+                {...form}
+                name="project_id"
+                label={t("api_keys.fields.project")}
+              >
+                <ProjectPicker
+                  workspace={workspace}
+                  value={form.watch("project_id")}
+                  onChange={(id) =>
+                    form.setValue("project_id", id, { shouldValidate: true })
+                  }
+                />
+              </FormFieldGroup>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -462,7 +464,11 @@ export const ApiKeyLimitsCard = ({
               </div>
             )}
 
-            <ApiKeyPolicyFields form={form} workspace={workspace} />
+            <ApiKeyPolicyFields
+              form={form}
+              workspace={workspace}
+              serviceAccountId={serviceAccountId}
+            />
             <div className="flex justify-end gap-2">
               {/* Discards the edits and goes back to what is stored — the form
                   is on the detail page, so there is nowhere to navigate away

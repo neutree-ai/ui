@@ -2,6 +2,7 @@ import { useUpdate } from "@refinedev/core";
 import { Switch } from "@/components/ui/switch";
 import { identitySourceErrorMessage } from "@/domains/identity-source/lib/identity-source-errors";
 import type { IdentitySource } from "@/domains/identity-source/types";
+import { displayName } from "@/foundation/lib/display-name";
 import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -20,7 +21,7 @@ export function IdentitySourceEnabledSwitch({
   const { t } = useTranslation();
   const { mutate, isLoading } = useUpdate();
   const enabled = record.spec?.enabled === true;
-  const name = record.metadata.display_name || record.metadata.name;
+  const name = displayName(record.metadata);
 
   return (
     <Switch

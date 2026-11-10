@@ -3,11 +3,13 @@ import {
   authUserDisplayName,
   authUserEmail,
   IDENTITY_SOURCE_LABEL,
+  IDENTITY_SOURCE_NAME_LABEL,
   identitySourceOf,
   isExternalUser,
   profileDisplayName,
   profileEmail,
   profileIdentitySource,
+  profileIdentitySourceName,
   profileOptionLabel,
 } from "./user-identity";
 
@@ -162,5 +164,24 @@ describe("profileEmail", () => {
 
   it("returns an empty string when there is no email", () => {
     expect(profileEmail({ metadata: null, spec: null })).toBe("");
+  });
+});
+
+describe("profileIdentitySourceName", () => {
+  it("prefers the source name and falls back to the type", () => {
+    expect(
+      profileIdentitySourceName({
+        labels: {
+          [IDENTITY_SOURCE_LABEL]: "ldap",
+          [IDENTITY_SOURCE_NAME_LABEL]: "org-ldap",
+        },
+      }),
+    ).toBe("org-ldap");
+    expect(
+      profileIdentitySourceName({
+        labels: { [IDENTITY_SOURCE_LABEL]: "ldap" },
+      }),
+    ).toBe("ldap");
+    expect(profileIdentitySourceName({ labels: {} })).toBe("");
   });
 });

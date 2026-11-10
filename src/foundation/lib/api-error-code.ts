@@ -1,3 +1,5 @@
+import { getErrorMessage } from "@/foundation/lib/error-message";
+
 /**
  * The application error code of a failed API call, if it carries one.
  *
@@ -19,6 +21,11 @@ export const getApiErrorHint = (error: unknown): string => {
   return typeof hint === "string" ? hint.trim() : "";
 };
 
+/** Whether a call was refused for lack of permission: RLS (42501) or HTTP 403. */
+export const isPermissionDenied = (error: unknown): boolean =>
+  getApiErrorCode(error) === "42501" ||
+  (error as { statusCode?: unknown } | null)?.statusCode === 403;
+
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /**
@@ -38,3 +45,16 @@ export const translateApiError = (
   if (!code || !(code in keysByCode)) return undefined;
   return t(keysByCode[code], { hint: getApiErrorHint(error) });
 };
+
+/**
+ * As translateApiError, falling back to the server text and then to the
+ * translated `fallbackKey`.
+ */
+export const translateApiErrorOr = (
+  t: Translate,
+  error: unknown,
+  keysByCode: Readonly<Record<string, string>>,
+  fallbackKey: string,
+): string =>
+  translateApiError(t, error, keysByCode) ??
+  getErrorMessage(error, t(fallbackKey));

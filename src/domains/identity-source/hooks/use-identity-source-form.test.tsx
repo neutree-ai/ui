@@ -1,4 +1,10 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { toFormValues } from "@/domains/identity-source/lib/identity-source-values";
 import type { IdentitySource } from "@/domains/identity-source/types";
@@ -27,7 +33,10 @@ const ldapRecord = {
   },
 } as unknown as IdentitySource;
 
-function renderIdentitySourceForm(action: "create" | "edit") {
+function renderIdentitySourceForm(
+  action: "create" | "edit",
+  record: IdentitySource = ldapRecord,
+) {
   const rendered = renderForm(
     () => useIdentitySourceForm({ action }),
     (r) => (
@@ -40,7 +49,7 @@ function renderIdentitySourceForm(action: "create" | "edit") {
   if (action === "edit") {
     act(() =>
       rendered.result.current.form.reset(
-        toFormValues(ldapRecord, "http://h/api/v1", "http://h/"),
+        toFormValues(record, "http://h/api/v1", "http://h/"),
       ),
     );
   }
@@ -53,10 +62,13 @@ function renderIdentitySourceForm(action: "create" | "edit") {
   return { ...rendered, submit };
 }
 
-const input = (name: string) =>
-  within(screen.getByTestId(`field-${name}`)).getByRole(
-    "textbox",
-  ) as HTMLInputElement;
+const input = (name: string) => {
+  const element = screen
+    .getByTestId(`field-${name}`)
+    .querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea");
+  if (!element) throw new Error(`no input in field-${name}`);
+  return element;
+};
 
 const submittedSpec = () => refineForm.onFinish.mock.calls[0][0].spec;
 
@@ -158,6 +170,117 @@ describe("useIdentitySourceForm", () => {
       expect(payload).not.toHaveProperty("api_version");
       expect(payload.metadata).toMatchObject({ name: "corp-ldap", labels: {} });
       expect(payload.spec.ldap).not.toHaveProperty("bind_password");
+    });
+  });
+
+  describe("organization sync", () => {
+    const syncRecord = {
+      ...ldapRecord,
+      spec: {
+        ...ldapRecord.spec,
+        ldap: {
+          ...ldapRecord.spec.ldap,
+          sync: {
+            org_unit_base_dn: "ou=org,dc=example,dc=org",
+            group_member_attribute: "uniqueMember",
+            page_size: null,
+          },
+        },
+        sync: {
+          enabled: true,
+          interval: 600,
+          requested_at: "2026-10-13T08:00:00+00:00",
+        },
+      },
+    } as unknown as IdentitySource;
+
+    const syncSwitch = () =>
+      screen.getByRole("switch", {
+        name: "identity_sources.fields.syncEnabled",
+      });
+
+    it("shows the sync settings only while sync is on", async () => {
+      renderIdentitySourceForm("create");
+      expect(syncSwitch().getAttribute("aria-checked")).toBe("false");
+      expect(screen.queryByTestId("field-spec.sync.interval")).toBeNull();
+      fireEvent.click(syncSwitch());
+      await waitFor(() => screen.getByTestId("field-spec.sync.interval"));
+      screen.getByTestId("field-spec.ldap.sync.org_unit_base_dn");
+      // Advanced settings stay folded until asked for.
+      expect(
+        screen.queryByTestId("field-spec.ldap.sync.group_filter"),
+      ).toBeNull();
+    });
+
+    it("is not offered for OIDC sources", async () => {
+      renderIdentitySourceForm("create");
+      selectOption("spec.type", "identity_sources.types.oidc");
+      await waitFor(() => screen.getByTestId("field-spec.oidc.issuer"));
+      expect(screen.queryByTestId("identity-source-sync-section")).toBeNull();
+    });
+
+    it("fills in the stored settings and saves them back whole", async () => {
+      const { submit } = renderIdentitySourceForm("edit", syncRecord);
+      await waitFor(() =>
+        expect(input("spec.sync.interval").value).toBe("600"),
+      );
+      expect(input("spec.ldap.sync.org_unit_base_dn").value).toBe(
+        "ou=org,dc=example,dc=org",
+      );
+      await submit();
+
+      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledTimes(1));
+      const { spec } = refineForm.onFinish.mock.calls[0][0];
+      expect(spec.sync).toEqual({
+        enabled: true,
+        interval: 600,
+        requested_at: "2026-10-13T08:00:00+00:00",
+      });
+      expect(spec.ldap.sync).toMatchObject({
+        org_unit_base_dn: "ou=org,dc=example,dc=org",
+        group_member_attribute: "uniqueMember",
+        group_base_dn: "",
+        page_size: null,
+      });
+    });
+
+    it("keeps the settings when sync is turned off", async () => {
+      const { submit } = renderIdentitySourceForm("edit", syncRecord);
+      await waitFor(() =>
+        expect(input("spec.sync.interval").value).toBe("600"),
+      );
+      fireEvent.click(syncSwitch());
+      await waitFor(() =>
+        expect(screen.queryByTestId("field-spec.sync.interval")).toBeNull(),
+      );
+      await submit();
+
+      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledTimes(1));
+      const { spec } = refineForm.onFinish.mock.calls[0][0];
+      expect(spec.sync).toMatchObject({ enabled: false, interval: 600 });
+      expect(spec.ldap.sync.org_unit_base_dn).toBe("ou=org,dc=example,dc=org");
+    });
+
+    it("rejects a short interval and a user list filter with {username}", async () => {
+      const { submit } = renderIdentitySourceForm("edit", syncRecord);
+      await waitFor(() =>
+        expect(input("spec.sync.interval").value).toBe("600"),
+      );
+      fillField("spec.sync.interval", "30");
+      fireEvent.click(
+        screen.getByText("identity_sources.sections.orgSyncAdvanced"),
+      );
+      await waitFor(() =>
+        screen.getByTestId("field-spec.ldap.sync.user_list_filter"),
+      );
+      fillField("spec.ldap.sync.user_list_filter", "(uid={username})");
+      await submit();
+
+      await waitFor(() =>
+        screen.getByText("identity_sources.validation.syncInterval"),
+      );
+      screen.getByText("identity_sources.validation.userListFilter");
+      expect(refineForm.onFinish).not.toHaveBeenCalled();
     });
   });
 });

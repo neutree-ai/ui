@@ -3,6 +3,7 @@ import {
   isNfsProtocol,
   isValidIPAddress,
   isValidPath,
+  isValidResourceName,
   isValidStorageQuantity,
 } from "./validate";
 
@@ -73,4 +74,17 @@ describe("isValidStorageQuantity", () => {
       expect(isValidStorageQuantity(v)).toBe(false);
     },
   );
+});
+
+describe("isValidResourceName", () => {
+  it.each([
+    ["team-a.1", true],
+    ["a", true],
+    ["Team", false],
+    ["-a", false],
+    ["a.", false],
+    ["a_b", false],
+  ])("%s -> %s", (name, valid) => {
+    expect(isValidResourceName(name)).toBe(valid);
+  });
 });
