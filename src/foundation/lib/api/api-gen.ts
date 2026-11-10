@@ -575,13 +575,15 @@ export type Database = {
           p_api_key_id?: string;
           p_endpoint_name?: string;
           p_workspace?: string;
+          p_team?: string;
+          p_org_unit?: string;
         };
         Returns: {
           date: string;
           api_key_id: string;
-          api_key_name: string;
+          api_key_name: string | null;
           api_key_display_name: string | null;
-          api_key_description: string;
+          api_key_description: string | null;
           endpoint_type: string | null;
           endpoint_name: string;
           model_name: string | null;

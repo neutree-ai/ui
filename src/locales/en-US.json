@@ -3393,6 +3393,7 @@
 			"allModels": "All models"
 		},
 		"apiKey": "API key",
+		"deletedKey": "Deleted {{id}}",
 		"model": "Model",
 		"promptTokens": "Prompt",
 		"completionTokens": "Completion",
@@ -3421,7 +3422,7 @@
 		},
 		"detail": {
 			"date": "Date",
-			"type": "Type",
+			"endpointType": "Endpoint type",
 			"endpoint": "Endpoint",
 			"internal": "Internal",
 			"external": "External"
@@ -3444,7 +3445,8 @@
 			"platform": "Entire platform",
 			"unassigned": "No department",
 			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments.",
-			"teams": "Teams"
+			"teams": "Teams",
+			"visible": "All usage you can see"
 		},
 		"summary": {
 			"total": "Total tokens",

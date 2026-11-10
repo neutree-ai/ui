@@ -4,7 +4,8 @@ import { useUsageByDimension } from "./use-usage-by-dimension";
 // useWorkspaceUsage returns a whole workspace's per-day, per-API-key, per-model
 // token usage (scoped to the caller's visible API keys by the RPC's auth.uid()
 // + permission filter). Same RPC as useApiKeyUsage, keyed by workspace + date
-// range. `enabled` false keeps the cached rows without fetching.
+// range. `enabled` false keeps the cached rows without fetching. `team` narrows
+// to usage recorded under that Team (p_team).
 //
 // "All workspaces" (ALL_WORKSPACES / "_all_") is a UI-only sentinel, not a real
 // workspace name. The RPC treats p_workspace as a narrowing filter
@@ -18,6 +19,7 @@ export function useWorkspaceUsage(
   startDate: string,
   endDate: string,
   enabled = true,
+  team?: string,
 ) {
   return useUsageByDimension(
     workspace
@@ -25,6 +27,7 @@ export function useWorkspaceUsage(
           p_start_date: startDate,
           p_end_date: endDate,
           ...(workspace === ALL_WORKSPACES ? {} : { p_workspace: workspace }),
+          ...(team ? { p_team: team } : {}),
         }
       : null,
     enabled,

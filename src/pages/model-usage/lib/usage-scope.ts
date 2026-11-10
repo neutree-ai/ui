@@ -41,14 +41,19 @@ const groupFilter = (group: GroupScope | null): GroupUsageFilter =>
 
 /**
  * The get_usage_by_group filter of a scope's User rows. A user opened from a
- * group counts only their usage in that group, as their row there did.
+ * group counts only their usage in that group, as their row there did: in a
+ * department, the usage recorded under it directly.
  */
 const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
   scope.type === "user"
-    ? { name: scope.id, ...groupFilter(scope.from) }
+    ? {
+        name: scope.id,
+        ...groupFilter(scope.from),
+        ...(scope.from?.type === "orgUnit" ? { direct: true } : {}),
+      }
     : groupFilter(groupOf(scope));
 
-/** What the page asks get_usage_by_group for in a scope. */
+/** What the page asks the usage RPCs for in a scope. */
 type ScopeQueries = {
   /** The filter of the scope's User rows. */
   user: GroupUsageFilter;
@@ -58,35 +63,35 @@ type ScopeQueries = {
    */
   units: GroupUsageFilter | null;
   /**
-   * The department whose child departments' User rows are needed: a
-   * department scope, or the department a user was opened from.
+   * The User rows no child department holds: the platform's usage under no
+   * department, or a department's own. Null when not split into departments.
    */
-  splitUnit?: string;
-  /** The user of a user scope, to narrow those child rows to. */
-  userId?: string;
+  direct: GroupUsageFilter | null;
+  /** The Team to narrow usage by API key to. */
+  keyTeam?: string;
 };
 
 export function scopeQueries(scope: UsageScope | null): ScopeQueries {
   switch (scope?.type) {
     case undefined:
-      return { user: {}, units: null };
+      return { user: {}, units: null, direct: null };
     case "platform":
-      return { user: {}, units: {} };
+      return { user: {}, units: {}, direct: { direct: true } };
     case "orgUnit":
       return {
         user: userUsageFilter(scope),
         units: { orgUnit: scope.name },
-        splitUnit: scope.name,
+        direct: { orgUnit: scope.name, direct: true },
       };
     case "team":
-      return { user: userUsageFilter(scope), units: null };
-    case "user":
       return {
         user: userUsageFilter(scope),
         units: null,
-        splitUnit: scope.from?.type === "orgUnit" ? scope.from.name : undefined,
-        userId: scope.id,
+        direct: null,
+        keyTeam: scope.name,
       };
+    case "user":
+      return { user: userUsageFilter(scope), units: null, direct: null };
   }
 }
 
@@ -207,12 +212,21 @@ export const groupFact = (r: GroupUsageRecord): UsageFact => ({
   who: { key: r.name, name: displayName(r), description: null },
 });
 
-/** A get_usage_by_dimension row as a fact of its API key. */
-export const keyFact = (r: ApiUsageRecord): UsageFact => ({
+/**
+ * A get_usage_by_dimension row as a fact of its API key. A deleted key's rows
+ * carry no name: `deletedLabel` names it by the start of its id.
+ */
+export const keyFact = (
+  r: ApiUsageRecord,
+  deletedLabel: (shortId: string) => string,
+): UsageFact => ({
   ...usageFields(r),
   who: {
     key: r.api_key_id,
-    name: r.api_key_display_name || r.api_key_name || r.api_key_id,
+    name:
+      r.api_key_name === null
+        ? deletedLabel(r.api_key_id.slice(0, 8))
+        : r.api_key_display_name || r.api_key_name,
     description: r.api_key_description || null,
   },
 });
@@ -248,60 +262,6 @@ export function sumUsage(
   return totals;
 }
 
-const factKey = (r: UsageFact, byWho: boolean) =>
-  [
-    byWho ? r.who.key : "",
-    r.date,
-    r.workspace,
-    r.endpoint_type ?? "",
-    r.endpoint_name,
-    r.model_name ?? "",
-  ].join("\u0000");
-
-/**
- * `rows` with `minus` taken out, matched by date, workspace, endpoint, model
- * and — when `byWho` — by who they count toward. Facts that come to nothing
- * are dropped, so a user whose usage is all in sub-departments leaves no row.
- */
-export function subtractUsage<R extends UsageFact>(
-  rows: R[],
-  minus: UsageFact[],
-  byWho = false,
-): R[] {
-  const left = new Map<string, R>();
-  for (const r of rows) {
-    const key = factKey(r, byWho);
-    const prior = left.get(key);
-    left.set(
-      key,
-      prior
-        ? {
-            ...prior,
-            usage: prior.usage + r.usage,
-            prompt_tokens: (prior.prompt_tokens ?? 0) + (r.prompt_tokens ?? 0),
-            completion_tokens:
-              (prior.completion_tokens ?? 0) + (r.completion_tokens ?? 0),
-            ...(prior.requests === undefined
-              ? {}
-              : { requests: prior.requests + (r.requests ?? 0) }),
-          }
-        : { ...r },
-    );
-  }
-  for (const m of minus) {
-    const row = left.get(factKey(m, byWho));
-    if (!row) continue;
-    row.usage -= m.usage ?? 0;
-    row.prompt_tokens = (row.prompt_tokens ?? 0) - (m.prompt_tokens ?? 0);
-    row.completion_tokens =
-      (row.completion_tokens ?? 0) - (m.completion_tokens ?? 0);
-    if (row.requests !== undefined) row.requests -= m.requests ?? 0;
-  }
-  return [...left.values()].filter(
-    (r) => r.usage > 0 || (r.prompt_tokens ?? 0) > 0 || (r.requests ?? 0) > 0,
-  );
-}
-
 /**
  * One row of the scope's breakdown: the usage fact and the entry it counts
  * toward. Entries never overlap, so their sum is the scope's total.
@@ -324,8 +284,8 @@ type BreakdownInput = {
   userRows: UsageFact[];
   /** get_usage_by_group by OrgUnit across the scope (each a subtree total). */
   unitRows: UsageFact[];
-  /** By User for each child department of an OrgUnit scope. */
-  childUserRows: UsageFact[];
+  /** By User, recorded under the department itself, or under none. */
+  directRows: UsageFact[];
   unassignedLabel: string;
 };
 
@@ -350,9 +310,8 @@ const userEntry = (id: string, label: string, from: GroupScope): Entry => ({
 
 /**
  * Splits a scope's usage into entries that do not overlap:
- * - the platform into its top departments, plus the users in none;
- * - a department into its child departments, plus its direct users (its
- *   users' usage less what was recorded in the child departments);
+ * - the platform into its top departments, plus the usage in none;
+ * - a department into its child departments, plus its direct users;
  * - a Team into its users;
  * - a user into the models they used.
  * Usage counts toward the department a user was in at the time.
@@ -363,7 +322,7 @@ export function buildBreakdown({
   roots,
   userRows,
   unitRows,
-  childUserRows,
+  directRows,
   unassignedLabel,
 }: BreakdownInput): BreakdownFact[] {
   if (scope.type === "user") {
@@ -396,10 +355,9 @@ export function buildBreakdown({
   });
 
   if (scope.type === "platform") {
-    const rest = subtractUsage(userRows, units);
     return [
       ...units,
-      ...rest.map((r) => ({
+      ...directRows.map((r) => ({
         ...r,
         entry: UNASSIGNED_KEY,
         label: unassignedLabel,
@@ -409,8 +367,7 @@ export function buildBreakdown({
     ];
   }
 
-  const direct = subtractUsage(userRows, childUserRows, true);
-  return [...units, ...direct.map((r) => byUser(r, scope))];
+  return [...units, ...directRows.map((r) => byUser(r, scope))];
 }
 
 /** A breakdown entry with where clicking it leads; null when nowhere. */

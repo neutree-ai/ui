@@ -26,7 +26,7 @@ const record = (
 
 const byKey = (r: ApiUsageRecord) => r.api_key_id;
 const metaOfKey = (r: ApiUsageRecord) => ({
-  name: r.api_key_display_name || r.api_key_name,
+  name: r.api_key_display_name || r.api_key_name || r.api_key_id,
   description: r.api_key_description ?? null,
 });
 

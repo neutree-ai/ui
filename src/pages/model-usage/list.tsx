@@ -25,6 +25,7 @@ import { ListPage } from "@/foundation/components/ListPage";
 import {
   useHasGlobalPermission,
   useHasPermission,
+  useTeamsWithPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -41,6 +42,7 @@ import {
 } from "@/pages/model-usage/components/UsageTables";
 import {
   breakdownLabelKeys,
+  groupOf,
   scopeTrail,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
@@ -97,14 +99,30 @@ export const ModelUsageList = () => {
     byId: nodesById,
     byName: nodesByName,
   } = useOrgTree(canReadGroups);
-  // Teams are a scope of their own for a global reader only: the RPC refuses
-  // usage by Team to everyone else.
-  const { list: teamList, byName: teamsByName } =
-    useTeamsByName(canReadAllGroups);
+  // A Team is a scope for a global reader, and for whoever reads that Team's
+  // usage: the RPC refuses usage by Team to everyone else.
+  const canReadSomeTeam = useHasPermission("team_usage:read").allowed === true;
+  const { list: allTeams, byName: teamsByName } = useTeamsByName(
+    canReadAllGroups || canReadSomeTeam,
+  );
+  const readableTeamIds = useTeamsWithPermission(
+    "team_usage:read",
+    useMemo(() => allTeams.map((team) => team.id), [allTeams]),
+    !canReadAllGroups && canReadSomeTeam,
+  );
+  const teamList = useMemo(
+    () =>
+      canReadAllGroups
+        ? allTeams
+        : allTeams.filter((team) => readableTeamIds.has(team.id)),
+    [canReadAllGroups, allTeams, readableTeamIds],
+  );
+  const hasScopes = canReadGroups || teamList.length > 0;
 
   // The page opens on the whole platform, or on the first department of a
-  // department admin; null is a reader of their own keys only.
-  const [pickedScope, setPickedScope] = useState<UsageScope | null>(null);
+  // department admin; null is the usage of every API key the caller reads.
+  // Undefined until a scope is picked.
+  const [pickedScope, setPickedScope] = useState<UsageScope | null>();
   const firstRoot = roots[0]?.unit.metadata.name;
   // Memoized: the scope keys the page's heavier memos.
   const defaultScope = useMemo<UsageScope | null>(
@@ -116,18 +134,23 @@ export const ModelUsageList = () => {
           : null,
     [canReadAllGroups, firstRoot],
   );
-  const scope = canReadGroups ? (pickedScope ?? defaultScope) : null;
-  const changeScope = useCallback((next: UsageScope) => {
+  const picked = pickedScope === undefined ? defaultScope : pickedScope;
+  const scope =
+    picked && (canReadGroups || groupOf(picked)?.type === "team")
+      ? picked
+      : null;
+  const changeScope = useCallback((next: UsageScope | null) => {
     setPickedScope(next);
     setHidden(new Set());
   }, []);
 
-  // The tabs this scope has. API keys carry no department, so they are only
-  // counted for the whole platform; Teams need a global reader.
+  // The tabs this scope has. API keys are counted for the whole platform and
+  // for a Team; Teams need a global reader.
   const tabs = useMemo<Tab[]>(() => {
     if (!scope) return ["apiKey", "model", "detail"];
     if (scope.type === "user") return ["model", "detail"];
-    if (scope.type === "team") return ["breakdown", "model", "detail"];
+    if (scope.type === "team")
+      return ["breakdown", "apiKey", "model", "detail"];
     return [
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
@@ -139,6 +162,10 @@ export const ModelUsageList = () => {
     ];
   }, [scope, canReadAllGroups]);
   const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  const deletedKeyLabel = useCallback(
+    (id: string) => t("model_usage.deletedKey", { id }),
+    [t],
+  );
 
   const {
     models,
@@ -164,6 +191,7 @@ export const ModelUsageList = () => {
     nodesByName,
     teamsByName,
     unassignedLabel: t("model_usage.scope.unassigned"),
+    deletedKeyLabel,
   });
 
   // Picking a day in the chart narrows the range itself to that day — there is
@@ -432,7 +460,7 @@ export const ModelUsageList = () => {
         </Select>
       </div>
 
-      {scope ? (
+      {hasScopes ? (
         <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
           <div className="lg:sticky lg:top-4">
             <UsageScopePanel

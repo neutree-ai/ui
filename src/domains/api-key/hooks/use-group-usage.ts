@@ -10,6 +10,11 @@ export type GroupUsageFilter = {
   team?: string;
   /** One group of the kind: a user id, or a Team's or OrgUnit's name. */
   name?: string;
+  /**
+   * With orgUnit, usage recorded under that OrgUnit itself, not its subtree;
+   * without, usage recorded under no OrgUnit (global readers only).
+   */
+  direct?: boolean;
 };
 
 const groupUsageParams = (
@@ -17,7 +22,7 @@ const groupUsageParams = (
   startDate: string,
   endDate: string,
   kind: GroupUsageKind,
-  { orgUnit, team, name }: GroupUsageFilter,
+  { orgUnit, team, name, direct }: GroupUsageFilter,
 ) => ({
   p_start_date: startDate,
   p_end_date: endDate,
@@ -26,6 +31,7 @@ const groupUsageParams = (
   ...(orgUnit ? { p_org_unit: orgUnit } : {}),
   ...(team ? { p_team: team } : {}),
   ...(name ? { p_name: name } : {}),
+  ...(direct ? { p_direct: true } : {}),
 });
 
 // useGroupUsage polls get_usage_by_group for one kind of group, once per
