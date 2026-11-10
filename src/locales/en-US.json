@@ -2357,6 +2357,9 @@
 			"totalTokens": "Total tokens",
 			"totalRequests": "Requests",
 			"requests": "Requests",
+			"byMember": "By member",
+			"byMemberHint": "Usage of each member's personal keys, part of the team total.",
+			"member": "Member",
 			"byApplication": "By application",
 			"byApplicationHint": "Usage of each application's keys, part of the team total.",
 			"application": "Application"
@@ -2920,8 +2923,8 @@
 			"allSources": "All identity sources",
 			"showInactive": "Show inactive",
 			"allTeamKinds": "All teams",
-			"projectsOnly": "Projects",
-			"nonProjects": "Non-project teams"
+			"projectsOnly": "Scenarios",
+			"nonProjects": "Non-scenario teams"
 		},
 		"departments": {
 			"title": "Departments",
@@ -2938,9 +2941,9 @@
 			"createTitle": "Create Team",
 			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
 			"editTitle": "Edit Team",
-			"editHint": "Change the display name of the team, or whether it is a project.",
-			"markProject": "Mark as project",
-			"markProjectHint": "A project works like any other team; it is only shown apart.",
+			"editHint": "Change the display name of the team, or whether it is a scenario.",
+			"markProject": "Mark as scenario",
+			"markProjectHint": "A scenario works like any other team; it is only shown apart.",
 			"namePlaceholder": "e.g. ml-platform",
 			"nameHint": "Lowercase letters, digits, '-' and '.'. It cannot be changed later.",
 			"nameFixed": "The name cannot be changed.",
@@ -2999,7 +3002,7 @@
 		"values": {
 			"manual": "Assigned by hand",
 			"manualTeam": "Manual",
-			"project": "Project",
+			"project": "Scenario",
 			"local": "Local"
 		},
 		"errors": {

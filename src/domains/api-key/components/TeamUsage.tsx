@@ -12,7 +12,7 @@ import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import {
   summarizeUsage,
   type UsageTotal,
-  usageByApplication,
+  usageByName,
 } from "@/domains/api-key/lib/usage-summary";
 import {
   type DateRange,
@@ -133,9 +133,54 @@ function UsageBreakdown({
   );
 }
 
+/** One per-group table of the team usage: by member or by application. */
+function GroupTotalsSection({
+  title,
+  description,
+  firstColumn,
+  rows,
+  error,
+  testId,
+  tableTestId,
+}: {
+  title: string;
+  description: string;
+  firstColumn: string;
+  rows: UsageTotal[];
+  error: unknown;
+  testId: string;
+  tableTestId: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <ShowPage.Section
+      title={title}
+      description={description}
+      data-testid={testId}
+    >
+      {error ? (
+        <EmptyState variant="inline" className="text-destructive">
+          {t("api_keys.team.usageFailed")}
+        </EmptyState>
+      ) : rows.length ? (
+        <TotalsTable
+          rows={rows}
+          firstColumn={firstColumn}
+          detailed={false}
+          testId={tableTestId}
+        />
+      ) : (
+        <EmptyState variant="inline">
+          {t("api_keys.team.usageEmpty")}
+        </EmptyState>
+      )}
+    </ShowPage.Section>
+  );
+}
+
 /**
  * Usage of one Team in every workspace: its members' personal keys and its
- * applications' keys, then split by application.
+ * applications' keys, then split by member and by application.
  */
 export function TeamUsage({ teamName }: { teamName: string }) {
   const { t } = useTranslation();
@@ -143,6 +188,13 @@ export function TeamUsage({ teamName }: { teamName: string }) {
   const team = useGroupUsage(ALL_WORKSPACES, range.start, range.end, "Team", [
     { team: teamName },
   ]);
+  const members = useGroupUsage(
+    ALL_WORKSPACES,
+    range.start,
+    range.end,
+    "User",
+    [{ team: teamName }],
+  );
   const apps = useGroupUsage(
     ALL_WORKSPACES,
     range.start,
@@ -154,10 +206,11 @@ export function TeamUsage({ teamName }: { teamName: string }) {
     () => summarizeUsage(team.usageData, teamName),
     [team.usageData, teamName],
   );
-  const byApp = useMemo(
-    () => usageByApplication(apps.usageData),
-    [apps.usageData],
+  const byMember = useMemo(
+    () => usageByName(members.usageData),
+    [members.usageData],
   );
+  const byApp = useMemo(() => usageByName(apps.usageData), [apps.usageData]);
 
   return (
     <div className="space-y-3" data-testid="team-usage">
@@ -173,28 +226,24 @@ export function TeamUsage({ teamName }: { teamName: string }) {
         error={team.error}
         testIdPrefix="team-usage"
       />
-      <ShowPage.Section
+      <GroupTotalsSection
+        title={t("api_keys.team.byMember")}
+        description={t("api_keys.team.byMemberHint")}
+        firstColumn={t("api_keys.team.member")}
+        rows={byMember}
+        error={members.error}
+        testId="team-usage-members"
+        tableTestId="team-usage-by-member"
+      />
+      <GroupTotalsSection
         title={t("api_keys.team.byApplication")}
         description={t("api_keys.team.byApplicationHint")}
-        data-testid="team-usage-applications"
-      >
-        {apps.error ? (
-          <EmptyState variant="inline" className="text-destructive">
-            {t("api_keys.team.usageFailed")}
-          </EmptyState>
-        ) : byApp.length ? (
-          <TotalsTable
-            rows={byApp}
-            firstColumn={t("api_keys.team.application")}
-            detailed={false}
-            testId="team-usage-by-application"
-          />
-        ) : (
-          <EmptyState variant="inline">
-            {t("api_keys.team.usageEmpty")}
-          </EmptyState>
-        )}
-      </ShowPage.Section>
+        firstColumn={t("api_keys.team.application")}
+        rows={byApp}
+        error={apps.error}
+        testId="team-usage-applications"
+        tableTestId="team-usage-by-application"
+      />
     </div>
   );
 }
