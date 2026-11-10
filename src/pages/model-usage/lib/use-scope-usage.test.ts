@@ -99,6 +99,8 @@ const row = (
   completion_tokens: usage * 0.2,
 });
 
+const deletedKeyLabel = (id: string) => `Deleted ${id}`;
+
 const render = (scope: UsageScope) =>
   renderHook(
     ({ scope }) => {
@@ -114,6 +116,7 @@ const render = (scope: UsageScope) =>
         nodesByName,
         teamsByName: new Map(),
         unassignedLabel: "No department",
+        deletedKeyLabel,
       });
     },
     { initialProps: { scope } },
@@ -128,7 +131,7 @@ beforeEach(() => {
 });
 
 describe("useScopeUsage", () => {
-  it("never subtracts one department's child rows from another's", () => {
+  it("never combines one department's rows with another's", () => {
     // rnd: u1 used 300 in ml, u2 100 in rnd itself.
     ready.set('User:{"orgUnit":"rnd"}', [
       row("User", "u1", 300),
@@ -138,7 +141,7 @@ describe("useScopeUsage", () => {
       row("OrgUnit", "rnd", 400),
       row("OrgUnit", "ml", 300),
     ]);
-    ready.set('User:{"orgUnit":"ml"}', [row("User", "u1", 300)]);
+    ready.set('User:{"orgUnit":"rnd","direct":true}', [row("User", "u2", 100)]);
     const { result, rerender } = render({ type: "orgUnit", name: "rnd" });
     const rnd = [
       ["ml", 300],
@@ -146,8 +149,9 @@ describe("useScopeUsage", () => {
     ];
     expect(entries(result)).toEqual(rnd);
 
-    // ml: u1's 300, of which 120 in infer. infer's rows are still loading,
-    // and its call site still holds ml's child rows (u1 300).
+    // ml: u1's 300, of which 120 in infer. ml's own rows are still loading,
+    // and their call site still holds rnd's (u2 100).
+    ready.set('User:{"orgUnit":"ml"}', [row("User", "u1", 300)]);
     ready.set('OrgUnit:{"orgUnit":"ml"}', [
       row("OrgUnit", "ml", 300),
       row("OrgUnit", "infer", 120),
@@ -158,7 +162,7 @@ describe("useScopeUsage", () => {
     expect(entries(result)).toEqual(rnd);
     expect(result.current.totals.total).toBe(400);
 
-    ready.set('User:{"orgUnit":"infer"}', [row("User", "u1", 120)]);
+    ready.set('User:{"orgUnit":"ml","direct":true}', [row("User", "u1", 180)]);
     rerender({ scope: { type: "orgUnit", name: "ml" } });
 
     expect(result.current.loading).toBe(false);
@@ -166,9 +170,7 @@ describe("useScopeUsage", () => {
       ["user:u1", 180],
       ["infer", 120],
     ]);
-    expect(result.current.breakdownSeries.every((s) => s.total >= 0)).toBe(
-      true,
-    );
+    expect(result.current.totals.total).toBe(300);
   });
 
   it("shows nothing rather than a partial first answer", () => {

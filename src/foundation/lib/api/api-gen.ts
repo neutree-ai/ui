@@ -568,6 +568,19 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      get_readable_usage_teams: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: number;
+          api_version: string;
+          kind: string;
+          metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          status: {
+            phase: string | null;
+            last_transition_time: string | null;
+          } | null;
+        }[];
+      };
       get_usage_by_dimension: {
         Args: {
           p_start_date: string;
@@ -575,13 +588,15 @@ export type Database = {
           p_api_key_id?: string;
           p_endpoint_name?: string;
           p_workspace?: string;
+          p_team?: string;
+          p_org_unit?: string;
         };
         Returns: {
           date: string;
           api_key_id: string;
-          api_key_name: string;
+          api_key_name: string | null;
           api_key_display_name: string | null;
-          api_key_description: string;
+          api_key_description: string | null;
           endpoint_type: string | null;
           endpoint_name: string;
           model_name: string | null;

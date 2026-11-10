@@ -108,12 +108,13 @@ enum ApiKeyPhase {
   DELETED = "Deleted",
 }
 
+// A deleted key's rows carry no name, display name or description.
 export type ApiUsageRecord = {
   date: string;
   api_key_id: string;
-  api_key_name: string;
+  api_key_name: string | null;
   api_key_display_name?: string | null;
-  api_key_description?: string;
+  api_key_description?: string | null;
   endpoint_type: string | null;
   endpoint_name: string;
   model_name: string | null;

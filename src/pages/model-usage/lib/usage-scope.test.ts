@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GroupUsageRecord } from "@/domains/api-key/types";
+import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import { buildOrgTree, indexNodes } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import {
@@ -8,7 +8,6 @@ import {
   keyFact,
   scopeQueries,
   scopeTrail,
-  subtractUsage,
   summarizeBreakdown,
   sumUsage,
   UNASSIGNED_KEY,
@@ -70,7 +69,7 @@ const breakdown = (
   rows: {
     userRows?: UsageFact[];
     unitRows?: UsageFact[];
-    childUserRows?: UsageFact[];
+    directRows?: UsageFact[];
   },
 ) =>
   buildBreakdown({
@@ -79,7 +78,7 @@ const breakdown = (
     roots,
     userRows: rows.userRows ?? [],
     unitRows: rows.unitRows ?? [],
-    childUserRows: rows.childUserRows ?? [],
+    directRows: rows.directRows ?? [],
     unassignedLabel: "No department",
   });
 
@@ -99,31 +98,39 @@ describe("scopeQueries", () => {
     expect(scopeQueries({ type: "platform" }).user).toEqual({});
     expect(scopeQueries(rnd).user).toEqual({ orgUnit: "rnd" });
     expect(scopeQueries(team).user).toEqual({ team: "t1" });
+    // In a department, what was recorded under it directly.
     expect(scopeQueries(user(rnd)).user).toEqual({
       name: "u1",
       orgUnit: "rnd",
+      direct: true,
     });
     expect(scopeQueries(user(team)).user).toEqual({ name: "u1", team: "t1" });
     expect(scopeQueries(user(null)).user).toEqual({ name: "u1" });
   });
 
   it("splits the platform and a department into departments only", () => {
-    expect(scopeQueries(null).units).toBeNull();
+    expect(scopeQueries(null).units).toBeUndefined();
     expect(scopeQueries({ type: "platform" }).units).toEqual({});
     expect(scopeQueries(rnd).units).toEqual({ orgUnit: "rnd" });
-    expect(scopeQueries(team).units).toBeNull();
-    expect(scopeQueries(user(rnd)).units).toBeNull();
+    expect(scopeQueries(team).units).toBeUndefined();
+    expect(scopeQueries(user(rnd)).units).toBeUndefined();
   });
 
-  it("reads child departments for a department and a user opened from one", () => {
-    expect(scopeQueries(rnd)).toMatchObject({ splitUnit: "rnd" });
-    expect(scopeQueries(rnd).userId).toBeUndefined();
-    expect(scopeQueries(user(rnd))).toMatchObject({
-      splitUnit: "rnd",
-      userId: "u1",
-    });
-    expect(scopeQueries(user(team)).splitUnit).toBeUndefined();
-    expect(scopeQueries({ type: "platform" }).splitUnit).toBeUndefined();
+  it("reads the usage under no department, or under a department itself", () => {
+    expect(scopeQueries({ type: "platform" }).direct).toEqual({ direct: true });
+    expect(scopeQueries(rnd).direct).toEqual({ orgUnit: "rnd", direct: true });
+    expect(scopeQueries(team).direct).toBeUndefined();
+    expect(scopeQueries(user(rnd)).direct).toBeUndefined();
+    expect(scopeQueries(null).direct).toBeUndefined();
+  });
+
+  it("narrows usage by API key to a Team or a department scope", () => {
+    expect(scopeQueries(team).keyGroup).toEqual({ team: "t1" });
+    expect(scopeQueries(rnd).keyGroup).toEqual({ orgUnit: "rnd" });
+    expect(scopeQueries(null).keyGroup).toBeUndefined();
+    expect(scopeQueries({ type: "platform" }).keyGroup).toBeUndefined();
+    expect(scopeQueries(user(team)).keyGroup).toBeUndefined();
+    expect(scopeQueries(user(rnd)).keyGroup).toBeUndefined();
   });
 });
 
@@ -186,29 +193,52 @@ describe("scopeTrail", () => {
 });
 
 describe("facts", () => {
+  const keyRecord = (
+    overrides: Partial<ApiUsageRecord> = {},
+  ): ApiUsageRecord => ({
+    date: "2026-10-20",
+    api_key_id: "0123456789abcdef",
+    api_key_name: "key",
+    api_key_display_name: null,
+    api_key_description: "",
+    endpoint_type: "endpoint",
+    endpoint_name: "chat",
+    model_name: "qwen",
+    workspace: "default",
+    usage: 10,
+    prompt_tokens: 8,
+    completion_tokens: 2,
+    ...overrides,
+  });
+  const deleted = (id: string) => `Deleted ${id}`;
+
   it("name a group row by its display name, an API key by its label", () => {
     expect(groupFact(record("User", "u1", 10)).who).toEqual({
       key: "u1",
       name: "u1 display",
       description: null,
     });
+    expect(keyFact(keyRecord(), deleted).who).toEqual({
+      key: "0123456789abcdef",
+      name: "key",
+      description: null,
+    });
+  });
+
+  it("name a deleted API key by the start of its id", () => {
     expect(
-      keyFact({
-        date: "2026-10-20",
-        api_key_id: "k1",
-        api_key_name: "key",
-        api_key_display_name: null,
-        api_key_description: "",
-        endpoint_type: "endpoint",
-        endpoint_name: "chat",
-        model_name: "qwen",
-        workspace: "default",
-        usage: 10,
-        prompt_tokens: 8,
-        completion_tokens: 2,
-      }),
-    ).toMatchObject({
-      who: { key: "k1", name: "key", description: null },
+      keyFact(
+        keyRecord({
+          api_key_name: null,
+          api_key_display_name: null,
+          api_key_description: null,
+        }),
+        deleted,
+      ).who,
+    ).toEqual({
+      key: "0123456789abcdef",
+      name: "Deleted 01234567",
+      description: null,
     });
   });
 });
@@ -228,39 +258,6 @@ describe("sumUsage", () => {
   });
 });
 
-describe("subtractUsage", () => {
-  it("takes out matching facts and drops those that come to nothing", () => {
-    const left = subtractUsage(
-      [
-        row("User", "a", 100),
-        row("User", "a", 40, { model_name: "llama" }),
-        row("User", "b", 30),
-      ],
-      [row("User", "a", 60), row("User", "b", 30)],
-      true,
-    );
-
-    expect(left.map((r) => [r.who.key, r.model_name, r.usage])).toEqual([
-      ["a", "qwen", 40],
-      ["a", "llama", 40],
-    ]);
-    expect(left[0].requests).toBe(4);
-  });
-
-  it("matches facts of one day, workspace, endpoint and model only", () => {
-    const left = subtractUsage(
-      [row("User", "a", 100)],
-      [
-        row("User", "a", 100, { date: "2026-10-21" }),
-        row("User", "a", 100, { workspace: "other" }),
-        row("User", "a", 100, { endpoint_name: "other" }),
-      ],
-    );
-
-    expect(left.map((r) => r.usage)).toEqual([100]);
-  });
-});
-
 describe("buildBreakdown", () => {
   it("splits the platform into its top departments and the users in none", () => {
     const facts = breakdown(
@@ -273,6 +270,7 @@ describe("buildBreakdown", () => {
           row("User", "u2", 150),
           row("User", "u3", 50),
         ],
+        directRows: [row("User", "u3", 50)],
         // Every department's subtree total; only the top ones are entries.
         unitRows: [
           row("OrgUnit", "rnd", 300),
@@ -314,8 +312,8 @@ describe("buildBreakdown", () => {
           row("OrgUnit", "ml", 270),
           row("OrgUnit", "infer", 120),
         ],
-        // ml's subtree by user.
-        childUserRows: [row("User", "u1", 200), row("User", "u3", 70 - 30)],
+        // Recorded under rnd itself.
+        directRows: [row("User", "u2", 80), row("User", "u3", 30)],
       },
     );
 
@@ -333,18 +331,6 @@ describe("buildBreakdown", () => {
         from: { type: "orgUnit", name: "rnd" },
       },
     });
-  });
-
-  it("lists a leaf department's users without subtracting anything", () => {
-    const facts = breakdown(
-      { type: "orgUnit", name: "infer" },
-      {
-        userRows: [row("User", "u1", 120)],
-        unitRows: [row("OrgUnit", "infer", 120)],
-      },
-    );
-
-    expect(totalsByEntry(facts)).toEqual({ "user:u1": 120 });
   });
 
   it("splits a user into the models they used", () => {
@@ -384,6 +370,7 @@ describe("summarizeBreakdown", () => {
   const facts = breakdown(rnd, {
     userRows: [row("User", "u2", 80)],
     unitRows: [row("OrgUnit", "ml", 50)],
+    directRows: [row("User", "u2", 80)],
   });
 
   it("lists the members who used nothing after those who did", () => {

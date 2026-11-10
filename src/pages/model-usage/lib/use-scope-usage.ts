@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
+import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
   useOrgUnitMembers,
   useTeamMembers,
@@ -17,7 +18,6 @@ import {
   keyFact,
   type ScopeMember,
   scopeQueries,
-  subtractUsage,
   summarizeBreakdown,
   sumUsage,
   type UsageFact,
@@ -54,6 +54,8 @@ type ScopeUsageInput = {
   nodesByName: ReadonlyMap<string, OrgTreeNode>;
   teamsByName: ReadonlyMap<string, Team>;
   unassignedLabel: string;
+  /** Names a deleted API key by the start of its id. Keep it stable. */
+  deletedKeyLabel: (shortId: string) => string;
 };
 
 /**
@@ -71,16 +73,12 @@ export function useScopeUsage({
   nodesByName,
   teamsByName,
   unassignedLabel,
+  deletedKeyLabel,
 }: ScopeUsageInput) {
   const queries = scopeQueries(scope);
   // Usage by department for the platform and for a department; a Team or a
   // user is not split into departments.
   const unitFilter = queries.units ?? {};
-  const childFilters = (
-    queries.splitUnit
-      ? (nodesByName.get(queries.splitUnit)?.children ?? [])
-      : []
-  ).map((node) => ({ orgUnit: node.unit.metadata.name, name: queries.userId }));
 
   const userUsage = useGroupUsage(
     workspace,
@@ -98,7 +96,13 @@ export function useScopeUsage({
     [unitFilter],
     !!queries.units,
   );
-  const childUsage = useGroupUsage(workspace, start, end, "User", childFilters);
+  const directUsage = useGroupUsage(
+    workspace,
+    start,
+    end,
+    "User",
+    queries.direct ? [queries.direct] : [],
+  );
   const teamUsage = useGroupUsage(
     workspace,
     start,
@@ -107,13 +111,23 @@ export function useScopeUsage({
     [unitFilter],
     teamsOpen,
   );
-  const keyUsage = useWorkspaceUsage(workspace, start, end, !scope || keysOpen);
+  const keyUsage = useWorkspaceUsage(
+    workspace,
+    start,
+    end,
+    !scope || keysOpen,
+    queries.keyGroup,
+  );
 
   const userFacts = useFacts(userUsage.usageData, groupFact);
   const unitFacts = useFacts(unitUsage.usageData, groupFact);
-  const childFacts = useFacts(childUsage.usageData, groupFact);
+  const directFacts = useFacts(directUsage.usageData, groupFact);
   const teamFacts = useFacts(teamUsage.usageData, groupFact);
-  const allKeyFacts = useFacts(keyUsage.usageData, keyFact);
+  const keyFactOf = useCallback(
+    (r: ApiUsageRecord) => keyFact(r, deletedKeyLabel),
+    [deletedKeyLabel],
+  );
+  const allKeyFacts = useFacts(keyUsage.usageData, keyFactOf);
 
   // The group's current members, so the breakdown lists those who used
   // nothing too. A department lists its direct members only: the members of
@@ -140,14 +154,7 @@ export function useScopeUsage({
     [memberUnit, memberTeam, unitMembers.members, teamMembers.members],
   );
 
-  // A user opened from a department counts their usage there less what was
-  // recorded in its sub-departments, which the sub-departments' rows hold.
-  const subtractChildren = scope?.type === "user" && !!queries.splitUnit;
-  const userRows = useMemo(
-    () => (subtractChildren ? subtractUsage(userFacts, childFacts) : userFacts),
-    [subtractChildren, userFacts, childFacts],
-  );
-  const scopeRows = scope ? userRows : allKeyFacts;
+  const scopeRows = scope ? userFacts : allKeyFacts;
   const models = useMemo(
     () => aggregateSeries(scopeRows, modelOf, modelMeta),
     [scopeRows],
@@ -173,9 +180,9 @@ export function useScopeUsage({
             scope,
             nodes: nodesByName,
             roots,
-            userRows: inModel(userRows),
+            userRows: inModel(userFacts),
             unitRows: inModel(unitFacts),
-            childUserRows: inModel(childFacts),
+            directRows: inModel(directFacts),
             unassignedLabel,
           })
         : [],
@@ -184,9 +191,9 @@ export function useScopeUsage({
       nodesByName,
       roots,
       inModel,
-      userRows,
+      userFacts,
       unitFacts,
-      childFacts,
+      directFacts,
       unassignedLabel,
     ],
   );
@@ -210,11 +217,11 @@ export function useScopeUsage({
     [inModel, teamFacts],
   );
 
-  // Rows of different params must never be combined: the breakdown would
-  // subtract one department's child rows from another's. While any query
-  // still holds the rows of its previous params, the last result whose rows
-  // all answered the same params stays on screen.
-  const all = [userUsage, unitUsage, childUsage, teamUsage, keyUsage];
+  // Rows of different params must never be combined: the total and the
+  // breakdown would count different scopes. While any query still holds the
+  // rows of its previous params, the last result whose rows all answered the
+  // same params stays on screen.
+  const all = [userUsage, unitUsage, directUsage, teamUsage, keyUsage];
   const settled = !all.some((q) => q.isPlaceholder);
   const view = {
     models,
@@ -248,7 +255,7 @@ export function useScopeUsage({
     loading:
       !settled ||
       (scope
-        ? userUsage.isLoading || unitUsage.isLoading || childUsage.isLoading
+        ? userUsage.isLoading || unitUsage.isLoading || directUsage.isLoading
         : keyUsage.isLoading),
     error: all.find((q) => q.error)?.error,
     refetch: () => {

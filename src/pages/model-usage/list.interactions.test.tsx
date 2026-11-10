@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
 import type {
   ApiUsageRecord,
   GroupUsageKind,
@@ -87,6 +88,8 @@ vi.mock("@/foundation/components/DateRangePicker", async () => {
 
 let canReadAll = false;
 let canReadSubtree = false;
+// The Teams whose usage the caller reads through a Team-scoped grant.
+let usageTeamIds: number[] = [];
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: () => ({ allowed: canReadAll, isLoading: false }),
   useHasPermission: () => ({ allowed: canReadSubtree, isLoading: false }),
@@ -105,8 +108,13 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
   return {
     useOrgTree: (enabled: boolean) =>
       orgTreeIndex(enabled ? (orgUnits as OrgUnit[]) : []),
-    useTeamsByName: (enabled: boolean) =>
-      teamIndex(enabled ? (teams as Team[]) : []),
+    // As get_readable_usage_teams: every Team for a global reader.
+    useReadableUsageTeams: () =>
+      teamIndex(
+        (canReadAll
+          ? teams
+          : teams.filter((team) => usageTeamIds.includes(team.id))) as Team[],
+      ),
     // rnd's direct members: u2, and u5 who used nothing. Team A: u1.
     useOrgUnitMembers: (id: number | undefined) => ({
       members: id === 1 ? [member("u2", "u2-name"), member("u5", "Idle")] : [],
@@ -117,7 +125,10 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
   };
 });
 
-const teams = [{ id: 7, metadata: { name: "team-a", display_name: "Team A" } }];
+const teams = [
+  { id: 7, metadata: { name: "team-a", display_name: "Team A" } },
+  { id: 8, metadata: { name: "team-b", display_name: "Team B" } },
+];
 const member = (id: string, name: string) => ({
   user_id: id,
   user_profiles: { id, metadata: { name } },
@@ -143,13 +154,17 @@ const group = (
   completion_tokens: usage * 0.2,
 });
 
+type Filter = {
+  orgUnit?: string;
+  team?: string;
+  name?: string;
+  direct?: boolean;
+};
+
 // What get_usage_by_group answers. u1 used qwen in ml, u2 llama in rnd
 // itself, u3 qwen in no department.
-const answer = (
-  kind: GroupUsageKind,
-  filter: { orgUnit?: string; team?: string; name?: string },
-): GroupUsageRecord[] => {
-  const key = `${kind}:${filter.orgUnit ?? filter.team ?? ""}`;
+const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
+  const key = `${kind}:${filter.orgUnit ?? filter.team ?? ""}${filter.direct ? ":direct" : ""}`;
   const answers: Record<string, GroupUsageRecord[]> = {
     "User:": [
       group("User", "u1", 300),
@@ -167,7 +182,8 @@ const answer = (
       group("OrgUnit", "rnd", 100, "llama"),
       group("OrgUnit", "ml", 300),
     ],
-    "User:ml": [group("User", "u1", 300)],
+    "User::direct": [group("User", "u3", 50)],
+    "User:rnd:direct": [group("User", "u2", 100, "llama")],
     "Team:": [group("Team", "team-a", 250)],
     "Team:rnd": [group("Team", "team-a", 250)],
     // u1's usage while in Team A, part of their 300.
@@ -192,7 +208,7 @@ vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
     _start: string,
     _end: string,
     kind: GroupUsageKind,
-    filters: { orgUnit?: string; team?: string; name?: string }[],
+    filters: Filter[],
     enabled = true,
   ) => {
     if (!workspace || !enabled) return query([]);
@@ -203,10 +219,14 @@ vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
   },
 }));
 
-const keyRow = (id: string, usage: number): ApiUsageRecord => ({
+const keyRow = (
+  id: string,
+  usage: number,
+  name: string | null = id,
+): ApiUsageRecord => ({
   date: "2026-10-20",
   api_key_id: id,
-  api_key_name: id,
+  api_key_name: name,
   endpoint_type: "endpoint",
   endpoint_name: "chat",
   model_name: "qwen",
@@ -216,23 +236,32 @@ const keyRow = (id: string, usage: number): ApiUsageRecord => ({
   completion_tokens: usage * 0.2,
 });
 let keyFetched = false;
+const keyGroups: (KeyUsageGroup | undefined)[] = [];
 vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: (
     workspace: string | undefined,
     _start: string,
     _end: string,
     enabled = true,
+    group?: KeyUsageGroup,
   ) => {
     const fetched = !!workspace && enabled;
     keyFetched ||= fetched;
-    return query(fetched ? [keyRow("key-a", 70), keyRow("key-b", 30)] : []);
+    if (fetched) keyGroups.push(group);
+    // A group's usage includes a member's key that was deleted since.
+    const rows = group
+      ? [keyRow("key-a", 70), keyRow("0123abcd-dead-key", 20, null)]
+      : [keyRow("key-a", 70), keyRow("key-b", 30)];
+    return query(fetched ? rows : []);
   },
 }));
 
 beforeEach(() => {
   canReadAll = false;
   canReadSubtree = false;
+  usageTeamIds = [];
   keyFetched = false;
+  keyGroups.length = 0;
   groupCalls.length = 0;
   refetch.mockClear();
 });
@@ -283,6 +312,7 @@ describe("a reader of the whole platform", () => {
 
     expect(groupCalls).toContain("User:{}");
     expect(groupCalls).toContain("OrgUnit:{}");
+    expect(groupCalls).toContain('User:{"direct":true}');
     expect(summary("total")).toContain("450");
     expect(summary("requests")).toContain("45");
     expect(tabs()).toEqual([
@@ -304,10 +334,11 @@ describe("a reader of the whole platform", () => {
 
     expect(groupCalls).toContain('User:{"orgUnit":"rnd"}');
     expect(groupCalls).toContain('OrgUnit:{"orgUnit":"rnd"}');
-    expect(groupCalls).toContain('User:{"orgUnit":"ml"}');
+    expect(groupCalls).toContain('User:{"orgUnit":"rnd","direct":true}');
+    // One query per scope, not one per child department.
+    expect(groupCalls.some((call) => call.includes('"ml"'))).toBe(false);
     expect(summary("total")).toContain("400");
-    // API keys carry no department, so they are counted for the platform only.
-    expect(tabs()).not.toContain("model_usage.tabs.apiKeys");
+    expect(tabs()).toContain("model_usage.tabs.apiKeys");
     // Direct members without usage are listed too, after the rest.
     expect(tableRows()).toEqual(["ML", "u2-name", "Idle"]);
 
@@ -325,6 +356,7 @@ describe("a reader of the whole platform", () => {
     expect(summary("total")).toContain("120");
     expect(tabs()).toEqual([
       "model_usage.tabs.members",
+      "model_usage.tabs.apiKeys",
       "model_usage.tabs.models",
       "model_usage.tabs.detail",
     ]);
@@ -351,9 +383,10 @@ describe("a reader of the whole platform", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "u2-name" }));
 
-    // Their usage in R&D, less what was recorded in its sub-departments.
-    expect(groupCalls).toContain('User:{"name":"u2","orgUnit":"rnd"}');
-    expect(groupCalls).toContain('User:{"orgUnit":"ml","name":"u2"}');
+    // Their usage recorded under R&D itself.
+    expect(groupCalls).toContain(
+      'User:{"name":"u2","orgUnit":"rnd","direct":true}',
+    );
     expect(summary("total")).toContain("100");
     expect(tabs()).toEqual([
       "model_usage.tabs.models",
@@ -403,5 +436,41 @@ describe("a department admin", () => {
       }),
     ).toBeNull();
     expect(tabs()).not.toContain("model_usage.tabs.teams");
+  });
+
+  it("lists the API keys used in their department", () => {
+    render(<ModelUsageList />);
+
+    openTab("model_usage.tabs.apiKeys");
+
+    expect(keyGroups).toContainEqual({ orgUnit: "market" });
+    expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
+  });
+});
+
+describe("a reader of one Team's usage", () => {
+  beforeEach(() => {
+    usageTeamIds = [7];
+  });
+
+  it("opens on every key they read, and picks their Team as a scope", () => {
+    render(<ModelUsageList />);
+
+    expect(groupCalls).toEqual([]);
+    expect(keyGroups).toEqual([undefined]);
+    expect(scopeButton("model_usage.scope.visible").ariaPressed).toBe("true");
+    // Only the Teams whose usage they read.
+    expect(
+      within(screen.getByRole("complementary")).queryByRole("button", {
+        name: "Team B",
+      }),
+    ).toBeNull();
+
+    fireEvent.click(scopeButton("Team A"));
+    expect(groupCalls).toContain('User:{"team":"team-a"}');
+    openTab("model_usage.tabs.apiKeys");
+
+    expect(keyGroups).toContainEqual({ team: "team-a" });
+    expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
   });
 });

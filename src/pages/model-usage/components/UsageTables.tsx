@@ -246,8 +246,8 @@ export function DetailTable({
               {t("model_usage.detail.date")}
             </TableHead>
             <TableHead className="w-[160px]">{whoHeader}</TableHead>
-            <TableHead className="w-[90px]">
-              {t("model_usage.detail.type")}
+            <TableHead className="w-[110px]">
+              {t("model_usage.detail.endpointType")}
             </TableHead>
             <TableHead>{t("model_usage.detail.endpoint")}</TableHead>
             <TableHead>{t("model_usage.model")}</TableHead>

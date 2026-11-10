@@ -1,4 +1,4 @@
-import { Globe, Users } from "lucide-react";
+import { Eye, Globe, Users } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { OrgUnitTree } from "@/domains/organization/components/OrgUnitTree";
@@ -45,10 +45,10 @@ const ScopeButton = ({
 );
 
 /**
- * The scope picker: the whole platform and the Teams, for a reader of every
- * group, and the departments the caller may read. A user is opened from the
- * breakdown, not from here, so a user scope keeps the group it came from
- * selected.
+ * The scope picker: the whole platform for a reader of every group, or else
+ * every API key the caller reads (no scope); the departments and Teams the
+ * caller may read. A user is opened from the breakdown, not from here, so a
+ * user scope keeps the group it came from selected.
  */
 export const UsageScopePanel = ({
   roots,
@@ -63,9 +63,9 @@ export const UsageScopePanel = ({
   nodesByName: ReadonlyMap<string, OrgTreeNode>;
   nodesById: ReadonlyMap<number, OrgTreeNode>;
   teams: Team[];
-  scope: UsageScope;
+  scope: UsageScope | null;
   canReadPlatform: boolean;
-  onScopeChange: (scope: UsageScope) => void;
+  onScopeChange: (scope: UsageScope | null) => void;
 }) => {
   const { t } = useTranslation();
   // Open to the second level by default; the tree is the page's navigation,
@@ -73,7 +73,7 @@ export const UsageScopePanel = ({
   const [expanded, setExpanded] = useState<Set<number> | null>(null);
   const openIds = expanded ?? new Set(roots.map((node) => node.unit.id));
 
-  const group = groupOf(scope);
+  const group = scope ? groupOf(scope) : null;
   const selectedId =
     group?.type === "orgUnit"
       ? nodesByName.get(group.name)?.unit.id
@@ -88,16 +88,23 @@ export const UsageScopePanel = ({
         <div className="mb-2 px-1 text-sm font-medium">
           {t("model_usage.scope.title")}
         </div>
-        {canReadPlatform ? (
-          <div className="mb-0.5">
+        <div className="mb-0.5">
+          {canReadPlatform ? (
             <ScopeButton
-              selected={scope.type === "platform"}
+              selected={scope?.type === "platform"}
               icon={<Globe className="size-4 shrink-0 text-muted-foreground" />}
               label={t("model_usage.scope.platform")}
               onClick={() => onScopeChange({ type: "platform" })}
             />
-          </div>
-        ) : null}
+          ) : (
+            <ScopeButton
+              selected={scope === null}
+              icon={<Eye className="size-4 shrink-0 text-muted-foreground" />}
+              label={t("model_usage.scope.visible")}
+              onClick={() => onScopeChange(null)}
+            />
+          )}
+        </div>
         <OrgUnitTree
           roots={roots}
           expanded={openIds}
