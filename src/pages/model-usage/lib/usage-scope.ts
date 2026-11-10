@@ -1,9 +1,13 @@
 import type { GroupUsageFilter } from "@/domains/api-key/hooks/use-group-usage";
-import type { GroupUsageRecord } from "@/domains/api-key/types";
-import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
+import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
+import {
+  type OrgTreeNode,
+  orgUnitAncestors,
+} from "@/domains/organization/lib/org-tree";
+import { displayName } from "@/foundation/lib/display-name";
 import {
   aggregateSeries,
+  modelOf,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
@@ -39,24 +43,106 @@ const groupFilter = (group: GroupScope | null): GroupUsageFilter =>
  * The get_usage_by_group filter of a scope's User rows. A user opened from a
  * group counts only their usage in that group, as their row there did.
  */
-export const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
+const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
   scope.type === "user"
     ? { name: scope.id, ...groupFilter(scope.from) }
     : groupFilter(groupOf(scope));
 
-/** The i18n keys that name a scope's breakdown: chart series, tab and column. */
+/** What the page asks get_usage_by_group for in a scope. */
+export type ScopeQueries = {
+  /** The filter of the scope's User rows. */
+  user: GroupUsageFilter;
+  /**
+   * The filter of the OrgUnit and Team rows. Null when the scope is not split
+   * into departments: a Team, a user, or no scope.
+   */
+  units: GroupUsageFilter | null;
+  /**
+   * The department whose child departments' User rows are needed: a
+   * department scope, or the department a user was opened from.
+   */
+  splitUnit?: string;
+  /** The user of a user scope, to narrow those child rows to. */
+  userId?: string;
+};
+
+export function scopeQueries(scope: UsageScope | null): ScopeQueries {
+  switch (scope?.type) {
+    case undefined:
+      return { user: {}, units: null };
+    case "platform":
+      return { user: {}, units: {} };
+    case "orgUnit":
+      return {
+        user: userUsageFilter(scope),
+        units: { orgUnit: scope.name },
+        splitUnit: scope.name,
+      };
+    case "team":
+      return { user: userUsageFilter(scope), units: null };
+    case "user":
+      return {
+        user: userUsageFilter(scope),
+        units: null,
+        splitUnit: scope.from?.type === "orgUnit" ? scope.from.name : undefined,
+        userId: scope.id,
+      };
+  }
+}
+
+export type ScopeCrumb = { label: string; scope: UsageScope };
+
+/**
+ * The way up from a scope: the platform for a reader of every group, then
+ * each readable department above, or the Team, then the user.
+ */
+export function scopeTrail(
+  scope: UsageScope | null,
+  {
+    canReadAllGroups,
+    nodesByName,
+    nodesById,
+    platformLabel,
+  }: {
+    canReadAllGroups: boolean;
+    nodesByName: ReadonlyMap<string, OrgTreeNode>;
+    nodesById: ReadonlyMap<number, OrgTreeNode>;
+    platformLabel: string;
+  },
+): ScopeCrumb[] {
+  if (!scope) return [];
+  const crumbs: ScopeCrumb[] = canReadAllGroups
+    ? [{ label: platformLabel, scope: { type: "platform" } }]
+    : [];
+  const group = groupOf(scope);
+  const groupNode =
+    group?.type === "orgUnit" ? nodesByName.get(group.name) : undefined;
+  if (groupNode) {
+    for (const node of orgUnitAncestors(groupNode, nodesById)) {
+      crumbs.push({
+        label: node.label,
+        scope: { type: "orgUnit", name: node.unit.metadata.name },
+      });
+    }
+  } else if (group?.type === "team") {
+    crumbs.push({ label: group.label, scope: group });
+  }
+  if (scope.type === "user") crumbs.push({ label: scope.label, scope });
+  return crumbs;
+}
+
+/**
+ * The i18n keys that name a scope's breakdown: chart series, tab and column.
+ * Without a scope or for a user there is no breakdown tab, only the chart.
+ */
 export function breakdownLabelKeys(scope: UsageScope | null): {
   series: string;
-  tab: string;
-  column: string;
+  tab?: string;
+  column?: string;
 } {
   switch (scope?.type) {
     case undefined:
-      return {
-        series: "model_usage.series.apiKey",
-        tab: "model_usage.tabs.apiKeys",
-        column: "model_usage.apiKey",
-      };
+      return { series: "model_usage.series.apiKey" };
     case "platform":
       return {
         series: "model_usage.series.department",
@@ -76,15 +162,21 @@ export function breakdownLabelKeys(scope: UsageScope | null): {
         column: "model_usage.columns.subUnitOrUser",
       };
     case "user":
-      return {
-        series: "model_usage.series.model",
-        tab: "model_usage.tabs.subUnits",
-        column: "model_usage.columns.subUnitOrUser",
-      };
+      return { series: "model_usage.series.model" };
   }
 }
 
-/** The fields every usage row shares, whichever RPC returned it. */
+/** Who a usage row counts toward: a user or group, or an API key. */
+export type UsageWho = {
+  key: string;
+  name: string;
+  description: string | null;
+};
+
+/**
+ * One usage row, whichever RPC returned it. `requests` is absent from usage
+ * by API key, which carries no request count.
+ */
 export type UsageFact = Pick<
   GroupUsageRecord,
   | "date"
@@ -95,7 +187,35 @@ export type UsageFact = Pick<
   | "usage"
   | "prompt_tokens"
   | "completion_tokens"
-> & { requests?: number };
+> & { requests?: number; who: UsageWho };
+
+const usageFields = (r: GroupUsageRecord | ApiUsageRecord) => ({
+  date: r.date,
+  workspace: r.workspace,
+  endpoint_type: r.endpoint_type,
+  endpoint_name: r.endpoint_name,
+  model_name: r.model_name,
+  usage: r.usage,
+  prompt_tokens: r.prompt_tokens,
+  completion_tokens: r.completion_tokens,
+});
+
+/** A get_usage_by_group row as a fact of its group. */
+export const groupFact = (r: GroupUsageRecord): UsageFact => ({
+  ...usageFields(r),
+  requests: r.requests,
+  who: { key: r.name, name: displayName(r), description: null },
+});
+
+/** A get_usage_by_dimension row as a fact of its API key. */
+export const keyFact = (r: ApiUsageRecord): UsageFact => ({
+  ...usageFields(r),
+  who: {
+    key: r.api_key_id,
+    name: r.api_key_display_name || r.api_key_name || r.api_key_id,
+    description: r.api_key_description || null,
+  },
+});
 
 export type UsageTotals = {
   prompt: number;
@@ -108,22 +228,29 @@ export type UsageTotals = {
 /** The usage of the platform's users that no department holds. */
 export const UNASSIGNED_KEY = "__unassigned";
 
-export function sumUsage(rows: UsageFact[]): UsageTotals {
-  const totals: UsageTotals = { prompt: 0, completion: 0, total: 0 };
+/** Adds up the rows; `requests` is counted, from 0, only when asked for. */
+export function sumUsage(
+  rows: UsageFact[],
+  countRequests: boolean,
+): UsageTotals {
+  const totals: UsageTotals = {
+    prompt: 0,
+    completion: 0,
+    total: 0,
+    ...(countRequests ? { requests: 0 } : {}),
+  };
   for (const r of rows) {
     totals.prompt += r.prompt_tokens ?? 0;
     totals.completion += r.completion_tokens ?? 0;
     totals.total += r.usage ?? 0;
-    if (r.requests !== undefined) {
-      totals.requests = (totals.requests ?? 0) + r.requests;
-    }
+    if (totals.requests !== undefined) totals.requests += r.requests ?? 0;
   }
   return totals;
 }
 
-const factKey = (r: UsageFact, name: string) =>
+const factKey = (r: UsageFact, byWho: boolean) =>
   [
-    name,
+    byWho ? r.who.key : "",
     r.date,
     r.workspace,
     r.endpoint_type ?? "",
@@ -133,17 +260,17 @@ const factKey = (r: UsageFact, name: string) =>
 
 /**
  * `rows` with `minus` taken out, matched by date, workspace, endpoint, model
- * and — when `nameOf` is given — by name. Facts that come to nothing are
- * dropped, so a user whose usage is all in sub-departments leaves no row.
+ * and — when `byWho` — by who they count toward. Facts that come to nothing
+ * are dropped, so a user whose usage is all in sub-departments leaves no row.
  */
-export function subtractUsage<R extends UsageFact, M extends UsageFact>(
+export function subtractUsage<R extends UsageFact>(
   rows: R[],
-  minus: M[],
-  nameOf: (r: R | M) => string = () => "",
+  minus: UsageFact[],
+  byWho = false,
 ): R[] {
   const left = new Map<string, R>();
   for (const r of rows) {
-    const key = factKey(r, nameOf(r));
+    const key = factKey(r, byWho);
     const prior = left.get(key);
     left.set(
       key,
@@ -162,7 +289,7 @@ export function subtractUsage<R extends UsageFact, M extends UsageFact>(
     );
   }
   for (const m of minus) {
-    const row = left.get(factKey(m, nameOf(m)));
+    const row = left.get(factKey(m, byWho));
     if (!row) continue;
     row.usage -= m.usage ?? 0;
     row.prompt_tokens = (row.prompt_tokens ?? 0) - (m.prompt_tokens ?? 0);
@@ -194,20 +321,31 @@ type BreakdownInput = {
   /** The departments shown at the top of the tree. */
   roots: OrgTreeNode[];
   /** get_usage_by_group by User across the scope. */
-  userRows: GroupUsageRecord[];
+  userRows: UsageFact[];
   /** get_usage_by_group by OrgUnit across the scope (each a subtree total). */
-  unitRows: GroupUsageRecord[];
+  unitRows: UsageFact[];
   /** By User for each child department of an OrgUnit scope. */
-  childUserRows: GroupUsageRecord[];
+  childUserRows: UsageFact[];
   unassignedLabel: string;
 };
 
-const unitEntry = (r: GroupUsageRecord, node: OrgTreeNode): BreakdownFact => ({
-  ...r,
+type Entry = Omit<BreakdownFact, keyof UsageFact>;
+
+const unitEntry = (node: OrgTreeNode): Entry => ({
   entry: node.unit.metadata.name,
   label: node.label,
   description: null,
   target: { type: "orgUnit", name: node.unit.metadata.name },
+});
+
+const userEntryKey = (id: string) => `user:${id}`;
+
+/** A user's entry in a group's breakdown, which opens the user from there. */
+const userEntry = (id: string, label: string, from: GroupScope): Entry => ({
+  entry: userEntryKey(id),
+  label,
+  description: null,
+  target: { type: "user", id, label, from },
 });
 
 /**
@@ -231,28 +369,20 @@ export function buildBreakdown({
   if (scope.type === "user") {
     return userRows.map((r) => ({
       ...r,
-      entry: r.model_name ?? EMPTY_VALUE,
-      label: r.model_name ?? EMPTY_VALUE,
+      entry: modelOf(r),
+      label: modelOf(r),
       description: null,
       target: null,
     }));
   }
 
-  const userEntry = (r: GroupUsageRecord, from: GroupScope) => ({
+  const byUser = (r: UsageFact, from: GroupScope): BreakdownFact => ({
     ...r,
-    entry: `user:${r.name}`,
-    label: r.display_name || r.name,
-    description: null,
-    target: {
-      type: "user" as const,
-      id: r.name,
-      label: r.display_name || r.name,
-      from,
-    },
+    ...userEntry(r.who.key, r.who.name, from),
   });
 
   if (scope.type === "team") {
-    return userRows.map((r) => userEntry(r, scope));
+    return userRows.map((r) => byUser(r, scope));
   }
 
   const children =
@@ -261,8 +391,8 @@ export function buildBreakdown({
     children.map((node) => [node.unit.metadata.name, node]),
   );
   const units = unitRows.flatMap((r) => {
-    const node = childByName.get(r.name);
-    return node ? [unitEntry(r, node)] : [];
+    const node = childByName.get(r.who.key);
+    return node ? [{ ...r, ...unitEntry(node) }] : [];
   });
 
   if (scope.type === "platform") {
@@ -279,48 +409,43 @@ export function buildBreakdown({
     ];
   }
 
-  const direct = subtractUsage(userRows, childUserRows, (r) => r.name);
-  return [...units, ...direct.map((r) => userEntry(r, scope))];
+  const direct = subtractUsage(userRows, childUserRows, true);
+  return [...units, ...direct.map((r) => byUser(r, scope))];
 }
+
+/** A breakdown entry with where clicking it leads; null when nowhere. */
+export type BreakdownSeries = UsageSeries & { target: UsageScope | null };
 
 /**
  * The breakdown's entries, biggest first, then the group's members who used
- * nothing — so a department or Team shows who did not use it too — and
- * where each entry leads.
+ * nothing — so a department or Team shows who did not use it too.
  */
 export function summarizeBreakdown(
   facts: BreakdownFact[],
-  idleMembers: ScopeMember[],
+  members: ScopeMember[],
   from: GroupScope | null,
-): { series: UsageSeries[]; targets: Map<string, UsageScope | null> } {
+): BreakdownSeries[] {
   const series = aggregateSeries(
     facts,
     (r) => r.entry,
-    (r) => ({ name: r.label, description: r.description }),
+    (r) => ({ name: r.label, description: r.description, target: r.target }),
   );
-  const targets = new Map(facts.map((r) => [r.entry, r.target]));
-  if (!from) return { series, targets };
+  if (!from) return series;
 
-  const idle = idleMembers
-    .filter((member) => !targets.has(`user:${member.id}`))
-    .sort((a, b) => a.label.localeCompare(b.label));
-  for (const member of idle) {
-    const key = `user:${member.id}`;
-    series.push({
-      key,
-      name: member.label,
+  const listed = new Set(series.map((s) => s.key));
+  const idle = members
+    .map((member) => userEntry(member.id, member.label, from))
+    .filter((e) => !listed.has(e.entry))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((e) => ({
+      key: e.entry,
+      name: e.label,
       description: null,
       prompt: 0,
       completion: 0,
       total: 0,
       requests: 0,
-    });
-    targets.set(key, {
-      type: "user",
-      id: member.id,
-      label: member.label,
-      from,
-    });
-  }
-  return { series, targets };
+      target: e.target,
+    }));
+  return [...series, ...idle];
 }

@@ -4,12 +4,16 @@ import { buildOrgTree, indexNodes } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import {
   buildBreakdown,
+  groupFact,
+  keyFact,
+  scopeQueries,
+  scopeTrail,
   subtractUsage,
   summarizeBreakdown,
   sumUsage,
   UNASSIGNED_KEY,
+  type UsageFact,
   type UsageScope,
-  userUsageFilter,
 } from "./usage-scope";
 
 const unit = (id: number, path: string, name: string): OrgUnit =>
@@ -38,6 +42,13 @@ const row = (
   name: string,
   usage: number,
   overrides: Partial<GroupUsageRecord> = {},
+) => groupFact(record(kind, name, usage, overrides));
+
+const record = (
+  kind: GroupUsageRecord["kind"],
+  name: string,
+  usage: number,
+  overrides: Partial<GroupUsageRecord> = {},
 ): GroupUsageRecord => ({
   date: "2026-10-20",
   kind,
@@ -57,9 +68,9 @@ const row = (
 const breakdown = (
   scope: UsageScope,
   rows: {
-    userRows?: GroupUsageRecord[];
-    unitRows?: GroupUsageRecord[];
-    childUserRows?: GroupUsageRecord[];
+    userRows?: UsageFact[];
+    unitRows?: UsageFact[];
+    childUserRows?: UsageFact[];
   },
 ) =>
   buildBreakdown({
@@ -78,35 +89,142 @@ const totalsByEntry = (facts: ReturnType<typeof breakdown>) => {
   return totals;
 };
 
-describe("userUsageFilter", () => {
+describe("scopeQueries", () => {
+  const rnd = { type: "orgUnit", name: "rnd" } as const;
+  const team = { type: "team", name: "t1", label: "T1" } as const;
+  const user = (from: UsageScope | null) =>
+    ({ type: "user", id: "u1", label: "U1", from }) as UsageScope;
+
   it("narrows a scope's User rows to its group, and a user to that group", () => {
-    const rnd = { type: "orgUnit", name: "rnd" } as const;
+    expect(scopeQueries({ type: "platform" }).user).toEqual({});
+    expect(scopeQueries(rnd).user).toEqual({ orgUnit: "rnd" });
+    expect(scopeQueries(team).user).toEqual({ team: "t1" });
+    expect(scopeQueries(user(rnd)).user).toEqual({
+      name: "u1",
+      orgUnit: "rnd",
+    });
+    expect(scopeQueries(user(team)).user).toEqual({ name: "u1", team: "t1" });
+    expect(scopeQueries(user(null)).user).toEqual({ name: "u1" });
+  });
+
+  it("splits the platform and a department into departments only", () => {
+    expect(scopeQueries(null).units).toBeNull();
+    expect(scopeQueries({ type: "platform" }).units).toEqual({});
+    expect(scopeQueries(rnd).units).toEqual({ orgUnit: "rnd" });
+    expect(scopeQueries(team).units).toBeNull();
+    expect(scopeQueries(user(rnd)).units).toBeNull();
+  });
+
+  it("reads child departments for a department and a user opened from one", () => {
+    expect(scopeQueries(rnd)).toMatchObject({ splitUnit: "rnd" });
+    expect(scopeQueries(rnd).userId).toBeUndefined();
+    expect(scopeQueries(user(rnd))).toMatchObject({
+      splitUnit: "rnd",
+      userId: "u1",
+    });
+    expect(scopeQueries(user(team)).splitUnit).toBeUndefined();
+    expect(scopeQueries({ type: "platform" }).splitUnit).toBeUndefined();
+  });
+});
+
+describe("scopeTrail", () => {
+  const nodesById = indexNodes(roots);
+  const trail = (scope: UsageScope | null, canReadAllGroups = true) =>
+    scopeTrail(scope, {
+      canReadAllGroups,
+      nodesByName: nodes,
+      nodesById,
+      platformLabel: "Platform",
+    }).map((crumb) => crumb.label);
+
+  it("leads up from a department through the departments above", () => {
+    expect(trail({ type: "orgUnit", name: "infer" })).toEqual([
+      "Platform",
+      "RND",
+      "ML",
+      "INFER",
+    ]);
+    expect(trail({ type: "orgUnit", name: "infer" }, false)).toEqual([
+      "RND",
+      "ML",
+      "INFER",
+    ]);
+  });
+
+  it("ends with the user, after the group they were opened from", () => {
     const team = { type: "team", name: "t1", label: "T1" } as const;
-    expect(userUsageFilter({ type: "platform" })).toEqual({});
-    expect(userUsageFilter(rnd)).toEqual({ orgUnit: "rnd" });
-    expect(userUsageFilter(team)).toEqual({ team: "t1" });
+    expect(trail({ type: "user", id: "u1", label: "U1", from: team })).toEqual([
+      "Platform",
+      "T1",
+      "U1",
+    ]);
     expect(
-      userUsageFilter({ type: "user", id: "u1", label: "U1", from: rnd }),
-    ).toEqual({ name: "u1", orgUnit: "rnd" });
+      trail({
+        type: "user",
+        id: "u1",
+        label: "U1",
+        from: { type: "orgUnit", name: "ml" },
+      }),
+    ).toEqual(["Platform", "RND", "ML", "U1"]);
+    expect(trail({ type: "platform" })).toEqual(["Platform"]);
+    expect(trail(null)).toEqual([]);
+  });
+
+  it("points each crumb at its scope", () => {
+    const [platform, rnd] = scopeTrail(
+      { type: "orgUnit", name: "ml" },
+      {
+        canReadAllGroups: true,
+        nodesByName: nodes,
+        nodesById,
+        platformLabel: "Platform",
+      },
+    );
+    expect(platform.scope).toEqual({ type: "platform" });
+    expect(rnd.scope).toEqual({ type: "orgUnit", name: "rnd" });
+  });
+});
+
+describe("facts", () => {
+  it("name a group row by its display name, an API key by its label", () => {
+    expect(groupFact(record("User", "u1", 10)).who).toEqual({
+      key: "u1",
+      name: "u1 display",
+      description: null,
+    });
     expect(
-      userUsageFilter({ type: "user", id: "u1", label: "U1", from: team }),
-    ).toEqual({ name: "u1", team: "t1" });
-    expect(
-      userUsageFilter({ type: "user", id: "u1", label: "U1", from: null }),
-    ).toEqual({ name: "u1" });
+      keyFact({
+        date: "2026-10-20",
+        api_key_id: "k1",
+        api_key_name: "key",
+        api_key_display_name: null,
+        api_key_description: "",
+        endpoint_type: "endpoint",
+        endpoint_name: "chat",
+        model_name: "qwen",
+        workspace: "default",
+        usage: 10,
+        prompt_tokens: 8,
+        completion_tokens: 2,
+      }),
+    ).toMatchObject({
+      who: { key: "k1", name: "key", description: null },
+    });
   });
 });
 
 describe("sumUsage", () => {
   it("adds up tokens, and requests only when the rows carry them", () => {
-    expect(sumUsage([row("User", "a", 100), row("User", "b", 50)])).toEqual({
+    expect(
+      sumUsage([row("User", "a", 100), row("User", "b", 50)], true),
+    ).toEqual({
       prompt: 120,
       completion: 30,
       total: 150,
       requests: 15,
     });
-    const { requests: _, ...withoutRequests } = row("User", "a", 100);
-    expect(sumUsage([withoutRequests]).requests).toBeUndefined();
+    expect(sumUsage([], true).requests).toBe(0);
+    expect(sumUsage([row("User", "a", 100)], false).requests).toBeUndefined();
   });
 });
 
@@ -119,10 +237,10 @@ describe("subtractUsage", () => {
         row("User", "b", 30),
       ],
       [row("User", "a", 60), row("User", "b", 30)],
-      (r) => ("name" in r ? String(r.name) : ""),
+      true,
     );
 
-    expect(left.map((r) => [r.name, r.model_name, r.usage])).toEqual([
+    expect(left.map((r) => [r.who.key, r.model_name, r.usage])).toEqual([
       ["a", "qwen", 40],
       ["a", "llama", 40],
     ]);
@@ -249,9 +367,7 @@ describe("buildBreakdown", () => {
     expect(totalsByEntry(facts)).toEqual({ qwen: 100, llama: 20, "-": 5 });
     expect(facts.every((f) => f.target === null)).toBe(true);
   });
-});
 
-describe("buildBreakdown for a Team", () => {
   it("splits a Team into its users, who lead back to the Team", () => {
     const team = { type: "team" as const, name: "alpha", label: "Alpha" };
     const facts = breakdown(team, {
@@ -271,7 +387,7 @@ describe("summarizeBreakdown", () => {
   });
 
   it("lists the members who used nothing after those who did", () => {
-    const { series, targets } = summarizeBreakdown(
+    const series = summarizeBreakdown(
       facts,
       [
         { id: "u2", label: "U2" },
@@ -287,17 +403,18 @@ describe("summarizeBreakdown", () => {
       ["Amy", 0],
       ["Zed", 0],
     ]);
-    expect(targets.get("user:u9")).toEqual({
+    const targetOf = (key: string) => series.find((s) => s.key === key)?.target;
+    expect(targetOf("user:u9")).toEqual({
       type: "user",
       id: "u9",
       label: "Zed",
       from: rnd,
     });
-    expect(targets.get("ml")).toEqual({ type: "orgUnit", name: "ml" });
+    expect(targetOf("ml")).toEqual({ type: "orgUnit", name: "ml" });
   });
 
   it("adds no members outside a group scope", () => {
-    const { series } = summarizeBreakdown(
+    const series = summarizeBreakdown(
       facts,
       [{ id: "u9", label: "Zed" }],
       null,

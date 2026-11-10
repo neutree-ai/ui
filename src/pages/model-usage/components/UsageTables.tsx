@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -94,25 +94,23 @@ const EmptyRow = ({ colSpan }: { colSpan: number }) => {
 /**
  * Usage per entry — department, user, Team, API key or model — with each
  * entry's share of `total`. Pass `total` null when entries overlap, as Teams
- * do, so no share is shown that would not add up. An entry `onOpen` accepts
- * opens as a scope of its own.
+ * do, so no share is shown that would not add up. An entry with a `target`
+ * opens it through `onOpen`.
  */
-export function UsageTable<R extends UsageSeries>({
+export function UsageTable<T>({
   nameHeader,
   rows,
   resetKey,
   total,
   showRequests = false,
-  canOpen,
   onOpen,
 }: {
   nameHeader: string;
-  rows: R[];
+  rows: (UsageSeries & { target?: T | null })[];
   resetKey: string;
   total: number | null;
   showRequests?: boolean;
-  canOpen?: (row: R) => boolean;
-  onOpen?: (row: R) => void;
+  onOpen?: (target: T) => void;
 }) {
   const { t } = useTranslation();
   const { page, pageCount, setPage, pagedRows } = usePagedRows(
@@ -153,15 +151,15 @@ export function UsageTable<R extends UsageSeries>({
             <EmptyRow colSpan={columns} />
           ) : (
             pagedRows.map((r) => {
-              const openable = onOpen && (canOpen?.(r) ?? true);
+              const { target } = r;
               return (
                 <TableRow key={r.key}>
                   <TableCell className="max-w-[240px]">
-                    {openable ? (
+                    {onOpen && target ? (
                       <button
                         type="button"
                         className="group flex max-w-full items-center gap-1 text-left text-primary hover:underline"
-                        onClick={() => onOpen(r)}
+                        onClick={() => onOpen(target)}
                       >
                         <ApiKeyLabel
                           name={r.name}
@@ -223,18 +221,14 @@ export function UsageTable<R extends UsageSeries>({
  * The per-record breakdown: date, who used it (a user or an API key),
  * endpoint type, endpoint, model and tokens.
  */
-export function DetailTable<R extends UsageFact>({
+export function DetailTable({
   rows,
   resetKey,
   whoHeader,
-  whoOf,
-  rowKey,
 }: {
-  rows: R[];
+  rows: UsageFact[];
   resetKey: string;
   whoHeader: string;
-  whoOf: (row: R) => ReactNode;
-  rowKey: (row: R) => string;
 }) {
   const { t } = useTranslation();
   const { page, pageCount, setPage, pagedRows } = usePagedRows(
@@ -278,12 +272,17 @@ export function DetailTable<R extends UsageFact>({
             <EmptyRow colSpan={showRequests ? 9 : 8} />
           ) : (
             pagedRows.map((r, i) => (
-              <TableRow key={`${rowKey(r)}-${i}`}>
+              <TableRow
+                key={`${r.date}-${r.who.key}-${r.endpoint_name}-${r.model_name}-${i}`}
+              >
                 <TableCell className="font-mono text-xs">
                   {formatTick(r.date)}
                 </TableCell>
                 <TableCell className="max-w-[160px] text-sm">
-                  {whoOf(r)}
+                  <ApiKeyLabel
+                    name={r.who.name}
+                    description={r.who.description}
+                  />
                 </TableCell>
                 <TableCell>
                   <EndpointTypeBadge type={r.endpoint_type} />

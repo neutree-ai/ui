@@ -1,15 +1,8 @@
 import { useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -18,32 +11,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
-import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
-import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
   useOrgTree,
-  useOrgUnitMembers,
-  useTeamMembers,
   useTeamsByName,
 } from "@/domains/organization/hooks/use-organization";
-import { orgUnitAncestors } from "@/domains/organization/lib/org-tree";
 import {
   type DateRange,
   DateRangePicker,
   formatRangeLabel,
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { ListPage } from "@/foundation/components/ListPage";
 import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { profileDisplayName } from "@/foundation/lib/user-identity";
 import { cn } from "@/foundation/lib/utils";
+import { ScopeBreadcrumb } from "@/pages/model-usage/components/ScopeBreadcrumb";
 import { UsageChart } from "@/pages/model-usage/components/UsageChart";
 import {
   ModelShare,
@@ -55,23 +40,16 @@ import {
   UsageTable,
 } from "@/pages/model-usage/components/UsageTables";
 import {
-  type BreakdownFact,
   breakdownLabelKeys,
-  buildBreakdown,
-  groupOf,
-  type ScopeMember,
-  subtractUsage,
-  summarizeBreakdown,
-  sumUsage,
-  type UsageFact,
+  scopeTrail,
   type UsageScope,
-  userUsageFilter,
 } from "@/pages/model-usage/lib/usage-scope";
 import {
-  aggregateSeries,
   buildTrend,
   foldRemainder,
+  type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
+import { useScopeUsage } from "@/pages/model-usage/lib/use-scope-usage";
 
 const RANGE_PRESETS = [7, 30, 90];
 // The window the page opens on, and the fallback when nothing else was picked.
@@ -85,17 +63,6 @@ const ALL_MODELS = "__all__";
 const PLATFORM: UsageScope = { type: "platform" };
 
 type Tab = "breakdown" | "team" | "apiKey" | "model" | "detail";
-
-const modelOf = (r: { model_name: string | null }) =>
-  r.model_name ?? EMPTY_VALUE;
-const modelMeta = (r: { model_name: string | null }) => ({
-  name: modelOf(r),
-  description: null,
-});
-const keyMeta = (r: ApiUsageRecord) => ({
-  name: r.api_key_display_name || r.api_key_name || r.api_key_id,
-  description: r.api_key_description || null,
-});
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
@@ -155,79 +122,6 @@ export const ModelUsageList = () => {
     setHidden(new Set());
   }, []);
 
-  const scopeUnit = scope?.type === "orgUnit" ? scope.name : undefined;
-  const scopeTeam = scope?.type === "team" ? scope.name : undefined;
-  const groupScope =
-    scope?.type === "orgUnit" || scope?.type === "team" ? scope : null;
-  // A user opened from a department counts their usage there less what was
-  // recorded in its sub-departments, which the sub-departments' rows hold.
-  const userFrom = scope?.type === "user" ? scope.from : null;
-  const userId = scope?.type === "user" ? scope.id : undefined;
-  const splitUnit =
-    scopeUnit ?? (userFrom?.type === "orgUnit" ? userFrom.name : undefined);
-  const userFilter = scope ? userUsageFilter(scope) : {};
-  const unitFilter = scopeUnit ? { orgUnit: scopeUnit } : {};
-  const childUnits = useMemo(
-    () =>
-      splitUnit
-        ? (nodesByName.get(splitUnit)?.children ?? []).map(
-            (node) => node.unit.metadata.name,
-          )
-        : [],
-    [splitUnit, nodesByName],
-  );
-  const groupWorkspace = scope ? workspace : undefined;
-  // Usage by department for the platform and for a department; a Team or a
-  // user is not split into departments.
-  const departmentWorkspace =
-    scope?.type === "platform" || scope?.type === "orgUnit"
-      ? workspace
-      : undefined;
-
-  const userUsage = useGroupUsage(
-    groupWorkspace,
-    range.start,
-    range.end,
-    "User",
-    [userFilter],
-  );
-  const unitUsage = useGroupUsage(
-    departmentWorkspace,
-    range.start,
-    range.end,
-    "OrgUnit",
-    [unitFilter],
-  );
-  const childUsage = useGroupUsage(
-    splitUnit ? workspace : undefined,
-    range.start,
-    range.end,
-    "User",
-    childUnits.map((orgUnit) => ({ orgUnit, name: userId })),
-  );
-
-  // The group's current members, so the breakdown lists those who used
-  // nothing too. A department lists its direct members only: the members of
-  // its sub-departments are counted in their department's row.
-  const unitMembers = useOrgUnitMembers(
-    scopeUnit ? nodesByName.get(scopeUnit)?.unit.id : undefined,
-    false,
-  );
-  const teamMembers = useTeamMembers(
-    scopeTeam ? teamsByName.get(scopeTeam)?.id : undefined,
-  );
-  const members = useMemo<ScopeMember[]>(
-    () =>
-      (scopeUnit ? unitMembers.members : scopeTeam ? teamMembers.members : [])
-        .filter((member) => member.user_profiles)
-        .map((member) => ({
-          id: member.user_id,
-          // biome-ignore lint/style/noNonNullAssertion: filtered above
-          label: profileDisplayName(member.user_profiles!.metadata),
-        })),
-    [scopeUnit, scopeTeam, unitMembers.members, teamMembers.members],
-  );
-
   // The tabs this scope has. API keys carry no department, so they are only
   // counted for the whole platform; Teams need a global reader.
   const tabs = useMemo<Tab[]>(() => {
@@ -246,20 +140,31 @@ export const ModelUsageList = () => {
   }, [scope, canReadAllGroups]);
   const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
 
-  const teamUsage = useGroupUsage(
+  const {
+    models,
+    scopeTotal,
+    facts,
+    totals,
+    breakdown,
+    breakdownSeries,
+    keyFacts,
+    keyRows,
+    teamRows,
+    loading,
+    error,
+    refetch,
+  } = useScopeUsage({
     workspace,
-    range.start,
-    range.end,
-    "Team",
-    [unitFilter],
-    tab === "team",
-  );
-  const keyUsage = useWorkspaceUsage(
-    workspace,
-    range.start,
-    range.end,
-    !scope || tab === "apiKey",
-  );
+    range,
+    model,
+    scope,
+    teamsOpen: tab === "team",
+    keysOpen: tab === "apiKey",
+    roots,
+    nodesByName,
+    teamsByName,
+    unassignedLabel: t("model_usage.scope.unassigned"),
+  });
 
   // Picking a day in the chart narrows the range itself to that day — there is
   // no second "focused day" state, so every panel on the page follows the same
@@ -303,107 +208,28 @@ export const ModelUsageList = () => {
         });
   }, [lastRange, t]);
 
-  // Every number on the page is the scope's: by user for a reader of groups
-  // (each user counts once), by API key for everyone else.
-  const userRows = useMemo(
-    () =>
-      userFrom?.type === "orgUnit"
-        ? subtractUsage(userUsage.usageData, childUsage.usageData)
-        : userUsage.usageData,
-    [userFrom, userUsage.usageData, childUsage.usageData],
-  );
-  const scopeRows: UsageFact[] = scope ? userRows : keyUsage.usageData;
-  const models = useMemo(
-    () => aggregateSeries(scopeRows, modelOf, modelMeta),
-    [scopeRows],
-  );
-  const scopeTotal = useMemo(
-    () => models.reduce((sum, m) => sum + m.total, 0),
-    [models],
-  );
-
-  const inModel = useCallback(
-    <R extends { model_name: string | null }>(rows: R[]) =>
-      model ? rows.filter((r) => modelOf(r) === model) : rows,
-    [model],
-  );
-  const facts = useMemo(() => inModel(scopeRows), [inModel, scopeRows]);
-  // Usage by group always counts requests, even when there are no rows.
-  const totals = useMemo(
-    () => (scope ? { requests: 0, ...sumUsage(facts) } : sumUsage(facts)),
-    [scope, facts],
-  );
-
-  const childRowsLoading =
-    userUsage.isLoading || unitUsage.isLoading || childUsage.isLoading;
-  const breakdown = useMemo<BreakdownFact[]>(() => {
-    if (!scope) return [];
-    return buildBreakdown({
-      scope,
-      nodes: nodesByName,
-      roots,
-      userRows: inModel(userRows),
-      unitRows: inModel(unitUsage.usageData),
-      childUserRows: inModel(childUsage.usageData),
-      unassignedLabel: t("model_usage.scope.unassigned"),
-    });
-  }, [
-    scope,
-    nodesByName,
-    roots,
-    inModel,
-    userRows,
-    unitUsage.usageData,
-    childUsage.usageData,
-    t,
-  ]);
-  const { series: breakdownSeries, targets } = useMemo(
-    () => summarizeBreakdown(breakdown, members, groupScope),
-    [breakdown, members, groupScope],
-  );
-
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
-  const keyFacts = useMemo(
-    () => inModel(keyUsage.usageData),
-    [inModel, keyUsage.usageData],
-  );
-  const keyRows = useMemo(
-    () => aggregateSeries(keyFacts, (r) => r.api_key_id, keyMeta),
-    [keyFacts],
-  );
   const chart = useMemo(() => {
-    if (scope) {
-      // Members without usage have nothing to draw.
-      const series = foldRemainder(
-        breakdownSeries.filter((s) => s.total > 0),
-        TOP_K,
-        (count) => t("model_usage.daily.otherGroups", { n: count }),
-      );
-      return {
-        series,
-        trend: buildTrend(breakdown, series, (r) => r.entry),
-      };
-    }
-    const series = foldRemainder(keyRows, TOP_K, (count) =>
-      t("model_usage.daily.otherKeys", { n: count }),
-    );
-    return {
-      series,
-      trend: buildTrend(keyFacts, series, (r) => r.api_key_id),
-    };
+    const [base, otherKey, trendOf] = scope
+      ? ([
+          // Members without usage have nothing to draw.
+          breakdownSeries.filter((s) => s.total > 0),
+          "model_usage.daily.otherGroups",
+          (series: UsageSeries[]) =>
+            buildTrend(breakdown, series, (r) => r.entry),
+        ] as const)
+      : ([
+          keyRows,
+          "model_usage.daily.otherKeys",
+          (series: UsageSeries[]) =>
+            buildTrend(keyFacts, series, (r) => r.who.key),
+        ] as const);
+    const series = foldRemainder(base, TOP_K, (n) => t(otherKey, { n }));
+    return { series, trend: trendOf(series) };
   }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, t]);
   const labelKeys = breakdownLabelKeys(scope);
 
-  const teamRows = useMemo(
-    () =>
-      aggregateSeries(
-        inModel(teamUsage.usageData),
-        (r: GroupUsageRecord) => r.name,
-        (r) => ({ name: r.display_name || r.name, description: null }),
-      ),
-    [inModel, teamUsage.usageData],
-  );
   const modelRows = useMemo(
     () => (model ? models.filter((m) => m.key === model) : models),
     [model, models],
@@ -417,33 +243,16 @@ export const ModelUsageList = () => {
     [facts],
   );
 
-  // The way up from the scope: the platform, then each department above.
-  const trail = useMemo(() => {
-    if (!scope) return [];
-    const crumbs: { label: string; scope: UsageScope }[] = canReadAllGroups
-      ? [
-          {
-            label: t("model_usage.scope.platform"),
-            scope: { type: "platform" },
-          },
-        ]
-      : [];
-    const group = groupOf(scope);
-    const groupNode =
-      group?.type === "orgUnit" ? nodesByName.get(group.name) : undefined;
-    if (groupNode) {
-      for (const node of orgUnitAncestors(groupNode, nodesById)) {
-        crumbs.push({
-          label: node.label,
-          scope: { type: "orgUnit", name: node.unit.metadata.name },
-        });
-      }
-    } else if (group?.type === "team") {
-      crumbs.push({ label: group.label, scope: group });
-    }
-    if (scope.type === "user") crumbs.push({ label: scope.label, scope });
-    return crumbs;
-  }, [scope, canReadAllGroups, nodesByName, nodesById, t]);
+  const trail = useMemo(
+    () =>
+      scopeTrail(scope, {
+        canReadAllGroups,
+        nodesByName,
+        nodesById,
+        platformLabel: t("model_usage.scope.platform"),
+      }),
+    [scope, canReadAllGroups, nodesByName, nodesById, t],
+  );
 
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
@@ -468,12 +277,8 @@ export const ModelUsageList = () => {
     });
   };
 
-  const loading = scope ? childRowsLoading : keyUsage.isLoading;
-  const queries = [userUsage, unitUsage, childUsage, teamUsage, keyUsage];
-  const error = queries.find((q) => q.error)?.error;
-
   const tabLabel: Record<Tab, string> = {
-    breakdown: t(labelKeys.tab),
+    breakdown: labelKeys.tab ? t(labelKeys.tab) : "",
     team: t("model_usage.tabs.teams"),
     apiKey: t("model_usage.tabs.apiKeys"),
     model: t("model_usage.tabs.models"),
@@ -482,31 +287,7 @@ export const ModelUsageList = () => {
 
   const content = (
     <div className="min-w-0 space-y-4">
-      {trail.length > 1 ? (
-        <Breadcrumb aria-label={t("model_usage.scope.title")}>
-          <BreadcrumbList>
-            {trail.map((crumb, index) => (
-              <Fragment key={JSON.stringify(crumb.scope)}>
-                {index > 0 ? <BreadcrumbSeparator /> : null}
-                <BreadcrumbItem>
-                  {index === trail.length - 1 ? (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <button
-                        type="button"
-                        onClick={() => changeScope(crumb.scope)}
-                      >
-                        {crumb.label}
-                      </button>
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </Fragment>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
-      ) : null}
+      <ScopeBreadcrumb trail={trail} onScopeChange={changeScope} />
 
       <UsageSummary totals={totals} />
 
@@ -538,96 +319,68 @@ export const ModelUsageList = () => {
         <div className="text-sm text-destructive">{error.message}</div>
       ) : null}
 
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as Tab)}
-        className="overflow-hidden rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)]"
-      >
-        <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
-          <TabsList>
-            {tabs.map((value) => (
-              <TabsTrigger key={value} value={value}>
-                {tabLabel[value]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-        <TabsContent value="breakdown" className="mt-0">
-          <UsageTable
-            nameHeader={t(labelKeys.column)}
-            rows={breakdownSeries}
-            resetKey={scopeKey}
-            total={totals.total}
-            showRequests
-            canOpen={(r) => !!targets.get(r.key)}
-            onOpen={(r) => {
-              const target = targets.get(r.key);
-              if (target) changeScope(target);
-            }}
-          />
-        </TabsContent>
-        <TabsContent value="team" className="mt-0">
-          <p className="px-4 pt-3 text-xs text-muted-foreground">
-            {t("model_usage.tabs.teamHint")}
-          </p>
-          <UsageTable
-            nameHeader={t("model_usage.group.kinds.Team")}
-            rows={teamRows}
-            resetKey={scopeKey}
-            total={null}
-            showRequests
-            onOpen={(r) =>
-              changeScope({ type: "team", name: r.key, label: r.name })
-            }
-          />
-        </TabsContent>
-        <TabsContent value="apiKey" className="mt-0">
-          <UsageTable
-            nameHeader={t("model_usage.apiKey")}
-            rows={keyRows}
-            resetKey={scopeKey}
-            total={keyRows.reduce((sum, r) => sum + r.total, 0)}
-          />
-        </TabsContent>
-        <TabsContent value="model" className="mt-0">
-          <UsageTable
-            nameHeader={t("model_usage.model")}
-            rows={modelRows}
-            resetKey={scopeKey}
-            total={totals.total}
-            showRequests={!!scope}
-          />
-        </TabsContent>
-        <TabsContent value="detail" className="mt-0">
-          {scope ? (
-            <DetailTable<GroupUsageRecord>
-              rows={detailRows as GroupUsageRecord[]}
+      <Card className="overflow-hidden">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
+            <TabsList>
+              {tabs.map((value) => (
+                <TabsTrigger key={value} value={value}>
+                  {tabLabel[value]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+          <TabsContent value="breakdown" className="mt-0">
+            <UsageTable
+              nameHeader={labelKeys.column ? t(labelKeys.column) : ""}
+              rows={breakdownSeries}
               resetKey={scopeKey}
-              whoHeader={t("model_usage.group.kinds.User")}
-              whoOf={(r) => r.display_name || r.name}
-              rowKey={(r) =>
-                `${r.date}-${r.name}-${r.endpoint_name}-${r.model_name}`
-              }
+              total={totals.total}
+              showRequests
+              onOpen={changeScope}
             />
-          ) : (
-            <DetailTable<ApiUsageRecord>
-              rows={detailRows as ApiUsageRecord[]}
+          </TabsContent>
+          <TabsContent value="team" className="mt-0">
+            <p className="px-4 pt-3 text-xs text-muted-foreground">
+              {t("model_usage.tabs.teamHint")}
+            </p>
+            <UsageTable
+              nameHeader={t("model_usage.group.kinds.Team")}
+              rows={teamRows}
               resetKey={scopeKey}
-              whoHeader={t("model_usage.apiKey")}
-              whoOf={(r) => (
-                <ApiKeyLabel
-                  name={r.api_key_name}
-                  displayName={r.api_key_display_name}
-                  description={r.api_key_description}
-                />
+              total={null}
+              showRequests
+              onOpen={changeScope}
+            />
+          </TabsContent>
+          <TabsContent value="apiKey" className="mt-0">
+            <UsageTable
+              nameHeader={t("model_usage.apiKey")}
+              rows={keyRows}
+              resetKey={scopeKey}
+              total={keyRows.reduce((sum, r) => sum + r.total, 0)}
+            />
+          </TabsContent>
+          <TabsContent value="model" className="mt-0">
+            <UsageTable
+              nameHeader={t("model_usage.model")}
+              rows={modelRows}
+              resetKey={scopeKey}
+              total={totals.total}
+              showRequests={!!scope}
+            />
+          </TabsContent>
+          <TabsContent value="detail" className="mt-0">
+            <DetailTable
+              rows={detailRows}
+              resetKey={scopeKey}
+              whoHeader={t(
+                scope ? "model_usage.group.kinds.User" : "model_usage.apiKey",
               )}
-              rowKey={(r) =>
-                `${r.date}-${r.api_key_id}-${r.endpoint_name}-${r.model_name}`
-              }
             />
-          )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 
@@ -640,9 +393,7 @@ export const ModelUsageList = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            for (const q of queries) q.refetch();
-          }}
+          onClick={refetch}
           disabled={loading}
         >
           <RefreshCw className={cn("size-4", loading && "animate-spin")} />
