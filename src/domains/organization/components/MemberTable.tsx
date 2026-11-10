@@ -14,6 +14,7 @@ import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 export type MemberRow = {
   key: string;
@@ -25,12 +26,6 @@ export type MemberRow = {
   since: string;
 };
 
-/** A column another domain fills in, e.g. each member's limits. */
-export type MemberColumn = {
-  header: string;
-  render: (row: MemberRow) => ReactNode;
-};
-
 type MemberTableProps = {
   rows: MemberRow[];
   isLoading?: boolean;
@@ -38,7 +33,7 @@ type MemberTableProps = {
   showDepartment?: boolean;
   showSource?: boolean;
   sinceLabel: string;
-  extraColumn?: MemberColumn;
+  extraColumn?: ExtraColumn<MemberRow>;
   /** A trailing cell per row, e.g. a remove button. */
   renderActions?: (row: MemberRow) => ReactNode;
 };

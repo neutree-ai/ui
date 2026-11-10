@@ -38,6 +38,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isValidResourceName } from "@/foundation/lib/validate";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 type ServiceAccountPermissions = {
   canCreate: boolean;
@@ -65,10 +66,7 @@ export function TeamServiceAccounts({
   renderKeys: (account: ServiceAccount) => ReactNode;
   renderUsage: (account: ServiceAccount) => ReactNode;
   /** A column another domain fills in, e.g. each application's limits. */
-  extraColumn?: {
-    header: string;
-    render: (account: ServiceAccount) => ReactNode;
-  };
+  extraColumn?: ExtraColumn<ServiceAccount>;
 }) {
   const { t } = useTranslation();
   const { rows, isLoading, error } = useServiceAccounts(teamId);

@@ -24,7 +24,10 @@ import {
   plainLabel,
 } from "@/domains/group-policy/components/PolicySourceLabel";
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
-import { tokenPoolSource } from "@/domains/group-policy/lib/subject-policy";
+import {
+  subjectPolicySource,
+  tokenPoolSource,
+} from "@/domains/group-policy/lib/subject-policy";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
@@ -37,9 +40,13 @@ import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /** Anchor of the section; the API key page links to it. */
-export const USER_MODEL_ACCESS_ANCHOR = "user-model-access";
+const USER_MODEL_ACCESS_ANCHOR = "user-model-access";
 /** Query parameter that preselects the workspace. */
 export const USER_MODEL_ACCESS_WORKSPACE_PARAM = "model_access_workspace";
+
+/** This section on a user's page, with `workspace` preselected. */
+export const userModelAccessHref = (profileName: string, workspace: string) =>
+  `/user-profiles/show/${encodeURIComponent(profileName)}?${USER_MODEL_ACCESS_WORKSPACE_PARAM}=${encodeURIComponent(workspace)}#${USER_MODEL_ACCESS_ANCHOR}`;
 
 const inWorkspace = (
   entries: GroupPolicyModel[] | null,
@@ -269,13 +276,7 @@ export function UserGroupModelAccess({
                       <TableCell>
                         <span className="inline-flex items-center gap-1.5">
                           <PolicySourceLabel
-                            source={tokenPoolSource({
-                              kind: policy.subject_kind,
-                              name: "",
-                              scope_kind: policy.scope_kind,
-                              scope_name: policy.scope_name,
-                              scope_display_name: policy.scope_display_name,
-                            })}
+                            source={subjectPolicySource(policy)}
                             renderTeam={renderTeam}
                             renderOrgUnit={renderOrgUnit}
                           />

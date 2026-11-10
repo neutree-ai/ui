@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { AddTeamMembersDialog } from "@/domains/organization/components/AddTeamMembersDialog";
 import {
-  type MemberColumn,
+  type MemberRow,
   MemberTable,
 } from "@/domains/organization/components/MemberTable";
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
@@ -33,6 +33,7 @@ import {
   isProjectTeam,
   matchesTeamKind,
   type TeamKindFilter,
+  teamScope,
   teamSource,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
@@ -53,6 +54,8 @@ import { displayName } from "@/foundation/lib/display-name";
 import { isDuplicateNameError } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 type OpenDialog =
   | { kind: "create" }
@@ -90,7 +93,9 @@ export function TeamsPanel({
     enabled: boolean,
   ) => TeamDeleteCheck | undefined;
   /** An extra member column for the selected Team; a hook, as it belongs to other domains. */
-  useMemberColumn?: (team: Team | undefined) => MemberColumn | undefined;
+  useMemberColumn?: (
+    team: LabeledScope | undefined,
+  ) => ExtraColumn<MemberRow> | undefined;
 }) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
@@ -145,7 +150,7 @@ export function TeamsPanel({
   const canAssign =
     useHasTeamPermission("team:assign-member", selectedId).allowed === true;
   const members = useTeamMembers(selected?.id);
-  const memberColumn = useMemberColumn(selected);
+  const memberColumn = useMemberColumn(selected && teamScope(selected));
   const deleteCheck = useDeleteCheck(
     selected?.metadata.name ?? "",
     !!selected && dialog?.kind === "delete",

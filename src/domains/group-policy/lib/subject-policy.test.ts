@@ -70,9 +70,9 @@ describe("subjectPolicyChange", () => {
 
   it.each([
     { existing: null, allowed: 0, quota: false, change: "none" },
-    { existing: "p", allowed: 0, quota: false, change: "remove" },
+    { existing: 7, allowed: 0, quota: false, change: "remove" },
     { existing: null, allowed: 1, quota: false, change: "save" },
-    { existing: "p", allowed: 0, quota: true, change: "save" },
+    { existing: 7, allowed: 0, quota: true, change: "save" },
   ] as const)(
     "existing $existing, $allowed models, quota $quota -> $change",
     ({ existing, allowed, quota, change }) => {

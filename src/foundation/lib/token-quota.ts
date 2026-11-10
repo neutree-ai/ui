@@ -3,6 +3,9 @@
 // This module owns both directions of that mapping so the form, the list usage
 // column and the detail consumption bar all agree on how a given integer reads.
 
+export const QUOTA_PERIODS = ["daily", "weekly", "monthly", "yearly"] as const;
+export type QuotaPeriod = (typeof QUOTA_PERIODS)[number];
+
 export const TOKEN_QUOTA_UNITS = ["tokens", "K", "M", "B"] as const;
 export type TokenQuotaUnit = (typeof TOKEN_QUOTA_UNITS)[number];
 

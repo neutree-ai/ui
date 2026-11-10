@@ -10,16 +10,10 @@ import type { TokenQuotaInput } from "@/domains/group-policy/hooks/use-token-quo
 import type { GroupTokenPoolPeriod } from "@/domains/group-policy/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
+  QUOTA_PERIODS,
   TOKEN_QUOTA_UNITS,
   type TokenQuotaUnit,
 } from "@/foundation/lib/token-quota";
-
-const POOL_PERIODS: GroupTokenPoolPeriod[] = [
-  "daily",
-  "weekly",
-  "monthly",
-  "yearly",
-];
 
 /** Amount, unit and period of a token quota; `testId` prefixes each control. */
 export function TokenQuotaFields({
@@ -84,7 +78,7 @@ export function TokenQuotaFields({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {POOL_PERIODS.map((p) => (
+          {QUOTA_PERIODS.map((p) => (
             <SelectItem key={p} value={p}>
               {t(`api_keys.limits.periods.${p}`)}
             </SelectItem>

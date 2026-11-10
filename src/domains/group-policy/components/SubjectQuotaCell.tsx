@@ -5,24 +5,21 @@ import { Button } from "@/components/ui/button";
 import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAccess";
 import { SubjectPolicyDialog } from "@/domains/group-policy/components/SubjectPolicyDialog";
 import {
-  GroupPolicyGoneError,
-  useGroupPolicyWrites,
+  type GroupPolicyWrites,
+  subjectKey,
   useScopeSubjectPolicies,
 } from "@/domains/group-policy/hooks/use-group-policies";
-import { GROUP_POLICY_ERROR_KEYS } from "@/domains/group-policy/lib/group-policy-errors";
+import { groupPolicyErrorText } from "@/domains/group-policy/lib/group-policy-errors";
 import { hasRules } from "@/domains/group-policy/lib/model-entries";
 import {
   buildSubjectPolicySpec,
   subjectPolicyChange,
 } from "@/domains/group-policy/lib/subject-policy";
-import type { PolicyScope, PrincipalKind } from "@/domains/group-policy/types";
+import type { PolicySubject } from "@/domains/group-policy/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import {
-  isPermissionDenied,
-  translateApiErrorOr,
-} from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 type ScopePolicyAccess = {
   canCreate: boolean;
@@ -39,41 +36,32 @@ export function SubjectQuotaCell({
   scope,
   subject,
   access,
+  writes,
 }: {
-  scope: PolicyScope & { label: string };
-  subject: { kind: PrincipalKind; id: string; label: string };
+  scope: LabeledScope;
+  subject: PolicySubject;
   access: ScopePolicyAccess;
+  writes: GroupPolicyWrites;
 }) {
   const { t } = useTranslation();
   // One read per scope: every cell shares the cached answer.
-  const { rows, isLoading } = useScopeSubjectPolicies(scope, true);
-  const writes = useGroupPolicyWrites();
+  const { bySubject, isLoading } = useScopeSubjectPolicies(scope, true);
   const [editing, setEditing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [dialogError, setDialogError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
 
   if (isLoading) return null;
-  const row = rows?.find(
-    (candidate) =>
-      candidate.subject_kind === subject.kind &&
-      candidate.subject_name === subject.id,
-  );
-  const name = row?.policy_name ?? null;
+  const row = bySubject?.get(subjectKey(subject.kind, subject.id));
+  const id = row?.id ?? null;
   const allowedCount = row?.allowed_models?.length ?? 0;
   const effective = row?.effective_remaining ?? null;
-
+  const editLabel = t(
+    id === null ? "group_policies.subject.set" : "group_policies.subject.edit",
+  );
+  const clearLabel = t("group_policies.subject.clear");
   const errorText = (err: unknown) =>
-    err instanceof GroupPolicyGoneError
-      ? t("group_policies.errors.gone")
-      : isPermissionDenied(err)
-        ? t("group_policies.subject.denied")
-        : translateApiErrorOr(
-            t,
-            err,
-            GROUP_POLICY_ERROR_KEYS,
-            "common.errors.unknown",
-          );
+    groupPolicyErrorText(t, err, "group_policies.subject.denied");
 
   return (
     // A row of the applications table opens the application on click; so
@@ -102,18 +90,7 @@ export function SubjectQuotaCell({
               </div>
             )}
             {row?.token_quota && (
-              <TokenPoolSummary
-                quota={row.token_quota}
-                pool={
-                  row.used === null || row.remaining === null
-                    ? undefined
-                    : {
-                        used: row.used,
-                        remaining: row.remaining,
-                        resets_at: row.resets_at ?? "",
-                      }
-                }
-              />
+              <TokenPoolSummary quota={row.token_quota} pool={row.pool} />
             )}
           </>
         )}
@@ -137,35 +114,27 @@ export function SubjectQuotaCell({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        {(name ? access.canUpdate : access.canCreate) && (
+        {(id === null ? access.canCreate : access.canUpdate) && (
           <Button
             size="icon"
             variant="ghost"
             className="h-7 w-7"
-            title={t(
-              name
-                ? "group_policies.subject.edit"
-                : "group_policies.subject.set",
-            )}
-            aria-label={t(
-              name
-                ? "group_policies.subject.edit"
-                : "group_policies.subject.set",
-            )}
+            title={editLabel}
+            aria-label={editLabel}
             data-testid={`subject-quota-edit-${subject.id}`}
             onClick={() => {
               setDialogError(undefined);
               setEditing(true);
             }}
           >
-            {name ? (
-              <Pencil className="h-3.5 w-3.5" />
-            ) : (
+            {id === null ? (
               <Plus className="h-4 w-4" />
+            ) : (
+              <Pencil className="h-3.5 w-3.5" />
             )}
           </Button>
         )}
-        {name && access.canDelete && (
+        {id !== null && access.canDelete && (
           <DeleteConfirmDialog
             allowForceDelete={false}
             open={clearing}
@@ -175,12 +144,15 @@ export function SubjectQuotaCell({
               subject: subject.label,
               scope: scope.label,
             })}
-            okText={t("group_policies.subject.clear")}
+            okText={clearLabel}
             loading={writes.isPending}
             onConfirm={async () => {
               setActionError(undefined);
               try {
-                await writes.removeByName(name);
+                await writes.remove({
+                  id,
+                  spec: buildSubjectPolicySpec(subject, scope, [], null, null),
+                });
               } catch (err) {
                 setActionError(errorText(err));
               }
@@ -191,8 +163,8 @@ export function SubjectQuotaCell({
               size="icon"
               variant="ghost"
               className="h-7 w-7"
-              title={t("group_policies.subject.clear")}
-              aria-label={t("group_policies.subject.clear")}
+              title={clearLabel}
+              aria-label={clearLabel}
               data-testid={`subject-quota-clear-${subject.id}`}
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -218,11 +190,11 @@ export function SubjectQuotaCell({
               tokenQuota,
             );
             try {
-              const change = subjectPolicyChange(name, spec);
-              if (change === "remove" && name) {
-                await writes.removeByName(name);
+              const change = subjectPolicyChange(id, spec);
+              if (change === "remove" && id !== null) {
+                await writes.remove({ id, spec });
               } else if (change === "save") {
-                await writes.saveByName(name, spec);
+                await writes.save(id === null ? undefined : { id }, spec);
               }
               setEditing(false);
             } catch (err) {

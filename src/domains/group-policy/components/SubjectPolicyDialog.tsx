@@ -29,14 +29,14 @@ import {
 import type {
   GroupPolicyModel,
   GroupTokenQuota,
-  PolicyScope,
-  PrincipalKind,
+  PolicySubject,
   ScopeSubjectPolicy,
 } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 /**
  * Sets the allowed models and token quota of one user or application in a
@@ -51,8 +51,8 @@ export function SubjectPolicyDialog({
   onOpenChange,
   onSave,
 }: {
-  scope: PolicyScope & { label: string };
-  subject: { kind: PrincipalKind; id: string; label: string };
+  scope: LabeledScope;
+  subject: PolicySubject;
   /** The subject's row in the scope; its policy fields are null when unset. */
   policy?: ScopeSubjectPolicy;
   saving?: boolean;
@@ -158,7 +158,7 @@ function EffectiveLimits({
   policyName,
 }: {
   subjectId: string;
-  scope: PolicyScope;
+  scope: LabeledScope;
   policyName: string | null;
 }) {
   const { t } = useTranslation();

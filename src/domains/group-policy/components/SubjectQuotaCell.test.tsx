@@ -1,16 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const saveByName = vi.fn();
 vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
-  GroupPolicyGoneError: class extends Error {},
+  subjectKey: (kind: string, id: string) => `${kind}/${id}`,
   useScopeSubjectPolicies: vi.fn(),
   useUserGroupPolicy: () => ({ policy: undefined, denied: true }),
-  useGroupPolicyWrites: () => ({
-    saveByName,
-    removeByName: vi.fn(),
-    isPending: false,
-  }),
 }));
 // TokenPoolSummary's module renders a ShowPage, which pulls refine's table
 // package; it does not load under vitest.
@@ -33,34 +27,36 @@ const row = (over: Partial<ScopeSubjectPolicy>): ScopeSubjectPolicy => ({
   allowed_models: null,
   denied_models: null,
   token_quota: null,
-  used: null,
-  remaining: null,
-  resets_at: null,
+  id: null,
+  pool: null,
   effective_remaining: null,
   ...over,
 });
 
 const setRows = (rows: ScopeSubjectPolicy[]) =>
   vi.mocked(useScopeSubjectPolicies).mockReturnValue({
-    rows,
+    bySubject: new Map(
+      rows.map((r) => [`${r.subject_kind}/${r.subject_name}`, r]),
+    ),
     isLoading: false,
     denied: false,
     error: null,
   });
 
+const writes = { save: vi.fn(), remove: vi.fn(), isPending: false };
+
 beforeEach(() => {
-  saveByName.mockReset().mockResolvedValue([]);
+  writes.save.mockReset().mockResolvedValue([]);
 });
 
 describe("SubjectQuotaCell", () => {
   it("shows this scope's pool, what is left in effect, and only the allowed actions", () => {
     setRows([
       row({
+        id: 7,
         policy_name: "p",
         token_quota: { limit: 1000, period: "daily" },
-        used: 10,
-        remaining: 990,
-        resets_at: "2026-11-11",
+        pool: { used: 10, remaining: 990, resets_at: "2026-11-11" },
         effective_remaining: 0,
       }),
     ]);
@@ -69,6 +65,7 @@ describe("SubjectQuotaCell", () => {
         scope={scope}
         subject={subject}
         access={{ canCreate: true, canUpdate: false, canDelete: true }}
+        writes={writes}
       />,
     );
     screen.getByTestId("group-policy-pool-usage");
@@ -85,6 +82,7 @@ describe("SubjectQuotaCell", () => {
         scope={scope}
         subject={subject}
         access={{ canCreate: true, canUpdate: false, canDelete: false }}
+        writes={writes}
       />,
     );
     fireEvent.click(screen.getByTestId("subject-quota-edit-u1"));
@@ -92,8 +90,8 @@ describe("SubjectQuotaCell", () => {
       target: { value: "2" },
     });
     fireEvent.click(screen.getByTestId("subject-policy-save"));
-    await vi.waitFor(() => expect(saveByName).toHaveBeenCalled());
-    expect(saveByName).toHaveBeenCalledWith(null, {
+    await vi.waitFor(() => expect(writes.save).toHaveBeenCalled());
+    expect(writes.save).toHaveBeenCalledWith(undefined, {
       subject_kind: "User",
       subject_name: "u1",
       scope_kind: "Team",

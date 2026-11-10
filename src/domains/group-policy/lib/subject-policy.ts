@@ -1,15 +1,13 @@
 import { hasRules } from "@/domains/group-policy/lib/model-entries";
 import type {
   GroupPolicyModel,
-  GroupPolicyScopeKind,
   GroupPolicySpec,
-  GroupPolicySubjectKind,
   GroupTokenPool,
   GroupTokenQuota,
-  PolicyScope,
   PrincipalKind,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
+import type { GroupKind, LabeledScope } from "@/foundation/types/group-scope";
 
 /**
  * The spec of a User or ServiceAccount policy in `scope`. Every field goes
@@ -18,7 +16,7 @@ import type {
  */
 export const buildSubjectPolicySpec = (
   subject: { kind: PrincipalKind; id: string },
-  scope: Pick<PolicyScope, "kind" | "name">,
+  scope: Pick<LabeledScope, "kind" | "name">,
   allowed: GroupPolicyModel[],
   denied: GroupPolicyModel[] | null,
   tokenQuota: GroupTokenQuota | null,
@@ -37,7 +35,7 @@ export const buildSubjectPolicySpec = (
  * policy emptied of every rule, otherwise a write.
  */
 export const subjectPolicyChange = (
-  existing: string | null,
+  existing: number | null,
   spec: GroupPolicySpec,
 ): "none" | "remove" | "save" =>
   hasRules(spec) ? "save" : existing ? "remove" : "none";
@@ -46,28 +44,34 @@ export const subjectPolicyChange = (
 export type TokenPoolSource =
   | {
       owner: "group";
-      kind: GroupPolicySubjectKind;
+      kind: GroupKind;
       name: string;
       label: string;
     }
   | {
       owner: "subject";
       /** null: set globally. */
-      scopeKind: GroupPolicyScopeKind | null;
+      scopeKind: GroupKind | null;
       scopeName: string | null;
       scopeLabel: string | null;
     };
 
+type ScopeFields = Partial<
+  Pick<GroupTokenPool, "scope_kind" | "scope_name" | "scope_display_name">
+>;
+
+/** The source of a policy or pool set on the subject itself, in its scope. */
+export const subjectPolicySource = (own: ScopeFields): TokenPoolSource => ({
+  owner: "subject",
+  scopeKind: own.scope_kind ?? null,
+  scopeName: own.scope_name ?? null,
+  scopeLabel: own.scope_kind
+    ? own.scope_display_name?.trim() || own.scope_name || null
+    : null,
+});
+
 export const tokenPoolSource = (
-  pool: Pick<
-    GroupTokenPool,
-    | "kind"
-    | "name"
-    | "display_name"
-    | "scope_kind"
-    | "scope_name"
-    | "scope_display_name"
-  >,
+  pool: Pick<GroupTokenPool, "kind" | "name" | "display_name"> & ScopeFields,
 ): TokenPoolSource =>
   pool.kind === "Team" || pool.kind === "OrgUnit"
     ? {
@@ -76,14 +80,7 @@ export const tokenPoolSource = (
         name: pool.name,
         label: pool.display_name?.trim() || pool.name,
       }
-    : {
-        owner: "subject",
-        scopeKind: pool.scope_kind ?? null,
-        scopeName: pool.scope_name ?? null,
-        scopeLabel: pool.scope_kind
-          ? pool.scope_display_name?.trim() || pool.scope_name || null
-          : null,
-      };
+    : subjectPolicySource(pool);
 
 type PolicyModelRule = {
   key: string;
@@ -106,12 +103,7 @@ export const otherPolicyRules = (
   [
     ...policy.groups.map((group) => ({
       key: `${group.kind}/${group.name}`,
-      source: {
-        owner: "group" as const,
-        kind: group.kind,
-        name: group.name,
-        label: group.display_name?.trim() || group.name,
-      },
+      source: tokenPoolSource(group),
       allowed: group.allowed_models ?? [],
       denied: group.denied_models ?? [],
       // An inactive group's policy still applies.
@@ -121,13 +113,7 @@ export const otherPolicyRules = (
       .filter((own) => own.name !== exclude)
       .map((own) => ({
         key: own.name,
-        source: tokenPoolSource({
-          kind: own.subject_kind,
-          name: "",
-          scope_kind: own.scope_kind,
-          scope_name: own.scope_name,
-          scope_display_name: own.scope_display_name,
-        }),
+        source: subjectPolicySource(own),
         allowed: own.allowed_models ?? [],
         denied: own.denied_models ?? [],
         applies: own.in_scope,

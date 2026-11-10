@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  type MemberColumn,
   type MemberRow,
   MemberTable,
 } from "@/domains/organization/components/MemberTable";
@@ -32,6 +31,8 @@ import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 const ALL_SOURCES = "__all__";
 
@@ -48,8 +49,8 @@ export function DepartmentsPanel({
 }: {
   renderRoleAssignments?: (orgUnitName: string, label: string) => ReactNode;
   useMemberColumn?: (
-    department: { id: number; name: string; label: string } | undefined,
-  ) => MemberColumn | undefined;
+    department: LabeledScope | undefined,
+  ) => ExtraColumn<MemberRow> | undefined;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
@@ -150,6 +151,7 @@ export function DepartmentsPanel({
   const members = useOrgUnitMembers(selected?.unit.id, includeSubtree);
   const memberColumn = useMemberColumn(
     selected && {
+      kind: "OrgUnit",
       id: selected.unit.id,
       name: selected.unit.metadata.name,
       label: selected.label,

@@ -1,53 +1,32 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GroupModelAccess } from "@/domains/group-policy/components/GroupModelAccess";
 import { useSubjectQuotaColumn } from "@/domains/group-policy/hooks/use-subject-quota-column";
+import type { PolicySubject } from "@/domains/group-policy/types";
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
-import type { MemberColumn } from "@/domains/organization/components/MemberTable";
+import type { MemberRow } from "@/domains/organization/components/MemberTable";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
 import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
-import type { Team } from "@/domains/organization/types";
 import { GroupRoleAssignments } from "@/domains/role-assignment/components/GroupRoleAssignments";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 import { TeamDetailTabs } from "@/pages/organization/team-detail-tabs";
 import { useTeamDeleteCheck } from "@/pages/organization/use-team-delete-check";
 
 const renderOrgUnit = (name: string) => <OrgUnitLabel name={name} />;
 
-const memberLimits = (
-  column: ReturnType<typeof useSubjectQuotaColumn>,
-): MemberColumn | undefined =>
-  column && {
-    header: column.header,
-    render: (row) =>
-      column.render({
-        kind: "User",
-        id: row.key,
-        label: row.profile ? displayName(row.profile.metadata) : row.key,
-      }),
-  };
+const memberSubject = (row: MemberRow): PolicySubject => ({
+  kind: "User",
+  id: row.key,
+  label: row.profile ? displayName(row.profile.metadata) : row.key,
+});
 
 // Each member's limits set in the selected Team or department.
-const useTeamMemberLimits = (team: Team | undefined) =>
-  memberLimits(
-    useSubjectQuotaColumn(
-      team && {
-        kind: "Team",
-        name: team.metadata.name,
-        id: team.id,
-        label: displayName(team.metadata),
-      },
-    ),
-  );
-const useDepartmentMemberLimits = (
-  department: { id: number; name: string; label: string } | undefined,
-) =>
-  memberLimits(
-    useSubjectQuotaColumn(department && { kind: "OrgUnit", ...department }),
-  );
+const useMemberLimits = (scope: LabeledScope | undefined) =>
+  useSubjectQuotaColumn(scope, memberSubject);
 
 /**
  * Departments and teams synced from identity sources, which sync owns, and
@@ -97,7 +76,7 @@ export const OrganizationList = () => {
         )}
         <TabsContent value="departments" className="mt-0">
           <DepartmentsPanel
-            useMemberColumn={useDepartmentMemberLimits}
+            useMemberColumn={useMemberLimits}
             renderRoleAssignments={(name, label) => (
               <>
                 <GroupRoleAssignments
@@ -114,7 +93,7 @@ export const OrganizationList = () => {
           <TabsContent value="teams" className="mt-0">
             <TeamsPanel
               useDeleteCheck={useTeamDeleteCheck}
-              useMemberColumn={useTeamMemberLimits}
+              useMemberColumn={useMemberLimits}
               renderTeamDetail={(team, members) => (
                 <TeamDetailTabs team={team} members={members} />
               )}
