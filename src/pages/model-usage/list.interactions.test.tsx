@@ -92,18 +92,7 @@ let canReadSubtree = false;
 let usageTeamIds: number[] = [];
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
   useHasGlobalPermission: () => ({ allowed: canReadAll, isLoading: false }),
-  useHasPermission: (permission: string) => ({
-    allowed:
-      permission === "team_usage:read"
-        ? canReadAll || usageTeamIds.length > 0
-        : canReadSubtree,
-    isLoading: false,
-  }),
-  useTeamsWithPermission: (
-    _permission: string,
-    ids: number[],
-    enabled: boolean,
-  ) => new Set(enabled ? ids.filter((id) => usageTeamIds.includes(id)) : []),
+  useHasPermission: () => ({ allowed: canReadSubtree, isLoading: false }),
 }));
 
 // rnd ── ml, and market.
@@ -119,8 +108,13 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
   return {
     useOrgTree: (enabled: boolean) =>
       orgTreeIndex(enabled ? (orgUnits as OrgUnit[]) : []),
-    useTeamsByName: (enabled: boolean) =>
-      teamIndex(enabled ? (teams as Team[]) : []),
+    // As get_readable_usage_teams: every Team for a global reader.
+    useReadableUsageTeams: () =>
+      teamIndex(
+        (canReadAll
+          ? teams
+          : teams.filter((team) => usageTeamIds.includes(team.id))) as Team[],
+      ),
     // rnd's direct members: u2, and u5 who used nothing. Team A: u1.
     useOrgUnitMembers: (id: number | undefined) => ({
       members: id === 1 ? [member("u2", "u2-name"), member("u5", "Idle")] : [],

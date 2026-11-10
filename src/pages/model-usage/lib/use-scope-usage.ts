@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
+import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
   useOrgUnitMembers,
   useTeamMembers,
@@ -122,10 +123,11 @@ export function useScopeUsage({
   const unitFacts = useFacts(unitUsage.usageData, groupFact);
   const directFacts = useFacts(directUsage.usageData, groupFact);
   const teamFacts = useFacts(teamUsage.usageData, groupFact);
-  const allKeyFacts = useMemo(
-    () => keyUsage.usageData.map((r) => keyFact(r, deletedKeyLabel)),
-    [keyUsage.usageData, deletedKeyLabel],
+  const keyFactOf = useCallback(
+    (r: ApiUsageRecord) => keyFact(r, deletedKeyLabel),
+    [deletedKeyLabel],
   );
+  const allKeyFacts = useFacts(keyUsage.usageData, keyFactOf);
 
   // The group's current members, so the breakdown lists those who used
   // nothing too. A department lists its direct members only: the members of

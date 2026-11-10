@@ -109,19 +109,19 @@ describe("scopeQueries", () => {
   });
 
   it("splits the platform and a department into departments only", () => {
-    expect(scopeQueries(null).units).toBeNull();
+    expect(scopeQueries(null).units).toBeUndefined();
     expect(scopeQueries({ type: "platform" }).units).toEqual({});
     expect(scopeQueries(rnd).units).toEqual({ orgUnit: "rnd" });
-    expect(scopeQueries(team).units).toBeNull();
-    expect(scopeQueries(user(rnd)).units).toBeNull();
+    expect(scopeQueries(team).units).toBeUndefined();
+    expect(scopeQueries(user(rnd)).units).toBeUndefined();
   });
 
   it("reads the usage under no department, or under a department itself", () => {
     expect(scopeQueries({ type: "platform" }).direct).toEqual({ direct: true });
     expect(scopeQueries(rnd).direct).toEqual({ orgUnit: "rnd", direct: true });
-    expect(scopeQueries(team).direct).toBeNull();
-    expect(scopeQueries(user(rnd)).direct).toBeNull();
-    expect(scopeQueries(null).direct).toBeNull();
+    expect(scopeQueries(team).direct).toBeUndefined();
+    expect(scopeQueries(user(rnd)).direct).toBeUndefined();
+    expect(scopeQueries(null).direct).toBeUndefined();
   });
 
   it("narrows usage by API key to a Team or a department scope", () => {

@@ -568,6 +568,19 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      get_readable_usage_teams: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: number;
+          api_version: string;
+          kind: string;
+          metadata: Database["api"]["CompositeTypes"]["metadata"] | null;
+          status: {
+            phase: string | null;
+            last_transition_time: string | null;
+          } | null;
+        }[];
+      };
       get_usage_by_dimension: {
         Args: {
           p_start_date: string;

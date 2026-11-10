@@ -13,7 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useOrgTree,
-  useTeamsByName,
+  useReadableUsageTeams,
 } from "@/domains/organization/hooks/use-organization";
 import {
   type DateRange,
@@ -25,7 +25,6 @@ import { ListPage } from "@/foundation/components/ListPage";
 import {
   useHasGlobalPermission,
   useHasPermission,
-  useTeamsWithPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -99,24 +98,9 @@ export const ModelUsageList = () => {
     byId: nodesById,
     byName: nodesByName,
   } = useOrgTree(canReadGroups);
-  // A Team is a scope for a global reader, and for whoever reads that Team's
-  // usage: the RPC refuses usage by Team to everyone else.
-  const canReadSomeTeam = useHasPermission("team_usage:read").allowed === true;
-  const { list: allTeams, byName: teamsByName } = useTeamsByName(
-    canReadAllGroups || canReadSomeTeam,
-  );
-  const readableTeamIds = useTeamsWithPermission(
-    "team_usage:read",
-    useMemo(() => allTeams.map((team) => team.id), [allTeams]),
-    !canReadAllGroups && canReadSomeTeam,
-  );
-  const teamList = useMemo(
-    () =>
-      canReadAllGroups
-        ? allTeams
-        : allTeams.filter((team) => readableTeamIds.has(team.id)),
-    [canReadAllGroups, allTeams, readableTeamIds],
-  );
+  // The Teams the caller may open as a scope: the RPC refuses usage by Team
+  // to everyone else.
+  const { list: teamList, byName: teamsByName } = useReadableUsageTeams();
   const hasScopes = canReadGroups || teamList.length > 0;
 
   // The page opens on the whole platform, or on the first department of a
@@ -144,8 +128,8 @@ export const ModelUsageList = () => {
     setHidden(new Set());
   }, []);
 
-  // The tabs this scope has. API keys are counted for the platform (global
-  // readers), a department and a Team; Teams need a global reader.
+  // The tabs this scope has. Every group scope counts API keys; Teams need a
+  // global reader.
   const tabs = useMemo<Tab[]>(() => {
     if (!scope) return ["apiKey", "model", "detail"];
     if (scope.type === "user") return ["model", "detail"];
@@ -154,9 +138,7 @@ export const ModelUsageList = () => {
     return [
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
-      ...(scope.type === "orgUnit" || canReadAllGroups
-        ? (["apiKey"] as const)
-        : []),
+      "apiKey",
       "model",
       "detail",
     ];

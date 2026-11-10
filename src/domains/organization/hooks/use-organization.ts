@@ -53,6 +53,22 @@ export const useTeamsByName = (enabled = true) => {
   };
 };
 
+/**
+ * The Teams the caller may open as a usage scope, as get_readable_usage_teams
+ * decides it, indexed as useTeamsByName.
+ */
+export const useReadableUsageTeams = () => {
+  const { data, isLoading } = useCustom<Team[]>({
+    url: "/rpc/get_readable_usage_teams",
+    method: "post",
+    config: { payload: {} },
+    queryOptions: { staleTime: STALE_TIME },
+    successNotification: false,
+    errorNotification: false,
+  });
+  return { ...teamIndex(data?.data ?? NO_TEAMS), isLoading };
+};
+
 const NO_MEMBERS: OrgUnitMember[] = [];
 
 // The member fields the tables show.

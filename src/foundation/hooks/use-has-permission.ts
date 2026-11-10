@@ -1,6 +1,5 @@
 import { useCustom, useDataProvider, useGetIdentity } from "@refinedev/core";
 import { useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
 
 type PermissionState = {
   /** Undefined while it is still being checked. */
@@ -132,46 +131,4 @@ export const useHasTeamPermission = (
     { team_id: teamId },
   );
   return teamId === undefined ? { allowed: false, isLoading: false } : state;
-};
-
-const NO_TEAMS = new Set<number>();
-
-/**
- * The ids among `teamIds` of the Teams on which the signed-in user holds a
- * permission, as useHasTeamPermission decides it for each. Empty until known.
- */
-export const useTeamsWithPermission = (
-  permission: string,
-  teamIds: readonly number[],
-  enabled = true,
-): ReadonlySet<number> => {
-  const { data: identity } = useGetIdentity<{ id?: string }>();
-  const userId = identity?.id;
-  const dataProvider = useDataProvider();
-  const results = useQueries({
-    queries: teamIds.map((teamId) => ({
-      queryKey: ["has_permission_on_team", userId, permission, teamId],
-      queryFn: async () => {
-        // biome-ignore lint/style/noNonNullAssertion: the data provider defines custom
-        const { data } = await dataProvider().custom!({
-          url: "/rpc/has_permission_on_team",
-          method: "post",
-          payload: {
-            user_uuid: userId,
-            required_permission: permission,
-            team_id: teamId,
-          },
-        });
-        return (data as unknown) === true;
-      },
-      enabled: enabled && !!userId,
-      retry: false,
-      staleTime: 60_000,
-    })),
-  });
-  const allowed = teamIds.filter((_, i) => results[i]?.data === true);
-  const key = allowed.join(",");
-  // A stable set while the answer holds, so callers can memo on it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed by its ids
-  return useMemo(() => (key ? new Set(allowed) : NO_TEAMS), [key]);
 };

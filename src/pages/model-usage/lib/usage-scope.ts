@@ -59,15 +59,15 @@ type ScopeQueries = {
   /** The filter of the scope's User rows. */
   user: GroupUsageFilter;
   /**
-   * The filter of the OrgUnit and Team rows. Null when the scope is not split
-   * into departments: a Team, a user, or no scope.
+   * The filter of the OrgUnit and Team rows. Absent when the scope is not
+   * split into departments: a Team, a user, or no scope.
    */
-  units: GroupUsageFilter | null;
+  units?: GroupUsageFilter;
   /**
    * The User rows no child department holds: the platform's usage under no
-   * department, or a department's own. Null when not split into departments.
+   * department, or a department's own. Absent when not split into departments.
    */
-  direct: GroupUsageFilter | null;
+  direct?: GroupUsageFilter;
   /** The group to narrow usage by API key to. */
   keyGroup?: KeyUsageGroup;
 };
@@ -75,7 +75,7 @@ type ScopeQueries = {
 export function scopeQueries(scope: UsageScope | null): ScopeQueries {
   switch (scope?.type) {
     case undefined:
-      return { user: {}, units: null, direct: null };
+      return { user: {} };
     case "platform":
       return { user: {}, units: {}, direct: { direct: true } };
     case "orgUnit":
@@ -88,12 +88,10 @@ export function scopeQueries(scope: UsageScope | null): ScopeQueries {
     case "team":
       return {
         user: userUsageFilter(scope),
-        units: null,
-        direct: null,
         keyGroup: { team: scope.name },
       };
     case "user":
-      return { user: userUsageFilter(scope), units: null, direct: null };
+      return { user: userUsageFilter(scope) };
   }
 }
 
