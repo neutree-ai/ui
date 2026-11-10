@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GroupUsageRecord } from "@/domains/api-key/types";
-import { summarizeUsage, usageByApplication } from "./usage-summary";
+import { summarizeUsage, usageByName } from "./usage-summary";
 
 const row = (
   name: string,
@@ -24,7 +24,7 @@ const row = (
 describe("usage summaries", () => {
   it("totals each application, largest first", () => {
     expect(
-      usageByApplication([row("a", 10, "App A"), row("b", 30), row("a", 5)]),
+      usageByName([row("a", 10, "App A"), row("b", 30), row("a", 5)]),
     ).toEqual([
       { key: "b", label: "b", requests: 1, tokens: 30 },
       { key: "a", label: "App A", requests: 2, tokens: 15 },

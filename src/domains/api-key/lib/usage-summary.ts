@@ -42,8 +42,8 @@ export function summarizeUsage(rows: GroupUsageRecord[], name?: string) {
   };
 }
 
-/** Totals per application (ServiceAccount usage rows). */
-export function usageByApplication(rows: GroupUsageRecord[]): UsageTotal[] {
+/** Totals per row name; each query returns a single kind (User or ServiceAccount). */
+export function usageByName(rows: GroupUsageRecord[]): UsageTotal[] {
   const byName = new Map<string, UsageTotal>();
   for (const row of rows) {
     const total = byName.get(row.name) ?? {
