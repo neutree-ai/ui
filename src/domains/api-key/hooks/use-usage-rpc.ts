@@ -1,72 +1,71 @@
 import { useCustomMutation } from "@refinedev/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useRef } from "react";
 
 export const POLL_INTERVAL_MS = 60_000;
 
+const NO_ROWS: never[] = [];
+
+// The rows of every page together. They keep their identity until a page
+// changes, so callers can memo on them.
+function useFlatPages<T>(pages: (T[] | undefined)[]): T[] {
+  const last = useRef<{ pages: (T[] | undefined)[]; rows: T[] }>({
+    pages: [],
+    rows: NO_ROWS,
+  });
+  const prev = last.current.pages;
+  if (pages.length !== prev.length || pages.some((p, i) => p !== prev[i])) {
+    last.current = {
+      pages,
+      rows: pages.some(Boolean) ? pages.flatMap((p) => p ?? []) : NO_ROWS,
+    };
+  }
+  return last.current.rows;
+}
+
 // useUsageRpcBatch polls a usage RPC once per params object and returns the
-// rows of all calls together. Pass null to disable fetching (before a required
-// id/workspace is known); an empty list fetches nothing and yields no rows.
-// `paramsList` MUST be a stable (memoized) reference — it keys both the fetch
-// and the 60s poll, so an unmemoized array would refetch on every render.
-// The poll skips a hidden page and catches up when it is shown again.
+// rows of all calls together. Each call is cached by its url and params, and
+// refetched every POLL_INTERVAL_MS while the page is visible. A disabled batch
+// keeps its cache; an empty list fetches nothing and yields no rows.
 export function useUsageRpcBatch<T>(
   url: string,
-  paramsList: Record<string, unknown>[] | null,
+  paramsList: Record<string, unknown>[],
+  enabled: boolean,
 ) {
-  const [usageData, setUsageData] = useState<T[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  // refine's custom POST, with its auth check and error notification.
   const { mutateAsync } = useCustomMutation();
-  // Only the latest request may write: a slow answer for the previous params
-  // must not land over the current one.
-  const latest = useRef(0);
+  const results = useQueries({
+    queries: paramsList.map((values) => ({
+      queryKey: [url, values],
+      queryFn: async () =>
+        (await mutateAsync({ url, method: "post", values })).data as T[],
+      enabled,
+      staleTime: POLL_INTERVAL_MS,
+      refetchInterval: POLL_INTERVAL_MS,
+      refetchIntervalInBackground: false,
+      // Catch up when the page is shown again.
+      refetchOnWindowFocus: true,
+      keepPreviousData: true,
+      retry: false,
+    })),
+  });
 
-  const fetchUsageData = useCallback(async () => {
-    if (!paramsList) return;
+  const failed = results.find((r) => r.error)?.error;
+  const error = failed
+    ? failed instanceof Error
+      ? failed
+      : new Error(String(failed))
+    : null;
+  // A failed refresh/poll must not leave stale usage on screen masquerading
+  // as the current result.
+  const usageData = useFlatPages(failed ? [] : results.map((r) => r.data));
 
-    const request = ++latest.current;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const pages = await Promise.all(
-        paramsList.map((values) =>
-          mutateAsync({ url, method: "post", values }),
-        ),
-      );
-      if (request !== latest.current) return;
-      setUsageData(pages.flatMap((res) => res.data as T[]));
-    } catch (err) {
-      if (request !== latest.current) return;
-      setError(err instanceof Error ? err : new Error(String(err)));
-      // Drop the previous rows on failure: a failed refresh/poll must not leave
-      // stale usage on screen masquerading as the current result.
-      setUsageData([]);
-    } finally {
-      if (request === latest.current) setIsLoading(false);
-    }
-  }, [url, paramsList, mutateAsync]);
-
-  useEffect(() => {
-    // New params: the rows of the old ones are no answer to them, and a
-    // caller that combines rows of several hooks would add them up wrong.
-    setUsageData([]);
-    fetchUsageData();
-  }, [fetchUsageData]);
-
-  useEffect(() => {
-    const visible = () => document.visibilityState !== "hidden";
-    const interval = setInterval(() => {
-      if (visible()) fetchUsageData();
-    }, POLL_INTERVAL_MS);
-    const onVisibility = () => {
-      if (visible()) fetchUsageData();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [fetchUsageData]);
-
-  return { usageData, isLoading, error, refetch: fetchUsageData };
+  return {
+    usageData,
+    isLoading: results.some((r) => r.isFetching),
+    error,
+    refetch: async () => {
+      if (enabled) await Promise.all(results.map((r) => r.refetch()));
+    },
+  };
 }

@@ -140,15 +140,15 @@ function UsageBreakdown({
 export function TeamUsage({ teamName }: { teamName: string }) {
   const { t } = useTranslation();
   const [range, setRange] = useState<DateRange>(() => trailingRange(30));
-  const team = useGroupUsage(ALL_WORKSPACES, range.start, range.end, "Team", {
-    team: teamName,
-  });
+  const team = useGroupUsage(ALL_WORKSPACES, range.start, range.end, "Team", [
+    { team: teamName },
+  ]);
   const apps = useGroupUsage(
     ALL_WORKSPACES,
     range.start,
     range.end,
     "ServiceAccount",
-    { team: teamName },
+    [{ team: teamName }],
   );
   const summary = useMemo(
     () => summarizeUsage(team.usageData, teamName),
@@ -214,7 +214,7 @@ export function ServiceAccountUsage({
     range.start,
     range.end,
     "ServiceAccount",
-    { team: teamName },
+    [{ team: teamName }],
   );
   const summary = useMemo(
     () => summarizeUsage(usageData, serviceAccountId),

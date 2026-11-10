@@ -192,29 +192,14 @@ vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
     _start: string,
     _end: string,
     kind: GroupUsageKind,
-    filter: { orgUnit?: string; team?: string; name?: string } = {},
+    filters: { orgUnit?: string; team?: string; name?: string }[],
+    enabled = true,
   ) => {
-    if (workspace) groupCalls.push(`${kind}:${JSON.stringify(filter)}`);
-    return query(workspace ? answer(kind, filter) : []);
-  },
-  useGroupUsageInUnits: (
-    workspace: string | undefined,
-    _start: string,
-    _end: string,
-    kind: GroupUsageKind,
-    units: string[],
-    name?: string,
-  ) => {
-    if (workspace) {
-      groupCalls.push(
-        `${kind} in ${units.join(",")}${name ? ` for ${name}` : ""}`,
-      );
+    if (!workspace || !enabled) return query([]);
+    for (const filter of filters) {
+      groupCalls.push(`${kind}:${JSON.stringify(filter)}`);
     }
-    return query(
-      workspace
-        ? units.flatMap((orgUnit) => answer(kind, { orgUnit, name }))
-        : [],
-    );
+    return query(filters.flatMap((filter) => answer(kind, filter)));
   },
 }));
 
@@ -232,9 +217,15 @@ const keyRow = (id: string, usage: number): ApiUsageRecord => ({
 });
 let keyFetched = false;
 vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
-  useWorkspaceUsage: (workspace: string | undefined) => {
-    keyFetched ||= !!workspace;
-    return query(workspace ? [keyRow("key-a", 70), keyRow("key-b", 30)] : []);
+  useWorkspaceUsage: (
+    workspace: string | undefined,
+    _start: string,
+    _end: string,
+    enabled = true,
+  ) => {
+    const fetched = !!workspace && enabled;
+    keyFetched ||= fetched;
+    return query(fetched ? [keyRow("key-a", 70), keyRow("key-b", 30)] : []);
   },
 }));
 
@@ -321,7 +312,7 @@ describe("a reader of the whole platform", () => {
 
     expect(groupCalls).toContain('User:{"orgUnit":"rnd"}');
     expect(groupCalls).toContain('OrgUnit:{"orgUnit":"rnd"}');
-    expect(groupCalls).toContain("User in ml");
+    expect(groupCalls).toContain('User:{"orgUnit":"ml"}');
     expect(summary("total")).toContain("400");
     // API keys carry no department, so they are counted for the platform only.
     expect(tabs()).not.toContain("model_usage.tabs.apiKeys");
@@ -370,7 +361,7 @@ describe("a reader of the whole platform", () => {
 
     // Their usage in R&D, less what was recorded in its sub-departments.
     expect(groupCalls).toContain('User:{"name":"u2","orgUnit":"rnd"}');
-    expect(groupCalls).toContain("User in ml for u2");
+    expect(groupCalls).toContain('User:{"orgUnit":"ml","name":"u2"}');
     expect(summary("total")).toContain("100");
     expect(tabs()).toEqual([
       "model_usage.tabs.models",

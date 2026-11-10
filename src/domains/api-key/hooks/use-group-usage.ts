@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { GroupUsageKind, GroupUsageRecord } from "@/domains/api-key/types";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useUsageRpcBatch } from "./use-usage-rpc";
@@ -29,62 +28,26 @@ const groupUsageParams = (
   ...(name ? { p_name: name } : {}),
 });
 
-const URL = "/rpc/get_usage_by_group";
-
-// useGroupUsage polls get_usage_by_group for one kind of group. The RPC needs a
-// global workspace:usage-read, or org_unit:usage-read for the caller's subtree;
-// pass an empty workspace to skip the call for everyone else. ALL_WORKSPACES
-// omits p_workspace, as in useWorkspaceUsage.
+// useGroupUsage polls get_usage_by_group for one kind of group, once per
+// filter, with the rows of every call together. The RPC needs a global
+// workspace:usage-read, or org_unit:usage-read for the caller's subtree; pass
+// an empty workspace or `enabled` false to skip the call for everyone else.
+// ALL_WORKSPACES omits p_workspace, as in useWorkspaceUsage.
 export function useGroupUsage(
   workspace: string | undefined,
   startDate: string,
   endDate: string,
   kind: GroupUsageKind,
-  filter: GroupUsageFilter = {},
+  filters: GroupUsageFilter[],
+  enabled = true,
 ) {
-  const { orgUnit, team, name } = filter;
-  const paramsList = useMemo(
-    () =>
-      workspace
-        ? [
-            groupUsageParams(workspace, startDate, endDate, kind, {
-              orgUnit,
-              team,
-              name,
-            }),
-          ]
-        : null,
-    [workspace, startDate, endDate, kind, orgUnit, team, name],
+  return useUsageRpcBatch<GroupUsageRecord>(
+    "/rpc/get_usage_by_group",
+    workspace
+      ? filters.map((filter) =>
+          groupUsageParams(workspace, startDate, endDate, kind, filter),
+        )
+      : [],
+    enabled && !!workspace,
   );
-  return useUsageRpcBatch<GroupUsageRecord>(URL, paramsList);
-}
-
-// useGroupUsageInUnits is useGroupUsage once per OrgUnit, with the rows of
-// every call together. Each call is narrowed to one OrgUnit's subtree, and to
-// one group of the kind when `name` is given.
-export function useGroupUsageInUnits(
-  workspace: string | undefined,
-  startDate: string,
-  endDate: string,
-  kind: GroupUsageKind,
-  orgUnits: string[],
-  name?: string,
-) {
-  const unitsKey = orgUnits.join("\u0000");
-  const paramsList = useMemo(
-    () =>
-      workspace
-        ? unitsKey
-            .split("\u0000")
-            .filter(Boolean)
-            .map((orgUnit) =>
-              groupUsageParams(workspace, startDate, endDate, kind, {
-                orgUnit,
-                name,
-              }),
-            )
-        : null,
-    [workspace, startDate, endDate, kind, unitsKey, name],
-  );
-  return useUsageRpcBatch<GroupUsageRecord>(URL, paramsList);
 }

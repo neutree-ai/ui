@@ -19,10 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import {
-  useGroupUsage,
-  useGroupUsageInUnits,
-} from "@/domains/api-key/hooks/use-group-usage";
+import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
@@ -168,7 +165,6 @@ export const ModelUsageList = () => {
   const userId = scope?.type === "user" ? scope.id : undefined;
   const splitUnit =
     scopeUnit ?? (userFrom?.type === "orgUnit" ? userFrom.name : undefined);
-  // useGroupUsage keys its request on the filter's fields, so these need no memo.
   const userFilter = scope ? userUsageFilter(scope) : {};
   const unitFilter = scopeUnit ? { orgUnit: scopeUnit } : {};
   const childUnits = useMemo(
@@ -193,22 +189,21 @@ export const ModelUsageList = () => {
     range.start,
     range.end,
     "User",
-    userFilter,
+    [userFilter],
   );
   const unitUsage = useGroupUsage(
     departmentWorkspace,
     range.start,
     range.end,
     "OrgUnit",
-    unitFilter,
+    [unitFilter],
   );
-  const childUsage = useGroupUsageInUnits(
+  const childUsage = useGroupUsage(
     splitUnit ? workspace : undefined,
     range.start,
     range.end,
     "User",
-    childUnits,
-    userId,
+    childUnits.map((orgUnit) => ({ orgUnit, name: userId })),
   );
 
   // The group's current members, so the breakdown lists those who used
@@ -252,16 +247,18 @@ export const ModelUsageList = () => {
   const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
 
   const teamUsage = useGroupUsage(
-    tab === "team" ? departmentWorkspace : undefined,
+    workspace,
     range.start,
     range.end,
     "Team",
-    unitFilter,
+    [unitFilter],
+    tab === "team",
   );
   const keyUsage = useWorkspaceUsage(
-    !scope || tab === "apiKey" ? workspace : undefined,
+    workspace,
     range.start,
     range.end,
+    !scope || tab === "apiKey",
   );
 
   // Picking a day in the chart narrows the range itself to that day — there is
