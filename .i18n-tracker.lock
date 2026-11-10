@@ -605,7 +605,7 @@
   "src/domains/service-account/lib/application-permissions.ts": "3cea45f3f4cd1d5e12a472f95c902bbb",
   "src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": "8db46ec46f1102acd812e49111b684c3",
   "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54",
-  "src/pages/model-usage/lib/usage-scope.ts": "b712669eec150fc087a636f824005a69",
+  "src/pages/model-usage/lib/usage-scope.ts": "b5f797b5ccc7bcd376fcf9346f93b286",
   "src/pages/model-usage/components/UsageOverview.tsx": "696abcf0d3492c9c0e5f69b84d51c194",
   "src/pages/model-usage/components/UsageScopePanel.tsx": "aced41ed8be365c3be983c248773b2a4",
   "src/pages/model-usage/components/UsageTables.tsx": "8e5e299c3347d9fcf637775049071c8b",

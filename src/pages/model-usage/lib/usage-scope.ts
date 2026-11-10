@@ -49,7 +49,7 @@ const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
     : groupFilter(groupOf(scope));
 
 /** What the page asks get_usage_by_group for in a scope. */
-export type ScopeQueries = {
+type ScopeQueries = {
   /** The filter of the scope's User rows. */
   user: GroupUsageFilter;
   /**
@@ -414,7 +414,7 @@ export function buildBreakdown({
 }
 
 /** A breakdown entry with where clicking it leads; null when nowhere. */
-export type BreakdownSeries = UsageSeries & { target: UsageScope | null };
+type BreakdownSeries = UsageSeries & { target: UsageScope | null };
 
 /**
  * The breakdown's entries, biggest first, then the group's members who used

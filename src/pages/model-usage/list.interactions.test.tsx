@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   ApiUsageRecord,
   GroupUsageKind,
@@ -229,14 +229,6 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   },
 }));
 
-// jsdom has no pointer capture or scrollIntoView; Radix calls both.
-beforeAll(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  Element.prototype.setPointerCapture = () => {};
-  Element.prototype.releasePointerCapture = () => {};
-  Element.prototype.scrollIntoView = () => {};
-});
-
 beforeEach(() => {
   canReadAll = false;
   canReadSubtree = false;
@@ -389,11 +381,9 @@ describe("a reader of the whole platform", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
-    expect(
-      screen.getByText(
-        "model_usage.daily.titleDayByGroup(model_usage.series.department)",
-      ),
-    ).toBeDefined();
+    screen.getByText(
+      "model_usage.daily.titleDayByGroup(model_usage.series.department)",
+    );
   });
 });
 
