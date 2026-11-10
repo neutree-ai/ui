@@ -1,5 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { type FieldValues, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Form } from "@/components/ui/form";
+import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -40,7 +43,18 @@ import {
   useTeams,
 } from "@/domains/organization/hooks/use-organization";
 import { OrgUnitLabel } from "./OrgUnitField";
-import { TeamLabel } from "./TeamField";
+import { TeamField, TeamLabel } from "./TeamField";
+
+function TeamPicker() {
+  const form = useForm<FieldValues>({ defaultValues: { team: "" } });
+  return (
+    <Form {...form}>
+      <FormFieldGroup {...form} name="team" label="Team">
+        <TeamField />
+      </FormFieldGroup>
+    </Form>
+  );
+}
 
 const loading = { data: undefined, isLoading: true } as never;
 const loaded = (rows: unknown[]) =>
@@ -106,5 +120,30 @@ describe("group labels", () => {
     const teams = screen.getAllByTestId("team-label");
     expect(teams[0].textContent).toBe("Demo Team A");
     expect(teams[1].textContent).toBe("other");
+  });
+
+  it("marks scene teams in the team picker", () => {
+    vi.mocked(useTeams).mockReturnValue(
+      loaded([
+        {
+          id: 5,
+          metadata: {
+            name: "scene",
+            labels: { "neutree.ai/team-kind": "project" },
+          },
+        },
+        { id: 6, metadata: { name: "plain" } },
+      ]),
+    );
+    render(<TeamPicker />);
+    fireEvent.click(screen.getByRole("combobox"));
+    within(screen.getByTestId("team-option-scene")).getByText(
+      "organization.values.project",
+    );
+    expect(
+      within(screen.getByTestId("team-option-plain")).queryByText(
+        "organization.values.project",
+      ),
+    ).toBeNull();
   });
 });
