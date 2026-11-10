@@ -44,11 +44,15 @@ export function PolicySourceLabel({
       {source.scopeKind && source.scopeName ? (
         <span className="inline-flex items-center gap-1">
           {t("group_policies.subject.setIn")}
-          {render(
-            source.scopeKind,
-            source.scopeName,
-            source.scopeLabel ?? source.scopeName,
-          )}
+          {/* Its own element: a plain-string label would merge with the text
+              before it into one flex item, and the gap would not apply. */}
+          <span>
+            {render(
+              source.scopeKind,
+              source.scopeName,
+              source.scopeLabel ?? source.scopeName,
+            )}
+          </span>
         </span>
       ) : (
         t("group_policies.subject.setGlobally")

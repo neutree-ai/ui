@@ -3126,6 +3126,8 @@
 			},
 			"quotaPlaceholder": "No quota",
 			"modelsAllowed": "{{count}} models allowed",
+			"modelsAllowed_one": "{{count}} model allowed",
+			"modelsAllowed_other": "{{count}} models allowed",
 			"effectiveRemaining": "{{remaining}} tokens left in effect",
 			"effectiveTitle": "Limits in effect",
 			"effectiveNone": "No other limits apply.",

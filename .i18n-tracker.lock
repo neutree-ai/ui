@@ -616,7 +616,7 @@
   "src/domains/group-policy/lib/subject-policy.ts": "8a9f62b62c51f91eb4d017cb6eaef99c",
   "src/domains/group-policy/hooks/use-subject-quota-column.tsx": "658d7a9ce98c5323246c1fc49ef5cab5",
   "src/domains/group-policy/hooks/use-token-quota-input.ts": "bb820a53e61b02db34f47daebc0ae905",
-  "src/domains/group-policy/components/PolicySourceLabel.tsx": "35c03459768b87eaae9b29809bd3004b",
+  "src/domains/group-policy/components/PolicySourceLabel.tsx": "428f4c6d586f57dc07ddbc300472b690",
   "src/domains/group-policy/components/SubjectPolicyDialog.tsx": "003b538e5f943175207afff401386543",
   "src/domains/group-policy/components/SubjectQuotaCell.tsx": "d75744aca07ba16a196526ae353251e3",
   "src/domains/group-policy/components/TokenQuotaFields.tsx": "ee2119ca06e2dcb2df05e3d55748893d",
