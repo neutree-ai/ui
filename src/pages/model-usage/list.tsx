@@ -144,8 +144,8 @@ export const ModelUsageList = () => {
     setHidden(new Set());
   }, []);
 
-  // The tabs this scope has. API keys are counted for the whole platform and
-  // for a Team; Teams need a global reader.
+  // The tabs this scope has. API keys are counted for the platform (global
+  // readers), a department and a Team; Teams need a global reader.
   const tabs = useMemo<Tab[]>(() => {
     if (!scope) return ["apiKey", "model", "detail"];
     if (scope.type === "user") return ["model", "detail"];
@@ -154,7 +154,7 @@ export const ModelUsageList = () => {
     return [
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
-      ...(scope.type === "platform" && canReadAllGroups
+      ...(scope.type === "orgUnit" || canReadAllGroups
         ? (["apiKey"] as const)
         : []),
       "model",

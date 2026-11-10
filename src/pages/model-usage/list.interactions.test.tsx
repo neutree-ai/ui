@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
 import type {
   ApiUsageRecord,
   GroupUsageKind,
@@ -241,20 +242,20 @@ const keyRow = (
   completion_tokens: usage * 0.2,
 });
 let keyFetched = false;
-const keyTeams: (string | undefined)[] = [];
+const keyGroups: (KeyUsageGroup | undefined)[] = [];
 vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: (
     workspace: string | undefined,
     _start: string,
     _end: string,
     enabled = true,
-    team?: string,
+    group?: KeyUsageGroup,
   ) => {
     const fetched = !!workspace && enabled;
     keyFetched ||= fetched;
-    if (fetched) keyTeams.push(team);
-    // Team A's usage includes a member's key that was deleted since.
-    const rows = team
+    if (fetched) keyGroups.push(group);
+    // A group's usage includes a member's key that was deleted since.
+    const rows = group
       ? [keyRow("key-a", 70), keyRow("0123abcd-dead-key", 20, null)]
       : [keyRow("key-a", 70), keyRow("key-b", 30)];
     return query(fetched ? rows : []);
@@ -266,7 +267,7 @@ beforeEach(() => {
   canReadSubtree = false;
   usageTeamIds = [];
   keyFetched = false;
-  keyTeams.length = 0;
+  keyGroups.length = 0;
   groupCalls.length = 0;
   refetch.mockClear();
 });
@@ -343,7 +344,7 @@ describe("a reader of the whole platform", () => {
     // One query per scope, not one per child department.
     expect(groupCalls.some((call) => call.includes('"ml"'))).toBe(false);
     expect(summary("total")).toContain("400");
-    expect(tabs()).not.toContain("model_usage.tabs.apiKeys");
+    expect(tabs()).toContain("model_usage.tabs.apiKeys");
     // Direct members without usage are listed too, after the rest.
     expect(tableRows()).toEqual(["ML", "u2-name", "Idle"]);
 
@@ -442,6 +443,15 @@ describe("a department admin", () => {
     ).toBeNull();
     expect(tabs()).not.toContain("model_usage.tabs.teams");
   });
+
+  it("lists the API keys used in their department", () => {
+    render(<ModelUsageList />);
+
+    openTab("model_usage.tabs.apiKeys");
+
+    expect(keyGroups).toContainEqual({ orgUnit: "market" });
+    expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
+  });
 });
 
 describe("a reader of one Team's usage", () => {
@@ -453,7 +463,7 @@ describe("a reader of one Team's usage", () => {
     render(<ModelUsageList />);
 
     expect(groupCalls).toEqual([]);
-    expect(keyTeams).toEqual([undefined]);
+    expect(keyGroups).toEqual([undefined]);
     expect(scopeButton("model_usage.scope.visible").ariaPressed).toBe("true");
     // Only the Teams whose usage they read.
     expect(
@@ -466,7 +476,7 @@ describe("a reader of one Team's usage", () => {
     expect(groupCalls).toContain('User:{"team":"team-a"}');
     openTab("model_usage.tabs.apiKeys");
 
-    expect(keyTeams).toContain("team-a");
+    expect(keyGroups).toContainEqual({ team: "team-a" });
     expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
   });
 });

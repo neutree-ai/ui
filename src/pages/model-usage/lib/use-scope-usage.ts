@@ -115,7 +115,7 @@ export function useScopeUsage({
     start,
     end,
     !scope || keysOpen,
-    queries.keyTeam,
+    queries.keyGroup,
   );
 
   const userFacts = useFacts(userUsage.usageData, groupFact);

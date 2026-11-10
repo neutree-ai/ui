@@ -124,11 +124,13 @@ describe("scopeQueries", () => {
     expect(scopeQueries(null).direct).toBeNull();
   });
 
-  it("narrows usage by API key to a Team scope only", () => {
-    expect(scopeQueries(team).keyTeam).toBe("t1");
-    expect(scopeQueries(null).keyTeam).toBeUndefined();
-    expect(scopeQueries({ type: "platform" }).keyTeam).toBeUndefined();
-    expect(scopeQueries(user(team)).keyTeam).toBeUndefined();
+  it("narrows usage by API key to a Team or a department scope", () => {
+    expect(scopeQueries(team).keyGroup).toEqual({ team: "t1" });
+    expect(scopeQueries(rnd).keyGroup).toEqual({ orgUnit: "rnd" });
+    expect(scopeQueries(null).keyGroup).toBeUndefined();
+    expect(scopeQueries({ type: "platform" }).keyGroup).toBeUndefined();
+    expect(scopeQueries(user(team)).keyGroup).toBeUndefined();
+    expect(scopeQueries(user(rnd)).keyGroup).toBeUndefined();
   });
 });
 

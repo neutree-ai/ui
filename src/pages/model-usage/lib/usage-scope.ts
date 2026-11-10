@@ -1,4 +1,5 @@
 import type { GroupUsageFilter } from "@/domains/api-key/hooks/use-group-usage";
+import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
   type OrgTreeNode,
@@ -67,8 +68,8 @@ type ScopeQueries = {
    * department, or a department's own. Null when not split into departments.
    */
   direct: GroupUsageFilter | null;
-  /** The Team to narrow usage by API key to. */
-  keyTeam?: string;
+  /** The group to narrow usage by API key to. */
+  keyGroup?: KeyUsageGroup;
 };
 
 export function scopeQueries(scope: UsageScope | null): ScopeQueries {
@@ -82,13 +83,14 @@ export function scopeQueries(scope: UsageScope | null): ScopeQueries {
         user: userUsageFilter(scope),
         units: { orgUnit: scope.name },
         direct: { orgUnit: scope.name, direct: true },
+        keyGroup: { orgUnit: scope.name },
       };
     case "team":
       return {
         user: userUsageFilter(scope),
         units: null,
         direct: null,
-        keyTeam: scope.name,
+        keyGroup: { team: scope.name },
       };
     case "user":
       return { user: userUsageFilter(scope), units: null, direct: null };
