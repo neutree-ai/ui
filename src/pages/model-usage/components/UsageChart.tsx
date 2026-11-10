@@ -1,5 +1,5 @@
 import { BarChart3, LineChart as LineChartIcon } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import {
@@ -242,14 +243,11 @@ export const UsageChart = ({
   trendData,
   dayCategories,
   isSingleDay,
-  groupByModel,
-  groupKindLabel,
-  headerExtra,
+  seriesLabel,
   chartType,
   onChartTypeChange,
   hidden,
   onToggleSeries,
-  totalTokens,
   isLoading,
   backLabel,
   onPickDay,
@@ -259,17 +257,12 @@ export const UsageChart = ({
   trendData: Array<Record<string, number | string>>;
   dayCategories: UsageSeries[];
   isSingleDay: boolean;
-  groupByModel: boolean;
-  /** Set when the series are users or groups of this kind, not API keys. */
-  groupKindLabel?: string;
-  /** Rendered after the title, e.g. the dimension picker. */
-  headerExtra?: ReactNode;
+  /** What each series is, e.g. "Department", for the title. */
+  seriesLabel: string;
   chartType: "line" | "bar";
   onChartTypeChange: (chartType: "line" | "bar") => void;
   hidden: Set<string>;
   onToggleSeries: (key: string) => void;
-  /** null hides the total, e.g. when the series overlap. */
-  totalTokens: number | null;
   isLoading: boolean;
   backLabel: string;
   onPickDay: (date: string) => void;
@@ -307,17 +300,9 @@ export const UsageChart = ({
     [series],
   );
 
-  const title = groupKindLabel
-    ? isSingleDay
-      ? t("model_usage.daily.titleDayByGroup", { kind: groupKindLabel })
-      : t("model_usage.daily.titleByGroup", { kind: groupKindLabel })
-    : isSingleDay
-      ? groupByModel
-        ? t("model_usage.daily.titleDayByModel")
-        : t("model_usage.daily.titleDayByKey")
-      : groupByModel
-        ? t("model_usage.daily.titleByModel")
-        : t("model_usage.daily.titleByKey");
+  const title = isSingleDay
+    ? t("model_usage.daily.titleDayByGroup", { kind: seriesLabel })
+    : t("model_usage.daily.titleByGroup", { kind: seriesLabel });
 
   const isEmpty = isSingleDay ? dayBars.length === 0 : trendData.length === 0;
 
@@ -387,11 +372,10 @@ export const UsageChart = ({
   ];
 
   return (
-    <div className="mb-4 rounded-[var(--nt-radius-card)] border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] p-4">
+    <Card className="p-4">
       <div className="flex items-baseline justify-between mb-2 gap-3">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className="text-sm font-medium">{title}</span>
-          {headerExtra}
           {isSingleDay ? (
             // The range itself is the state; this is the way back that stays
             // visible for someone who only ever looks at the chart.
@@ -412,16 +396,6 @@ export const UsageChart = ({
           )}
         </div>
         <div className="flex items-center gap-3">
-          {totalTokens === null ? null : (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-semibold tabular-nums">
-                {formatTokens(totalTokens)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {t("model_usage.daily.totalLabel")}
-              </span>
-            </div>
-          )}
           {/* The single-day chart is a distribution across API keys (or
               models), not a trend, so there is nothing to switch. */}
           {isSingleDay ? null : (
@@ -576,6 +550,6 @@ export const UsageChart = ({
           </ResponsiveContainer>
         )}
       </div>
-    </div>
+    </Card>
   );
 };

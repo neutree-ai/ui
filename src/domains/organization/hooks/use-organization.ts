@@ -71,14 +71,20 @@ export const useOrgUnitMembers = (
     pagination: ALL,
     filters: [{ field: "org_unit_id", operator: "eq", value: orgUnitId }],
     meta: { select: `*,${MEMBER_PROFILE}` },
-    queryOptions: { enabled: orgUnitId !== undefined && !includeSubtree },
+    queryOptions: {
+      enabled: orgUnitId !== undefined && !includeSubtree,
+      staleTime: STALE_TIME,
+    },
   });
   const subtree = useCustom<OrgUnitMember[]>({
     // org_units names a member's department when the tree lacks it.
     url: `/rpc/org_unit_subtree_members?select=*,${MEMBER_PROFILE},org_units(*)`,
     method: "post",
     config: { payload: { p_org_unit_id: orgUnitId } },
-    queryOptions: { enabled: orgUnitId !== undefined && includeSubtree },
+    queryOptions: {
+      enabled: orgUnitId !== undefined && includeSubtree,
+      staleTime: STALE_TIME,
+    },
     successNotification: false,
     errorNotification: false,
   });
@@ -90,16 +96,18 @@ export const useOrgUnitMembers = (
   };
 };
 
+const NO_TEAM_MEMBERS: TeamMember[] = [];
+
 export const useTeamMembers = (teamId: number | undefined) => {
   const query = useList<TeamMember>({
     resource: "team_members",
     pagination: ALL,
     filters: [{ field: "team_id", operator: "eq", value: teamId }],
     meta: { select: "*,user_profiles(*)" },
-    queryOptions: { enabled: teamId !== undefined },
+    queryOptions: { enabled: teamId !== undefined, staleTime: STALE_TIME },
   });
   return {
-    members: query.data?.data ?? [],
+    members: query.data?.data ?? NO_TEAM_MEMBERS,
     isLoading: teamId !== undefined && query.isLoading,
     error: query.error,
   };

@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockMutateAsync = vi.fn();
@@ -7,15 +9,32 @@ vi.mock("@refinedev/core", () => ({
   useCustomMutation: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
-import { POLL_INTERVAL_MS, useApiKeyUsage } from "./use-api-key-usage";
+import { useApiKeyUsage } from "./use-api-key-usage";
+import { POLL_INTERVAL_MS } from "./use-usage-rpc";
+
+let queryClient: QueryClient;
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(QueryClientProvider, { client: queryClient }, children);
+const render = <P, R>(hook: (props: P) => R, initialProps?: P) =>
+  renderHook(hook, { wrapper, initialProps });
+
+// Moves the clock, then lets the query cache settle: it notifies through
+// zero-delay timers, which a zero-length advance does not reach.
+const flush = (ms = 0) =>
+  act(async () => {
+    await vi.advanceTimersByTimeAsync(ms);
+    await vi.advanceTimersByTimeAsync(1);
+  });
 
 describe("useApiKeyUsage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    queryClient = new QueryClient();
   });
 
   afterEach(() => {
+    queryClient.clear();
     vi.useRealTimers();
   });
 
@@ -47,7 +66,7 @@ describe("useApiKeyUsage", () => {
   ];
 
   it("returns empty data initially when no apiKeyId", () => {
-    const { result } = renderHook(() => useApiKeyUsage(undefined));
+    const { result } = render(() => useApiKeyUsage(undefined));
 
     expect(result.current.usageData).toEqual([]);
     expect(result.current.isLoading).toBe(false);
@@ -58,11 +77,11 @@ describe("useApiKeyUsage", () => {
   it("fetches usage data when apiKeyId is provided", async () => {
     mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
 
-    const { result } = renderHook(() => useApiKeyUsage("abc"));
+    const { result } = render(() => useApiKeyUsage("abc"));
 
     expect(result.current.isLoading).toBe(true);
 
-    await act(async () => {});
+    await flush();
 
     expect(result.current.usageData).toEqual(usageRecords);
     expect(result.current.isLoading).toBe(false);
@@ -79,9 +98,9 @@ describe("useApiKeyUsage", () => {
   it("sets error on fetch failure", async () => {
     mockMutateAsync.mockRejectedValueOnce(new Error("network error"));
 
-    const { result } = renderHook(() => useApiKeyUsage("abc"));
+    const { result } = render(() => useApiKeyUsage("abc"));
 
-    await act(async () => {});
+    await flush();
 
     expect(result.current.usageData).toEqual([]);
     expect(result.current.isLoading).toBe(false);
@@ -91,9 +110,9 @@ describe("useApiKeyUsage", () => {
   it("wraps non-Error throws into Error", async () => {
     mockMutateAsync.mockRejectedValueOnce("string error");
 
-    const { result } = renderHook(() => useApiKeyUsage("abc"));
+    const { result } = render(() => useApiKeyUsage("abc"));
 
-    await act(async () => {});
+    await flush();
 
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe("string error");
@@ -102,16 +121,14 @@ describe("useApiKeyUsage", () => {
   it("clears error on successful retry", async () => {
     mockMutateAsync.mockRejectedValueOnce(new Error("fail"));
 
-    const { result } = renderHook(() => useApiKeyUsage("abc"));
+    const { result } = render(() => useApiKeyUsage("abc"));
 
-    await act(async () => {});
+    await flush();
     expect(result.current.error).not.toBeNull();
 
     mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
 
-    await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-    });
+    await flush(POLL_INTERVAL_MS);
 
     expect(result.current.error).toBeNull();
     expect(result.current.usageData).toEqual(usageRecords);
@@ -120,17 +137,15 @@ describe("useApiKeyUsage", () => {
   it("drops previously loaded data when a later poll fails", async () => {
     mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
 
-    const { result } = renderHook(() => useApiKeyUsage("abc"));
+    const { result } = render(() => useApiKeyUsage("abc"));
 
-    await act(async () => {});
+    await flush();
     expect(result.current.usageData).toEqual(usageRecords);
 
     // A failed refresh/poll must not leave stale rows on screen.
     mockMutateAsync.mockRejectedValueOnce(new Error("boom"));
 
-    await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-    });
+    await flush(POLL_INTERVAL_MS);
 
     expect(result.current.usageData).toEqual([]);
     expect(result.current.error).toEqual(new Error("boom"));
@@ -139,40 +154,55 @@ describe("useApiKeyUsage", () => {
   it("polls every 60 seconds", async () => {
     mockMutateAsync.mockResolvedValue({ data: [] });
 
-    renderHook(() => useApiKeyUsage("abc"));
+    render(() => useApiKeyUsage("abc"));
 
-    await act(async () => {});
+    await flush();
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-    });
+    await flush(POLL_INTERVAL_MS);
     expect(mockMutateAsync).toHaveBeenCalledTimes(2);
 
-    await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-    });
+    await flush(POLL_INTERVAL_MS);
     expect(mockMutateAsync).toHaveBeenCalledTimes(3);
   });
 
   it("refetches when apiKeyId changes", async () => {
     mockMutateAsync.mockResolvedValue({ data: usageRecords });
 
-    const { rerender } = renderHook(({ id }) => useApiKeyUsage(id), {
-      initialProps: { id: "a" as string | undefined },
-    });
+    const { rerender } = render(
+      ({ id }: { id?: string }) => useApiKeyUsage(id),
+      {
+        id: "a",
+      },
+    );
 
-    await act(async () => {});
+    await flush();
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
 
     rerender({ id: "b" });
 
-    await act(async () => {});
+    await flush();
     expect(mockMutateAsync).toHaveBeenCalledTimes(2);
     expect(mockMutateAsync).toHaveBeenLastCalledWith(
       expect.objectContaining({
         values: expect.objectContaining({ p_api_key_id: "b" }),
       }),
     );
+  });
+
+  it("marks the previous key's rows as a placeholder while the next key loads", async () => {
+    mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
+    const { result, rerender } = render(
+      ({ id }: { id?: string }) => useApiKeyUsage(id),
+      { id: "a" },
+    );
+    await flush();
+    expect(result.current.isPlaceholder).toBe(false);
+
+    mockMutateAsync.mockReturnValueOnce(new Promise(() => {}));
+    rerender({ id: "b" });
+
+    expect(result.current.usageData).toEqual(usageRecords);
+    expect(result.current.isPlaceholder).toBe(true);
   });
 });

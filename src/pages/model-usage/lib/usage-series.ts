@@ -1,4 +1,5 @@
 import type { ApiUsageRecord } from "@/domains/api-key/types";
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 
 // One aggregated series — in the multi-day chart a line, in the single-day
 // chart a bar. `prompt`/`completion` are what the stacked day bars need; the
@@ -27,26 +28,33 @@ type UsageRow = Pick<
   "usage" | "prompt_tokens" | "completion_tokens"
 > & { requests?: number };
 
-// Sums usage into one series per key, biggest total first.
-export function aggregateSeries<R extends UsageRow>(
+/** `part` as a percentage of `whole`; 0 when there is nothing to share. */
+export const shareOf = (part: number, whole: number) =>
+  whole > 0 ? (part / whole) * 100 : 0;
+
+export const formatShare = (part: number, whole: number) =>
+  whole > 0 ? `${shareOf(part, whole).toFixed(1)}%` : "0%";
+
+/** The model a usage row names; rows without one share the empty value. */
+export const modelOf = (r: { model_name: string | null }) =>
+  r.model_name ?? EMPTY_VALUE;
+
+// Sums usage into one series per key, biggest total first. Each series takes
+// its name, description and any further fields from its first row's meta.
+export function aggregateSeries<
+  R extends UsageRow,
+  M extends SeriesMeta = SeriesMeta,
+>(
   rows: R[],
   keyOf: (r: R) => string,
-  metaOf: (r: R) => SeriesMeta,
-): UsageSeries[] {
-  const byKey = new Map<string, UsageSeries>();
+  metaOf: (r: R) => M,
+): (UsageSeries & M)[] {
+  const byKey = new Map<string, UsageSeries & M>();
   for (const r of rows) {
     const key = keyOf(r);
     let series = byKey.get(key);
     if (!series) {
-      const meta = metaOf(r);
-      series = {
-        key,
-        name: meta.name,
-        description: meta.description,
-        prompt: 0,
-        completion: 0,
-        total: 0,
-      };
+      series = { ...metaOf(r), key, prompt: 0, completion: 0, total: 0 };
       byKey.set(key, series);
     }
     series.prompt += r.prompt_tokens ?? 0;

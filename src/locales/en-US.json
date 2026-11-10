@@ -3389,19 +3389,14 @@
 		"refresh": "Refresh",
 		"empty": "No usage in the selected window.",
 		"filters": {
-			"apiKey": "API key",
-			"allApiKeys": "All API keys",
 			"model": "Model",
-			"endpointType": "Type",
-			"allTypes": "All types"
+			"allModels": "All models"
 		},
 		"apiKey": "API key",
 		"model": "Model",
 		"promptTokens": "Prompt",
 		"completionTokens": "Completion",
 		"totalTokens": "Total",
-		"byApiKey": "By API key",
-		"byModel": "By model",
 		"range": {
 			"7": "Last 7 days",
 			"30": "Last 30 days",
@@ -3415,23 +3410,16 @@
 				"completion": "Completion",
 				"total": "Total"
 			},
-			"titleByKey": "Daily tokens by API key",
-			"titleByModel": "Daily tokens by model",
-			"totalLabel": "total tokens",
-			"titleDayByKey": "Tokens by API key · single day",
-			"titleDayByModel": "Tokens by model · single day",
 			"otherKeys": "Other {{n}} API keys",
 			"otherGroups": "Other {{n}}",
 			"titleByGroup": "Daily tokens by {{kind}}",
 			"titleDayByGroup": "Tokens by {{kind}} · single day",
-			"dimension": "Chart by",
 			"otherAxisLabel": "Other {{n}} (total)",
 			"clickHint": "Click a day to scope the page to that day",
 			"backToPreset": "Back to last {{days}} days",
 			"backToRange": "Back to {{range}}"
 		},
 		"detail": {
-			"title": "Daily detail",
 			"date": "Date",
 			"type": "Type",
 			"endpoint": "Endpoint",
@@ -3442,29 +3430,53 @@
 			"line": "Line chart",
 			"bar": "Bar chart"
 		},
-		"byApiKeyOnDay": "By API key · {{date}}",
-		"byModelOnDay": "By model · {{date}}",
 		"group": {
-			"title": "By user or group",
-			"titleOnDay": "By user or group · {{date}}",
-			"kind": "Group by",
 			"kinds": {
 				"User": "User",
 				"Team": "Team",
 				"OrgUnit": "Department"
 			},
+			"requests": "Requests"
+		},
+		"share": "Share",
+		"scope": {
+			"title": "Scope",
+			"platform": "Entire platform",
+			"unassigned": "No department",
+			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments.",
+			"teams": "Teams"
+		},
+		"summary": {
+			"total": "Total tokens",
+			"prompt": "Prompt tokens",
+			"completion": "Completion tokens",
 			"requests": "Requests",
-			"historyHint": "Usage counts toward the groups the user was in at the time.",
-			"subtreeHint": "A department includes its sub-departments. Usage counts toward the department the user was in at the time.",
-			"apiKeyIgnored": "The API key filter does not apply here.",
-			"subtreeOnly": "Only the departments you manage: usage a user had in another department is not included.",
-			"filters": {
-				"department": "Department",
-				"allDepartments": "All departments",
-				"team": "Team",
-				"allTeams": "All teams",
-				"subtreeIncluded": "Includes its sub-departments."
-			}
+			"share": "{{share}} of total"
+		},
+		"modelShare": {
+			"title": "Usage by model",
+			"active": "{{n}} models in use",
+			"filter": "Show only this model; select again to show all"
+		},
+		"series": {
+			"department": "department",
+			"subUnit": "sub-department or user",
+			"model": "model",
+			"apiKey": "API key",
+			"member": "member"
+		},
+		"columns": {
+			"subUnitOrUser": "Sub-department or user"
+		},
+		"tabs": {
+			"departments": "By department",
+			"subUnits": "By sub-department and user",
+			"teams": "By Team",
+			"apiKeys": "By API key",
+			"models": "By model",
+			"detail": "Daily detail",
+			"teamHint": "A user may be in several Teams, so the Teams' totals can add up to more than the scope's total. Usage counts toward the Teams the user was in at the time.",
+			"members": "By member"
 		}
 	},
 	"observations": {

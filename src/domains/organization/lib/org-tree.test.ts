@@ -9,6 +9,7 @@ import {
   indexNodes,
   type OrgTreeNode,
   orgTreeIndex,
+  orgUnitAncestors,
   orgUnitPathLabel,
   teamIndex,
 } from "./org-tree";
@@ -155,6 +156,25 @@ describe("indexNodes", () => {
   it("indexes every node of the forest", () => {
     expect([...indexNodes(buildOrgTree(corp)).keys()].sort()).toEqual([
       1, 2, 3, 4, 5, 6,
+    ]);
+  });
+});
+
+describe("orgUnitAncestors", () => {
+  it("lists the readable nodes from the top down to the node", () => {
+    const labels = (roots: OrgTreeNode[]) => {
+      const byId = indexNodes(roots);
+      return orgUnitAncestors(byId.get(3)!, byId).map((n) => n.label);
+    };
+    expect(labels(buildOrgTree(corp))).toEqual([
+      "Corp",
+      "Engineering",
+      "Platform",
+    ]);
+    // A department admin bound to Engineering cannot read Corp.
+    expect(labels(buildOrgTree(corp.slice(1, 4)))).toEqual([
+      "Engineering",
+      "Platform",
     ]);
   });
 });
