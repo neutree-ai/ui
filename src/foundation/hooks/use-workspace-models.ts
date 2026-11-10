@@ -1,5 +1,10 @@
 import { useList } from "@refinedev/core";
 import { useMemo } from "react";
+import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
+import {
+  type EndpointLifecycle,
+  isEndpointWithdrawn,
+} from "@/foundation/lib/endpoint-availability";
 import {
   type ExternalModelSourceSpec,
   type ModelSource,
@@ -34,19 +39,18 @@ export type WorkspaceModelOption = {
   workspace?: string;
 };
 
-type WorkspaceEndpointRef = {
+type WorkspaceEndpointRef = EndpointLifecycle & {
   metadata?: { name?: string | null; workspace?: string | null } | null;
   status?: { phase?: string | null; served_models?: string[] | null } | null;
 };
 
-type WorkspaceExternalEndpointRef = {
+type WorkspaceExternalEndpointRef = EndpointLifecycle & {
   metadata?: {
     name?: string | null;
     workspace?: string | null;
     labels?: Record<string, string> | null;
   } | null;
   spec?: ExternalModelSourceSpec;
-  status?: { phase?: string | null } | null;
 };
 
 export const modelOptionValue = (
@@ -107,14 +111,14 @@ export function useWorkspaceModels(
     resource: "endpoints",
     pagination: { mode: "off" },
     meta: { workspace, workspaced: true },
-    queryOptions: { enabled },
+    queryOptions: { enabled, ...LIST_POLL_QUERY_OPTIONS },
   });
   const { data: externalEndpointsData } = useList<WorkspaceExternalEndpointRef>(
     {
       resource: "external_endpoints",
       pagination: { mode: "off" },
       meta: { workspace, workspaced: true },
-      queryOptions: { enabled },
+      queryOptions: { enabled, ...LIST_POLL_QUERY_OPTIONS },
     },
   );
 
@@ -123,6 +127,7 @@ export function useWorkspaceModels(
     const options: WorkspaceModelOption[] = [];
 
     for (const endpoint of endpointsData?.data ?? []) {
+      if (isEndpointWithdrawn(endpoint)) continue;
       const model = nonBlankModelName(endpoint.status?.served_models?.[0]);
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (model === undefined || !endpointName) continue;
@@ -139,6 +144,7 @@ export function useWorkspaceModels(
     }
 
     for (const endpoint of externalEndpointsData?.data ?? []) {
+      if (isEndpointWithdrawn(endpoint)) continue;
       const endpointName = String(endpoint.metadata?.name ?? "").trim();
       if (!endpointName) continue;
       for (const model of exposedExternalModels(endpoint.spec)) {

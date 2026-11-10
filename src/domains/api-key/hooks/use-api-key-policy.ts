@@ -14,6 +14,8 @@ import {
   type WorkspaceModelOption,
 } from "@/foundation/hooks/use-workspace-models";
 import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
+import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
+import { isEndpointPhaseWithdrawn } from "@/foundation/lib/endpoint-availability";
 import {
   type ModelSource,
   parseStoredModelSource,
@@ -409,6 +411,8 @@ export function invokableModelOptions(
     const type = row.type === "external" ? "external" : "internal";
     const value = modelOptionValue(type, endpointName, model);
     const seen = byValue.get(value);
+    const phase = row.phase ?? seen?.phase ?? null;
+    if (isEndpointPhaseWithdrawn(phase)) continue;
     options.push({
       value,
       label: model,
@@ -419,7 +423,7 @@ export function invokableModelOptions(
         type === "internal"
           ? SELF_HOSTED_MODEL_SOURCE
           : (parseStoredModelSource(row.source_label) ?? seen?.source),
-      phase: row.phase ?? seen?.phase ?? null,
+      phase,
       workspace,
     });
   }
@@ -447,7 +451,7 @@ export function useInvokableModels(
           : { p_service_account_id: serviceAccountId }),
       },
     },
-    queryOptions: { enabled, retry: false },
+    queryOptions: { enabled, retry: false, ...LIST_POLL_QUERY_OPTIONS },
     successNotification: false,
     errorNotification: false,
   });
