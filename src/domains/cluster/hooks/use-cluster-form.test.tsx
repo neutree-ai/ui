@@ -1,15 +1,8 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
-import { fillField, selectOption } from "@/foundation/testing/interactions";
-import { refineForm } from "@/foundation/testing/refine-form";
+import { selectOption } from "@/foundation/testing/interactions";
+import { renderForm } from "@/foundation/testing/render-form";
 
 vi.mock("@refinedev/core", () => ({
   useList: () => ({ data: { data: [] }, isLoading: false }),
@@ -20,11 +13,6 @@ vi.mock("@refinedev/core", () => ({
     data: { data: { available_versions: [] } },
     isLoading: false,
   }),
-  useSaveButton: () => ({ label: "buttons.save" }),
-}));
-
-vi.mock("@/foundation/hooks/use-on-back", () => ({
-  useOnBack: () => undefined,
 }));
 
 vi.mock("@/foundation/components/WorkspaceField", () => ({
@@ -62,15 +50,11 @@ const KUBECONFIG = "field-spec.config.kubernetes_config.kubeconfig";
 const SSH_USER = "field-spec.config.ssh_config.auth.ssh_user";
 const ACCEL = "field-spec.accelerator_virtualization.enabled";
 
-const renderCluster = (action: "create" | "edit" = "create") => {
-  const result = {
-    current: undefined as unknown as ReturnType<typeof useClusterForm>,
-  };
-  function ClusterForm() {
-    const r = useClusterForm({ action });
-    result.current = r;
-    return (
-      <ResourceForm {...r.form}>
+const renderCluster = (action: "create" | "edit" = "create") =>
+  renderForm(
+    () => useClusterForm({ action }),
+    (r) => (
+      <>
         {r.metadataFields}
         {r.clusterConfigurationFields}
         {r.providerFields}
@@ -78,11 +62,9 @@ const renderCluster = (action: "create" | "edit" = "create") => {
         {r.acceleratorVirtualizationFields}
         {r.authFields}
         {r.cacheFields}
-      </ResourceForm>
-    );
-  }
-  return { ...render(<ClusterForm />), result };
-};
+      </>
+    ),
+  );
 
 const switchType = (type: "kubernetes" | "multipleStaticNodes") =>
   selectOption("spec.type", `clusters.options.${type}`);
@@ -152,57 +134,6 @@ describe("useClusterForm", () => {
       result.current.form.getValues("spec.config.kubernetes_config.router"),
     ).not.toHaveProperty("version");
   });
-
-  it.each([
-    undefined,
-    {
-      max_connections_per_backend: 0,
-      connect_timeout_seconds: 1.25,
-      sock_connect_timeout_seconds: 2.5,
-      sock_read_timeout_seconds: 0,
-    },
-  ])(
-    "preserves API-managed Router settings through an edit submission (%j)",
-    async (proxy) => {
-      const { result } = renderCluster("edit");
-      act(() =>
-        result.current.form.reset({
-          ...result.current.form.getValues(),
-          metadata: {
-            ...result.current.form.getValues("metadata"),
-            name: "cluster-a",
-            workspace: "default",
-          },
-          spec: {
-            type: "kubernetes",
-            version: "v1.3.0",
-            image_registry: "default",
-            config: {
-              kubernetes_config: {
-                router: {
-                  replicas: 2,
-                  resources: { cpu: "1", memory: "1Gi" },
-                  ...proxy,
-                },
-              },
-            },
-          },
-        }),
-      );
-      fillField("spec.config.kubernetes_config.router.replicas", 3);
-      fireEvent.click(screen.getByTestId("form-submit"));
-
-      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledOnce());
-      expect(
-        refineForm.onFinish.mock.lastCall?.[0].spec.config.kubernetes_config
-          .router,
-      ).toEqual({
-        replicas: 3,
-        resources: { cpu: "1", memory: "1Gi" },
-        ...proxy,
-      });
-    },
-  );
 
   it("keeps accelerator virtualization off for kubernetes clusters at or below v1.0.1", async () => {
     const { result } = renderCluster();

@@ -32,10 +32,6 @@ type RouterSpec = {
   access_mode?: KubernetesAccessMode;
   replicas?: number;
   resources?: Record<string, string>;
-  max_connections_per_backend?: number;
-  connect_timeout_seconds?: number;
-  sock_connect_timeout_seconds?: number;
-  sock_read_timeout_seconds?: number;
 };
 
 type KubernetesClusterConfig = {

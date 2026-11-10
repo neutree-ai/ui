@@ -95,7 +95,7 @@
   "src/foundation/providers/auth-provider/index.ts": "0b05f6b462ccbe92491d1c3d4cb18623",
   "src/foundation/lib/column-visibility-storage.ts": "14d5119fc656854dc6bf4774f465e3ab",
   "src/foundation/lib/constant.ts": "7ba88946322ba84f6d56091fcb3c624e",
-  "src/foundation/lib/grafana-dashboard-configs.ts": "4a370f6b68abf0d7fdee8e7bf541687d",
+  "src/foundation/lib/grafana-dashboard-configs.ts": "00b71de322e2028041548a0c1287d52a",
   "src/foundation/lib/i18n.ts": "7ca93a505420fdfee78bb9d88ffcc272",
   "src/foundation/lib/plural.ts": "5d10922518b7de7bf6db90ce2e078f5f",
   "src/foundation/lib/unit.ts": "364e1f56b690042e2823558b0a435817",
