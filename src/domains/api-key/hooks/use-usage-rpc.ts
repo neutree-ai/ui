@@ -27,6 +27,8 @@ function useFlatPages<T>(pages: (T[] | undefined)[]): T[] {
 // rows of all calls together. Each call is cached by its url and params, and
 // refetched every POLL_INTERVAL_MS while the page is visible. A disabled batch
 // keeps its cache; an empty list fetches nothing and yields no rows.
+// While new params load, the previous rows stay and `isPlaceholder` is set:
+// they are no answer to the current params yet.
 export function useUsageRpcBatch<T>(
   url: string,
   paramsList: Record<string, unknown>[],
@@ -63,6 +65,11 @@ export function useUsageRpcBatch<T>(
   return {
     usageData,
     isLoading: results.some((r) => r.isFetching),
+    isPlaceholder:
+      enabled &&
+      results.some(
+        (r) => r.isPreviousData || (r.isFetching && r.data === undefined),
+      ),
     error,
     refetch: async () => {
       if (enabled) await Promise.all(results.map((r) => r.refetch()));

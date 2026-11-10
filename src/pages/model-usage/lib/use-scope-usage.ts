@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
 import {
@@ -210,8 +210,13 @@ export function useScopeUsage({
     [inModel, teamFacts],
   );
 
+  // Rows of different params must never be combined: the breakdown would
+  // subtract one department's child rows from another's. While any query
+  // still holds the rows of its previous params, the last result whose rows
+  // all answered the same params stays on screen.
   const all = [userUsage, unitUsage, childUsage, teamUsage, keyUsage];
-  return {
+  const settled = !all.some((q) => q.isPlaceholder);
+  const view = {
     models,
     scopeTotal,
     facts,
@@ -221,9 +226,30 @@ export function useScopeUsage({
     keyFacts,
     keyRows,
     teamRows,
-    loading: scope
-      ? userUsage.isLoading || unitUsage.isLoading || childUsage.isLoading
-      : keyUsage.isLoading,
+  };
+  const lastSettled = useRef<typeof view | null>(null);
+  if (settled) lastSettled.current = view;
+  const shown = settled
+    ? view
+    : (lastSettled.current ?? {
+        models: [],
+        scopeTotal: 0,
+        facts: [],
+        totals: sumUsage([], !!scope),
+        breakdown: [],
+        breakdownSeries: [],
+        keyFacts: [],
+        keyRows: [],
+        teamRows: [],
+      });
+
+  return {
+    ...shown,
+    loading:
+      !settled ||
+      (scope
+        ? userUsage.isLoading || unitUsage.isLoading || childUsage.isLoading
+        : keyUsage.isLoading),
     error: all.find((q) => q.error)?.error,
     refetch: () => {
       for (const q of all) q.refetch();

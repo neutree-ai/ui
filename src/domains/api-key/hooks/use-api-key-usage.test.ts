@@ -189,4 +189,20 @@ describe("useApiKeyUsage", () => {
       }),
     );
   });
+
+  it("marks the previous key's rows as a placeholder while the next key loads", async () => {
+    mockMutateAsync.mockResolvedValueOnce({ data: usageRecords });
+    const { result, rerender } = render(
+      ({ id }: { id?: string }) => useApiKeyUsage(id),
+      { id: "a" },
+    );
+    await flush();
+    expect(result.current.isPlaceholder).toBe(false);
+
+    mockMutateAsync.mockReturnValueOnce(new Promise(() => {}));
+    rerender({ id: "b" });
+
+    expect(result.current.usageData).toEqual(usageRecords);
+    expect(result.current.isPlaceholder).toBe(true);
+  });
 });
