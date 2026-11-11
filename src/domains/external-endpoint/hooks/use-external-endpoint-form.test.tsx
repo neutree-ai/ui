@@ -269,6 +269,12 @@ beforeEach(() => {
 });
 
 describe("create vs edit", () => {
+  it("defaults new endpoints to a 300 second timeout", () => {
+    const { result } = renderEndpointForm({ action: "create" });
+
+    expect(result.current.form.getValues("spec.timeout")).toBe(300000);
+  });
+
   it.each([
     {
       action: "create" as const,
