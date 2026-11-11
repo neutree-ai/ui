@@ -34,11 +34,14 @@ import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
   allocationFallbackReadings,
+  allocationKey,
   deviceHardwareInfo,
   type EndpointGpuAllocation,
   endpointAllocationUsedMiB,
+  endpointHref,
   type GpuAllocation,
   type ObservedGpu,
+  percentOf,
   reading,
   splitGpuEndpointAllocations,
 } from "@/foundation/lib/accelerator-observations";
@@ -80,13 +83,6 @@ const gib = (mib: number | null | undefined) =>
   mib == null ? "—" : `${(mib / 1024).toFixed(1)} GiB`;
 const gibValue = (mib: number | null | undefined) =>
   mib == null ? "—" : (mib / 1024).toFixed(1);
-const ratio = (
-  value: number | null | undefined,
-  total: number | null | undefined,
-) =>
-  value == null || !total
-    ? 0
-    : Math.max(0, Math.min(100, (value / total) * 100));
 const OWNER_WEIGHTS_TONE = 72;
 const OWNER_SECONDARY_TONE = 24;
 const ownerTone = (color: string, amount: number) =>
@@ -360,7 +356,7 @@ function EndpointAllocationTooltip({
             hit box on the text; a block one collapses here. */}
         <p className="break-all text-sm font-semibold leading-5">
           <Link
-            to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
+            to={endpointHref(allocation)}
             className="text-primary hover:underline focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]"
           >
             {allocation.endpoint}
@@ -669,7 +665,7 @@ function InventoryAllocationBar({
     >
       <div className="absolute inset-0 flex overflow-hidden rounded-full">
         {visible.map((allocation, segmentIndex) => {
-          const allocationKey = `${allocation.workspace}:${allocation.endpoint}`;
+          const segmentKey = allocationKey(allocation);
           const mark = chartCategoryMark(segmentIndex);
           const color = mark.color;
           const actualUsedMiB = endpointAllocationUsedMiB(
@@ -678,7 +674,7 @@ function InventoryAllocationBar({
             allocations.length,
             cardUsedMiB,
           );
-          const isSelected = selectedKey === allocationKey;
+          const isSelected = selectedKey === segmentKey;
           const button = (
             <button
               type="button"
@@ -695,16 +691,16 @@ function InventoryAllocationBar({
                 ...(segmentIndex > 0 ? chartOutlineStyle() : {}),
               }}
               aria-label={`${allocation.endpoint}, ${gib(allocation.memoryMiB)} ${t("observations.reservedLower")}`}
-              onMouseEnter={() => setActiveAllocation(allocationKey)}
+              onMouseEnter={() => setActiveAllocation(segmentKey)}
               onMouseLeave={() => setActiveAllocation(null)}
-              onFocus={() => setActiveAllocation(allocationKey)}
+              onFocus={() => setActiveAllocation(segmentKey)}
               onBlur={() => setActiveAllocation(null)}
               onClick={() => {
                 if (mode === "select") {
-                  onSelect?.(allocationKey);
+                  onSelect?.(segmentKey);
                   return;
                 }
-                setActiveAllocation(allocationKey);
+                setActiveAllocation(segmentKey);
               }}
             >
               {(hidden.length > 0 || visible.length > 6) && (
@@ -712,15 +708,12 @@ function InventoryAllocationBar({
                   aria-hidden
                   className="pointer-events-none absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white tabular-nums"
                 >
-                  {visible.findIndex(
-                    (item) =>
-                      `${item.workspace}:${item.endpoint}` === allocationKey,
-                  ) + 1}
+                  {segmentIndex + 1}
                 </span>
               )}
               {(mode === "select"
-                ? isSelected || activeAllocation === allocationKey
-                : activeAllocation === allocationKey) && (
+                ? isSelected || activeAllocation === segmentKey
+                : activeAllocation === segmentKey) && (
                 <EndpointSegmentPattern
                   allocation={allocation}
                   color={color}
@@ -737,11 +730,11 @@ function InventoryAllocationBar({
           );
 
           if (mode === "select") {
-            return <Fragment key={allocationKey}>{button}</Fragment>;
+            return <Fragment key={segmentKey}>{button}</Fragment>;
           }
 
           return (
-            <HoverCard key={allocationKey} openDelay={120} closeDelay={80}>
+            <HoverCard key={segmentKey} openDelay={120} closeDelay={80}>
               <HoverCardTrigger asChild>{button}</HoverCardTrigger>
               <EndpointAllocationTooltip
                 allocation={allocation}
@@ -798,7 +791,7 @@ function InventoryAllocationBar({
                   >
                     <Link
                       className="break-all font-medium text-primary hover:underline"
-                      to={`/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`}
+                      to={endpointHref(allocation)}
                     >
                       {allocation.endpoint}
                     </Link>
@@ -978,19 +971,19 @@ function AllocationVram({
         <div className="absolute inset-0 overflow-hidden rounded-full">
           <div
             className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)] opacity-30"
-            style={{ width: `${ratio(reserved, total)}%` }}
+            style={{ width: `${percentOf(reserved, total)}%` }}
           />
           {actual != null && (
             <div
               className="absolute inset-y-0 left-0 bg-[var(--nt-chart-series-1)]"
-              style={{ width: `${ratio(actual, total)}%` }}
+              style={{ width: `${percentOf(actual, total)}%` }}
             />
           )}
           {actual != null && replica && hasComposition && (
             <CompositionSegments
-              measuredPct={ratio(actual, total)}
-              weightsPct={ratio(replica.modelWeightsMiB, total)}
-              kvPct={ratio(replica.kvCacheCapacityMiB, total)}
+              measuredPct={percentOf(actual, total)}
+              weightsPct={percentOf(replica.modelWeightsMiB, total)}
+              kvPct={percentOf(replica.kvCacheCapacityMiB, total)}
               color={chartCategoryMark(0).color}
             />
           )}
@@ -1073,8 +1066,6 @@ function GpuObservationDetails({
     tflopsOverrides,
     device.peakFP16TFLOPS,
   );
-  const keyOf = (allocation: EndpointGpuAllocation) =>
-    `${allocation.workspace}:${allocation.endpoint}`;
 
   // The ownership bar always describes the physical card. A lone Endpoint can
   // stay expanded without a toggle, but it still occupies one segment of that
@@ -1390,13 +1381,11 @@ function GpuObservationDetails({
               {/* Cards sit flush: a divider separates rows inside one surface
                   instead of each row floating as its own bordered block. */}
               <ul className="divide-y divide-[var(--nt-stroke-neutral-trans-2)]">
-                {sorted.map((allocation) => {
-                  const key = keyOf(allocation);
+                {sorted.map((allocation, sortedIndex) => {
+                  const key = allocationKey(allocation);
                   const isOpen = isSingleEndpoint || selectedKey === key;
-                  const index =
-                    sorted.findIndex((item) => keyOf(item) === key) + 1;
+                  const index = sortedIndex + 1;
                   const mark = chartCategoryMark(index - 1);
-                  const endpointHref = `/${encodeURIComponent(allocation.workspace)}/endpoints/show/${encodeURIComponent(allocation.endpoint)}`;
                   const identity = (
                     <>
                       <span
@@ -1498,7 +1487,7 @@ function GpuObservationDetails({
                             also expands must not navigate. The arrow is the
                             single, deliberate way out. */}
                         <Link
-                          to={endpointHref}
+                          to={endpointHref(allocation)}
                           aria-label={t("observations.openEndpoint", {
                             endpoint: allocation.endpoint,
                           })}
@@ -1975,7 +1964,7 @@ export function GpuObservationCard({
                         ? "outlined"
                         : "unavailable"
                     }
-                    value={ratio(readings.actual, readings.total)}
+                    value={percentOf(readings.actual, readings.total)}
                   />
                   <strong className="min-w-12 text-right whitespace-nowrap font-semibold tabular-nums">
                     {readings.actual != null

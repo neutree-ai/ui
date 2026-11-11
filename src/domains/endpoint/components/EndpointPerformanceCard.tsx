@@ -56,21 +56,37 @@ export function EndpointPerformanceCard({
   const throughputLines = useMemo(() => THROUGHPUT_LINES(t), [t]);
   const cacheHitLines = useMemo(() => CACHE_HIT_LINES(t), [t]);
   const cacheIOLines = useMemo(() => CACHE_IO_LINES(t), [t]);
-  const latencyCurrent = performanceTrendLatestRow(
-    series,
-    latencyLines.map((line) => line.metric),
+  const latencyCurrent = useMemo(
+    () =>
+      performanceTrendLatestRow(
+        series,
+        latencyLines.map((line) => line.metric),
+      ),
+    [series, latencyLines],
   );
-  const throughputCurrent = performanceTrendLatestRow(
-    series,
-    throughputLines.map((line) => line.metric),
+  const throughputCurrent = useMemo(
+    () =>
+      performanceTrendLatestRow(
+        series,
+        throughputLines.map((line) => line.metric),
+      ),
+    [series, throughputLines],
   );
-  const cacheHitCurrent = performanceTrendLatestRow(
-    series,
-    cacheHitLines.map((line) => line.metric),
+  const cacheHitCurrent = useMemo(
+    () =>
+      performanceTrendLatestRow(
+        series,
+        cacheHitLines.map((line) => line.metric),
+      ),
+    [series, cacheHitLines],
   );
-  const cacheIOCurrent = performanceTrendLatestRow(
-    series,
-    cacheIOLines.map((line) => line.metric),
+  const cacheIOCurrent = useMemo(
+    () =>
+      performanceTrendLatestRow(
+        series,
+        cacheIOLines.map((line) => line.metric),
+      ),
+    [series, cacheIOLines],
   );
 
   return (
@@ -165,7 +181,7 @@ export function EndpointPerformanceCard({
 
         {showKvCache && (
           <MetricTile
-            className={showKvCache ? "lg:col-span-2 xl:col-span-1" : undefined}
+            className="lg:col-span-2 xl:col-span-1"
             icon={Database}
             title={t("endpoints.performance.kvCache")}
             actions={

@@ -3,10 +3,8 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import type {
-  AcceleratorSample,
-  GpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
+import type { GpuAllocation } from "@/foundation/lib/accelerator-observations";
+import { makeAcceleratorSample as sample } from "@/foundation/testing/resource-builders";
 import {
   GpuObservationCard,
   GpuObservationTableHeader,
@@ -35,17 +33,6 @@ const allocation: GpuAllocation = {
   modelWeightsMiB: 2048,
   kvCacheCapacityMiB: 8192,
 };
-
-const sample = (
-  metric: string,
-  value: number,
-  labels: Record<string, string> = {},
-): AcceleratorSample => ({
-  metric,
-  value,
-  observed_at: 1,
-  labels: { node: "node", accelerator_uuid: "gpu", ...labels },
-});
 
 const card = (
   props: Partial<Parameters<typeof GpuObservationCard>[0]> = {},

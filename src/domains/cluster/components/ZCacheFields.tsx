@@ -27,7 +27,11 @@ import {
   type CacheEndpointCandidate,
   cacheEndpointRefs,
 } from "../lib/cache-endpoints";
-import { cacheMessage } from "../lib/zcache-presentation";
+import {
+  cacheMessage,
+  isValidCacheCapacity,
+  MAX_CACHE_CAPACITY_GIB,
+} from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 import { CacheEndpointLinks } from "./CacheEndpointLinks";
 
@@ -312,17 +316,14 @@ export function ZCacheFields({
                 className="sm:col-span-2"
                 rules={{
                   validate: (value) =>
-                    Number.isInteger(Number(value)) &&
-                    Number(value) >= 1 &&
-                    Number(value) <= 2147483647
-                      ? true
-                      : t("clusters.zcache.invalidCapacity"),
+                    isValidCacheCapacity(value) ||
+                    t("clusters.zcache.invalidCapacity"),
                 }}
               >
                 <Input
                   type="number"
                   min={1}
-                  max={2147483647}
+                  max={MAX_CACHE_CAPACITY_GIB}
                   step={1}
                   onChange={(event) =>
                     form.setValue(

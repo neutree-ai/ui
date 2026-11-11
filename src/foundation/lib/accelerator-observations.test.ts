@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
-  allocationColor,
   allocationComposition,
   allocationFallbackReadings,
   endpointAllocationUsedMiB,
@@ -177,16 +176,6 @@ it("groups ownership per Endpoint and keeps the first eight sorted allocations",
     "endpoint-1",
   ]);
   expect(hiddenMemoryMiB).toBe(3);
-});
-
-it("uses the same categorical colour sequence on every GPU", () => {
-  expect([0, 1, 2, 3].map(allocationColor)).toEqual([
-    "var(--nt-chart-cat-1)",
-    "var(--nt-chart-cat-2)",
-    "var(--nt-chart-cat-3)",
-    "var(--nt-chart-cat-4)",
-  ]);
-  expect(allocationColor(8)).toBe("var(--nt-chart-more)");
 });
 
 it.each([

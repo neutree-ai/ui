@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
@@ -55,8 +56,14 @@ export function EndpointPerformanceTrendChart({
   status,
 }: PerformanceTrendChartProps) {
   const { t } = useTranslation();
-  const metrics = lines.map((line) => line.metric);
-  const rows = performanceTrendRows(series, metrics);
+  const rows = useMemo(
+    () =>
+      performanceTrendRows(
+        series,
+        lines.map((line) => line.metric),
+      ),
+    [series, lines],
+  );
   const leftAxisLine = lines.find((line) => line.axis === "left");
   const rightAxisLine = lines.find((line) => line.axis === "right");
   const yAxisWidth = 34;

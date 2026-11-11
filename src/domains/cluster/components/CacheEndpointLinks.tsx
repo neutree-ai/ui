@@ -5,6 +5,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Link } from "@/foundation/components/Link";
+import { endpointHref } from "@/foundation/lib/accelerator-observations";
 import { cn } from "@/foundation/lib/utils";
 import type { CacheEndpointRef } from "../lib/cache-endpoints";
 
@@ -23,7 +24,10 @@ function CacheEndpointList({
         return endpoint.name ? (
           <Link
             key={endpoint.key}
-            href={`/${encodeURIComponent(endpoint.workspace)}/endpoints/show/${encodeURIComponent(endpoint.name)}`}
+            href={endpointHref({
+              workspace: endpoint.workspace,
+              endpoint: endpoint.name,
+            })}
             className={cn(
               chipClassName,
               "text-primary underline-offset-2 hover:border-primary/40 hover:bg-[var(--nt-fill-outstanding-light)] hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15",

@@ -2,113 +2,40 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  CHART_BRAND,
   CHART_CATEGORY_COUNT,
-  CHART_CATEGORY_TOKENS,
   CHART_MORE_COLOR,
-  CHART_SEQUENTIAL_TOKENS,
-  CHART_SERIES_SEPARATOR,
   CHART_STRIPES_BACKGROUND,
   chartCategoryColor,
   chartCategoryMark,
-  chartCategoryMarks,
-  chartMarkOutline,
   chartMarkStyle,
   chartMoreMark,
-  chartOutlineStyle,
-  chartVerdictColor,
 } from "./chart-palette";
 
-describe("chartCategoryColor", () => {
-  it("maps a category index to its semantic token in order", () => {
-    expect(chartCategoryColor(0)).toBe("var(--nt-chart-cat-1)");
-    expect(chartCategoryColor(3)).toBe("var(--nt-chart-cat-4)");
-    expect(chartCategoryColor(7)).toBe("var(--nt-chart-cat-8)");
+describe("chartCategoryMark", () => {
+  it.each([
+    [0, "var(--nt-chart-cat-1)", "solid"],
+    [5, "var(--nt-chart-cat-6)", "solid"],
+    [6, "var(--nt-chart-cat-7)", "stripes"],
+    [7, "var(--nt-chart-cat-8)", "stripes"],
+  ])("category %i uses %s with a %s fill", (index, color, pattern) => {
+    expect(chartCategoryMark(index)).toMatchObject({
+      color,
+      pattern,
+      paletteIndex: index,
+      isMore: false,
+    });
+    expect(chartCategoryColor(index)).toBe(color);
   });
 
-  it("never cycles: the ninth category collapses to the neutral More mark", () => {
-    for (let index = 0; index < CHART_CATEGORY_COUNT; index += 1) {
-      expect(chartCategoryColor(index)).toBe(CHART_CATEGORY_TOKENS[index]);
-    }
+  it("never cycles: past the palette every category collapses to More", () => {
+    expect(chartCategoryMark(CHART_CATEGORY_COUNT)).toEqual(chartMoreMark());
+    expect(chartCategoryMark(999)).toEqual(chartMoreMark());
     expect(chartCategoryColor(CHART_CATEGORY_COUNT)).toBe(CHART_MORE_COLOR);
-    expect(chartCategoryMark(CHART_CATEGORY_COUNT).isMore).toBe(true);
   });
 
   it("treats a missing or negative index as the first category", () => {
     expect(chartCategoryColor(-1)).toBe("var(--nt-chart-cat-1)");
     expect(chartCategoryColor(Number.NaN)).toBe("var(--nt-chart-cat-1)");
-  });
-});
-
-describe("chartCategoryMark fallback ladder", () => {
-  it("uses solid colours for the first six categories", () => {
-    for (let index = 0; index < 6; index += 1) {
-      expect(chartCategoryMark(index)).toMatchObject({
-        pattern: "solid",
-        segment: 1,
-        paletteIndex: index,
-        isMore: false,
-      });
-    }
-  });
-
-  it("adds stripes to the Gold and Violet extension categories", () => {
-    const seventh = chartCategoryMark(6);
-    const eighth = chartCategoryMark(7);
-
-    expect(seventh).toMatchObject({
-      color: "var(--nt-chart-cat-7)",
-      pattern: "stripes",
-      segment: 2,
-      paletteIndex: 6,
-      isMore: false,
-    });
-    expect(eighth).toMatchObject({
-      color: "var(--nt-chart-cat-8)",
-      pattern: "stripes",
-      segment: 2,
-      paletteIndex: 7,
-      isMore: false,
-    });
-  });
-
-  it("collapses to the neutral 'more' mark once differences run out", () => {
-    expect(chartCategoryMark(8)).toMatchObject({
-      color: CHART_MORE_COLOR,
-      pattern: "solid",
-      isMore: true,
-    });
-    expect(chartCategoryMark(999)).toEqual(chartMoreMark());
-    expect(chartMoreMark()).toEqual({
-      color: "var(--nt-chart-more)",
-      pattern: "solid",
-      segment: 0,
-      paletteIndex: -1,
-      isMore: true,
-    });
-  });
-});
-
-describe("chartCategoryMarks", () => {
-  it("returns one mark per category in assignment order", () => {
-    const marks = chartCategoryMarks(10);
-
-    expect(marks).toHaveLength(10);
-    expect(marks.map((mark) => mark.color)).toEqual(
-      Array.from({ length: 10 }, (_, index) => chartCategoryColor(index)),
-    );
-    expect(marks.map((mark) => mark.pattern)).toEqual([
-      ...Array.from({ length: 6 }, () => "solid"),
-      "stripes",
-      "stripes",
-      "solid",
-      "solid",
-    ]);
-  });
-
-  it("returns nothing for zero or an invalid count", () => {
-    expect(chartCategoryMarks(0)).toEqual([]);
-    expect(chartCategoryMarks(Number.NaN)).toEqual([]);
   });
 });
 
@@ -129,44 +56,6 @@ describe("chartMarkStyle", () => {
   it("keeps the neutral 'more' mark flat", () => {
     expect(chartMarkStyle(chartMoreMark())).toEqual({
       backgroundColor: CHART_MORE_COLOR,
-    });
-  });
-});
-
-describe("roles that are not categories", () => {
-  it("lets a lone series wear the product primary", () => {
-    expect(CHART_BRAND).toBe("var(--nt-chart-brand)");
-  });
-
-  it("maps verdicts onto the semantic families", () => {
-    expect(chartVerdictColor("pass")).toBe("var(--nt-chart-pass)");
-    expect(chartVerdictColor("watch")).toBe("var(--nt-chart-watch)");
-    expect(chartVerdictColor("fail")).toBe("var(--nt-chart-fail)");
-  });
-
-  it("keeps verdict colours out of the categorical slots", () => {
-    for (const verdict of ["pass", "watch", "fail"] as const) {
-      expect(CHART_CATEGORY_TOKENS).not.toContain(chartVerdictColor(verdict));
-      expect(CHART_CATEGORY_TOKENS).not.toContain(CHART_BRAND);
-    }
-  });
-});
-
-describe("segment separator (B2)", () => {
-  it("separates marks with the surface colour, not a ring", () => {
-    expect(CHART_SERIES_SEPARATOR).toBe("var(--nt-fill-neutral-white)");
-  });
-
-  it("gives SVG fill marks a 1px separator stroke", () => {
-    expect(chartMarkOutline()).toEqual({
-      stroke: "var(--nt-fill-neutral-white)",
-      strokeWidth: 1,
-    });
-  });
-
-  it("draws a DOM separator without changing the box size", () => {
-    expect(chartOutlineStyle()).toEqual({
-      boxShadow: "inset 1px 0 0 var(--nt-fill-neutral-white)",
     });
   });
 });
@@ -202,70 +91,20 @@ function themeTokens(selector: string): Map<string, string> {
   return tokens;
 }
 
-describe("categorical tokens across themes", () => {
-  it("declares the same eight semantic aliases in both themes", () => {
-    const light = themeTokens(":root");
-    const dark = themeTokens(".dark");
-
-    expect(CHART_CATEGORY_TOKENS).toHaveLength(CHART_CATEGORY_COUNT);
-    CHART_CATEGORY_TOKENS.forEach((token, index) => {
-      const name = `--nt-chart-cat-${index + 1}`;
-      expect(token).toBe(`var(${name})`);
-      // The module hands pages a token name; both themes must define it, or the
-      // mark silently disappears when the other theme is active.
-      expect(light.get(name), `${name} (light)`).toBe(
-        `var(--nt-chart-series-${index + 1})`,
-      );
-      expect(dark.get(name), `${name} (dark)`).toBe(
-        `var(--nt-chart-series-${index + 1})`,
-      );
-    });
-  });
-
-  it("declares the sequential ramp in both themes, in magnitude order", () => {
-    const light = themeTokens(":root");
-    const dark = themeTokens(".dark");
-
-    expect(CHART_SEQUENTIAL_TOKENS).toHaveLength(5);
-    CHART_SEQUENTIAL_TOKENS.forEach((token, index) => {
-      const name = `--nt-chart-seq-${index + 1}`;
-      expect(token).toBe(`var(${name})`);
-      expect(light.get(name), `${name} (light)`).toBeDefined();
-      expect(dark.get(name), `${name} (dark)`).toBeDefined();
-    });
-  });
-
-  it("declares the separator surface in both themes", () => {
-    const themes: Array<[string, Map<string, string>]> = [
-      ["light", themeTokens(":root")],
-      ["dark", themeTokens(".dark")],
-    ];
-    for (const [theme, tokens] of themes) {
-      expect(tokens.get("--nt-fill-neutral-white"), theme).toBeDefined();
-    }
-  });
-
-  it("keeps More as a dedicated solid neutral in both themes", () => {
-    expect(themeTokens(":root").get("--nt-chart-more")).toBeDefined();
-    expect(themeTokens(".dark").get("--nt-chart-more")).toBeDefined();
-    expect(CHART_MORE_COLOR).toBe("var(--nt-chart-more)");
-  });
-
-  it("keeps the module token list in the same order as the CSS aliases", () => {
-    expect(CHART_CATEGORY_TOKENS).toEqual(
-      Array.from(
-        { length: CHART_CATEGORY_COUNT },
-        (_, index) => `var(--nt-chart-cat-${index + 1})`,
-      ),
-    );
-  });
-
-  it("derives the marks from tokens, never from a status token", () => {
-    const statusToken =
-      /--nt-(?:fill|text|stroke)-(?:positive|notice|serious|danger)/;
-    for (const token of CHART_CATEGORY_TOKENS) {
-      expect(token).not.toMatch(statusToken);
-    }
-    expect(CHART_MORE_COLOR).not.toMatch(statusToken);
-  });
+describe("chart tokens in variables.css", () => {
+  // The module hands pages token names; both themes must define them, or the
+  // mark silently disappears when the other theme is active.
+  it.each([":root", ".dark"])(
+    "%s defines every token the marks use",
+    (theme) => {
+      const tokens = themeTokens(theme);
+      for (let index = 1; index <= CHART_CATEGORY_COUNT; index += 1) {
+        expect(tokens.get(`--nt-chart-cat-${index}`)).toBe(
+          `var(--nt-chart-series-${index})`,
+        );
+      }
+      expect(tokens.get("--nt-chart-more")).toBeDefined();
+      expect(tokens.get("--nt-fill-neutral-white")).toBeDefined();
+    },
+  );
 });

@@ -61,7 +61,8 @@ export function useEndpointPerformanceTrends(
     method: "get",
     queryOptions: {
       enabled: Boolean(workspace && name && enabled),
-      refetchInterval: 15000,
+      // A custom range has fixed bounds, so its data does not change.
+      refetchInterval: range.kind === "preset" ? 15000 : false,
       retry: false,
     },
   });

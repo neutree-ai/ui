@@ -329,17 +329,15 @@ describe("ZCacheFields", () => {
     await screen.findByText("clusters.zcache.selectNodes");
     expect(submit).not.toHaveBeenCalled();
   });
-  it.each(["0", "1.5", "2147483648", ""])(
-    "keeps invalid capacity %s visible with an explanation",
-    async (input) => {
-      render(<Form onSubmit={vi.fn()} status={observed} />);
-      const capacity = screen.getByRole("spinbutton") as HTMLInputElement;
-      fireEvent.change(capacity, { target: { value: input } });
-      fireEvent.blur(capacity);
-      expect(capacity.value).toBe(input);
-      await screen.findByText("clusters.zcache.invalidCapacity");
-    },
-  );
+  // The capacity rule itself is covered by isValidCacheCapacity's own test.
+  it("keeps an invalid capacity visible with an explanation", async () => {
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    const capacity = screen.getByRole("spinbutton") as HTMLInputElement;
+    fireEvent.change(capacity, { target: { value: "0" } });
+    fireEvent.blur(capacity);
+    expect(capacity.value).toBe("0");
+    await screen.findByText("clusters.zcache.invalidCapacity");
+  });
   it("can disable runtime even after clearing the target selection", async () => {
     const submit = vi.fn();
     render(<Form onSubmit={submit} status={observed} />);

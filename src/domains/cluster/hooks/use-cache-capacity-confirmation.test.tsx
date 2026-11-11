@@ -1,107 +1,50 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useCacheCapacityConfirmation } from "./use-cache-capacity-confirmation";
 
-function Harness({
-  before,
-  after,
-  save,
-}: {
-  before?: { enabled: boolean; l1_size_gib: number };
-  after: { enabled: boolean; l1_size_gib: number };
-  save: () => void;
-}) {
-  const { confirmCapacity, pending, cancel, confirm } =
-    useCacheCapacityConfirmation();
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => confirmCapacity(before, after, save)}
-      >
-        save
-      </button>
-      {pending && (
-        <>
-          <p>
-            {pending.disable
-              ? "clusters.zcache.disableTitle"
-              : "clusters.zcache.capacityChangeTitle"}
-          </p>
-          <p>
-            {pending.disable
-              ? "clusters.zcache.disableDescription"
-              : "clusters.zcache.capacityChangeDescription"}
-          </p>
-          <button type="button" onClick={cancel}>
-            buttons.cancel
-          </button>
-          <button type="button" onClick={confirm}>
-            {pending.disable
-              ? "clusters.zcache.disableTitle"
-              : "clusters.zcache.confirmSave"}
-          </button>
-        </>
-      )}
-    </>
-  );
-}
-describe("capacity change confirmation", () => {
+const on = (l1_size_gib: number) => ({ enabled: true, l1_size_gib });
+const off = (l1_size_gib: number) => ({ enabled: false, l1_size_gib });
+
+describe("useCacheCapacityConfirmation", () => {
+  it.each([
+    ["initial", undefined, on(3)],
+    ["enabling", off(2), on(3)],
+    ["unchanged", on(2), on(2)],
+  ])("saves %s capacity without asking", (_, before, after) => {
+    const save = vi.fn();
+    const { result } = renderHook(useCacheCapacityConfirmation);
+
+    act(() => result.current.confirmCapacity(before, after, save));
+
+    expect(save).toHaveBeenCalledOnce();
+    expect(result.current.pending).toBeNull();
+  });
+
+  it.each([
+    ["a capacity change", on(2), on(3), false],
+    ["disabling", on(2), off(2), true],
+  ])("asks before %s", (_, before, after, disable) => {
+    const save = vi.fn();
+    const { result } = renderHook(useCacheCapacityConfirmation);
+
+    act(() => result.current.confirmCapacity(before, after, save));
+
+    expect(save).not.toHaveBeenCalled();
+    expect(result.current.pending).toMatchObject({ disable });
+  });
+
   it("cancel does not submit; confirm submits exactly once", () => {
     const save = vi.fn();
-    render(
-      <Harness
-        before={{ enabled: true, l1_size_gib: 2 }}
-        after={{ enabled: true, l1_size_gib: 3 }}
-        save={save}
-      />,
-    );
-    fireEvent.click(screen.getByText("save"));
-    expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("buttons.cancel"));
-    expect(save).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("save"));
-    fireEvent.click(screen.getByText("clusters.zcache.confirmSave"));
-    expect(save).toHaveBeenCalledTimes(1);
-  });
-  it.each([
-    [undefined, { enabled: true, l1_size_gib: 3 }],
-    [
-      { enabled: false, l1_size_gib: 2 },
-      { enabled: true, l1_size_gib: 3 },
-    ],
-    [
-      { enabled: true, l1_size_gib: 2 },
-      { enabled: true, l1_size_gib: 2 },
-    ],
-  ])(
-    "does not confirm initial, unchanged or disabled capacity",
-    (before, after) => {
-      const save = vi.fn();
-      render(<Harness before={before} after={after!} save={save} />);
-      fireEvent.click(screen.getByText("save"));
-      expect(save).toHaveBeenCalledTimes(1);
-      expect(
-        screen.queryByText("clusters.zcache.capacityChangeTitle"),
-      ).toBeNull();
-    },
-  );
-});
+    const { result } = renderHook(useCacheCapacityConfirmation);
 
-it("confirms disabling even when capacity is unchanged", () => {
-  const save = vi.fn();
-  render(
-    <Harness
-      before={{ enabled: true, l1_size_gib: 2 }}
-      after={{ enabled: false, l1_size_gib: 2 }}
-      save={save}
-    />,
-  );
-  fireEvent.click(screen.getByText("save"));
-  expect(save).not.toHaveBeenCalled();
-  screen.getByText("clusters.zcache.disableDescription");
-  fireEvent.click(
-    screen.getByRole("button", { name: "clusters.zcache.disableTitle" }),
-  );
-  expect(save).toHaveBeenCalledOnce();
+    act(() => result.current.confirmCapacity(on(2), on(3), save));
+    act(() => result.current.cancel());
+    expect(save).not.toHaveBeenCalled();
+    expect(result.current.pending).toBeNull();
+
+    act(() => result.current.confirmCapacity(on(2), on(3), save));
+    act(() => result.current.confirm());
+    expect(save).toHaveBeenCalledOnce();
+    expect(result.current.pending).toBeNull();
+  });
 });

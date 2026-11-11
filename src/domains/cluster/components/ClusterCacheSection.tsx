@@ -13,6 +13,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import { endpointHref } from "@/foundation/lib/accelerator-observations";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import {
   type CacheEndpointCandidate,
@@ -342,7 +343,10 @@ function ZCacheDetails({
                               >
                                 {endpoint.name ? (
                                   <Link
-                                    href={`/${encodeURIComponent(endpoint.workspace)}/endpoints/show/${encodeURIComponent(endpoint.name)}`}
+                                    href={endpointHref({
+                                      workspace: endpoint.workspace,
+                                      endpoint: endpoint.name,
+                                    })}
                                     className="break-all text-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
                                   >
                                     {endpoint.label}

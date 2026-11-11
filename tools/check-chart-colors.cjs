@@ -3,7 +3,7 @@
  * Chart colour governance gate.
  *
  * Chart code has to read its colours from the design tokens; a literal colour is
- * the fourth parallel palette nobody maintains. This script enforces three rules
+ * the fourth parallel palette nobody maintains. This script enforces five rules
  * from the product style guide's chart-colour rules:
  *
  *   1. chart code (any `.ts`/`.tsx` that renders recharts, or whose file name says
@@ -131,7 +131,7 @@ const HINTS = {
     "  categorical series   var(--nt-chart-cat-1) … var(--nt-chart-cat-8)",
     "  magnitude / ramp     var(--nt-chart-seq-1) … var(--nt-chart-seq-5)",
     "  single-series brand   CHART_BRAND (a lone series may wear --primary)",
-    "  verdict (pass/watch/fail) chartVerdictColor() — status dimensions only",
+    "  verdict (pass/watch/fail) var(--nt-chart-pass|watch|fail) — status dimensions only",
     "  neutral “more”       chartMoreMark() from src/foundation/lib/chart-palette.ts",
     "If a token is missing for the role, add it to src/variables.css instead of",
     "pasting a hex value here.",
