@@ -50,6 +50,7 @@ import {
   readEngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
 import {
+  estimateCheckpointWeightsGb,
   estimateModelWeightsGb,
   perReplicaRequiredGb,
 } from "@/domains/endpoint/lib/estimate-weights";
@@ -1532,6 +1533,36 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     setPickedModelRef(null);
   }, [pickedModelSettled, pickedModelInfo, form]);
 
+  // A direct registry deployment uses the version's reported size as the
+  // weights estimate. Read the current version rather than only the version
+  // that was just picked, so edit pages and preselected models get the same
+  // value without replaying the picker's info write into the form.
+  const directModelSelection = isEdit || modelSourceMode === "manual";
+  const modelSizeRef = useMemo<RegistryModelRef | null>(
+    () =>
+      directModelSelection &&
+      !hidesModelFields &&
+      workspace &&
+      currentRegistry &&
+      currentModelName
+        ? {
+            workspace,
+            registry: currentRegistry,
+            model: currentModelName,
+            version: currentModelVersion || undefined,
+          }
+        : null,
+    [
+      currentModelName,
+      currentModelVersion,
+      currentRegistry,
+      directModelSelection,
+      hidesModelFields,
+      workspace,
+    ],
+  );
+  const modelSizeVersion = useRegistryModelVersion(modelSizeRef ?? {});
+
   // The resolver only runs on form events, so a lookup result landing after
   // the last user interaction would never surface (or clear) the
   // model-not-found error. Re-validate that one field when the inputs or the
@@ -2061,9 +2092,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // state comes from that same query, which is what separates "still reading"
   // and "the registry refused" from "the checkpoint omits this field".
   const currentModelInfo = form.watch("spec.model.info") ?? null;
-  const estimatedWeightsGb = estimateModelWeightsGb(
+  const checkpointWeightsGb = estimateCheckpointWeightsGb(
     currentModelInfo ?? activeModelInfo,
   );
+  const weightsFromModelSize =
+    directModelSelection && modelSizeRef
+      ? estimateModelWeightsGb(modelSizeVersion.model?.size)
+      : null;
 
   // What this deployment will actually be created with, which is what the KV
   // cache estimate should start from. These are the composed engine args — a
@@ -2403,7 +2438,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const weightsFromCatalog =
     selectedCatalog && modelSourceMode === "catalog" ? activeVariantVram : null;
-  const perReplicaWeights = weightsFromCatalog ?? estimatedWeightsGb;
+  const weightsFromCheckpoint =
+    selectedCatalog && modelSourceMode === "catalog"
+      ? checkpointWeightsGb
+      : null;
+  const perReplicaWeights =
+    weightsFromCatalog ?? weightsFromModelSize ?? weightsFromCheckpoint;
   const declaredWeights =
     perReplicaWeights == null
       ? null
@@ -2412,7 +2452,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           source:
             weightsFromCatalog != null
               ? ("catalog" as const)
-              : ("checkpoint" as const),
+              : weightsFromModelSize != null
+                ? ("model-size" as const)
+                : ("checkpoint" as const),
           replicas: replicaCount,
           // Only accelerator data that came from the selected cluster. The
           // composed variant also writes its reference accelerator into the form;

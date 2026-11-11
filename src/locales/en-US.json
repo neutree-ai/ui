@@ -1363,8 +1363,10 @@
 				"cacheDisabled": "Not enabled",
 				"cacheEnabledCheck": "KV cache is enabled for this deployment.",
 				"cacheDisabledCheck": "KV cache is optional and is not enabled.",
-				"perReplica": "Per replica · weights + KV cache",
-				"partialPerReplica": "Known per-replica requirement · some inputs unavailable",
+				"perReplica": "Per replica",
+				"weightsAndKvCache": "Weights + KV cache",
+				"kvCacheOnly": "KV cache only · weights unavailable",
+				"weightsOnly": "Weights only · KV cache unavailable",
 				"weights": "Weights",
 				"kvCache": "KV cache",
 				"fleetTotal": "All replicas",
@@ -1753,7 +1755,9 @@
 		"weights": {
 			"declared": "Declared by the catalog",
 			"estimated": "Estimated from checkpoint metadata",
+			"estimatedFromSize": "Estimated from model size",
 			"sourceCatalog": "Measured by the model catalog for the weights alone, per replica.",
+			"sourceModelSize": "Uses the model version's reported size as a proxy for the weights in one replica. Other files in the model folder are included; runtime-only buffers are not.",
 			"sourceCheckpoint": "Estimated from checkpoint metadata for the weights alone, per replica."
 		},
 		"kvCacheSettings": {
