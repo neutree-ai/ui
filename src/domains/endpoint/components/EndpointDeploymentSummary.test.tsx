@@ -67,7 +67,9 @@ describe("EndpointDeploymentSummary", () => {
   it("shows the combined per-replica total when weights and KV are known", () => {
     renderSummary({ declared: catalogWeights, kvCacheGb: 16.1 });
 
+    screen.getByText("endpoints.wizard.summary.perReplica");
     screen.getByText("43.1 GB");
+    screen.getByText("endpoints.wizard.summary.weightsAndKvCache");
     screen.getByText("endpoints.weights.declared 27 GB");
     screen.getByTestId("vram-check-badge");
 
@@ -89,8 +91,20 @@ describe("EndpointDeploymentSummary", () => {
   it("labels a KV-only total as partial rather than inferring weights", () => {
     renderSummary({ kvCacheGb: 16.1 });
 
+    screen.getByText("endpoints.wizard.summary.perReplica");
     screen.getByText("16.1 GB");
-    screen.getByText("endpoints.wizard.summary.partialPerReplica");
+    screen.getByText("endpoints.wizard.summary.kvCacheOnly");
+  });
+
+  it("labels a weights-only total as partial when the KV cache is unavailable", () => {
+    renderSummary({
+      declared: { ...catalogWeights, perReplicaGb: 16 },
+      kvCacheGb: null,
+    });
+
+    screen.getByText("endpoints.wizard.summary.perReplica");
+    screen.getByText("16 GB");
+    screen.getByText("endpoints.wizard.summary.weightsOnly");
   });
 
   it("distinguishes checkpoint-estimated weights from catalog declarations", () => {
@@ -100,6 +114,15 @@ describe("EndpointDeploymentSummary", () => {
     });
 
     screen.getByText("endpoints.weights.estimated 16 GB");
+  });
+
+  it("identifies a direct model's size as the weights estimate", () => {
+    renderSummary({
+      declared: { ...catalogWeights, perReplicaGb: 54, source: "model-size" },
+      kvCache: null,
+    });
+
+    screen.getByText("endpoints.weights.estimatedFromSize 54 GB");
   });
 
   it("reports cache as enabled when the endpoint configures it", () => {

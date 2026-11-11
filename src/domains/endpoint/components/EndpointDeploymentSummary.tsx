@@ -20,11 +20,13 @@ import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
 
 type EndpointDeclaredWeights = {
-  /** Weights per replica, from the catalog or estimated from the checkpoint.
-   * Does not include the KV cache, which is computed separately and added. */
+  /** Weights per replica, from the catalog, the model version's size, or the
+   * checkpoint fallback for a catalog that declares no VRAM minimum. Does not
+   * include the KV cache, which is computed separately and added. */
   perReplicaGb: number | null;
-  /** Catalog declarations are measured; checkpoint values are calculated. */
-  source?: "catalog" | "checkpoint";
+  /** Catalog declarations are measured; model-size values are storage proxies;
+   * checkpoint values are calculated. */
+  source?: "catalog" | "model-size" | "checkpoint";
   replicas: number;
   /** What the chosen cluster offers one replica, for the VRAM check. */
   accelerator: {
@@ -89,32 +91,43 @@ export function EndpointDeploymentSummary({
   const fleetGb =
     knownPerReplicaGb != null ? knownPerReplicaGb * replicas : null;
   const completeEstimate = weightsGb != null && kvGb != null;
+  const partialEstimateLabel =
+    weightsGb == null
+      ? t("endpoints.wizard.summary.kvCacheOnly")
+      : t("endpoints.wizard.summary.weightsOnly");
   const cacheEnabled = Boolean(values.spec.kv_cache);
   const weightsLabel =
-    declared?.source === "checkpoint"
-      ? t("endpoints.weights.estimated")
-      : declared?.source === "catalog"
-        ? t("endpoints.weights.declared")
-        : t("endpoints.wizard.summary.weights");
+    declared?.source === "model-size"
+      ? t("endpoints.weights.estimatedFromSize")
+      : declared?.source === "checkpoint"
+        ? t("endpoints.weights.estimated")
+        : declared?.source === "catalog"
+          ? t("endpoints.weights.declared")
+          : t("endpoints.wizard.summary.weights");
   const weightsSourceHint =
-    declared?.source === "checkpoint"
-      ? t("endpoints.weights.sourceCheckpoint")
-      : declared?.source === "catalog"
-        ? t("endpoints.weights.sourceCatalog")
-        : null;
+    declared?.source === "model-size"
+      ? t("endpoints.weights.sourceModelSize")
+      : declared?.source === "checkpoint"
+        ? t("endpoints.weights.sourceCheckpoint")
+        : declared?.source === "catalog"
+          ? t("endpoints.weights.sourceCatalog")
+          : null;
 
   return (
     <div className="space-y-4" data-testid="endpoint-deployment-summary">
       {knownPerReplicaGb != null ? (
         <div className="space-y-3">
           <div>
-            <div className="text-[32px] font-semibold leading-none tracking-tight tabular-nums">
+            <div className="text-xs font-medium text-muted-foreground">
+              {t("endpoints.wizard.summary.perReplica")}
+            </div>
+            <div className="mt-1 text-[32px] font-semibold leading-none tracking-tight tabular-nums">
               {formatGb(knownPerReplicaGb)} GB
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {completeEstimate
-                ? t("endpoints.wizard.summary.perReplica")
-                : t("endpoints.wizard.summary.partialPerReplica")}
+                ? t("endpoints.wizard.summary.weightsAndKvCache")
+                : partialEstimateLabel}
             </div>
           </div>
 

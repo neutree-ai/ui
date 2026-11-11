@@ -3,31 +3,6 @@ import {
   type GpuAllocation,
   reading,
 } from "@/foundation/lib/accelerator-observations";
-import type { EndpointReplicaResourceRow } from "./resource-status";
-
-export type ReplicaIdentity = {
-  endpointName: string;
-  workspace: string;
-  modelName: string;
-};
-
-/** The allocation identity a replica device's samples are labelled with. */
-export const replicaDeviceAllocation = (
-  device: EndpointReplicaResourceRow,
-  identity: ReplicaIdentity,
-): GpuAllocation => ({
-  endpoint: identity.endpointName,
-  workspace: identity.workspace,
-  model: identity.modelName,
-  node: device.nodeId,
-  uuid: device.uuid,
-  replica: device.replicaId,
-  instance: device.instanceId,
-  vdevice: device.vdeviceIndex ?? undefined,
-  memoryMiB: device.memoryMiB,
-  modelWeightsMiB: device.modelWeightsMiB,
-  kvCacheCapacityMiB: device.kvCacheCapacityMiB,
-});
 
 type ReplicaGroupUsage = {
   actualMiB: number | null;

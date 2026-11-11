@@ -20,6 +20,7 @@ type SegmentedControlProps<TValue extends string> = {
   items: SegmentedControlItem<TValue>[];
   onValueChange: (value: TValue) => void;
   className?: string;
+  size?: "sm" | "md";
 };
 
 export function SegmentedControl<TValue extends string>({
@@ -28,13 +29,15 @@ export function SegmentedControl<TValue extends string>({
   items,
   onValueChange,
   className,
+  size = "md",
 }: SegmentedControlProps<TValue>) {
   return (
     <TooltipProvider delayDuration={0}>
       <div
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--nt-radius-button)+2px)] bg-[var(--nt-fill-neutral-trans-3)] p-1 text-[var(--nt-text-neutral-secondary)]",
+          "inline-flex flex-wrap items-center rounded-[calc(var(--nt-radius-button)+2px)] bg-[var(--nt-fill-neutral-trans-3)] text-[var(--nt-text-neutral-secondary)]",
+          size === "sm" ? "gap-0.5 p-0.5" : "gap-1 p-1",
           className,
         )}
         role="group"
@@ -51,7 +54,8 @@ export function SegmentedControl<TValue extends string>({
               }
               aria-pressed={selected}
               className={cn(
-                "inline-flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] px-2.5 text-sm font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px] disabled:pointer-events-none disabled:opacity-50",
+                "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--nt-radius-button)] font-medium [transition:background-color_var(--nt-motion-fast),color_var(--nt-motion-fast),box-shadow_var(--nt-motion-fast)] hover:bg-[var(--nt-fill-neutral-trans-3)] hover:text-[var(--nt-text-neutral-super)] focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px] disabled:pointer-events-none disabled:opacity-50",
+                size === "sm" ? "h-6 px-2 text-xs" : "h-7 px-2.5 text-sm",
                 selected &&
                   "bg-[var(--nt-fill-neutral-white)] font-semibold text-[var(--nt-text-colorful-outstanding)] shadow-[shadow:var(--nt-effect-button-shadow-push-button-ordinary)] ring-1 ring-[var(--nt-stroke-outstanding-light)] hover:bg-[var(--nt-fill-neutral-white)] hover:text-[var(--nt-text-colorful-outstanding)]",
               )}
