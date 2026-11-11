@@ -508,21 +508,23 @@ describe("a department admin", () => {
 
     expect(keyGroups).toContainEqual({ orgUnit: "market" });
     expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
+    // The keys cover all of the department's usage.
+    expect(screen.queryByTestId("usage-key-coverage-hint")).toBeNull();
   });
 });
 
 describe("a reader of one Team's usage", () => {
   beforeEach(() => {
-    usageTeamIds = [7];
+    usageTeamIds = [7, 9];
   });
 
-  it("opens on every key they read, and picks their Team as a scope", () => {
+  it("opens on their first Team, and can still pick every key they read", () => {
     renderPage();
 
-    expect(groupCalls).toEqual([]);
-    // This period's keys and the previous period's.
-    expect(keyGroups).toEqual([undefined, undefined]);
-    expect(scopeButton("model_usage.scope.visible").ariaPressed).toBe("true");
+    // Teams before scenarios, as the panel lists them.
+    expect(groupCalls).toContain('User:{"team":"team-a"}');
+    expect(groupCalls).not.toContain('User:{"team":"launch"}');
+    expect(scopeButton("Team A").ariaPressed).toBe("true");
     // Only the Teams whose usage they read.
     expect(
       within(screen.getByRole("complementary")).queryByRole("button", {
@@ -530,11 +532,31 @@ describe("a reader of one Team's usage", () => {
       }),
     ).toBeNull();
 
-    fireEvent.click(scopeButton("Team A"));
-    expect(groupCalls).toContain('User:{"team":"team-a"}');
+    fireEvent.click(scopeButton("model_usage.scope.visible"));
+    expect(scopeButton("model_usage.scope.visible").ariaPressed).toBe("true");
+    expect(tabs()).toEqual([
+      "model_usage.tabs.apiKeys",
+      "model_usage.tabs.detail",
+    ]);
+  });
+
+  it("opens on a scenario when they read no Team", () => {
+    usageTeamIds = [9];
+    renderPage();
+
+    expect(groupCalls).toContain('User:{"team":"launch"}');
+  });
+
+  it("lists the Team's API keys, and says older usage has no key", () => {
+    renderPage();
+
     openTab("model_usage.tabs.apiKeys");
 
     expect(keyGroups).toContainEqual({ team: "team-a" });
     expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
+    // The keys' 90 of the Team's 150.
+    expect(screen.getByTestId("usage-key-coverage-hint").textContent).toBe(
+      "model_usage.tabs.apiKeyCoverageHint",
+    );
   });
 });

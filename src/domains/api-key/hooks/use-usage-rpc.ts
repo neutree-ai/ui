@@ -26,7 +26,8 @@ function useFlatPages<T>(pages: (T[] | undefined)[]): T[] {
 // useUsageRpcBatch polls a usage RPC once per params object and returns the
 // rows of all calls together. Each call is cached by its url and params, and
 // refetched every POLL_INTERVAL_MS while the page is visible. A disabled batch
-// keeps its cache; an empty list fetches nothing and yields no rows.
+// or an empty list fetches nothing and yields no rows: the cache may hold
+// another caller's rows under the same params.
 // While new params load, the previous rows stay and `isPlaceholder` is set:
 // they are no answer to the current params yet.
 export function useUsageRpcBatch<T>(
@@ -52,7 +53,7 @@ export function useUsageRpcBatch<T>(
     })),
   });
 
-  const failed = results.find((r) => r.error)?.error;
+  const failed = enabled ? results.find((r) => r.error)?.error : undefined;
   const error = failed
     ? failed instanceof Error
       ? failed
@@ -60,11 +61,13 @@ export function useUsageRpcBatch<T>(
     : null;
   // A failed refresh/poll must not leave stale usage on screen masquerading
   // as the current result.
-  const usageData = useFlatPages(failed ? [] : results.map((r) => r.data));
+  const usageData = useFlatPages(
+    failed || !enabled ? [] : results.map((r) => r.data),
+  );
 
   return {
     usageData,
-    isLoading: results.some((r) => r.isFetching),
+    isLoading: enabled && results.some((r) => r.isFetching),
     isPlaceholder:
       enabled &&
       results.some(

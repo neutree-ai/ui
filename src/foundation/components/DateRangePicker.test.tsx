@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   type DateRange,
   DateRangePicker,
+  formatRangeLabel,
   trailingRange,
 } from "./DateRangePicker";
 
@@ -131,5 +132,16 @@ describe("DateRangePicker", () => {
 
     expect(onChange).toHaveBeenCalledWith(trailingRange(7));
     expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("formatRangeLabel", () => {
+  it("names the range in the reader's language", () => {
+    const range = { start: "2026-10-13", end: "2026-11-11" };
+    expect(formatRangeLabel(range)).toBe("Oct 13 – Nov 11");
+    expect(formatRangeLabel(range, "zh-CN")).toBe("10月13日 – 11月11日");
+    expect(
+      formatRangeLabel({ start: "2026-09-07", end: "2026-09-07" }, "zh-CN"),
+    ).toBe("9月7日");
   });
 });

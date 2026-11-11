@@ -4,7 +4,7 @@ import { useUsageByDimension } from "./use-usage-by-dimension";
 // useWorkspaceUsage returns a whole workspace's per-day, per-API-key, per-model
 // token usage (scoped to the caller's visible API keys by the RPC's auth.uid()
 // + permission filter). Same RPC as useApiKeyUsage, keyed by workspace + date
-// range. `enabled` false keeps the cached rows without fetching. `group` narrows
+// range. `enabled` false fetches nothing and yields no rows. `group` narrows
 // to usage recorded under a Team (p_team) or a department and its
 // sub-departments (p_org_unit).
 //

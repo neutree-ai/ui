@@ -16,6 +16,7 @@ import {
   useOrgTree,
   useReadableUsageTeams,
 } from "@/domains/organization/hooks/use-organization";
+import { isProjectTeam } from "@/domains/organization/lib/team";
 import {
   type DateRange,
   DateRangePicker,
@@ -98,7 +99,7 @@ const useUsageView = () => {
 };
 
 export const ModelUsageList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
@@ -150,11 +151,15 @@ export const ModelUsageList = () => {
   const { list: teamList, byName: teamsByName } = useReadableUsageTeams();
   const hasScopes = canReadGroups || teamList.length > 0;
 
-  // The page opens on the whole platform, or on the first department of a
-  // department admin; null is the usage of every API key the caller reads.
-  // Undefined until a scope is picked.
+  // The page opens on the whole platform, on the first department of a
+  // department admin, or on the first Team of a Team reader; null is the
+  // usage of every API key the caller reads. Undefined until a scope is
+  // picked.
   const pickedScope = view.scope;
   const firstRoot = roots[0]?.unit.metadata.name;
+  // As the panel lists them: Teams before scenarios.
+  const firstTeam =
+    teamList.find((team) => !isProjectTeam(team)) ?? teamList[0];
   // Memoized: the scope keys the page's heavier memos.
   const defaultScope = useMemo<UsageScope | null>(
     () =>
@@ -162,8 +167,14 @@ export const ModelUsageList = () => {
         ? PLATFORM
         : firstRoot
           ? { type: "orgUnit", name: firstRoot }
-          : null,
-    [canReadAllGroups, firstRoot],
+          : firstTeam
+            ? {
+                type: "team",
+                name: firstTeam.metadata.name,
+                label: displayName(firstTeam.metadata),
+              }
+            : null,
+    [canReadAllGroups, firstRoot, firstTeam],
   );
   const picked = pickedScope === undefined ? defaultScope : pickedScope;
   // A Team named in the URL takes its label from the Teams the caller reads.
@@ -290,9 +301,9 @@ export const ModelUsageList = () => {
     return preset
       ? t("model_usage.daily.backToPreset", { days: preset })
       : t("model_usage.daily.backToRange", {
-          range: formatRangeLabel(target),
+          range: formatRangeLabel(target, i18n?.language),
         });
-  }, [lastRange, t]);
+  }, [lastRange, t, i18n?.language]);
 
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
@@ -315,6 +326,14 @@ export const ModelUsageList = () => {
     return { series, trend: trendOf(series) };
   }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, t]);
   const labelKeys = breakdownLabelKeys(scope);
+
+  const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
+  // A group's usage by API key starts when it was first recorded per key, so
+  // older usage of the group is in its total but in no key's row.
+  const keyCoverageShort =
+    (scope?.type === "orgUnit" || scope?.type === "team") &&
+    !loading &&
+    keyTotal < totals.total;
 
   const detailRows = useMemo(
     () =>
@@ -442,11 +461,19 @@ export const ModelUsageList = () => {
             />
           </TabsContent>
           <TabsContent value="apiKey" className="mt-0">
+            {keyCoverageShort ? (
+              <p
+                className="px-4 pt-3 text-xs text-muted-foreground"
+                data-testid="usage-key-coverage-hint"
+              >
+                {t("model_usage.tabs.apiKeyCoverageHint")}
+              </p>
+            ) : null}
             <UsageTable
               nameHeader={t("model_usage.apiKey")}
               rows={keyRows}
               resetKey={scopeKey}
-              total={keyRows.reduce((sum, r) => sum + r.total, 0)}
+              total={keyTotal}
             />
           </TabsContent>
           <TabsContent value="detail" className="mt-0">
