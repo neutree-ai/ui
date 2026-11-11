@@ -441,7 +441,6 @@ export const VariablesInput = React.forwardRef<
               <Input
                 type="text"
                 value={jsonValueDrafts[key] ?? formatPrimitiveValue(val)}
-                pattern={schema[key].pattern}
                 aria-invalid={Boolean(jsonValueErrors[key])}
                 onChange={(e) =>
                   handleExistingPatternValueChange(key, e.target.value)
@@ -570,7 +569,6 @@ export const VariablesInput = React.forwardRef<
           type="text"
           placeholder={t("components.variablesInput.newValue")}
           value={row.value}
-          pattern={row.key ? schema[row.key]?.pattern : undefined}
           aria-invalid={Boolean(editingRowErrors[row.id])}
           onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
           onBlur={() => saveEditingRowNow(row.id)}

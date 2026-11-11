@@ -61,9 +61,7 @@ describe("VariablesInput", () => {
       />,
     );
 
-    const input = screen.getByDisplayValue("4G") as HTMLInputElement;
-    expect(input.type).toBe("text");
-    expect(input.pattern).toBe("^(?:\\d+|\\d+[KMGT])$");
+    const input = screen.getByDisplayValue("4G");
 
     fireEvent.change(input, { target: { value: "8GB" } });
     expect(onChange).not.toHaveBeenCalled();
@@ -82,9 +80,7 @@ describe("VariablesInput", () => {
         schema={humanReadableIntegerSchema}
       />,
     );
-    expect((screen.getByDisplayValue("16G") as HTMLInputElement).value).toBe(
-      "16G",
-    );
+    screen.getByDisplayValue("16G");
   });
 
   it("renders existing object schema values as pretty JSON", () => {
