@@ -48,7 +48,8 @@ const useFacts = <R>(rows: R[], toFact: (r: R) => UsageFact) =>
 
 /**
  * The usage of a scope's users and of its applications in one range. Each
- * is fetched only when the scope has it.
+ * is fetched only when the scope has it; otherwise it is no query at all, so
+ * no cached rows of another scope can stand in for it.
  */
 const useSubjectUsage = (
   workspace: string,
@@ -60,16 +61,14 @@ const useSubjectUsage = (
     start,
     end,
     "User",
-    [queries.user ?? {}],
-    !!queries.user,
+    queries.user ? [queries.user] : [],
   ),
   apps: useGroupUsage(
     workspace,
     start,
     end,
     "ServiceAccount",
-    [queries.apps ?? {}],
-    !!queries.apps,
+    queries.apps ? [queries.apps] : [],
   ),
 });
 
@@ -124,8 +123,7 @@ export function useScopeUsage({
     start,
     end,
     "OrgUnit",
-    [unitFilter],
-    !!queries.units,
+    queries.units ? [queries.units] : [],
   );
   const directUsage = useGroupUsage(
     workspace,

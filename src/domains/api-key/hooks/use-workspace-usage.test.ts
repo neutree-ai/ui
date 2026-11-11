@@ -80,4 +80,21 @@ describe("useWorkspaceUsage", () => {
     // `workspace = p_workspace` filter would match nothing.
     expect(call.values).not.toHaveProperty("p_workspace");
   });
+
+  it("yields no cached rows while disabled", async () => {
+    mockMutateAsync.mockResolvedValueOnce({ data: [{ usage: 1 }] });
+    const { result, rerender } = renderHook(
+      ({ enabled }) =>
+        useWorkspaceUsage("default", "2025-01-01", "2025-02-01", enabled),
+      { wrapper, initialProps: { enabled: true } },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(result.current.usageData).toHaveLength(1);
+
+    // The same params from a caller that has no use for them.
+    rerender({ enabled: false });
+
+    expect(result.current.usageData).toEqual([]);
+    expect(result.current.isPlaceholder).toBe(false);
+  });
 });
