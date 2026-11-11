@@ -164,6 +164,17 @@ it("shows the manager error returned by the selected cluster", () => {
   screen.getByText("cache manager could not reconcile");
 });
 
+it("localizes the reconciling phase in pending manager messages", () => {
+  render(
+    <Editor cache={null} cluster={makeCluster({ phase: "Reconciling" })} />,
+  );
+  expect(
+    screen.getAllByText(
+      "endpoints.kvCacheSettings.managerPending:endpoints.kvCacheSettings.phases.Reconciling",
+    ).length,
+  ).toBeGreaterThanOrEqual(2);
+});
+
 async function openConfig() {
   fireEvent.click(
     screen.getByRole("button", {

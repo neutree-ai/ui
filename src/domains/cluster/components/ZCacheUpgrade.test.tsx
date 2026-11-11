@@ -186,3 +186,29 @@ it("links each failed instance with its failure", () => {
   );
   screen.getByText("image pull failed");
 });
+
+it("renders localized upgrade error messages for coded and permission failures", async () => {
+  mutate.mockRejectedValueOnce({
+    code: "21123",
+    message: "cache upgrade is already in progress",
+  });
+  render(<ZCacheUpgrade cluster={makeCluster()} />);
+  fireEvent.click(button("clusters.cacheUpgrade.title"));
+  pickOption(
+    screen.getByRole("combobox", { name: "upgrade" }),
+    /^clusters\.cacheUpgrade\.engine/,
+  );
+  pickOption(
+    screen.getByRole("combobox", { name: "disable" }),
+    "clusters.cacheUpgrade.disable",
+  );
+  fireEvent.click(button("clusters.cacheUpgrade.confirm"));
+  await screen.findByText("clusters.cacheUpgrade.errors.alreadyInProgress:");
+
+  mutate.mockRejectedValueOnce({
+    code: "42501",
+    message: "permission denied to upgrade cluster cache",
+  });
+  fireEvent.click(button("clusters.cacheUpgrade.confirm"));
+  await screen.findByText("clusters.cacheUpgrade.errors.permissionDenied");
+});

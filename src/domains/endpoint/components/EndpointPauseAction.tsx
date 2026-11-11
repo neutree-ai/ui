@@ -1,6 +1,7 @@
 import { useInvalidate, useUpdate } from "@refinedev/core";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
+import { endpointCacheErrorMessage } from "@/domains/endpoint/lib/endpoint-cache-errors";
 import {
   computeTogglePayload,
   derivePauseState,
@@ -77,14 +78,15 @@ export const EndpointPauseAction = ({
       });
     } catch (error) {
       toast.error(
-        getErrorMessage(
-          error,
-          translate(
-            isPaused
-              ? "endpoints.messages.resumeFailed"
-              : "endpoints.messages.pauseFailed",
+        endpointCacheErrorMessage(translate, error) ??
+          getErrorMessage(
+            error,
+            translate(
+              isPaused
+                ? "endpoints.messages.resumeFailed"
+                : "endpoints.messages.pauseFailed",
+            ),
           ),
-        ),
       );
     }
   };

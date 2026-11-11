@@ -237,7 +237,16 @@ const serverCodeSteps: Record<string, number> = {
   "10233": EndpointStep.resources,
   "10229": EndpointStep.model,
   "10234": EndpointStep.model,
+  "21101": EndpointStep.runtime,
+  "21102": EndpointStep.runtime,
+  "21103": EndpointStep.runtime,
+  "21104": EndpointStep.runtime,
+  "21105": EndpointStep.runtime,
+  "21106": EndpointStep.runtime,
+  "21107": EndpointStep.runtime,
+  "21108": EndpointStep.advanced,
   "22023": EndpointStep.runtime,
+  INVALID_CACHE_CONFIGURATION: EndpointStep.runtime,
 };
 
 const explicitServerPath = (error: unknown): string | null => {
@@ -266,6 +275,7 @@ const explicitServerPath = (error: unknown): string | null => {
 export function endpointServerIssue(
   error: unknown,
   fallbackMessage: string,
+  translateError?: (error: unknown) => string | undefined,
 ): EndpointServerIssue {
   const path =
     explicitServerPath(error) ??
@@ -276,7 +286,11 @@ export function endpointServerIssue(
       ? endpointRootStep(path)
       : ((code ? serverCodeSteps[code] : undefined) ?? LAST_ENDPOINT_STEP);
 
-  return { step, path, message: getErrorMessage(error, fallbackMessage) };
+  return {
+    step,
+    path,
+    message: translateError?.(error) ?? getErrorMessage(error, fallbackMessage),
+  };
 }
 
 /** One source of truth for the stepper and summary. Field validation keeps its

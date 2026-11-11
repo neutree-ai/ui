@@ -64,6 +64,15 @@ const CACHE_MANAGER_DISPLAY: Record<
   },
 };
 
+const CACHE_MANAGER_PHASE_KEYS: Readonly<Record<string, string>> = {
+  Ready: "endpoints.kvCacheSettings.phases.Ready",
+  Reconciling: "endpoints.kvCacheSettings.phases.Reconciling",
+  Failed: "endpoints.kvCacheSettings.phases.Failed",
+  Unavailable: "endpoints.kvCacheSettings.phases.Unavailable",
+  Disabled: "endpoints.kvCacheSettings.phases.Disabled",
+  Unknown: "endpoints.kvCacheSettings.phases.Unknown",
+};
+
 export function EndpointKVCacheFields({
   form,
   cluster,
@@ -81,8 +90,21 @@ export function EndpointKVCacheFields({
   const [configOpen, setConfigOpen] = useState(false);
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
-  const phaseValues =
-    "phase" in cacheManager ? { phase: cacheManager.phase } : {};
+  const phaseKey =
+    "phase" in cacheManager
+      ? CACHE_MANAGER_PHASE_KEYS[cacheManager.phase]
+      : undefined;
+  const phaseLabel =
+    "phase" in cacheManager
+      ? phaseKey
+        ? t(phaseKey)
+        : cacheManager.phase
+      : undefined;
+  const translateWithPhase = (key: string) =>
+    key === "endpoints.kvCacheSettings.managerPending" &&
+    phaseLabel !== undefined
+      ? t(key, { phase: phaseLabel })
+      : t(key);
   const supported = unavailableReason === null;
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
@@ -118,7 +140,7 @@ export function EndpointKVCacheFields({
           </span>{" "}
         </>
       )}
-      {t(unavailableReason, phaseValues)}
+      {translateWithPhase(unavailableReason)}
     </p>
   ) : null;
   const cacheTimeoutField = cache?.provider ? (
@@ -163,7 +185,7 @@ export function EndpointKVCacheFields({
             )}
           />
           <span className={cn("font-medium", managerDisplay.tone)}>
-            {t(managerDisplay.key, phaseValues)}
+            {translateWithPhase(managerDisplay.key)}
           </span>
           {l1CapacityGiB != null && (
             <span className="text-muted-foreground">
@@ -193,7 +215,7 @@ export function EndpointKVCacheFields({
             {t("endpoints.sections.kvCache")}
           </h2>
           <InfoHint
-            label={t(
+            label={translateWithPhase(
               unavailableReason ?? "endpoints.kvCacheSettings.scheduling",
             )}
           />

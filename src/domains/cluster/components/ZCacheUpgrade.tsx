@@ -27,6 +27,7 @@ import { Link } from "@/foundation/components/Link";
 import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import { getErrorMessage } from "@/foundation/lib/error-message";
+import { cacheUpgradeErrorMessage } from "../lib/zcache-errors";
 import {
   type CacheDependentEndpoint,
   defaultUpgradeAction,
@@ -189,7 +190,10 @@ function UpgradeDialog({
         void invalidate({ resource, invalidates: ["list", "detail"] });
       }
     } catch (e) {
-      setError(getErrorMessage(e, t("clusters.zcache.saveFailed")));
+      setError(
+        cacheUpgradeErrorMessage(t, e) ??
+          getErrorMessage(e, t("clusters.zcache.saveFailed")),
+      );
     }
   }
   return (

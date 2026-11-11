@@ -333,5 +333,35 @@ describe("endpoint wizard error mapping", () => {
       path: "spec.engine.version",
       message: "unsupported version",
     });
+    expect(
+      endpointServerIssue(
+        {
+          code: "21102",
+          message:
+            "wait for the cluster cache node pool to finish applying before enabling inference cache",
+        },
+        "fallback",
+        () => "endpoints.kvCacheSettings.errors.nodePoolNotReady",
+      ),
+    ).toEqual({
+      step: 2,
+      path: undefined,
+      message: "endpoints.kvCacheSettings.errors.nodePoolNotReady",
+    });
+    expect(
+      endpointServerIssue(
+        {
+          code: "21108",
+          hint: "LMCACHE_CHUNK_SIZE",
+          message: "remove custom LMCACHE_CHUNK_SIZE",
+        },
+        "fallback",
+        () => "endpoints.kvCacheSettings.errors.customOverride",
+      ),
+    ).toEqual({
+      step: 3,
+      path: undefined,
+      message: "endpoints.kvCacheSettings.errors.customOverride",
+    });
   });
 });

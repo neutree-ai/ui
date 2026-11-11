@@ -11,6 +11,7 @@ import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
 import { ZCacheFields } from "@/domains/cluster/components/ZCacheFields";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
+import { clusterCacheErrorMessage } from "@/domains/cluster/lib/zcache-errors";
 import type { Cluster } from "@/domains/cluster/types";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import FormCardGrid from "@/foundation/components/FormCardGrid";
@@ -45,6 +46,16 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
       queryOptions: {
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+      },
+      errorNotification: (error) => {
+        const description = clusterCacheErrorMessage(t, error);
+        return description
+          ? {
+              type: "error",
+              message: t("clusters.zcache.saveFailed"),
+              description,
+            }
+          : undefined;
       },
     },
     mode: "all",

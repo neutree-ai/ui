@@ -47,3 +47,15 @@ it("keeps a failed retry visible", async () => {
     "clusters.zcache.serviceName unavailable",
   );
 });
+it("translates coded cluster cache admission errors on retry", async () => {
+  mocks.update.mockRejectedValue({
+    code: "21117",
+    message: "inference instances still use cache",
+  });
+  render(<CacheRetry cluster={cluster} />);
+  fireEvent.click(screen.getByRole("button"));
+  await screen.findByRole("alert");
+  expect(screen.getByRole("alert").textContent).toBe(
+    "clusters.zcache.errors.inUseByEndpoints:",
+  );
+});
