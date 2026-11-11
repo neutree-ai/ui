@@ -15,16 +15,14 @@ export const CACHE_DEPENDENT_SELECT =
   "id,name:metadata->>name,display_name:metadata->>display_name,kv_cache:spec->kv_cache,observed_kv_cache:status->kv_cache";
 
 /**
- * Labels of the endpoints that configure ZCache or are reported using it,
- * deduplicated.
+ * Labels of the endpoints reported as actively using ZCache, deduplicated.
  */
 export function cacheDependents(endpoints: CacheDependentEndpoint[]) {
   const labels = endpoints
     .filter(
       (endpoint) =>
-        endpoint.kv_cache?.provider === "zcache" ||
-        (endpoint.observed_kv_cache?.provider === "zcache" &&
-          endpoint.observed_kv_cache.details?.in_use),
+        endpoint.observed_kv_cache?.provider === "zcache" &&
+        endpoint.observed_kv_cache.details?.in_use === true,
     )
     .map(
       (endpoint) =>

@@ -529,7 +529,7 @@
   "src/domains/endpoint/hooks/use-kv-cache-availability.ts": "62f5ac8b2c363feb1769c902dd5b81f3",
   "src/foundation/lib/chart-palette.ts": "13e1a01f10591f9fea2073e027168a79",
   "src/domains/cluster/lib/observed-gpu.ts": "7a43909e29f1d2c1fa71004ded90356b",
-  "src/domains/cluster/lib/zcache-node-selection.ts": "758d20be2c5af51fd305df01d8f0d2bc",
+  "src/domains/cluster/lib/zcache-node-selection.ts": "b9dbaf3da9b19e7ee0de429299a943c0",
   "src/domains/endpoint/lib/replica-usage.ts": "39f633a996c89455e1c0087e8b20a5ce",
   "src/foundation/components/GpuAllocationBar.tsx": "08549eaf6a1cdae32cf541cc942a1db4",
   "src/foundation/components/GpuDetailsSheet.tsx": "3ed749c55445396077c897afead49fc3",

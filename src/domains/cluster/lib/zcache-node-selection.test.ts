@@ -10,24 +10,39 @@ const endpoint = (
 ): CacheDependentEndpoint => ({ id: 1, name: "ep", ...overrides });
 
 describe("cacheDependents", () => {
-  it("lists endpoints that configure or are reported using the cache, once each", () => {
+  it("lists only endpoints reported as actively using the cache, once each", () => {
     expect(
       cacheDependents([
-        endpoint({ name: "configured", kv_cache: { provider: "zcache" } }),
+        endpoint({
+          name: "paused",
+          kv_cache: { provider: "zcache" },
+          observed_kv_cache: { provider: "zcache", details: { in_use: false } },
+        }),
+        endpoint({ name: "configured-only", kv_cache: { provider: "zcache" } }),
+        endpoint({
+          name: "using",
+          display_name: "Using",
+          kv_cache: { provider: "zcache" },
+          observed_kv_cache: { provider: "zcache", details: { in_use: true } },
+        }),
+        endpoint({
+          name: "terminating-old-pod",
+          kv_cache: null,
+          observed_kv_cache: { provider: "zcache", details: { in_use: true } },
+        }),
+        endpoint({ name: "other", kv_cache: { provider: "lmcache" } }),
+        endpoint({
+          id: 7,
+          name: null,
+          observed_kv_cache: { provider: "zcache", details: { in_use: true } },
+        }),
         endpoint({
           name: "using",
           display_name: "Using",
           observed_kv_cache: { provider: "zcache", details: { in_use: true } },
         }),
-        endpoint({
-          name: "idle",
-          observed_kv_cache: { provider: "zcache", details: { in_use: false } },
-        }),
-        endpoint({ name: "other", kv_cache: { provider: "lmcache" } }),
-        endpoint({ id: 7, name: null, kv_cache: { provider: "zcache" } }),
-        endpoint({ name: "configured", kv_cache: { provider: "zcache" } }),
       ]),
-    ).toEqual(["configured", "Using", "7"]);
+    ).toEqual(["Using", "terminating-old-pod", "7"]);
   });
 });
 
