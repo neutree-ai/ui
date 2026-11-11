@@ -2,8 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
-  subjectKey: (kind: string, id: string) => `${kind}/${id}`,
-  useScopeSubjectPolicies: vi.fn(),
   useUserGroupPolicy: () => ({ policy: undefined, denied: true }),
 }));
 // TokenPoolSummary's module renders a ShowPage, which pulls refine's table
@@ -13,7 +11,6 @@ vi.mock("@/domains/group-policy/components/ModelEntryPicker", () => ({
   ModelEntryPicker: () => null,
 }));
 
-import { useScopeSubjectPolicies } from "@/domains/group-policy/hooks/use-group-policies";
 import type { ScopeSubjectPolicy } from "@/domains/group-policy/types";
 import { SubjectQuotaCell } from "./SubjectQuotaCell";
 
@@ -33,16 +30,6 @@ const row = (over: Partial<ScopeSubjectPolicy>): ScopeSubjectPolicy => ({
   ...over,
 });
 
-const setRows = (rows: ScopeSubjectPolicy[]) =>
-  vi.mocked(useScopeSubjectPolicies).mockReturnValue({
-    bySubject: new Map(
-      rows.map((r) => [`${r.subject_kind}/${r.subject_name}`, r]),
-    ),
-    isLoading: false,
-    denied: false,
-    error: null,
-  });
-
 const writes = { save: vi.fn(), remove: vi.fn(), isPending: false };
 
 beforeEach(() => {
@@ -51,19 +38,17 @@ beforeEach(() => {
 
 describe("SubjectQuotaCell", () => {
   it("shows this scope's pool, what is left in effect, and only the allowed actions", () => {
-    setRows([
-      row({
-        id: 7,
-        policy_name: "p",
-        token_quota: { limit: 1000, period: "daily" },
-        pool: { used: 10, remaining: 990, resets_at: "2026-11-11" },
-        effective_remaining: 0,
-      }),
-    ]);
     render(
       <SubjectQuotaCell
         scope={scope}
         subject={subject}
+        policy={row({
+          id: 7,
+          policy_name: "p",
+          token_quota: { limit: 1000, period: "daily" },
+          pool: { used: 10, remaining: 990, resets_at: "2026-11-11" },
+          effective_remaining: 0,
+        })}
         access={{ canCreate: true, canUpdate: false, canDelete: true }}
         writes={writes}
       />,
@@ -76,11 +61,11 @@ describe("SubjectQuotaCell", () => {
   });
 
   it("creates a policy scoped to the scope from the dialog", async () => {
-    setRows([row({})]);
     render(
       <SubjectQuotaCell
         scope={scope}
         subject={subject}
+        policy={row({})}
         access={{ canCreate: true, canUpdate: false, canDelete: false }}
         writes={writes}
       />,

@@ -7,7 +7,12 @@ import type {
   PrincipalKind,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
-import type { GroupKind, LabeledScope } from "@/foundation/types/group-scope";
+import { displayName } from "@/foundation/lib/display-name";
+import {
+  type GroupKind,
+  isGroupKind,
+  type LabeledScope,
+} from "@/foundation/types/group-scope";
 
 /**
  * The spec of a User or ServiceAccount policy in `scope`. Every field goes
@@ -66,19 +71,22 @@ export const subjectPolicySource = (own: ScopeFields): TokenPoolSource => ({
   scopeKind: own.scope_kind ?? null,
   scopeName: own.scope_name ?? null,
   scopeLabel: own.scope_kind
-    ? own.scope_display_name?.trim() || own.scope_name || null
+    ? displayName({
+        name: own.scope_name ?? "",
+        display_name: own.scope_display_name,
+      }) || null
     : null,
 });
 
 export const tokenPoolSource = (
   pool: Pick<GroupTokenPool, "kind" | "name" | "display_name"> & ScopeFields,
 ): TokenPoolSource =>
-  pool.kind === "Team" || pool.kind === "OrgUnit"
+  isGroupKind(pool.kind)
     ? {
         owner: "group",
         kind: pool.kind,
         name: pool.name,
-        label: pool.display_name?.trim() || pool.name,
+        label: displayName(pool),
       }
     : subjectPolicySource(pool);
 

@@ -31,7 +31,6 @@ import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors
 import type { ServiceAccount } from "@/domains/service-account/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
-import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -367,15 +366,10 @@ function CreateServiceAccountDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="sm:max-w-md"
-        aria-describedby={undefined}
-        onOpenAutoFocus={skipInfoHintOnOpen}
-      >
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-1">
+          <DialogTitle hint={t("service_accounts.createHint")}>
             {t("service_accounts.createTitle")}
-            <InfoHint label={t("service_accounts.createHint")} />
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">

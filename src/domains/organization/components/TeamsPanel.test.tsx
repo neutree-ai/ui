@@ -38,21 +38,14 @@ vi.mock("@/foundation/components/ShowPage", () => ({
   },
 }));
 
-// The menu renders flat, so a test picks an item without opening it; picking
-// one closes the menu, as Radix does after onSelect.
+// The menu renders flat, so a test picks an item without opening it.
 vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
   DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
     <>{children}</>
   ),
-  DropdownMenuContent: ({
-    children,
-    onCloseAutoFocus,
-  }: {
-    children: ReactNode;
-    onCloseAutoFocus?: (event: Event) => void;
-  }) => (
-    <div onClick={() => onCloseAutoFocus?.(new Event("focus"))}>{children}</div>
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
   ),
   DropdownMenuItem: ({
     children,
@@ -382,6 +375,21 @@ describe("TeamsPanel", () => {
     );
   });
 
+  it("checks the name on blur only once it was edited", () => {
+    grant("team:create");
+    render(<Panel />);
+    fireEvent.click(screen.getByTestId("team-create-team"));
+    const name = screen.getByTestId("team-form-name");
+    fireEvent.blur(name);
+    expect(
+      screen.queryByText("organization.teams.validation.nameRequired"),
+    ).toBeNull();
+    fireEvent.change(name, { target: { value: "x" } });
+    fireEvent.change(name, { target: { value: "" } });
+    fireEvent.blur(name);
+    screen.getByText("organization.teams.validation.nameRequired");
+  });
+
   it("creates a team marked as a project", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
@@ -392,7 +400,7 @@ describe("TeamsPanel", () => {
       target: { value: "launch" },
     });
     fireEvent.click(screen.getByTestId("team-form-project"));
-    screen.getByText("organization.teams.createScenarioTitle");
+    screen.getByRole("heading", { name: "organization.teams.createScenario" });
     fireEvent.click(screen.getByTestId("team-form-save"));
     await waitFor(() =>
       expect(writes.create).toHaveBeenCalledWith({
@@ -408,7 +416,7 @@ describe("TeamsPanel", () => {
     writes.create.mockResolvedValue({ ...manual, id: 9 });
     render(<Panel />);
     fireEvent.click(screen.getByTestId("team-create-scenario"));
-    screen.getByText("organization.teams.createScenarioTitle");
+    screen.getByRole("heading", { name: "organization.teams.createScenario" });
     expect(
       screen.getByTestId("team-form-project").getAttribute("aria-checked"),
     ).toBe("true");

@@ -1,4 +1,9 @@
-import { useCustom, useInvalidate, useList } from "@refinedev/core";
+import {
+  type CustomResponse,
+  useCustom,
+  useInvalidate,
+  useList,
+} from "@refinedev/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { GroupPolicyGoneError } from "@/domains/group-policy/lib/group-policy-errors";
 import type {
@@ -15,7 +20,11 @@ import {
 } from "@/foundation/hooks/use-has-permission";
 import { useRowWrite } from "@/foundation/hooks/use-row-write";
 import { isPermissionDenied } from "@/foundation/lib/api-error-code";
-import type { GroupKind, LabeledScope } from "@/foundation/types/group-scope";
+import {
+  type GroupKind,
+  isGroupKind,
+  type LabeledScope,
+} from "@/foundation/types/group-scope";
 
 /** The policy of one group; a group has at most one. Subject policies never match. */
 export const useGroupPolicy = (
@@ -75,7 +84,7 @@ type PolicyTarget = Pick<
  * policy and the scope it was set in.
  */
 const affectedBy = (target: PolicyTarget) => (key: readonly unknown[]) =>
-  target.subject_kind === "Team" || target.subject_kind === "OrgUnit"
+  isGroupKind(target.subject_kind)
     ? POLICY_READ_URLS.some((url) => readsCustom(key, url))
     : readsCustom(key, USER_POLICY_URL, { p_user_id: target.subject_name }) ||
       (!!target.scope_kind &&
@@ -101,10 +110,8 @@ export const useGroupPolicyWrites = () => {
     target: PolicyTarget,
   ) => {
     const rows = await run(url, method, values);
-    const group =
-      target.subject_kind === "Team" || target.subject_kind === "OrgUnit";
     await Promise.all([
-      group &&
+      isGroupKind(target.subject_kind) &&
         invalidate({
           resource: "group_policies",
           invalidates: ["list"],
@@ -193,6 +200,19 @@ export const useGroupTokenPool = (
 
 export const subjectKey = (kind: PrincipalKind, id: string) => `${kind}/${id}`;
 
+// Module-level so the query keeps its memoized result across renders.
+const indexBySubject = (response: CustomResponse<ScopeSubjectPolicy[]>) => ({
+  ...response,
+  data: {
+    bySubject: new Map(
+      response.data.map((row) => [
+        subjectKey(row.subject_kind, row.subject_name),
+        row,
+      ]),
+    ),
+  },
+});
+
 /**
  * Every user (and, in a Team, every application) a scope manages, with its
  * policy in that scope, by subjectKey. `denied` when the caller holds no
@@ -218,17 +238,7 @@ export const useScopeSubjectPolicies = (
     queryOptions: {
       enabled: ready,
       retry: false,
-      select: (response) => ({
-        ...response,
-        data: {
-          bySubject: new Map(
-            response.data.map((row) => [
-              subjectKey(row.subject_kind, row.subject_name),
-              row,
-            ]),
-          ),
-        },
-      }),
+      select: indexBySubject,
     },
     successNotification: false,
     errorNotification: false,
@@ -242,14 +252,12 @@ export const useScopeSubjectPolicies = (
   };
 };
 
-// Both run; the one for the other kind skips its check, and so do both
-// until `enabled`.
+// Both run; the one for the other kind skips its check.
 const useScopePermission = (
   permission: string,
   scope: LabeledScope | undefined,
-  enabled = true,
 ) => {
-  const id = enabled ? scope?.id : undefined;
+  const id = scope?.id;
   const onTeam = useHasTeamPermission(
     permission,
     scope?.kind === "Team" ? id : undefined,
@@ -267,11 +275,15 @@ const useScopePermission = (
  * ancestors). The server checks every write regardless.
  */
 export const useScopePolicyAccess = (scope: LabeledScope | undefined) => {
+  // All four checks run at once; a write also needs read.
   const canRead = useScopePermission("group_policy:read", scope);
+  const canCreate = useScopePermission("group_policy:create", scope);
+  const canUpdate = useScopePermission("group_policy:update", scope);
+  const canDelete = useScopePermission("group_policy:delete", scope);
   return {
     canRead,
-    canCreate: useScopePermission("group_policy:create", scope, canRead),
-    canUpdate: useScopePermission("group_policy:update", scope, canRead),
-    canDelete: useScopePermission("group_policy:delete", scope, canRead),
+    canCreate: canRead && canCreate,
+    canUpdate: canRead && canUpdate,
+    canDelete: canRead && canDelete,
   };
 };

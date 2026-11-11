@@ -1,5 +1,5 @@
 import { ChevronDown, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -176,9 +176,6 @@ export function TeamsPanel({
     setDialog(next);
   };
   const close = () => setDialog(undefined);
-  // The create menu opens its dialog once closed: the menu still moves focus
-  // while closing, which would blur the name field and show its error at once.
-  const pendingCreate = useRef<boolean | undefined>(undefined);
 
   const select = (name: string | undefined) => {
     updateView({ team: name });
@@ -444,28 +441,15 @@ export function TeamsPanel({
                     <ChevronDown className="ml-1 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  onCloseAutoFocus={(event) => {
-                    const project = pendingCreate.current;
-                    if (project === undefined) return;
-                    pendingCreate.current = undefined;
-                    event.preventDefault();
-                    open({ kind: "create", project });
-                  }}
-                >
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onSelect={() => {
-                      pendingCreate.current = false;
-                    }}
+                    onSelect={() => open({ kind: "create", project: false })}
                     data-testid="team-create-team"
                   >
                     {t("organization.teams.create")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onSelect={() => {
-                      pendingCreate.current = true;
-                    }}
+                    onSelect={() => open({ kind: "create", project: true })}
                     data-testid="team-create-scenario"
                   >
                     {t("organization.teams.createScenario")}

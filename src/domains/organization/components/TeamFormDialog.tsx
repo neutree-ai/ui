@@ -18,7 +18,6 @@ import {
   validateTeamName,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamFormValues } from "@/domains/organization/types";
-import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const NAME_ERROR_KEYS: Record<TeamNameError, string> = {
@@ -59,6 +58,9 @@ export function TeamFormDialog({
   const [project, setProject] = useState(
     team ? isProjectTeam(team) : initialProject,
   );
+  // Blur marks the name touched only once edited: opening the dialog may move
+  // focus through the field before the user types.
+  const [dirty, setDirty] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const nameError = team ? undefined : validateTeamName(name.trim());
@@ -75,25 +77,20 @@ export function TeamFormDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-md"
-        aria-describedby={undefined}
-        onOpenAutoFocus={skipInfoHintOnOpen}
-      >
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-1">
+          <DialogTitle
+            hint={
+              team
+                ? t("organization.teams.editHint")
+                : t("organization.teams.createHint")
+            }
+          >
             {team
               ? t("organization.teams.editTitle")
               : project
-                ? t("organization.teams.createScenarioTitle")
+                ? t("organization.teams.createScenario")
                 : t("organization.teams.createTitle")}
-            <InfoHint
-              label={
-                team
-                  ? t("organization.teams.editHint")
-                  : t("organization.teams.createHint")
-              }
-            />
           </DialogTitle>
         </DialogHeader>
         <form
@@ -109,8 +106,11 @@ export function TeamFormDialog({
               id="team-name"
               value={name}
               disabled={!!team}
-              onChange={(event) => setName(event.target.value)}
-              onBlur={() => setTouched(true)}
+              onChange={(event) => {
+                setName(event.target.value);
+                setDirty(true);
+              }}
+              onBlur={() => dirty && setTouched(true)}
               placeholder={t("organization.teams.namePlaceholder")}
               data-testid="team-form-name"
             />

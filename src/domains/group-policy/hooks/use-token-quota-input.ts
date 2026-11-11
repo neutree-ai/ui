@@ -28,7 +28,8 @@ export const useTokenQuotaInput = (
   );
   return {
     amount,
-    setAmount: (next: string) => setAmount(formatThousands(next)),
+    /** Takes the amount as ThousandsInput formats it. */
+    setAmount,
     unit,
     setUnit,
     period,

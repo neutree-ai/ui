@@ -8,3 +8,7 @@ export type LabeledScope = {
   id: number;
   label: string;
 };
+
+export const isGroupKind = (
+  kind: string | null | undefined,
+): kind is GroupKind => kind === "Team" || kind === "OrgUnit";

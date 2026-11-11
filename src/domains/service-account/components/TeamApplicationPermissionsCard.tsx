@@ -21,7 +21,6 @@ import {
 import { isManagementRole } from "@/domains/service-account/lib/application-permissions";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { TeamApplicationPermissions } from "@/domains/service-account/types";
-import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
@@ -211,15 +210,10 @@ function AppPermissionsDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="max-h-[85vh] overflow-y-auto sm:max-w-lg"
-        aria-describedby={undefined}
-        onOpenAutoFocus={skipInfoHintOnOpen}
-      >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-1">
+          <DialogTitle hint={t("service_accounts.appPermissions.editHint")}>
             {t("service_accounts.appPermissions.editTitle")}
-            <InfoHint label={t("service_accounts.appPermissions.editHint")} />
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">

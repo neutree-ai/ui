@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import type { TokenQuotaInput } from "@/domains/group-policy/hooks/use-token-quota-input";
 import type { GroupTokenPoolPeriod } from "@/domains/group-policy/types";
+import { ThousandsInput } from "@/foundation/components/ThousandsInput";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   QUOTA_PERIODS,
@@ -32,12 +32,11 @@ export function TokenQuotaFields({
   return (
     <div className="flex items-start gap-2">
       <div className="flex-1">
-        <Input
+        <ThousandsInput
           id={id}
-          inputMode="decimal"
           value={input.amount}
           placeholder={placeholder}
-          onChange={(e) => input.setAmount(e.target.value)}
+          onChange={input.setAmount}
           aria-invalid={!input.valid}
           data-testid={`${testId}-amount`}
         />

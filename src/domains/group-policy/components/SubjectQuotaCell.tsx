@@ -4,18 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAccess";
 import { SubjectPolicyDialog } from "@/domains/group-policy/components/SubjectPolicyDialog";
-import {
-  type GroupPolicyWrites,
-  subjectKey,
-  useScopeSubjectPolicies,
-} from "@/domains/group-policy/hooks/use-group-policies";
+import type { GroupPolicyWrites } from "@/domains/group-policy/hooks/use-group-policies";
 import { groupPolicyErrorText } from "@/domains/group-policy/lib/group-policy-errors";
 import { hasRules } from "@/domains/group-policy/lib/model-entries";
 import {
   buildSubjectPolicySpec,
   subjectPolicyChange,
 } from "@/domains/group-policy/lib/subject-policy";
-import type { PolicySubject } from "@/domains/group-policy/types";
+import type {
+  PolicySubject,
+  ScopeSubjectPolicy,
+} from "@/domains/group-policy/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
@@ -35,24 +34,23 @@ type ScopePolicyAccess = {
 export function SubjectQuotaCell({
   scope,
   subject,
+  policy: row,
   access,
   writes,
 }: {
   scope: LabeledScope;
   subject: PolicySubject;
+  /** The subject's row in the scope's subject policies, if any. */
+  policy: ScopeSubjectPolicy | undefined;
   access: ScopePolicyAccess;
   writes: GroupPolicyWrites;
 }) {
   const { t } = useTranslation();
-  // One read per scope: every cell shares the cached answer.
-  const { bySubject, isLoading } = useScopeSubjectPolicies(scope, true);
   const [editing, setEditing] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [dialogError, setDialogError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
 
-  if (isLoading) return null;
-  const row = bySubject?.get(subjectKey(subject.kind, subject.id));
   const id = row?.id ?? null;
   const allowedCount = row?.allowed_models?.length ?? 0;
   const effective = row?.effective_remaining ?? null;

@@ -1,10 +1,22 @@
 import { CircleHelp } from "lucide-react";
+import type { ComponentPropsWithoutRef, FocusEvent } from "react";
+import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/foundation/lib/utils";
+
+// Radix opens a tooltip on any focus, so a dialog that auto-focuses this
+// button on open would show the tooltip. Only keyboard focus should; where
+// `:focus-visible` is unsupported, keep Radix's default.
+const ignoreProgrammaticFocus = (event: FocusEvent<HTMLButtonElement>) => {
+  try {
+    if (!event.currentTarget.matches(":focus-visible")) event.preventDefault();
+  } catch {}
+};
 
 // A `?`-in-a-circle button that reveals `label` on hover or focus — the
 // explanation for a section title that would otherwise crowd the title
@@ -13,12 +25,11 @@ import {
 export const InfoHint = ({ label }: { label: string }) => (
   <TooltipProvider delayDuration={0}>
     <Tooltip>
-      <TooltipTrigger asChild>
+      <TooltipTrigger asChild onFocus={ignoreProgrammaticFocus}>
         <button
           type="button"
           className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label={label}
-          data-info-hint=""
         >
           <CircleHelp className="size-3.5" aria-hidden="true" />
         </button>
@@ -30,21 +41,14 @@ export const InfoHint = ({ label }: { label: string }) => (
   </TooltipProvider>
 );
 
-const FOCUSABLE = [
-  "input:not([disabled]):not([type='hidden'])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  "button:not([disabled]):not([data-info-hint])",
-  "[tabindex]:not([tabindex='-1']):not([data-info-hint])",
-].join(",");
-
-/**
- * `onOpenAutoFocus` for a dialog with an InfoHint in its header: focus the
- * first control that is not a hint, else the dialog itself, so opening the
- * dialog does not open a tooltip.
- */
-export const skipInfoHintOnOpen = (event: Event) => {
-  event.preventDefault();
-  const content = event.target as HTMLElement;
-  (content.querySelector<HTMLElement>(FOCUSABLE) ?? content).focus();
-};
+/** A form label with its explanation behind a `?` beside it. */
+export const LabelWithHint = ({
+  hint,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof Label> & { hint: string }) => (
+  <div className={cn("flex items-center gap-1", className)}>
+    <Label {...props} />
+    <InfoHint label={hint} />
+  </div>
+);

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type {
   FeatureSelection,
@@ -129,7 +129,9 @@ describe("FeaturePicker feature descriptions", () => {
     const hint = screen.getByRole("button", {
       name: "Max sequence length (tokens) — pick a preset or type your own (native ceiling 262144).",
     });
-    fireEvent.focus(hint);
+    // Tab onto it: the hint opens on keyboard focus only.
+    fireEvent.keyDown(document.body, { key: "Tab" });
+    act(() => hint.focus());
 
     expect((await screen.findByRole("tooltip")).textContent).toBe(
       "Max sequence length (tokens) — pick a preset or type your own (native ceiling 262144).",

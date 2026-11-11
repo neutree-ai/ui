@@ -13,7 +13,7 @@ import { cn } from "@/foundation/lib/utils";
 const sectionHeaderClassName =
   "flex flex-wrap items-center justify-between gap-4";
 const sectionTitleClassName =
-  "flex items-center gap-1 text-base font-semibold leading-6 text-foreground";
+  "text-base font-semibold leading-6 text-foreground";
 const sectionDescriptionClassName =
   "mt-1 text-sm leading-5 text-muted-foreground";
 const sectionContentClassName = "p-5";
@@ -64,10 +64,10 @@ export const Section = ({
         >
           <div className="min-w-0">
             {title && (
-              <h2 className={sectionTitleClassName}>
-                {title}
+              <div className="flex items-center gap-1">
+                <h2 className={sectionTitleClassName}>{title}</h2>
                 {hint && <InfoHint label={hint} />}
-              </h2>
+              </div>
             )}
             {description && (
               <p className={sectionDescriptionClassName}>{description}</p>

@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import type { TokenPoolSource } from "@/domains/group-policy/lib/subject-policy";
 import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export type GroupRenderer = (
   name: string,
   displayName?: string | null,
 ) => ReactNode;
-export const plainLabel: GroupRenderer = (name, displayName) =>
-  displayName?.trim() || name;
+export const plainLabel: GroupRenderer = (name, display_name) =>
+  displayName({ name, display_name });
 
 /**
  * Where a policy or pool comes from: a Team or department, or the subject's

@@ -27,7 +27,6 @@ import {
 import { buildMemberTree } from "@/domains/organization/lib/member-tree";
 import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
 import { EmptyState } from "@/foundation/components/EmptyState";
-import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { getErrorMessage } from "@/foundation/lib/error-message";
@@ -119,17 +118,12 @@ export function AddTeamMembersDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        aria-describedby={undefined}
-        onOpenAutoFocus={skipInfoHintOnOpen}
-      >
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-1">
+          <DialogTitle
+            hint={t("organization.teams.addMembersHint", { team: teamName })}
+          >
             {t("organization.teams.addMembersTitle")}
-            <InfoHint
-              label={t("organization.teams.addMembersHint", { team: teamName })}
-            />
           </DialogTitle>
         </DialogHeader>
         <SegmentedControl<ViewMode>
