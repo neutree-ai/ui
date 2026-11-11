@@ -6,8 +6,11 @@ import {
   TeamUsage,
 } from "@/domains/api-key/components/TeamUsage";
 import { TeamTokenPool } from "@/domains/group-policy/components/TeamTokenPool";
+import { useSubjectQuotaColumn } from "@/domains/group-policy/hooks/use-subject-quota-column";
+import { teamScope } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
 import { TeamServiceAccounts } from "@/domains/service-account/components/TeamServiceAccounts";
+import type { ServiceAccount } from "@/domains/service-account/types";
 import {
   useHasGlobalPermission,
   useHasTeamPermission,
@@ -16,6 +19,12 @@ import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type TeamTab = "members" | "applications" | "usage";
+
+const appSubject = (account: ServiceAccount) => ({
+  kind: "ServiceAccount" as const,
+  id: account.id,
+  label: displayName(account.metadata),
+});
 
 /** A Team's members, applications and usage, each tab shown to whoever may read it. */
 export function TeamDetailTabs({
@@ -39,6 +48,7 @@ export function TeamDetailTabs({
     useHasTeamPermission("team_usage:read", team.id).allowed === true;
   const canEditAppPermissions =
     useHasGlobalPermission("role_assignment:create").allowed === true;
+  const limits = useSubjectQuotaColumn(teamScope(team), appSubject);
 
   const current =
     (tab === "applications" && !canRead) || (tab === "usage" && !canReadUsage)
@@ -88,6 +98,7 @@ export function TeamDetailTabs({
                 canDelete={canDelete}
               />
             )}
+            extraColumn={limits}
             // Usage by application needs team_usage:read on the Team.
             renderUsage={(account) =>
               canReadUsage ? (

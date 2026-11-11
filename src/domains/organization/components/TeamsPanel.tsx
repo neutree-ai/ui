@@ -1,7 +1,13 @@
-import { Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -10,7 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddTeamMembersDialog } from "@/domains/organization/components/AddTeamMembersDialog";
-import { MemberTable } from "@/domains/organization/components/MemberTable";
+import {
+  type MemberRow,
+  MemberTable,
+} from "@/domains/organization/components/MemberTable";
 import { OrganizationToolbar } from "@/domains/organization/components/OrganizationToolbar";
 import { ProjectBadge } from "@/domains/organization/components/ProjectBadge";
 import { TeamFormDialog } from "@/domains/organization/components/TeamFormDialog";
@@ -30,6 +39,7 @@ import {
   isProjectTeam,
   matchesTeamKind,
   type TeamKindFilter,
+  teamScope,
   teamSource,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
@@ -50,13 +60,17 @@ import { displayName } from "@/foundation/lib/display-name";
 import { isDuplicateNameError } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 type OpenDialog =
-  | { kind: "create" }
+  | { kind: "create"; project: boolean }
   | { kind: "edit" }
   | { kind: "add-members" }
   | { kind: "delete" }
   | { kind: "remove-member"; userId: string };
+
+const noMemberColumn = () => undefined;
 
 /**
  * Teams synced from identity sources (read-only) and Teams created in
@@ -67,6 +81,7 @@ export function TeamsPanel({
   renderRoleAssignments,
   renderTeamDetail,
   useDeleteCheck,
+  useMemberColumn = noMemberColumn,
 }: {
   /** Lists the selected Team's role assignments. */
   renderRoleAssignments: (teamName: string, label: string) => ReactNode;
@@ -83,6 +98,10 @@ export function TeamsPanel({
     teamName: string,
     enabled: boolean,
   ) => TeamDeleteCheck | undefined;
+  /** An extra member column for the selected Team; a hook, as it belongs to other domains. */
+  useMemberColumn?: (
+    team: LabeledScope | undefined,
+  ) => ExtraColumn<MemberRow> | undefined;
 }) {
   const { t } = useTranslation();
   const errorText = (error: unknown, creating = false) => {
@@ -137,6 +156,7 @@ export function TeamsPanel({
   const canAssign =
     useHasTeamPermission("team:assign-member", selectedId).allowed === true;
   const members = useTeamMembers(selected?.id);
+  const memberColumn = useMemberColumn(selected && teamScope(selected));
   const deleteCheck = useDeleteCheck(
     selected?.metadata.name ?? "",
     !!selected && dialog?.kind === "delete",
@@ -305,6 +325,7 @@ export function TeamsPanel({
             isLoading={members.isLoading}
             error={errorText(members.error)}
             sinceLabel={t("organization.fields.joinedAt")}
+            extraColumn={memberColumn}
             renderActions={
               manual && canAssign
                 ? (row) => (
@@ -412,14 +433,29 @@ export function TeamsPanel({
           title={t("organization.teams.title")}
           actions={
             canCreate && (
-              <Button
-                size="sm"
-                onClick={() => open({ kind: "create" })}
-                data-testid="team-create"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                {t("organization.teams.create")}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" data-testid="team-create">
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("buttons.create")}
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => open({ kind: "create", project: false })}
+                    data-testid="team-create-team"
+                  >
+                    {t("organization.teams.create")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => open({ kind: "create", project: true })}
+                    data-testid="team-create-scenario"
+                  >
+                    {t("organization.teams.createScenario")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )
           }
           contentClassName="max-h-[calc(100vh-300px)] min-h-40 overflow-auto px-3 pb-4 pt-3"
@@ -479,6 +515,7 @@ export function TeamsPanel({
       {dialog?.kind === "create" && (
         <TeamFormDialog
           onOpenChange={(next) => !next && close()}
+          initialProject={dialog.project}
           saving={teamWrites.isPending}
           error={dialogError}
           onSave={(values) =>

@@ -1,14 +1,16 @@
-import { useShow } from "@refinedev/core";
+import { useList, useShow } from "@refinedev/core";
 import { useTranslation } from "react-i18next";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
+import { userModelAccessHref } from "@/domains/group-policy/components/UserGroupModelAccess";
 import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/components/ShowPage";
+import type { Metadata } from "@/foundation/types/basic-types";
 
 export const ApiKeysShow = () => {
   const { t } = useTranslation();
@@ -26,6 +28,13 @@ export const ApiKeysShow = () => {
       ? (record?.metadata.workspace ?? undefined)
       : undefined,
   );
+  // Readable only to whoever may read the owner: no profile, no link.
+  const { data: owners } = useList<{ metadata: Metadata }>({
+    resource: "user_profiles",
+    filters: [{ field: "id", operator: "eq", value: record?.user_id }],
+    queryOptions: { enabled: !!record?.user_id },
+  });
+  const ownerProfile = owners?.data?.[0]?.metadata?.name;
   const project = projects.find(
     (candidate) => candidate.id === record?.spec.project_id,
   );
@@ -81,12 +90,21 @@ export const ApiKeysShow = () => {
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace ?? ""}
             />
-            {record.user_id && record.metadata.workspace && (
-              <ApiKeyGroupPolicyHint
-                userId={record.user_id}
-                workspace={record.metadata.workspace}
-              />
-            )}
+            {(record.user_id || serviceAccountId) &&
+              record.metadata.workspace && (
+                <ApiKeyGroupPolicyHint
+                  ownerId={record.user_id ?? serviceAccountId ?? ""}
+                  workspace={record.metadata.workspace}
+                  profileHref={
+                    ownerProfile
+                      ? userModelAccessHref(
+                          ownerProfile,
+                          record.metadata.workspace,
+                        )
+                      : undefined
+                  }
+                />
+              )}
             <ApiKeyLimitsCard
               apiKeyId={String(record.id)}
               workspace={record.metadata.workspace ?? ""}

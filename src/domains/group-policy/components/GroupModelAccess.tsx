@@ -6,18 +6,16 @@ import { Button } from "@/components/ui/button";
 import { GroupPolicyDialog } from "@/domains/group-policy/components/GroupPolicyDialog";
 import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList";
 import {
-  GroupPolicyGoneError,
   useGroupPolicy,
   useGroupPolicyWrites,
   useGroupTokenPool,
 } from "@/domains/group-policy/hooks/use-group-policies";
-import { GROUP_POLICY_ERROR_KEYS } from "@/domains/group-policy/lib/group-policy-errors";
+import { groupPolicyErrorText } from "@/domains/group-policy/lib/group-policy-errors";
 import {
   buildGroupPolicySpec,
   hasRules,
 } from "@/domains/group-policy/lib/model-entries";
 import type {
-  GroupPolicySubjectKind,
   GroupTokenPool,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
@@ -25,9 +23,9 @@ import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
-import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
+import type { GroupKind } from "@/foundation/types/group-scope";
 
 /** Limit, period and, when read, the usage of the current period. */
 export function TokenPoolSummary({
@@ -35,7 +33,7 @@ export function TokenPoolSummary({
   pool,
 }: {
   quota: GroupTokenQuota;
-  pool?: Pick<GroupTokenPool, "used" | "remaining" | "resets_at">;
+  pool?: Pick<GroupTokenPool, "used" | "remaining" | "resets_at"> | null;
 }) {
   const { t } = useTranslation();
   const period = t(`api_keys.limits.periods.${quota.period}`);
@@ -79,7 +77,7 @@ export function GroupModelAccess({
   name,
   label,
 }: {
-  kind: GroupPolicySubjectKind;
+  kind: GroupKind;
   name: string;
   /** The group's display name; defaults to the name. */
   label?: string;
@@ -103,15 +101,7 @@ export function GroupModelAccess({
 
   if (!canRead) return null;
 
-  const errorText = (err: unknown) =>
-    err instanceof GroupPolicyGoneError
-      ? t("group_policies.errors.gone")
-      : translateApiErrorOr(
-          t,
-          err,
-          GROUP_POLICY_ERROR_KEYS,
-          "common.errors.unknown",
-        );
+  const errorText = (err: unknown) => groupPolicyErrorText(t, err);
 
   const canEdit = policy ? canUpdate : canCreate;
   const allowed = policy?.spec.allowed_models ?? [];
@@ -120,7 +110,7 @@ export function GroupModelAccess({
   return (
     <ShowPage.Section
       title={t("group_policies.title")}
-      description={t(
+      hint={t(
         kind === "Team"
           ? "group_policies.groupHint.Team"
           : "group_policies.groupHint.OrgUnit",

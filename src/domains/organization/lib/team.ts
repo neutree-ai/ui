@@ -1,5 +1,7 @@
 import type { Team } from "@/domains/organization/types";
+import { displayName } from "@/foundation/lib/display-name";
 import { isValidResourceName } from "@/foundation/lib/validate";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 /** The identity source a Team was synced from; "" for a manual Team. */
 export const teamSource = (team: Pick<Team, "spec">): string =>
@@ -49,3 +51,12 @@ export function validateTeamName(name: string): TeamNameError | undefined {
   if (RESERVED_SUFFIX.test(name)) return "reserved";
   return undefined;
 }
+
+export const teamScope = (
+  team: Pick<Team, "id" | "metadata">,
+): LabeledScope => ({
+  kind: "Team",
+  name: team.metadata.name,
+  id: team.id,
+  label: displayName(team.metadata),
+});

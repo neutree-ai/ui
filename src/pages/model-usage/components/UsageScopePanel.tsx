@@ -9,6 +9,7 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import type { Team } from "@/domains/organization/types";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -85,8 +86,9 @@ export const UsageScopePanel = ({
   return (
     <aside>
       <Card className="p-3">
-        <div className="mb-2 px-1 text-sm font-medium">
+        <div className="mb-2 flex items-center gap-1 px-1 text-sm font-medium">
           {t("model_usage.scope.title")}
+          <InfoHint label={t("model_usage.scope.hint")} />
         </div>
         <div className="mb-0.5">
           {canReadPlatform ? (
@@ -160,9 +162,6 @@ export const UsageScopePanel = ({
             </ul>
           </section>
         ) : null}
-        <p className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] px-1 pt-3 text-xs text-muted-foreground">
-          {t("model_usage.scope.hint")}
-        </p>
       </Card>
     </aside>
   );

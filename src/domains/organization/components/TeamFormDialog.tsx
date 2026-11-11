@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -32,6 +31,8 @@ type TeamFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   /** The Team to edit; a new Team when absent. */
   team?: Team;
+  /** Whether a new Team starts marked as a scenario. */
+  initialProject?: boolean;
   saving?: boolean;
   error?: string;
   onSave: (values: TeamFormValues) => void;
@@ -44,6 +45,7 @@ type TeamFormDialogProps = {
 export function TeamFormDialog({
   onOpenChange,
   team,
+  initialProject = false,
   saving,
   error,
   onSave,
@@ -53,7 +55,12 @@ export function TeamFormDialog({
   const [displayName, setDisplayName] = useState(
     team?.metadata.display_name ?? "",
   );
-  const [project, setProject] = useState(!!team && isProjectTeam(team));
+  const [project, setProject] = useState(
+    team ? isProjectTeam(team) : initialProject,
+  );
+  // Blur marks the name touched only once edited: opening the dialog may move
+  // focus through the field before the user types.
+  const [dirty, setDirty] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const nameError = team ? undefined : validateTeamName(name.trim());
@@ -72,16 +79,19 @@ export function TeamFormDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle
+            hint={
+              team
+                ? t("organization.teams.editHint")
+                : t("organization.teams.createHint")
+            }
+          >
             {team
               ? t("organization.teams.editTitle")
-              : t("organization.teams.createTitle")}
+              : project
+                ? t("organization.teams.createScenario")
+                : t("organization.teams.createTitle")}
           </DialogTitle>
-          <DialogDescription>
-            {team
-              ? t("organization.teams.editHint")
-              : t("organization.teams.createHint")}
-          </DialogDescription>
         </DialogHeader>
         <form
           className="space-y-4"
@@ -96,8 +106,11 @@ export function TeamFormDialog({
               id="team-name"
               value={name}
               disabled={!!team}
-              onChange={(event) => setName(event.target.value)}
-              onBlur={() => setTouched(true)}
+              onChange={(event) => {
+                setName(event.target.value);
+                setDirty(true);
+              }}
+              onBlur={() => dirty && setTouched(true)}
               placeholder={t("organization.teams.namePlaceholder")}
               data-testid="team-form-name"
             />

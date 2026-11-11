@@ -1,5 +1,6 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import { Card } from "@/components/ui/card";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { cn } from "@/foundation/lib/utils";
 
 /**
@@ -27,6 +28,7 @@ const sectionContentClassName = "p-5";
 export const Section = ({
   title,
   description,
+  hint,
   actions,
   children,
   className,
@@ -35,7 +37,10 @@ export const Section = ({
   ...props
 }: PropsWithChildren<{
   title?: ReactNode;
+  /** Visible text under the title: data such as a source or a path. */
   description?: ReactNode;
+  /** An explanation of the section, behind a `?` beside the title. */
+  hint?: string;
   actions?: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -58,7 +63,12 @@ export const Section = ({
           className={cn(sectionHeaderClassName, framed ? "px-5 pt-4" : "pb-3")}
         >
           <div className="min-w-0">
-            {title && <h2 className={sectionTitleClassName}>{title}</h2>}
+            {title && (
+              <div className="flex items-center gap-1">
+                <h2 className={sectionTitleClassName}>{title}</h2>
+                {hint && <InfoHint label={hint} />}
+              </div>
+            )}
             {description && (
               <p className={sectionDescriptionClassName}>{description}</p>
             )}

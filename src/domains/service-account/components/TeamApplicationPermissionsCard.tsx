@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -46,7 +45,7 @@ export function TeamApplicationPermissionsCard({
   return (
     <ShowPage.Section
       title={t("service_accounts.appPermissions.title")}
-      description={t("service_accounts.appPermissions.hint")}
+      hint={t("service_accounts.appPermissions.hint")}
       data-testid="team-application-permissions"
       actions={
         canEdit && appPermissions ? (
@@ -213,12 +212,9 @@ function AppPermissionsDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle hint={t("service_accounts.appPermissions.editHint")}>
             {t("service_accounts.appPermissions.editTitle")}
           </DialogTitle>
-          <DialogDescription>
-            {t("service_accounts.appPermissions.editHint")}
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <fieldset className="space-y-2">

@@ -136,7 +136,7 @@ function UsageBreakdown({
 /** One per-group table of the team usage: by member or by application. */
 function GroupTotalsSection({
   title,
-  description,
+  hint,
   firstColumn,
   rows,
   error,
@@ -144,7 +144,7 @@ function GroupTotalsSection({
   tableTestId,
 }: {
   title: string;
-  description: string;
+  hint: string;
   firstColumn: string;
   rows: UsageTotal[];
   error: unknown;
@@ -153,11 +153,7 @@ function GroupTotalsSection({
 }) {
   const { t } = useTranslation();
   return (
-    <ShowPage.Section
-      title={title}
-      description={description}
-      data-testid={testId}
-    >
+    <ShowPage.Section title={title} hint={hint} data-testid={testId}>
       {error ? (
         <EmptyState variant="inline" className="text-destructive">
           {t("api_keys.team.usageFailed")}
@@ -228,7 +224,7 @@ export function TeamUsage({ teamName }: { teamName: string }) {
       />
       <GroupTotalsSection
         title={t("api_keys.team.byMember")}
-        description={t("api_keys.team.byMemberHint")}
+        hint={t("api_keys.team.byMemberHint")}
         firstColumn={t("api_keys.team.member")}
         rows={byMember}
         error={members.error}
@@ -237,7 +233,7 @@ export function TeamUsage({ teamName }: { teamName: string }) {
       />
       <GroupTotalsSection
         title={t("api_keys.team.byApplication")}
-        description={t("api_keys.team.byApplicationHint")}
+        hint={t("api_keys.team.byApplicationHint")}
         firstColumn={t("api_keys.team.application")}
         rows={byApp}
         error={apps.error}

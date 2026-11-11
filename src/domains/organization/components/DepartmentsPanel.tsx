@@ -31,14 +31,26 @@ import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 
 const ALL_SOURCES = "__all__";
 
-/** `renderRoleAssignments` lists the selected department's role assignments. */
+const noMemberColumn = () => undefined;
+
+/**
+ * `renderRoleAssignments` lists the selected department's role assignments;
+ * `useMemberColumn` adds a member column for it (a hook, as it belongs to
+ * other domains).
+ */
 export function DepartmentsPanel({
   renderRoleAssignments,
+  useMemberColumn = noMemberColumn,
 }: {
   renderRoleAssignments?: (orgUnitName: string, label: string) => ReactNode;
+  useMemberColumn?: (
+    department: LabeledScope | undefined,
+  ) => ExtraColumn<MemberRow> | undefined;
 } = {}) {
   const { t } = useTranslation();
   const errorText = (error: unknown) =>
@@ -137,6 +149,14 @@ export function DepartmentsPanel({
   const selected =
     selectedId === undefined ? undefined : nodesById.get(selectedId);
   const members = useOrgUnitMembers(selected?.unit.id, includeSubtree);
+  const memberColumn = useMemberColumn(
+    selected && {
+      kind: "OrgUnit",
+      id: selected.unit.id,
+      name: selected.unit.metadata.name,
+      label: selected.label,
+    },
+  );
   const memberRows = useMemo<MemberRow[]>(
     () =>
       members.members.map((m) => ({
@@ -268,6 +288,7 @@ export function DepartmentsPanel({
                 showDepartment={includeSubtree}
                 showSource
                 sinceLabel={t("organization.fields.assignedAt")}
+                extraColumn={memberColumn}
               />
             ) : (
               <EmptyState variant="inline">

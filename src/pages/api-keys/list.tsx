@@ -529,10 +529,9 @@ export const ApiKeysList = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{t("api_keys.create")}</DialogTitle>
-            <DialogDescription>
-              {t("api_keys.messages.createDescription")}
-            </DialogDescription>
+            <DialogTitle hint={t("api_keys.messages.createDescription")}>
+              {t("api_keys.create")}
+            </DialogTitle>
           </DialogHeader>
           <CreateApiKeyForm
             key={createKeySession}
@@ -677,10 +676,9 @@ export const ApiKeysList = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("api_keys.projects.edit")}</DialogTitle>
-            <DialogDescription>
-              {t("api_keys.projects.editDescription")}
-            </DialogDescription>
+            <DialogTitle hint={t("api_keys.projects.editDescription")}>
+              {t("api_keys.projects.edit")}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <label htmlFor="project-name" className="block text-sm font-medium">

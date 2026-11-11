@@ -2,9 +2,9 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
-import { ThousandsInput } from "@/domains/api-key/components/ThousandsInput";
 import type { PolicyModelRow } from "@/domains/api-key/hooks/use-api-key-policy";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
+import { ThousandsInput } from "@/foundation/components/ThousandsInput";
 import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,

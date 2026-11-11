@@ -2940,6 +2940,7 @@
 			"noMatch": "No teams match the filter.",
 			"create": "Create Team",
 			"createTitle": "Create Team",
+			"createScenario": "Create Scenario",
 			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
 			"editTitle": "Edit Team",
 			"editHint": "Change the display name of the team, or whether it is a scenario.",
@@ -3045,7 +3046,7 @@
 			"OrgUnit": "Limits the models every member of this department and its sub-departments can call. A sub-department cannot allow more than its parents."
 		},
 		"userHint": "The models this user can call in a workspace, as the policies of their teams and departments allow.",
-		"mergeRules": "Departments on the user's path intersect. Teams unite, then intersect with the departments. A denied model is always denied. An API key's own allowed models narrow this further. Policies of inactive groups still apply. Changes take effect within about 10 seconds.",
+		"mergeRules": "Departments on the user's path intersect. Teams unite, then intersect with the departments. Limits set on the user itself narrow this further. A denied model is always denied. An API key's own allowed models narrow this further. Policies of inactive groups still apply. Changes take effect within about 10 seconds.",
 		"unrestricted": "No limit",
 		"noRule": "None",
 		"allWorkspaces": "All workspaces",
@@ -3058,7 +3059,7 @@
 		"deleteTitle": "Delete model access policy?",
 		"deleteHint": "Members of {{group}} are no longer limited by this group. Other groups still apply.",
 		"viewDetails": "View details",
-		"apiKeyHint": "The models this key can call are also limited by the policies of its owner's groups.",
+		"apiKeyHint": "The models this key can call are also limited by the policies that apply to its owner.",
 		"fields": {
 			"allowed": "Allowed models",
 			"denied": "Denied models"
@@ -3089,7 +3090,9 @@
 			"invalidModels": "A model list has an invalid entry. Each entry needs a model name.",
 			"alreadyExists": "This group already has a model access policy. Refresh and edit it.",
 			"gone": "The policy no longer exists. Refresh the page.",
-			"invalidTokenPool": "The token pool needs a positive whole number of tokens and a daily, weekly, monthly or yearly period."
+			"invalidTokenPool": "The token pool needs a positive whole number of tokens and a daily, weekly, monthly or yearly period.",
+			"scopeMismatch": "This kind of limit cannot be set in this scope. A user's limit belongs to a team or a department; an application's to its team.",
+			"notInScope": "The user or application is not in this scope: the user is not a member of the team or of the department's subtree, or the application belongs to another team."
 		},
 		"pool": {
 			"title": "Token pool",
@@ -3103,6 +3106,39 @@
 			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over.",
 			"none": "This team has no token pool.",
 			"unreadable": "You cannot read this team's token pool."
+		},
+		"subject": {
+			"column": "Limits",
+			"set": "Set limits",
+			"edit": "Edit limits",
+			"clear": "Clear limits",
+			"clearTitle": "Clear limits?",
+			"clearHint": "{{subject}} is no longer limited in {{scope}}. Limits set elsewhere still apply.",
+			"dialogTitle": "Limits of {{subject}} in {{scope}}",
+			"dialogHint": "These limits add to every other policy and can only narrow it. Usage counts every API key of the user or application, in every workspace.",
+			"allowedHint": {
+				"User": "The user can call only these models. Leave empty for no limit.",
+				"ServiceAccount": "The application can call only these models. Leave empty for no limit."
+			},
+			"quota": "Token quota",
+			"quotaHint": {
+				"User": "Tokens the user may use per period, across all their API keys and workspaces. When they run out, the user's API keys are rejected until the period resets. Leave empty for no quota.",
+				"ServiceAccount": "Tokens the application may use per period, across all its API keys and workspaces. When they run out, its API keys are rejected until the period resets. Leave empty for no quota."
+			},
+			"quotaPlaceholder": "No quota",
+			"modelsAllowed": "{{count}} models allowed",
+			"modelsAllowed_one": "{{count}} model allowed",
+			"modelsAllowed_other": "{{count}} models allowed",
+			"effectiveRemaining": "{{remaining}} tokens left in effect",
+			"effectiveTitle": "Limits in effect",
+			"effectiveNone": "No other limits apply.",
+			"mergeRules": "All policies combine and can only narrow: every allow list applies, a denied model is always denied, and every pool must have tokens left. The strictest pool decides.",
+			"thisScope": "(this scope)",
+			"own": "Own limit",
+			"setIn": "Own limit, set in",
+			"setGlobally": "Own limit, set globally",
+			"notInScope": "No longer in this scope, so the limit does not apply.",
+			"denied": "You cannot change limits in this scope."
 		}
 	},
 	"oem_configs": {

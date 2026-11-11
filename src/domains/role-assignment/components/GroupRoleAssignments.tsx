@@ -37,7 +37,7 @@ export function GroupRoleAssignments({
   return (
     <ShowPage.Section
       title={t("role_assignments.group.title")}
-      description={t(
+      hint={t(
         kind === "Team"
           ? "role_assignments.group.hint.Team"
           : "role_assignments.group.hint.OrgUnit",

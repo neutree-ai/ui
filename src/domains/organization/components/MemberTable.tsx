@@ -14,6 +14,7 @@ import { Loader } from "@/foundation/components/Loader";
 import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 export type MemberRow = {
   key: string;
@@ -32,6 +33,7 @@ type MemberTableProps = {
   showDepartment?: boolean;
   showSource?: boolean;
   sinceLabel: string;
+  extraColumn?: ExtraColumn<MemberRow>;
   /** A trailing cell per row, e.g. a remove button. */
   renderActions?: (row: MemberRow) => ReactNode;
 };
@@ -50,6 +52,7 @@ export function MemberTable({
   showDepartment,
   showSource,
   sinceLabel,
+  extraColumn,
   renderActions,
 }: MemberTableProps) {
   const { t } = useTranslation();
@@ -90,6 +93,7 @@ export function MemberTable({
             <TableHead>{t("organization.fields.source")}</TableHead>
           )}
           <TableHead>{sinceLabel}</TableHead>
+          {extraColumn && <TableHead>{extraColumn.header}</TableHead>}
           {renderActions && <TableHead className="w-0" />}
         </TableRow>
       </TableHeader>
@@ -120,6 +124,7 @@ export function MemberTable({
             <TableCell>
               <Timestamp timestamp={row.since} relative />
             </TableCell>
+            {extraColumn && <TableCell>{extraColumn.render(row)}</TableCell>}
             {renderActions && (
               <TableCell className="text-right">{renderActions(row)}</TableCell>
             )}

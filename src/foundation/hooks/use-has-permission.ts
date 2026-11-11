@@ -132,3 +132,21 @@ export const useHasTeamPermission = (
   );
   return teamId === undefined ? { allowed: false, isLoading: false } : state;
 };
+
+/**
+ * Whether the signed-in user holds a permission on one OrgUnit, through a
+ * global assignment or one on the OrgUnit or an ancestor
+ * (has_permission_on_org_unit). Undefined orgUnitId skips the check and
+ * reports not allowed.
+ */
+export const useHasOrgUnitPermission = (
+  permission: string,
+  orgUnitId: number | undefined,
+): PermissionState => {
+  const state = usePermissionRpc(
+    "/rpc/has_permission_on_org_unit",
+    orgUnitId === undefined ? undefined : permission,
+    { org_unit_id: orgUnitId },
+  );
+  return orgUnitId === undefined ? { allowed: false, isLoading: false } : state;
+};

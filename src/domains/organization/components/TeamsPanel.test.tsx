@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +36,30 @@ vi.mock("@/foundation/components/ShowPage", () => ({
       </section>
     ),
   },
+}));
+
+// The menu renders flat, so a test picks an item without opening it.
+vi.mock("@/components/ui/dropdown-menu", () => ({
+  DropdownMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
+  DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
+    <>{children}</>
+  ),
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onSelect,
+    "data-testid": testId,
+  }: {
+    children: ReactNode;
+    onSelect: () => void;
+    "data-testid"?: string;
+  }) => (
+    <button type="button" onClick={onSelect} data-testid={testId}>
+      {children}
+    </button>
+  ),
 }));
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
@@ -327,7 +351,7 @@ describe("TeamsPanel", () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "corp-0123456789ab" },
     });
@@ -351,15 +375,54 @@ describe("TeamsPanel", () => {
     );
   });
 
+  it("checks the name on blur only once it was edited", () => {
+    grant("team:create");
+    render(<Panel />);
+    fireEvent.click(screen.getByTestId("team-create-team"));
+    const name = screen.getByTestId("team-form-name");
+    fireEvent.blur(name);
+    expect(
+      screen.queryByText("organization.teams.validation.nameRequired"),
+    ).toBeNull();
+    fireEvent.change(name, { target: { value: "x" } });
+    fireEvent.change(name, { target: { value: "" } });
+    fireEvent.blur(name);
+    screen.getByText("organization.teams.validation.nameRequired");
+  });
+
   it("creates a team marked as a project", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
+    screen.getByText("organization.teams.createTitle");
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "launch" },
     });
     fireEvent.click(screen.getByTestId("team-form-project"));
+    screen.getByRole("heading", { name: "organization.teams.createScenario" });
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(writes.create).toHaveBeenCalledWith({
+        name: "launch",
+        displayName: "",
+        project: true,
+      }),
+    );
+  });
+
+  it("creates a scenario with the mark preset, which can be turned off", async () => {
+    grant("team:create");
+    writes.create.mockResolvedValue({ ...manual, id: 9 });
+    render(<Panel />);
+    fireEvent.click(screen.getByTestId("team-create-scenario"));
+    screen.getByRole("heading", { name: "organization.teams.createScenario" });
+    expect(
+      screen.getByTestId("team-form-project").getAttribute("aria-checked"),
+    ).toBe("true");
+    fireEvent.change(screen.getByTestId("team-form-name"), {
+      target: { value: "launch" },
+    });
     fireEvent.click(screen.getByTestId("team-form-save"));
     await waitFor(() =>
       expect(writes.create).toHaveBeenCalledWith({
@@ -420,7 +483,7 @@ describe("TeamsPanel", () => {
       message: "duplicate key",
     });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "guild" },
     });

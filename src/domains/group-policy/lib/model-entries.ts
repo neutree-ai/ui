@@ -1,9 +1,9 @@
 import type {
   GroupPolicyModel,
   GroupPolicySpec,
-  GroupPolicySubjectKind,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
+import type { GroupKind } from "@/foundation/types/group-scope";
 
 export const entryKey = (entry: GroupPolicyModel) =>
   `${entry.workspace ?? ""}/${entry.model}`;
@@ -37,7 +37,7 @@ export const removeEntry = (
 
 /** Every field always goes out: a PATCH clears the one it leaves out. */
 export const buildGroupPolicySpec = (
-  kind: GroupPolicySubjectKind,
+  kind: GroupKind,
   name: string,
   allowed: GroupPolicyModel[],
   denied: GroupPolicyModel[],
