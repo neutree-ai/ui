@@ -1,5 +1,9 @@
 import type { DateRange } from "@/foundation/components/DateRangePicker";
-import type { UsageScope } from "@/pages/model-usage/lib/usage-scope";
+import {
+  isOwnerScope,
+  type OwnerScope,
+  type UsageScope,
+} from "@/pages/model-usage/lib/usage-scope";
 
 /**
  * The model usage page's view as URL query parameters, so a reload, the
@@ -25,10 +29,11 @@ export type UsageView = {
 const SCOPE = "scope";
 const UNIT = "department";
 const TEAM = "team";
-const USER = "user";
-const USER_NAME = "userName";
-const APP = "application";
-const APP_NAME = "applicationName";
+// The id and display-name parameters of a user and of an application.
+const OWNER_PARAMS = {
+  user: { id: "user", name: "userName" },
+  application: { id: "application", name: "applicationName" },
+} as const satisfies Record<OwnerScope["type"], { id: string; name: string }>;
 const TAB = "tab";
 const FROM = "from";
 const TO = "to";
@@ -45,23 +50,12 @@ const readScope = (params: URLSearchParams): UsageScope | null | undefined => {
     : team
       ? ({ type: "team", name: team, label: team } as const)
       : null;
-  const user = params.get(USER);
-  if (user) {
-    return {
-      type: "user",
-      id: user,
-      label: params.get(USER_NAME) || user,
-      from: group,
-    };
-  }
-  const app = params.get(APP);
-  if (app) {
-    return {
-      type: "application",
-      id: app,
-      label: params.get(APP_NAME) || app,
-      from: group,
-    };
+  for (const type of ["user", "application"] as const) {
+    const id = params.get(OWNER_PARAMS[type].id);
+    if (id) {
+      const label = params.get(OWNER_PARAMS[type].name) || id;
+      return { type, id, label, from: group };
+    }
   }
   if (group) return group;
   switch (params.get(SCOPE)) {
@@ -102,25 +96,18 @@ export const writeUsageView = (
     else next.delete(key);
   };
   if ("scope" in change) {
-    for (const key of [SCOPE, UNIT, TEAM, USER, USER_NAME, APP, APP_NAME]) {
-      next.delete(key);
-    }
+    const owners = Object.values(OWNER_PARAMS).flatMap((p) => [p.id, p.name]);
+    for (const key of [SCOPE, UNIT, TEAM, ...owners]) next.delete(key);
     const scope = change.scope;
-    const group =
-      scope?.type === "user" || scope?.type === "application"
-        ? scope.from
-        : scope;
+    const group = isOwnerScope(scope) ? scope.from : scope;
     if (group?.type === "orgUnit") next.set(UNIT, group.name);
     else if (group?.type === "team") next.set(TEAM, group.name);
     if (scope === null) next.set(SCOPE, "keys");
     else if (scope?.type === "platform" || scope?.type === "applications") {
       next.set(SCOPE, scope.type);
-    } else if (scope?.type === "user") {
-      next.set(USER, scope.id);
-      next.set(USER_NAME, scope.label);
-    } else if (scope?.type === "application") {
-      next.set(APP, scope.id);
-      next.set(APP_NAME, scope.label);
+    } else if (isOwnerScope(scope)) {
+      next.set(OWNER_PARAMS[scope.type].id, scope.id);
+      next.set(OWNER_PARAMS[scope.type].name, scope.label);
     }
   }
   if ("tab" in change) setOrDelete(TAB, change.tab);

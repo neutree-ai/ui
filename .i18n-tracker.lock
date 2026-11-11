@@ -281,7 +281,7 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "3492d93c7442ce8aa362363f129bf06d",
-  "src/pages/model-usage/list.tsx": "5366df1486134ff99d3ca12002aa3514",
+  "src/pages/model-usage/list.tsx": "733443c609dbd7419c9e80ed35c9655d",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "8382415b07ff22c5e0fd372976849e38",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "caf2d9d9863cb3c64eaacd6a62c05be3",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
@@ -604,7 +604,7 @@
   "src/domains/service-account/lib/application-permissions.ts": "3cea45f3f4cd1d5e12a472f95c902bbb",
   "src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": "d8bf2efc6a5db57d5ed677f5c878b740",
   "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54",
-  "src/pages/model-usage/lib/usage-scope.ts": "aa81dec60e9d30b413fa348b5f8fa772",
+  "src/pages/model-usage/lib/usage-scope.ts": "31b1e0e47fdf189d5295807f7194f31b",
   "src/pages/model-usage/components/UsageOverview.tsx": "c7f178bfaadbe95a1cbcefed42140055",
   "src/pages/model-usage/components/UsageScopePanel.tsx": "4f7078ced014d888f035120bdd033d07",
   "src/pages/model-usage/components/UsageTables.tsx": "9608f699928849e488a6ef1457f5592d",
@@ -622,5 +622,5 @@
   "src/foundation/types/extra-column.ts": "30806ab467f71aac6ca9891fcce3a024",
   "src/foundation/types/group-scope.ts": "fa1d922fe2141405fa24a5a02dd2b2f8",
   "src/foundation/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
-  "src/pages/model-usage/lib/usage-view.ts": "f148429496f8854557c53fa80d7d891f"
+  "src/pages/model-usage/lib/usage-view.ts": "c1ebf5c1924a478b13cffba20c10f31e"
 }

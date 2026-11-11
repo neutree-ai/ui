@@ -46,6 +46,7 @@ import {
   type BreakdownLabels,
   breakdownLabelKeys,
   groupOf,
+  isOwnerScope,
   scopeTrail,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
@@ -191,7 +192,7 @@ export const ModelUsageList = () => {
       const team = s?.type === "team" ? teamsByName.get(s.name) : undefined;
       return team ? { ...s, label: displayName(team.metadata) } : s;
     };
-    return picked.type === "user" || picked.type === "application"
+    return isOwnerScope(picked)
       ? { ...picked, from: labeled(picked.from) }
       : labeled(picked);
   }, [picked, canReadAllGroups, canReadGroups, teamsByName]);
@@ -208,9 +209,7 @@ export const ModelUsageList = () => {
   // reader. The models are the card beside the chart.
   const tabs = useMemo<UsageTab[]>(() => {
     if (!scope) return ["apiKey", "detail"];
-    if (scope.type === "user" || scope.type === "application") {
-      return ["apiKey", "detail"];
-    }
+    if (isOwnerScope(scope)) return ["apiKey", "detail"];
     if (scope.type === "applications") return ["breakdown", "detail"];
     if (scope.type === "team") return ["breakdown", "apiKey", "detail"];
     return [
