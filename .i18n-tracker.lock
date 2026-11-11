@@ -521,7 +521,7 @@
   "src/domains/endpoint/components/EndpointDeploymentWizard.tsx": "41c20ea85a7594fc47c43989f19ffeaa",
   "src/domains/endpoint/components/EndpointResolvedModelEditor.tsx": "a39c3834d24b55c2ba895e43aef0d4b8",
   "src/domains/endpoint/components/ModelOptionalFields.tsx": "5970abd037ebc1409219878a9231bc05",
-  "src/domains/endpoint/lib/endpoint-wizard.ts": "612b5f2b9ef3d55f28d9b506c81bfdc4",
+  "src/domains/endpoint/lib/endpoint-wizard.ts": "74897fa15ddc18de7d02e7922660ab13",
   "src/domains/endpoint/lib/estimate-weights.ts": "458ce82311f63ead02085dbb6321657b",
   "src/domains/endpoint/lib/review-context.ts": "b19a894ad8db26e853f2204d74d714a2",
   "src/foundation/lib/form-errors.ts": "191739f1dd15aefc1059ff47fc7e6c48",
@@ -613,6 +613,6 @@
   "src/pages/model-usage/lib/use-scope-usage.ts": "30f39026a9644fd84c96df424a9fb333",
   "src/pages/model-usage/components/ScopeBreadcrumb.tsx": "c56e180cd1b22787abb4ed113e55dc66",
   "src/foundation/lib/endpoint-availability.ts": "89a4a6fc251f6eb84aa68281b1d8cd79",
-  "src/domains/endpoint/lib/endpoint-cache-errors.ts": "56b47106883abfb1abc7d167ffc1886e",
-  "src/domains/cluster/lib/zcache-errors.ts": "acfb288c2ce1734418fa973ea74884f2"
+  "src/domains/endpoint/lib/endpoint-cache-errors.ts": "acb326460173cf64f9ccd85edad5246d",
+  "src/domains/cluster/lib/zcache-errors.ts": "e8278743f3017abd5bab34eb24c94bbb"
 }

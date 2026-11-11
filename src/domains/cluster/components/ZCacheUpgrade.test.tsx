@@ -189,7 +189,7 @@ it("links each failed instance with its failure", () => {
 
 it("renders localized upgrade error messages for coded and permission failures", async () => {
   mutate.mockRejectedValueOnce({
-    code: "21123",
+    code: "CACHE_UPGRADE_IN_PROGRESS",
     message: "cache upgrade is already in progress",
   });
   render(<ZCacheUpgrade cluster={makeCluster()} />);

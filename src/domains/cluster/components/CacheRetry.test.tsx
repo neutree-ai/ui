@@ -49,7 +49,7 @@ it("keeps a failed retry visible", async () => {
 });
 it("translates coded cluster cache admission errors on retry", async () => {
   mocks.update.mockRejectedValue({
-    code: "21117",
+    code: "CLUSTER_CACHE_IN_USE",
     message: "inference instances still use cache",
   });
   render(<CacheRetry cluster={cluster} />);

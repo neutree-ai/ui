@@ -6,13 +6,34 @@ const t = (key: string, options?: Record<string, unknown>) =>
 
 describe("endpointCacheErrorMessage", () => {
   it.each([
-    ["21101", "endpoints.kvCacheSettings.errors.engineIncompatible"],
-    ["21102", "endpoints.kvCacheSettings.errors.nodePoolNotReady"],
-    ["21103", "endpoints.kvCacheSettings.errors.clusterDisabled"],
-    ["21104", "endpoints.kvCacheSettings.errors.requiresVllm"],
-    ["21105", "endpoints.kvCacheSettings.errors.requiresTextGeneration"],
-    ["21106", "endpoints.kvCacheSettings.errors.invalidOptions"],
-    ["21107", "endpoints.kvCacheSettings.errors.invalidTimeout"],
+    [
+      "ENDPOINT_CACHE_ENGINE_INCOMPATIBLE",
+      "endpoints.kvCacheSettings.errors.engineIncompatible",
+    ],
+    [
+      "ENDPOINT_CACHE_NODE_POOL_NOT_READY",
+      "endpoints.kvCacheSettings.errors.nodePoolNotReady",
+    ],
+    [
+      "ENDPOINT_CACHE_CLUSTER_DISABLED",
+      "endpoints.kvCacheSettings.errors.clusterDisabled",
+    ],
+    [
+      "ENDPOINT_CACHE_REQUIRES_VLLM",
+      "endpoints.kvCacheSettings.errors.requiresVllm",
+    ],
+    [
+      "ENDPOINT_CACHE_REQUIRES_TEXT_GENERATION",
+      "endpoints.kvCacheSettings.errors.requiresTextGeneration",
+    ],
+    [
+      "ENDPOINT_CACHE_INVALID_OPTIONS",
+      "endpoints.kvCacheSettings.errors.invalidOptions",
+    ],
+    [
+      "ENDPOINT_CACHE_INVALID_TIMEOUT",
+      "endpoints.kvCacheSettings.errors.invalidTimeout",
+    ],
   ])("maps code %s to %s", (code, expected) => {
     expect(
       endpointCacheErrorMessage(t, { code, message: "raw server message" }),
@@ -22,7 +43,7 @@ describe("endpointCacheErrorMessage", () => {
   it("passes the server hint for custom override errors", () => {
     expect(
       endpointCacheErrorMessage(t, {
-        code: "21108",
+        code: "ENDPOINT_CACHE_CUSTOM_OVERRIDE",
         hint: "LMCACHE_CHUNK_SIZE",
         message: "remove custom LMCACHE_CHUNK_SIZE",
       }),

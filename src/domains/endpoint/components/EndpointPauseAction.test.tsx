@@ -46,7 +46,7 @@ beforeEach(() => {
 
 it("shows a localized cache error when resuming fails with a cache admission code", async () => {
   mocks.mutateAsync.mockRejectedValue({
-    code: "21102",
+    code: "ENDPOINT_CACHE_NODE_POOL_NOT_READY",
     message:
       "wait for the cluster cache node pool to finish applying before enabling inference cache",
   });

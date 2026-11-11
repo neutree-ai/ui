@@ -336,7 +336,7 @@ describe("endpoint wizard error mapping", () => {
     expect(
       endpointServerIssue(
         {
-          code: "21102",
+          code: "ENDPOINT_CACHE_NODE_POOL_NOT_READY",
           message:
             "wait for the cluster cache node pool to finish applying before enabling inference cache",
         },
@@ -351,7 +351,7 @@ describe("endpoint wizard error mapping", () => {
     expect(
       endpointServerIssue(
         {
-          code: "21108",
+          code: "ENDPOINT_CACHE_CUSTOM_OVERRIDE",
           hint: "LMCACHE_CHUNK_SIZE",
           message: "remove custom LMCACHE_CHUNK_SIZE",
         },
