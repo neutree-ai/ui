@@ -46,6 +46,7 @@ import {
   type BreakdownLabels,
   breakdownLabelKeys,
   groupOf,
+  isOwnerScope,
   scopeTrail,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
@@ -181,7 +182,9 @@ export const ModelUsageList = () => {
   const scope = useMemo<UsageScope | null>(() => {
     if (!picked) return null;
     const allowed =
-      picked.type === "platform" || picked.type === "applications"
+      picked.type === "platform" ||
+      picked.type === "applications" ||
+      (picked.type === "application" && !picked.from)
         ? canReadAllGroups
         : canReadGroups || groupOf(picked)?.type === "team";
     if (!allowed) return null;
@@ -189,7 +192,7 @@ export const ModelUsageList = () => {
       const team = s?.type === "team" ? teamsByName.get(s.name) : undefined;
       return team ? { ...s, label: displayName(team.metadata) } : s;
     };
-    return picked.type === "user"
+    return isOwnerScope(picked)
       ? { ...picked, from: labeled(picked.from) }
       : labeled(picked);
   }, [picked, canReadAllGroups, canReadGroups, teamsByName]);
@@ -201,11 +204,12 @@ export const ModelUsageList = () => {
     [updateView],
   );
 
-  // The tabs this scope has. Every group scope counts API keys; Teams need a
-  // global reader. The models are the card beside the chart.
+  // The tabs this scope has. Every group scope counts API keys, and so does a
+  // user or an application, by the keys they own; Teams need a global
+  // reader. The models are the card beside the chart.
   const tabs = useMemo<UsageTab[]>(() => {
     if (!scope) return ["apiKey", "detail"];
-    if (scope.type === "user") return ["detail"];
+    if (isOwnerScope(scope)) return ["apiKey", "detail"];
     if (scope.type === "applications") return ["breakdown", "detail"];
     if (scope.type === "team") return ["breakdown", "apiKey", "detail"];
     return [
@@ -328,12 +332,9 @@ export const ModelUsageList = () => {
   const labelKeys = breakdownLabelKeys(scope);
 
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
-  // A group's usage by API key starts when it was first recorded per key, so
-  // older usage of the group is in its total but in no key's row.
-  const keyCoverageShort =
-    (scope?.type === "orgUnit" || scope?.type === "team") &&
-    !loading &&
-    keyTotal < totals.total;
+  // Usage recorded before per-key attribution, or by keys deleted since, is in
+  // the total but in no key's row.
+  const keyCoverageShort = !!scope && !loading && keyTotal < totals.total;
 
   const detailRows = useMemo(
     () =>
