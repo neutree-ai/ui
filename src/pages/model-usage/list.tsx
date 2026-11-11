@@ -99,7 +99,7 @@ const useUsageView = () => {
 };
 
 export const ModelUsageList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
@@ -301,9 +301,9 @@ export const ModelUsageList = () => {
     return preset
       ? t("model_usage.daily.backToPreset", { days: preset })
       : t("model_usage.daily.backToRange", {
-          range: formatRangeLabel(target),
+          range: formatRangeLabel(target, i18n?.language),
         });
-  }, [lastRange, t]);
+  }, [lastRange, t, i18n?.language]);
 
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
