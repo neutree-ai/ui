@@ -5,20 +5,45 @@ import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import type { UsageTotals } from "@/pages/model-usage/lib/usage-scope";
 import {
+  changeOf,
   formatShare,
   shareOf,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
-/** The scope's totals: all, prompt and completion tokens, and requests. */
-export const UsageSummary = ({ totals }: { totals: UsageTotals }) => {
+/** Who made the scope's usage, for a scope counted by user. */
+type UsageActivity = { users: number; applications: number };
+
+/**
+ * The scope's totals: all, prompt and completion tokens, and requests. The
+ * total compares with the previous period of the same length; null while it
+ * is unknown.
+ */
+export const UsageSummary = ({
+  totals,
+  previousTotal,
+  activity,
+}: {
+  totals: UsageTotals;
+  previousTotal: number | null;
+  activity: UsageActivity | null;
+}) => {
   const { t } = useTranslation();
+  const changeFoot = () => {
+    if (previousTotal === null) return null;
+    const change = changeOf(totals.total, previousTotal);
+    if (change === null) return t("model_usage.summary.noPrevious");
+    const arrow = change >= 0 ? "↑" : "↓";
+    return t("model_usage.summary.change", {
+      change: `${arrow} ${Math.abs(change).toFixed(1)}%`,
+    });
+  };
   const cards = [
     {
       key: "total",
       label: t("model_usage.summary.total"),
       value: formatTokens(totals.total),
-      foot: null,
+      foot: changeFoot(),
     },
     {
       key: "prompt",
@@ -43,7 +68,12 @@ export const UsageSummary = ({ totals }: { totals: UsageTotals }) => {
             key: "requests",
             label: t("model_usage.summary.requests"),
             value: totals.requests.toLocaleString(),
-            foot: null,
+            foot: activity
+              ? t("model_usage.summary.activity", {
+                  users: activity.users,
+                  applications: activity.applications,
+                })
+              : null,
           },
         ]),
   ];
@@ -89,6 +119,8 @@ export const ModelShare = ({
   onSelect: (model: string) => void;
 }) => {
   const { t } = useTranslation();
+  // Usage by API key carries no request count.
+  const showRequests = models.some((m) => m.requests !== undefined);
   return (
     <Card className="flex flex-col p-4">
       <div className="mb-1 text-sm font-medium">
@@ -130,6 +162,16 @@ export const ModelShare = ({
                     shape="rounded"
                     value={shareOf(model.total, total)}
                   />
+                  <div className="mt-1 font-mono text-xs text-muted-foreground">
+                    {showRequests
+                      ? t("model_usage.modelShare.tokensAndRequests", {
+                          tokens: formatTokens(model.total),
+                          requests: (model.requests ?? 0).toLocaleString(),
+                        })
+                      : t("model_usage.modelShare.tokens", {
+                          tokens: formatTokens(model.total),
+                        })}
+                  </div>
                 </button>
               </li>
             );

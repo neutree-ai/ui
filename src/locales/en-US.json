@@ -3454,6 +3454,7 @@
 			"otherKeys": "Other {{n}} API keys",
 			"otherGroups": "Other {{n}}",
 			"titleByGroup": "Daily tokens by {{kind}}",
+			"titleRequestsByGroup": "Daily requests by {{kind}}",
 			"titleDayByGroup": "Tokens by {{kind}} · single day",
 			"otherAxisLabel": "Other {{n}} (total)",
 			"clickHint": "Click a day to scope the page to that day",
@@ -3469,13 +3470,17 @@
 		},
 		"chart": {
 			"line": "Line chart",
-			"bar": "Bar chart"
+			"bar": "Bar chart",
+			"tokens": "Tokens",
+			"requests": "Requests",
+			"metric": "Chart metric"
 		},
 		"group": {
 			"kinds": {
 				"User": "User",
 				"Team": "Team",
-				"OrgUnit": "Department"
+				"OrgUnit": "Department",
+				"ServiceAccount": "Application"
 			},
 			"requests": "Requests"
 		},
@@ -3484,42 +3489,53 @@
 			"title": "Scope",
 			"platform": "Entire platform",
 			"unassigned": "No department",
-			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments.",
+			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments. Applications count toward their Team and belong to no department.",
 			"teams": "Teams",
-			"visible": "All usage you can see"
+			"visible": "All usage you can see",
+			"applications": "Applications",
+			"scenarios": "Scenarios"
 		},
 		"summary": {
 			"total": "Total tokens",
 			"prompt": "Prompt tokens",
 			"completion": "Completion tokens",
 			"requests": "Requests",
-			"share": "{{share}} of total"
+			"share": "{{share}} of total",
+			"change": "{{change}} vs. previous period",
+			"noPrevious": "No usage in the previous period",
+			"activity": "{{users}} active users · {{applications}} applications"
 		},
 		"modelShare": {
 			"title": "Usage by model",
 			"active": "{{n}} models in use",
-			"filter": "Show only this model; select again to show all"
+			"filter": "Show only this model; select again to show all",
+			"tokens": "{{tokens}} tokens",
+			"tokensAndRequests": "{{tokens}} tokens · {{requests}} requests"
 		},
 		"series": {
 			"department": "department",
 			"subUnit": "sub-department or user",
 			"model": "model",
 			"apiKey": "API key",
-			"member": "member"
+			"application": "application",
+			"memberOrApplication": "member or application"
 		},
 		"columns": {
-			"subUnitOrUser": "Sub-department or user"
+			"subUnitOrUser": "Sub-department or user",
+			"memberOrApplication": "Member or application",
+			"userOrApplication": "User or application"
 		},
 		"tabs": {
 			"departments": "By department",
 			"subUnits": "By sub-department and user",
 			"teams": "By Team",
 			"apiKeys": "By API key",
-			"models": "By model",
 			"detail": "Daily detail",
-			"teamHint": "A user may be in several Teams, so the Teams' totals can add up to more than the scope's total. Usage counts toward the Teams the user was in at the time.",
-			"members": "By member"
-		}
+			"teamHint": "A user may be in several Teams, so the Teams' totals can add up to more than the scope's total. Usage counts toward the Teams the user was in at the time; a Team's total includes its applications.",
+			"applications": "By application",
+			"membersAndApplications": "By member and application"
+		},
+		"openTeam": "Open in Model Usage"
 	},
 	"observations": {
 		"actualMemory": "Actual VRAM",

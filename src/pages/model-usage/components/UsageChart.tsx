@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import {
   CHART_CATEGORY_TOKENS,
   CHART_SERIES_SEPARATOR,
@@ -29,6 +30,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import {
   OTHER_SERIES_KEY,
+  type TrendMetric,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 
@@ -93,6 +95,14 @@ function seriesMark(series: UsageSeries[], key: string): ChartMark {
 export const shortLabel = (value: string, max = 8) =>
   value.length > max ? `${value.slice(0, max)}…` : value;
 
+const TREND_TITLE_KEYS: Record<TrendMetric, string> = {
+  tokens: "model_usage.daily.titleByGroup",
+  requests: "model_usage.daily.titleRequestsByGroup",
+};
+
+const formatMetric = (metric: TrendMetric, value: number) =>
+  metric === "requests" ? value.toLocaleString() : formatTokens(value);
+
 // Converts a YYYY-MM-DD date into a compact M/D axis tick.
 export function formatTick(date: string): string {
   const parts = date.split("-");
@@ -131,11 +141,13 @@ export const TrendTooltip = ({
   payload,
   label,
   meta,
+  metric = "tokens",
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string;
   meta: Map<string, UsageSeries>;
+  metric?: TrendMetric;
 }) => {
   const { t } = useTranslation();
   if (!active || !payload?.length) return null;
@@ -177,14 +189,14 @@ export const TrendTooltip = ({
               ) : null}
             </span>
             <span className="ml-auto font-mono">
-              {formatTokens(p.value ?? 0)}
+              {formatMetric(metric, p.value ?? 0)}
             </span>
           </div>
         );
       })}
       <div className="mt-1 flex border-t pt-1">
         <span>{t("model_usage.daily.tooltip.total")}</span>
-        <span className="ml-auto font-mono">{formatTokens(total)}</span>
+        <span className="ml-auto font-mono">{formatMetric(metric, total)}</span>
       </div>
     </div>
   );
@@ -246,6 +258,8 @@ export const UsageChart = ({
   seriesLabel,
   chartType,
   onChartTypeChange,
+  metric,
+  onMetricChange,
   hidden,
   onToggleSeries,
   isLoading,
@@ -261,6 +275,10 @@ export const UsageChart = ({
   seriesLabel: string;
   chartType: "line" | "bar";
   onChartTypeChange: (chartType: "line" | "bar") => void;
+  /** What the trend counts. */
+  metric: TrendMetric;
+  /** Absent when the rows carry no request count (usage by API key). */
+  onMetricChange?: (metric: TrendMetric) => void;
   hidden: Set<string>;
   onToggleSeries: (key: string) => void;
   isLoading: boolean;
@@ -300,9 +318,10 @@ export const UsageChart = ({
     [series],
   );
 
-  const title = isSingleDay
-    ? t("model_usage.daily.titleDayByGroup", { kind: seriesLabel })
-    : t("model_usage.daily.titleByGroup", { kind: seriesLabel });
+  const titleKey = isSingleDay
+    ? "model_usage.daily.titleDayByGroup"
+    : TREND_TITLE_KEYS[metric];
+  const title = t(titleKey, { kind: seriesLabel });
 
   const isEmpty = isSingleDay ? dayBars.length === 0 : trendData.length === 0;
 
@@ -333,7 +352,7 @@ export const UsageChart = ({
     />,
     <YAxis
       key="y"
-      tickFormatter={(v) => formatTokens(v) ?? ""}
+      tickFormatter={(v) => formatMetric(metric, v) ?? ""}
       tickLine={false}
       axisLine={false}
       fontSize={11}
@@ -342,7 +361,7 @@ export const UsageChart = ({
     <Tooltip
       key="tip"
       cursor={trendCursor(chartType)}
-      content={<TrendTooltip meta={meta} />}
+      content={<TrendTooltip meta={meta} metric={metric} />}
     />,
     <Legend
       key="legend"
@@ -398,6 +417,19 @@ export const UsageChart = ({
         <div className="flex items-center gap-3">
           {/* The single-day chart is a distribution across API keys (or
               models), not a trend, so there is nothing to switch. */}
+          {/* The single-day chart splits tokens into prompt and completion;
+              it has no request view. */}
+          {isSingleDay || !onMetricChange ? null : (
+            <SegmentedControl
+              ariaLabel={t("model_usage.chart.metric")}
+              value={metric}
+              items={[
+                { value: "tokens", label: t("model_usage.chart.tokens") },
+                { value: "requests", label: t("model_usage.chart.requests") },
+              ]}
+              onValueChange={onMetricChange}
+            />
+          )}
           {isSingleDay ? null : (
             <div className="inline-flex rounded-md border p-0.5">
               <Button

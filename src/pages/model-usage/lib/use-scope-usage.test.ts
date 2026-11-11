@@ -8,7 +8,8 @@ import type { UsageScope } from "./usage-scope";
 
 // Each call site of useGroupUsage answers the filters that are ready; for
 // any other filters it keeps the rows of its previous answer, as the query
-// cache does while new params load.
+// cache does while new params load. A key prefixed with "<start date>|"
+// answers only the calls for the range that starts then.
 const ready = new Map<string, GroupUsageRecord[]>();
 const lastByCall = new Map<number, GroupUsageRecord[]>();
 let callIndex = 0;
@@ -16,7 +17,7 @@ let callIndex = 0;
 vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
   useGroupUsage: (
     _workspace: string,
-    _start: string,
+    start: string,
     _end: string,
     kind: GroupUsageKind,
     filters: object[],
@@ -27,7 +28,10 @@ vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
     if (!enabled || filters.length === 0) {
       return { ...base, usageData: [], isLoading: false, isPlaceholder: false };
     }
-    const keys = filters.map((f) => `${kind}:${JSON.stringify(f)}`);
+    const keys = filters.map((f) => {
+      const key = `${kind}:${JSON.stringify(f)}`;
+      return ready.has(`${start}|${key}`) ? `${start}|${key}` : key;
+    });
     if (keys.every((key) => ready.has(key))) {
       const rows = keys.flatMap((key) => ready.get(key) ?? []);
       lastByCall.set(call, rows);
@@ -115,7 +119,11 @@ const render = (scope: UsageScope) =>
         roots,
         nodesByName,
         teamsByName: new Map(),
-        unassignedLabel: "No department",
+        breakdownLabels: {
+          unassigned: "No department",
+          applications: "Applications",
+          application: "Application",
+        },
         deletedKeyLabel,
       });
     },
@@ -185,5 +193,31 @@ describe("useScopeUsage", () => {
       total: 0,
       requests: 0,
     });
+  });
+
+  it("counts a Team's applications with its members, and compares with the previous period", () => {
+    const team = { type: "team" as const, name: "alpha", label: "Alpha" };
+    ready.set('User:{"team":"alpha"}', [
+      row("User", "u1", 100),
+      row("User", "u2", 50),
+    ]);
+    ready.set('ServiceAccount:{"team":"alpha"}', [
+      row("ServiceAccount", "sa1", 50),
+    ]);
+    // The 30 days before 2026-10-01: half the usage.
+    ready.set('2026-09-01|User:{"team":"alpha"}', [row("User", "u1", 80)]);
+    ready.set('2026-09-01|ServiceAccount:{"team":"alpha"}', [
+      row("ServiceAccount", "sa1", 20),
+    ]);
+    const { result } = render(team);
+
+    expect(result.current.totals.total).toBe(200);
+    expect(entries(result)).toEqual([
+      ["user:u1", 100],
+      ["user:u2", 50],
+      ["app:sa1", 50],
+    ]);
+    expect(result.current.activity).toEqual({ users: 2, applications: 1 });
+    expect(result.current.previousTotal).toBe(100);
   });
 });
