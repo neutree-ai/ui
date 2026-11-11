@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
+import type { KeyUsageFilter } from "@/domains/api-key/hooks/use-workspace-usage";
 import type {
   ApiUsageRecord,
   GroupUsageKind,
@@ -256,14 +256,14 @@ const keyRow = (
   completion_tokens: usage * 0.2,
 });
 let keyFetched = false;
-const keyGroups: (KeyUsageGroup | undefined)[] = [];
+const keyGroups: (KeyUsageFilter | undefined)[] = [];
 vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
   useWorkspaceUsage: (
     workspace: string | undefined,
     _start: string,
     _end: string,
     enabled = true,
-    group?: KeyUsageGroup,
+    group?: KeyUsageFilter,
   ) => {
     const fetched = !!workspace && enabled;
     keyFetched ||= fetched;
@@ -454,7 +454,16 @@ describe("a reader of the whole platform", () => {
       'User:{"name":"u2","orgUnit":"rnd","direct":true}',
     );
     expect(summary("total")).toContain("100");
-    expect(tabs()).toEqual(["model_usage.tabs.detail"]);
+    expect(tabs()).toEqual([
+      "model_usage.tabs.apiKeys",
+      "model_usage.tabs.detail",
+    ]);
+    // Their keys' usage, as their row counted it.
+    expect(keyGroups).toContainEqual({
+      orgUnit: "rnd",
+      direct: true,
+      user: "u2",
+    });
 
     const crumbs = within(
       screen.getByRole("navigation", { name: "model_usage.scope.title" }),
@@ -545,6 +554,55 @@ describe("a reader of one Team's usage", () => {
     renderPage();
 
     expect(groupCalls).toContain('User:{"team":"launch"}');
+  });
+
+  it("opens a member on the API keys they own in the Team", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "u1-name" }));
+
+    expect(screen.getByRole("tab", { selected: true }).textContent).toBe(
+      "model_usage.tabs.apiKeys",
+    );
+    expect(keyGroups).toContainEqual({ team: "team-a", user: "u1" });
+    expect(tableRows()).toEqual(["key-a", "model_usage.deletedKey(0123abcd)"]);
+    // The keys' 90 of the member's 120 in the Team.
+    expect(screen.getByTestId("usage-key-coverage-hint").textContent).toBe(
+      "model_usage.tabs.apiKeyCoverageHint",
+    );
+  });
+
+  it("opens an application on its API keys, and leads back to the Team", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^sa1-name/ }));
+
+    expect(groupCalls).toContain(
+      'ServiceAccount:{"name":"sa1","team":"team-a"}',
+    );
+    expect(summary("total")).toContain("30");
+    expect(tabs()).toEqual([
+      "model_usage.tabs.apiKeys",
+      "model_usage.tabs.detail",
+    ]);
+    expect(keyGroups).toContainEqual({ team: "team-a", serviceAccount: "sa1" });
+    // Another owner's keys were never asked for.
+    expect(keyGroups.some((g) => g?.user)).toBe(false);
+
+    const crumbs = within(
+      screen.getByRole("navigation", { name: "model_usage.scope.title" }),
+    );
+    crumbs.getByText("sa1-name");
+    fireEvent.click(crumbs.getByRole("button", { name: "Team A" }));
+    expect(summary("total")).toContain("150");
+  });
+
+  it("opens the application the URL names", () => {
+    renderPage("/?team=team-a&application=sa1&applicationName=Bot");
+
+    expect(scopeButton("Team A").ariaPressed).toBe("true");
+    expect(keyGroups).toContainEqual({ team: "team-a", serviceAccount: "sa1" });
+    expect(summary("total")).toContain("30");
   });
 
   it("lists the Team's API keys, and says older usage has no key", () => {

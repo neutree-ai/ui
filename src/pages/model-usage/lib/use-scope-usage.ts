@@ -145,7 +145,7 @@ export function useScopeUsage({
     start,
     end,
     !scope || keysOpen,
-    queries.keyGroup,
+    queries.keys,
   );
 
   // The previous period of the same length, for the total's change. Only

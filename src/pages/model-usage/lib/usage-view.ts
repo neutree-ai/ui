@@ -4,7 +4,8 @@ import type { UsageScope } from "@/pages/model-usage/lib/usage-scope";
 /**
  * The model usage page's view as URL query parameters, so a reload, the
  * browser history or a link from elsewhere (a Team's usage tab) opens the
- * same scope. Groups are named by metadata.name, users by id.
+ * same scope. Groups are named by metadata.name, users and applications by
+ * id.
  */
 
 const TABS = ["breakdown", "team", "apiKey", "detail"] as const;
@@ -26,6 +27,8 @@ const UNIT = "department";
 const TEAM = "team";
 const USER = "user";
 const USER_NAME = "userName";
+const APP = "application";
+const APP_NAME = "applicationName";
 const TAB = "tab";
 const FROM = "from";
 const TO = "to";
@@ -48,6 +51,15 @@ const readScope = (params: URLSearchParams): UsageScope | null | undefined => {
       type: "user",
       id: user,
       label: params.get(USER_NAME) || user,
+      from: group,
+    };
+  }
+  const app = params.get(APP);
+  if (app) {
+    return {
+      type: "application",
+      id: app,
+      label: params.get(APP_NAME) || app,
       from: group,
     };
   }
@@ -90,9 +102,14 @@ export const writeUsageView = (
     else next.delete(key);
   };
   if ("scope" in change) {
-    for (const key of [SCOPE, UNIT, TEAM, USER, USER_NAME]) next.delete(key);
+    for (const key of [SCOPE, UNIT, TEAM, USER, USER_NAME, APP, APP_NAME]) {
+      next.delete(key);
+    }
     const scope = change.scope;
-    const group = scope?.type === "user" ? scope.from : scope;
+    const group =
+      scope?.type === "user" || scope?.type === "application"
+        ? scope.from
+        : scope;
     if (group?.type === "orgUnit") next.set(UNIT, group.name);
     else if (group?.type === "team") next.set(TEAM, group.name);
     if (scope === null) next.set(SCOPE, "keys");
@@ -101,6 +118,9 @@ export const writeUsageView = (
     } else if (scope?.type === "user") {
       next.set(USER, scope.id);
       next.set(USER_NAME, scope.label);
+    } else if (scope?.type === "application") {
+      next.set(APP, scope.id);
+      next.set(APP_NAME, scope.label);
     }
   }
   if ("tab" in change) setOrDelete(TAB, change.tab);
