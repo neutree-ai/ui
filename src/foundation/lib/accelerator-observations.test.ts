@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
-  allocationColor,
   allocationComposition,
+  allocationFallbackReadings,
+  deviceReadings,
   endpointAllocationUsedMiB,
   type GpuAllocation,
   gpuAllocations,
@@ -16,7 +17,6 @@ import {
   sampleAge,
   splitGpuEndpointAllocations,
 } from "./accelerator-observations";
-import { CHART_MORE_COLOR, chartCategoryMark } from "./chart-palette";
 
 const metric = "neutree_endpoint_replica_accelerator_memory_used_bytes";
 const allocation: GpuAllocation = {
@@ -179,20 +179,6 @@ it("groups ownership per Endpoint and keeps the first eight sorted allocations",
   expect(hiddenMemoryMiB).toBe(3);
 });
 
-it("colours an Endpoint by name so it keeps its colour across GPUs", () => {
-  // The largest allocation always takes the first colour.
-  expect(allocationColor("any", 0)).toBe(chartCategoryMark(0).color);
-  const second = ["a", "b", "c", "d", "e"].map((name) =>
-    allocationColor(name, 1),
-  );
-  expect(new Set(second).size).toBeGreaterThan(1);
-  expect(second).not.toContain(chartCategoryMark(0).color);
-  // Hashed colours stay on the solid main sequence; past the palette is More.
-  for (const color of second)
-    expect(color).not.toMatch(/--nt-chart-cat-[78]\)/);
-  expect(allocationColor("a", 8)).toBe(CHART_MORE_COLOR);
-});
-
 it.each([
   {
     name: "splits a known reservation",
@@ -203,6 +189,7 @@ it.each([
     },
     actual: 80,
     expected: {
+      known: true,
       weightsPct: 20,
       kvPct: 50,
       otherPct: 30,
@@ -219,6 +206,7 @@ it.each([
     },
     actual: 150,
     expected: {
+      known: true,
       weightsPct: 70,
       kvPct: 30,
       otherPct: 0,
@@ -227,7 +215,7 @@ it.each([
     },
   },
   {
-    name: "leaves an unknown split empty",
+    name: "keeps weights and counts the rest as other without L0 KV",
     reservation: {
       memoryMiB: 100,
       modelWeightsMiB: 20,
@@ -235,11 +223,29 @@ it.each([
     },
     actual: null,
     expected: {
+      known: true,
+      weightsPct: 20,
+      kvPct: 0,
+      otherPct: 80,
+      otherMiB: 80,
+      actualPct: null,
+    },
+  },
+  {
+    name: "leaves the split unknown without model weights",
+    reservation: {
+      memoryMiB: 100,
+      modelWeightsMiB: null,
+      kvCacheCapacityMiB: 50,
+    },
+    actual: 40,
+    expected: {
+      known: false,
       weightsPct: 0,
       kvPct: 0,
       otherPct: 0,
       otherMiB: null,
-      actualPct: null,
+      actualPct: 40,
     },
   },
   {
@@ -247,10 +253,11 @@ it.each([
     reservation: { memoryMiB: 0, modelWeightsMiB: 0, kvCacheCapacityMiB: 0 },
     actual: 10,
     expected: {
+      known: false,
       weightsPct: 0,
       kvPct: 0,
       otherPct: 0,
-      otherMiB: 0,
+      otherMiB: null,
       actualPct: null,
     },
   },
@@ -357,4 +364,131 @@ it("totals the replicas that report usage and keeps the others unknown", () => {
   expect(usage.rows.map((row) => row.usedMiB)).toEqual([2048, null]);
   expect(usage.usedMiB).toBe(2048);
   expect(replicaUsage([], group).usedMiB).toBeNull();
+});
+
+it("infers device memory and peak utilization from every Endpoint allocation", () => {
+  const readbacks = [
+    { ...allocation, replica: "pod-a", instance: "pod-a" },
+    { ...allocation, replica: "pod-b", instance: "pod-b" },
+  ];
+  const samples = [
+    sample(2 * 1024 ** 3, {
+      replica: "pod-a",
+      instance_id: "pod-a",
+      vdevice_index: "0",
+    }),
+    sample(3 * 1024 ** 3, {
+      replica: "pod-b",
+      instance_id: "pod-b",
+      vdevice_index: "1",
+    }),
+    {
+      ...sample(0.4, {
+        replica: "pod-a",
+        instance_id: "pod-a",
+        vdevice_index: "0",
+      }),
+      metric: "neutree_endpoint_replica_accelerator_utilization_ratio",
+    },
+    {
+      ...sample(0.75, {
+        replica: "pod-b",
+        instance_id: "pod-b",
+        vdevice_index: "1",
+      }),
+      metric: "neutree_endpoint_replica_accelerator_utilization_ratio",
+    },
+  ];
+
+  expect(allocationFallbackReadings(samples, readbacks)).toMatchObject({
+    memoryUsedMiB: 5 * 1024,
+    utilization: { value: 0.75 },
+  });
+  expect(
+    allocationFallbackReadings(samples.slice(0, 3), readbacks),
+  ).toMatchObject({
+    memoryUsedMiB: 5 * 1024,
+    utilization: undefined,
+  });
+  expect(
+    allocationFallbackReadings(samples.slice(0, 1), readbacks),
+  ).toMatchObject({
+    memoryUsedMiB: null,
+    utilization: undefined,
+  });
+});
+
+describe("deviceReadings", () => {
+  const gpu = {
+    node: "node",
+    uuid: "gpu",
+    index: 0,
+    product: "T4",
+    totalMiB: 1024,
+    allocatedMiB: 100,
+  };
+  const gib = 1024 ** 3;
+  const device = (name: string, value: number) =>
+    makeAcceleratorSample(`neutree_accelerator_${name}`, value);
+  const endpoint = (name: string, value: number) => ({
+    ...sample(value),
+    metric: `neutree_endpoint_replica_accelerator_${name}`,
+  });
+
+  it.each([
+    {
+      name: "the device gauge when it covers its Endpoints",
+      samples: [
+        device("memory_used_bytes", 3 * gib),
+        endpoint("memory_used_bytes", 2 * gib),
+      ],
+      actual: 3 * 1024,
+    },
+    {
+      name: "the Endpoint sum when the device gauge reads lower",
+      samples: [
+        device("memory_used_bytes", 1 * gib),
+        endpoint("memory_used_bytes", 2 * gib),
+      ],
+      actual: 2 * 1024,
+    },
+    {
+      name: "the Endpoint sum when the device gauge is missing",
+      samples: [endpoint("memory_used_bytes", 2 * gib)],
+      actual: 2 * 1024,
+    },
+    {
+      name: "the device gauge when no Endpoint reports",
+      samples: [device("memory_used_bytes", 3 * gib)],
+      actual: 3 * 1024,
+    },
+    { name: "nothing without either reading", samples: [], actual: null },
+  ])("uses $name", ({ samples, actual }) => {
+    expect(deviceReadings(gpu, samples, undefined, [allocation]).actual).toBe(
+      actual,
+    );
+  });
+
+  it("takes utilization from the same source as the memory reading", () => {
+    const samples = [
+      device("memory_used_bytes", 1 * gib),
+      device("utilization_ratio", 0.2),
+      endpoint("memory_used_bytes", 2 * gib),
+      endpoint("utilization_ratio", 0.6),
+    ];
+    expect(
+      deviceReadings(gpu, samples, undefined, [allocation]).utilization?.value,
+    ).toBe(0.6);
+    expect(
+      deviceReadings(gpu, samples.slice(1), undefined, []).utilization?.value,
+    ).toBe(0.2);
+  });
+
+  it("reads a replica only from its own gauge", () => {
+    const samples = [endpoint("memory_used_bytes", 2 * gib)];
+    expect(deviceReadings(gpu, samples, allocation, [allocation]).actual).toBe(
+      2 * 1024,
+    );
+    expect(deviceReadings(gpu, [], allocation, [allocation]).actual).toBeNull();
+  });
 });

@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useCan } from "@refinedev/core";
+import { Settings2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
+import { EmptyValue } from "@/foundation/components/EmptyValue";
+import EndpointStatus from "@/foundation/components/EndpointStatus";
+import { Link } from "@/foundation/components/Link";
+import { MetricBar } from "@/foundation/components/MetricBar";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
+import { endpointHref } from "@/foundation/lib/accelerator-observations";
 import { formatToDecimal } from "@/foundation/lib/unit";
+import {
+  type CacheEndpointCandidate,
+  cacheEndpointRefs,
+} from "../lib/cache-endpoints";
 import {
   cacheMessage,
   operationLabel,
@@ -16,33 +27,54 @@ import {
 import type { Cluster } from "../types";
 import { CacheRetry } from "./CacheRetry";
 import { ZCacheActivity } from "./ZCacheActivity";
+import { ZCacheEditor } from "./ZCacheEditor";
 import { ZCacheUpgrade } from "./ZCacheUpgrade";
 
 export function ClusterCacheSection({
   cluster,
   l1CacheByNode,
+  endpoints = [],
+  endpointsLoading = false,
+  endpointsError = false,
 }: {
   cluster: Cluster;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+  endpoints?: CacheEndpointCandidate[];
+  endpointsLoading?: boolean;
+  endpointsError?: boolean;
 }) {
   const { systemInfo } = useSystemApi();
   const available =
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
     true;
   return available ? (
-    <ZCacheDetails cluster={cluster} l1CacheByNode={l1CacheByNode} />
+    <ZCacheDetails
+      cluster={cluster}
+      l1CacheByNode={l1CacheByNode}
+      endpoints={endpoints}
+      endpointsLoading={endpointsLoading}
+      endpointsError={endpointsError}
+    />
   ) : null;
 }
 
 function ZCacheDetails({
   cluster,
   l1CacheByNode,
+  endpoints,
+  endpointsLoading,
+  endpointsError,
 }: {
   cluster: Cluster;
   l1CacheByNode?: Record<string, NodeL1CacheUsage>;
+  endpoints: CacheEndpointCandidate[];
+  endpointsLoading: boolean;
+  endpointsError: boolean;
 }) {
   const { t } = useTranslation();
+  const { data: access } = useCan({ resource: "clusters", action: "edit" });
   const [history, setHistory] = useState(false);
+  const [editing, setEditing] = useState(false);
   const status = zcacheStatus(cluster);
   const summary = cluster.status?.cache;
   const desired = zcacheSpec(cluster);
@@ -55,6 +87,10 @@ function ZCacheDetails({
   const ready = nodes.filter((n) => n.runtime === "Ready").length;
   const request = busy?.request;
   const cp = status?.control_plane;
+  const cacheEndpoints = useMemo(
+    () => cacheEndpointRefs(endpoints, cluster.metadata?.workspace),
+    [cluster.metadata?.workspace, endpoints],
+  );
   return (
     <ShowPage.Section
       title={
@@ -70,6 +106,14 @@ function ZCacheDetails({
           {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
             <CacheRetry cluster={cluster} />
           )}
+          <Button
+            size="sm"
+            disabled={access?.can !== true}
+            onClick={() => setEditing(true)}
+          >
+            <Settings2 className="mr-2 h-4 w-4" />
+            {t("clusters.zcache.edit")}
+          </Button>
         </div>
       }
     >
@@ -164,15 +208,40 @@ function ZCacheDetails({
                   <th className="pb-3 font-medium">
                     {t("clusters.zcache.reportedCapacity")}
                   </th>
+                  <th className="pb-3 pl-6 font-medium">
+                    {t("clusters.zcache.usedBy")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {names.map((name) => {
                   const node = nodes.find((n) => n.name === name);
                   const target = targetNodes.includes(name);
-                  const usedGiB = !stale
-                    ? l1CacheByNode?.[name]?.usedGiB
-                    : null;
+                  const nodeEndpoints = cacheEndpoints.filter((endpoint) =>
+                    endpoint.nodes.includes(name),
+                  );
+                  const usage = l1CacheByNode?.[name];
+                  const usedGiB = !stale ? usage?.usedGiB : null;
+                  const capacityGiB =
+                    usage?.capacityGiB ??
+                    (node && node.capacity_bytes > 0
+                      ? node.capacity_bytes / 2 ** 30
+                      : null);
+                  const percent =
+                    usedGiB != null && capacityGiB != null && capacityGiB > 0
+                      ? Math.round(
+                          Math.min(
+                            100,
+                            Math.max(0, (usedGiB / capacityGiB) * 100),
+                          ),
+                        )
+                      : null;
+                  const usedLabel =
+                    usedGiB != null ? formatToDecimal(usedGiB, 1) : null;
+                  const capacityLabel =
+                    capacityGiB != null
+                      ? formatToDecimal(capacityGiB, 0)
+                      : null;
                   return (
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
@@ -207,10 +276,43 @@ function ZCacheDetails({
                           </p>
                         )}
                       </td>
-                      <td className="whitespace-nowrap py-3 tabular-nums">
-                        {node && node.capacity_bytes > 0
-                          ? `${usedGiB != null ? `${formatToDecimal(usedGiB, 1)} / ` : ""}${node.capacity_bytes / 2 ** 30} GiB`
-                          : "—"}
+                      <td className="min-w-56 py-3 tabular-nums">
+                        {usedLabel && capacityLabel ? (
+                          <div className="flex max-w-64 items-baseline justify-between gap-3">
+                            <span>
+                              {usedLabel} / {capacityLabel} GiB
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {percent}%
+                            </span>
+                          </div>
+                        ) : capacityLabel ? (
+                          <span>{capacityLabel} GiB</span>
+                        ) : (
+                          "—"
+                        )}
+                        {capacityLabel && (
+                          <MetricBar
+                            value={percent}
+                            size="sm"
+                            series="blue"
+                            track={percent == null ? "unavailable" : "subtle"}
+                            aria-label={
+                              percent == null
+                                ? t("clusters.zcache.usageUnavailableAria", {
+                                    node: name,
+                                    capacity: capacityLabel,
+                                  })
+                                : t("clusters.zcache.usageAria", {
+                                    node: name,
+                                    used: usedLabel,
+                                    capacity: capacityLabel,
+                                    percent,
+                                  })
+                            }
+                            className="mt-2 max-w-64"
+                          />
+                        )}
                         {target &&
                           desired &&
                           (!node ||
@@ -222,6 +324,45 @@ function ZCacheDetails({
                               })}
                             </p>
                           )}
+                      </td>
+                      <td className="min-w-56 py-3 pl-6">
+                        {endpointsLoading ? (
+                          <span className="text-xs text-muted-foreground">
+                            {t("loading")}
+                          </span>
+                        ) : endpointsError ? (
+                          <span className="text-xs text-destructive">
+                            {t("clusters.zcache.dependencyCheckFailed")}
+                          </span>
+                        ) : nodeEndpoints.length > 0 ? (
+                          <div className="flex flex-col gap-2">
+                            {nodeEndpoints.map((endpoint) => (
+                              <div
+                                key={endpoint.key}
+                                className="flex flex-wrap items-center gap-2"
+                              >
+                                {endpoint.name ? (
+                                  <Link
+                                    href={endpointHref({
+                                      workspace: endpoint.workspace,
+                                      endpoint: endpoint.name,
+                                    })}
+                                    className="break-all text-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
+                                  >
+                                    {endpoint.label}
+                                  </Link>
+                                ) : (
+                                  <span className="break-all text-sm font-medium">
+                                    {endpoint.label}
+                                  </span>
+                                )}
+                                <EndpointStatus {...(endpoint.status ?? {})} />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <EmptyValue />
+                        )}
                       </td>
                     </tr>
                   );
@@ -238,7 +379,15 @@ function ZCacheDetails({
             )}
           </p>
         )}
+        {!endpointsLoading && !endpointsError && cacheEndpoints.length > 0 && (
+          <p className="text-xs leading-5 text-muted-foreground">
+            {t("clusters.zcache.dependencyDetailHint")}
+          </p>
+        )}
       </div>
+      {editing && (
+        <ZCacheEditor cluster={cluster} onClose={() => setEditing(false)} />
+      )}
       <ZCacheActivity
         summary={summary}
         status={status}

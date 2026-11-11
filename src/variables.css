@@ -115,29 +115,54 @@
 		--nt-font-compact: 400 13px / 20px var(--nt-font-family-sans);
 		--nt-font-caption: 400 12px / 18px var(--nt-font-family-sans);
 		--nt-font-meta: 600 11px / 16px var(--nt-font-family-sans);
-		/* Chart categories. Six coordinated Paul Tol Vibrant main colours cover
-		   the normal categorical case. Gold and Violet are extension slots: their
+		/* Chart series. Six coordinated Paul Tol Vibrant main colours cover the
+		   normal categorical case. Gold and Violet are extension slots: their
 		   full eight-colour CVD separation is weaker, so chart marks add a
 		   texture and category lists keep a segment number or direct label.
 		   The categorical order is fixed and never cycled. Status tokens
 		   (positive/notice/serious) stay reserved for state.
 		   Cyan, Orange and Gold sit below 3:1 against the #f2f5fa card surface;
-		   thin marks therefore need the series separator or adjacent text.
-		   src/foundation/lib/chart-palette.test.ts checks contrast and CVD. */
-		--nt-chart-cat-1: #0077bb;
-		--nt-chart-cat-2: #ee7733;
-		--nt-chart-cat-3: #33bbee;
-		--nt-chart-cat-4: #cc3311;
-		--nt-chart-cat-5: #009988;
-		--nt-chart-cat-6: #ee3377;
-		--nt-chart-cat-7: #e3bf48;
-		--nt-chart-cat-8: #8e5aa9;
+		   thin marks therefore need the series outline or adjacent text. The
+		   trailing ratio is the measured fill contrast on this theme. */
+		--nt-chart-series-1: #0077bb; /* 4.41:1 */
+		--nt-chart-series-2: #ee7733; /* 2.62:1 + outline */
+		--nt-chart-series-3: #33bbee; /* 2.03:1 + outline */
+		--nt-chart-series-4: #cc3311; /* 4.75:1 */
+		--nt-chart-series-5: #009988; /* 3.25:1 */
+		--nt-chart-series-6: #ee3377; /* 3.57:1 */
+		--nt-chart-series-7: #e3bf48; /* 1.63:1 + texture */
+		--nt-chart-series-8: #8e5aa9; /* 4.59:1 + texture */
 		/* More is deliberately separate from the eight category slots: it is a
 		   solid neutral bucket, never a ninth hue and never a striped mark. */
 		--nt-chart-more: #8a8f98;
 		--nt-chart-more-foreground: #ffffff;
-		/* A single series may wear the product's primary. */
+		/* Semantic aliases: pages read --nt-chart-cat-*, never the raw series
+		   step, so a category keeps its meaning when the palette is retuned and
+		   the categorical layer can be remapped in one place. */
+		--nt-chart-cat-1: var(--nt-chart-series-1);
+		--nt-chart-cat-2: var(--nt-chart-series-2);
+		--nt-chart-cat-3: var(--nt-chart-series-3);
+		--nt-chart-cat-4: var(--nt-chart-series-4);
+		--nt-chart-cat-5: var(--nt-chart-series-5);
+		--nt-chart-cat-6: var(--nt-chart-series-6);
+		--nt-chart-cat-7: var(--nt-chart-series-7);
+		--nt-chart-cat-8: var(--nt-chart-series-8);
+		/* Sequential ramp for magnitude (heatmaps, intensity fills). One blue
+		   hue, steps 2/4/6/8/10 of the style-guide blue ramp: seq-1 sits nearest
+		   the card surface for the lowest magnitude, seq-5 is the strongest, so
+		   "more ink" means "more" in light mode. */
+		/* Chart roles that are not categories: a single series may wear the
+		   product's primary, and a status dimension borrows the semantic families
+		   instead of inventing its own red or green. */
 		--nt-chart-brand: hsl(var(--primary));
+		--nt-chart-pass: var(--nt-fill-positive-base);
+		--nt-chart-watch: var(--nt-fill-outstanding-base);
+		--nt-chart-fail: var(--nt-fill-serious-base);
+		--nt-chart-seq-1: #7fd2ff; /* 1.53:1 */
+		--nt-chart-seq-2: #19a3ff; /* 2.49:1 */
+		--nt-chart-seq-3: #0775f2; /* 3.97:1 */
+		--nt-chart-seq-4: #0f53c1; /* 6.35:1 */
+		--nt-chart-seq-5: #05318d; /* 10.50:1 */
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;
@@ -311,21 +336,44 @@
 		--nt-outline-active-focus: 0px 0px 0px 4px rgba(38, 141, 255, 0.18);
 		--nt-outline-active-focus-error: 0px 0px 0px 4px rgba(240, 104, 95, 0.18);
 		--nt-outline-active-focus-notice: 0px 0px 0px 4px rgba(234, 162, 58, 0.18);
-		/* Chart categories. The six main colours and two extension hues carry
-		   the same category identity in both themes; every fill clears 3:1
-		   against the #132033 card surface. Gold and Violet still keep their
-		   texture because the all-eight CVD separation is reduced. */
-		--nt-chart-cat-1: #0077bb;
-		--nt-chart-cat-2: #ee7733;
-		--nt-chart-cat-3: #33bbee;
-		--nt-chart-cat-4: #cc3311;
-		--nt-chart-cat-5: #009988;
-		--nt-chart-cat-6: #ee3377;
-		--nt-chart-cat-7: #e3bf48;
-		--nt-chart-cat-8: #8e5aa9;
+		/* Chart series. The six main colours and two extension hues carry the
+		   same category identity in both themes. Every fill clears 3:1 against
+		   the #132033 card surface. Gold and Violet still keep their texture
+		   requirement because the all-eight CVD separation is reduced. */
+		--nt-chart-series-1: #0077bb; /* 3.40:1 */
+		--nt-chart-series-2: #ee7733; /* 5.71:1 */
+		--nt-chart-series-3: #33bbee; /* 7.40:1 */
+		--nt-chart-series-4: #cc3311; /* 3.16:1 */
+		--nt-chart-series-5: #009988; /* 4.61:1 */
+		--nt-chart-series-6: #ee3377; /* 4.19:1 */
+		--nt-chart-series-7: #e3bf48; /* 9.21:1 */
+		--nt-chart-series-8: #8e5aa9; /* 3.26:1 */
 		--nt-chart-more: #d1d5db;
 		--nt-chart-more-foreground: #132033;
+		/* Semantic aliases, mirroring the light theme. */
+		--nt-chart-cat-1: var(--nt-chart-series-1);
+		--nt-chart-cat-2: var(--nt-chart-series-2);
+		--nt-chart-cat-3: var(--nt-chart-series-3);
+		--nt-chart-cat-4: var(--nt-chart-series-4);
+		--nt-chart-cat-5: var(--nt-chart-series-5);
+		--nt-chart-cat-6: var(--nt-chart-series-6);
+		--nt-chart-cat-7: var(--nt-chart-series-7);
+		--nt-chart-cat-8: var(--nt-chart-series-8);
+		/* Sequential ramp, mirrored for the dark surface: seq-1 is the dimmest
+		   (near the #132033 card) and seq-5 the brightest, so magnitude still
+		   reads as "more ink" in dark mode. Same five steps as the light ramp. */
+		/* Chart roles that are not categories: a single series may wear the
+		   product's primary, and a status dimension borrows the semantic families
+		   instead of inventing its own red or green. */
 		--nt-chart-brand: hsl(var(--primary));
+		--nt-chart-pass: var(--nt-fill-positive-base);
+		--nt-chart-watch: var(--nt-fill-outstanding-base);
+		--nt-chart-fail: var(--nt-fill-serious-base);
+		--nt-chart-seq-1: #05318d; /* 1.43:1 */
+		--nt-chart-seq-2: #0f53c1; /* 2.36:1 */
+		--nt-chart-seq-3: #0775f2; /* 3.77:1 */
+		--nt-chart-seq-4: #19a3ff; /* 6.02:1 */
+		--nt-chart-seq-5: #7fd2ff; /* 9.80:1 */
 		--nt-radius-button: 6px;
 		--nt-radius-input: 5px;
 		--nt-radius-checkbox: 3px;

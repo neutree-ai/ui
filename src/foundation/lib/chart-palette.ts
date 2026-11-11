@@ -21,7 +21,7 @@
 export const CHART_CATEGORY_COUNT = 8;
 
 /** First six categories are the colour-only-safe main sequence. */
-export const CHART_MAIN_CATEGORY_COUNT = 6;
+const CHART_MAIN_CATEGORY_COUNT = 6;
 
 /** Semantic categorical tokens, in assignment order; identical in both themes. */
 export const CHART_CATEGORY_TOKENS = [
@@ -36,10 +36,9 @@ export const CHART_CATEGORY_TOKENS = [
 ] as const;
 
 /**
- * A single-series chart has no neighbouring hue to collide with, so the series
- * may carry the product's own primary instead of a category slot. The moment a
- * second series appears, switch to the categorical tokens — brand then reads as
- * chrome, not as data.
+ * Single-series brand colour. A lone series has no neighbouring hue to collide
+ * with, so it may carry the product's own primary instead of a category slot.
+ * The moment a second series appears, switch to the categorical tokens.
  */
 export const CHART_BRAND = "var(--nt-chart-brand)";
 
@@ -48,11 +47,10 @@ export const CHART_BRAND = "var(--nt-chart-brand)";
  */
 export const CHART_MORE_COLOR = "var(--nt-chart-more)";
 
-/** Diagonal stripes for the Gold / Violet extension slots and the KV-cache part
- * of a GPU reservation, on DOM marks.
+/** Diagonal stripes for the Gold / Violet extension slots, on DOM marks.
  *
- * Mixed from `--background` over the mark colour, so the stripes follow the
- * theme.
+ * Mixed from theme tokens (`--background` and the mark colour) so the stripes
+ * follow the theme.
  */
 export const CHART_STRIPES_BACKGROUND =
   "linear-gradient(hsl(var(--background) / 0.34), hsl(var(--background) / 0.34)), " +
@@ -63,8 +61,8 @@ export const CHART_STRIPES_BACKGROUND =
  * theme because it is the card fill, not a fixed white. */
 export const CHART_SERIES_SEPARATOR = "var(--nt-fill-neutral-white)";
 
-/** DOM edge for a fill mark (segment div, legend swatch): an inset shadow draws
- * the gap without changing the box size, which matters for 6px-tall bars. */
+/** DOM edge for a fill mark (segment div, legend swatch): an inset shadow draws over
+ * the edge without changing the box size, which matters for 6px-tall bars. */
 export function chartOutlineStyle(): {
   boxShadow: string;
 } {
@@ -73,11 +71,14 @@ export function chartOutlineStyle(): {
   };
 }
 
+/** How a mark is painted, independent of the renderer (CSS or SVG). */
+export type ChartPattern = "solid" | "stripes";
+
 export type ChartMark = {
   /** Fill/stroke colour: a CSS token, so it follows the active theme. */
   color: string;
   /** Second distinguisher for a colour that is already in use. */
-  pattern: "solid" | "stripes";
+  pattern: ChartPattern;
   /** Index into CHART_CATEGORY_TOKENS; -1 for the neutral "more" mark. */
   paletteIndex: number;
   /** True when the palette was exhausted and the mark collapsed to neutral. */
@@ -103,6 +104,12 @@ export function chartCategoryMark(index: number): ChartMark {
     paletteIndex: slot,
     isMore: false,
   };
+}
+
+/** Just the solid colour for a category, for marks that cannot carry a pattern
+ * (a 2px line stroke, a legend swatch, a table cell). */
+export function chartCategoryColor(index: number): string {
+  return chartCategoryMark(index).color;
 }
 
 /** Neutral mark for the folded "more" bucket — not a category colour. */

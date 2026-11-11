@@ -1988,6 +1988,64 @@ describe("the weights estimate", () => {
       "spec.model.info": info,
     });
 
+  it.each(["create", "edit"] as const)(
+    "uses the reported model size for a direct deployment on %s",
+    (action) => {
+      vi.mocked(useRegistryModelVersion).mockReturnValue(
+        modelVersionResult({
+          name: "v2",
+          creation_time: "",
+          size: "54 GB",
+          info: {
+            ...checkpointShape,
+            parameter_count: "27B",
+            quantization: "fp8",
+          },
+        }),
+      );
+      const { result } = renderEndpointForm(action, {
+        registries: [{ metadata: { name: "model-nfs" } }],
+      });
+
+      setValues(result, {
+        "spec.model.registry": "model-nfs",
+        "spec.model.name": "qwen3.8-27b-fp8",
+        "spec.model.version": "main",
+        "spec.model.info": {
+          ...checkpointShape,
+          parameter_count: "27B",
+          quantization: "fp8",
+        },
+      });
+
+      screen.getByText("endpoints.weights.estimatedFromSize 50.3 GB");
+      expect(screen.queryByText(/^endpoints\.weights\.estimated /)).toBeNull();
+    },
+  );
+
+  it("does not fall back to checkpoint precision for a direct deployment", () => {
+    vi.mocked(useRegistryModelVersion).mockReturnValue(
+      modelVersionResult({
+        name: "v2",
+        creation_time: "",
+      }),
+    );
+    const { result } = renderEndpointForm("create", {
+      registries: [{ metadata: { name: "hf" } }],
+    });
+
+    withModel(result, {
+      ...checkpointShape,
+      parameter_count: "27B",
+      quantization: "fp8",
+    });
+
+    expect(
+      screen.queryByText(/^endpoints\.weights\.estimated(?:FromSize)? /),
+    ).toBeNull();
+    screen.getByTestId("kv-cache-estimate");
+  });
+
   it("estimates the KV cache with no catalog in play, offering both fields", () => {
     const { result } = renderEndpointForm("create", {
       registries: [{ metadata: { name: "hf" } }],
