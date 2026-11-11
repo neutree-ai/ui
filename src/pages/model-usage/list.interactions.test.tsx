@@ -376,7 +376,7 @@ describe("a reader of the whole platform", () => {
       "model_usage.tabs.detail",
     ]);
     expect(keyGroups).toContainEqual({ serviceAccount: "sa1" });
-    // Read across the platform, the keys hold all of its usage.
+    // Its keys add up to its total, so nothing is left unattributed.
     expect(screen.queryByTestId("usage-key-coverage-hint")).toBeNull();
 
     const crumbs = within(

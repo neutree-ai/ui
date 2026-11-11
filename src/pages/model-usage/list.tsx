@@ -333,10 +333,9 @@ export const ModelUsageList = () => {
   const labelKeys = breakdownLabelKeys(scope);
 
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
-  // A group's usage by API key starts when it was first recorded per key, so
-  // older usage of the group is in its total but in no key's row.
-  const keyCoverageShort =
-    !!scope && groupOf(scope) !== null && !loading && keyTotal < totals.total;
+  // Usage recorded before per-key attribution, or by keys deleted since, is in
+  // the total but in no key's row.
+  const keyCoverageShort = !!scope && !loading && keyTotal < totals.total;
 
   const detailRows = useMemo(
     () =>

@@ -281,7 +281,7 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "3492d93c7442ce8aa362363f129bf06d",
-  "src/pages/model-usage/list.tsx": "1b43addfaa67d8354aaa08fa9f5af9c1",
+  "src/pages/model-usage/list.tsx": "5366df1486134ff99d3ca12002aa3514",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "8382415b07ff22c5e0fd372976849e38",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "caf2d9d9863cb3c64eaacd6a62c05be3",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
