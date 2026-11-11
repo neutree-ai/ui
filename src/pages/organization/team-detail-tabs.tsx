@@ -1,4 +1,6 @@
+import { ChevronRight } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAccountApiKeys } from "@/domains/api-key/components/ServiceAccountApiKeys";
 import {
@@ -6,16 +8,26 @@ import {
   TeamUsage,
 } from "@/domains/api-key/components/TeamUsage";
 import { TeamTokenPool } from "@/domains/group-policy/components/TeamTokenPool";
+import { useSubjectQuotaColumn } from "@/domains/group-policy/hooks/use-subject-quota-column";
+import { teamScope } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
 import { TeamServiceAccounts } from "@/domains/service-account/components/TeamServiceAccounts";
+import type { ServiceAccount } from "@/domains/service-account/types";
 import {
   useHasGlobalPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type TeamTab = "members" | "applications" | "usage";
+
+const appSubject = (account: ServiceAccount) => ({
+  kind: "ServiceAccount" as const,
+  id: account.id,
+  label: displayName(account.metadata),
+});
 
 /** A Team's members, applications and usage, each tab shown to whoever may read it. */
 export function TeamDetailTabs({
@@ -39,6 +51,7 @@ export function TeamDetailTabs({
     useHasTeamPermission("team_usage:read", team.id).allowed === true;
   const canEditAppPermissions =
     useHasGlobalPermission("role_assignment:create").allowed === true;
+  const limits = useSubjectQuotaColumn(teamScope(team), appSubject);
 
   const current =
     (tab === "applications" && !canRead) || (tab === "usage" && !canReadUsage)
@@ -88,6 +101,7 @@ export function TeamDetailTabs({
                 canDelete={canDelete}
               />
             )}
+            extraColumn={limits}
             // Usage by application needs team_usage:read on the Team.
             renderUsage={(account) =>
               canReadUsage ? (
@@ -102,6 +116,17 @@ export function TeamDetailTabs({
       )}
       {canReadUsage && (
         <TabsContent value="usage" className="mt-0 space-y-3">
+          <div className="flex justify-end">
+            <Link
+              className="inline-flex items-center gap-0.5 text-sm text-primary hover:underline"
+              to={`/${ALL_WORKSPACES}/model-usage?${new URLSearchParams({
+                team: team.metadata.name,
+              })}`}
+            >
+              {t("model_usage.openTeam")}
+              <ChevronRight className="size-3.5" />
+            </Link>
+          </div>
           <TeamTokenPool teamName={team.metadata.name} />
           <TeamUsage teamName={team.metadata.name} />
         </TabsContent>

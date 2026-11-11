@@ -1,5 +1,5 @@
 import { useGetIdentity } from "@refinedev/core";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -18,11 +18,21 @@ import {
 } from "@/components/ui/table";
 import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAccess";
 import { ModelEntryList } from "@/domains/group-policy/components/ModelEntryList";
+import {
+  type GroupRenderer,
+  PolicySourceLabel,
+  plainLabel,
+} from "@/domains/group-policy/components/PolicySourceLabel";
 import { useUserGroupPolicy } from "@/domains/group-policy/hooks/use-group-policies";
+import {
+  subjectPolicySource,
+  tokenPoolSource,
+} from "@/domains/group-policy/lib/subject-policy";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
@@ -31,9 +41,13 @@ import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /** Anchor of the section; the API key page links to it. */
-export const USER_MODEL_ACCESS_ANCHOR = "user-model-access";
+const USER_MODEL_ACCESS_ANCHOR = "user-model-access";
 /** Query parameter that preselects the workspace. */
 export const USER_MODEL_ACCESS_WORKSPACE_PARAM = "model_access_workspace";
+
+/** This section on a user's page, with `workspace` preselected. */
+export const userModelAccessHref = (profileName: string, workspace: string) =>
+  `/user-profiles/show/${encodeURIComponent(profileName)}?${USER_MODEL_ACCESS_WORKSPACE_PARAM}=${encodeURIComponent(workspace)}#${USER_MODEL_ACCESS_ANCHOR}`;
 
 const inWorkspace = (
   entries: GroupPolicyModel[] | null,
@@ -66,10 +80,6 @@ const Names = ({
       ))}
     </div>
   );
-
-type GroupRenderer = (name: string, displayName?: string | null) => ReactNode;
-const plainLabel: GroupRenderer = (name, displayName) =>
-  displayName?.trim() || name;
 
 /**
  * How the user's groups limit the models they can call in a workspace: the
@@ -118,13 +128,14 @@ export function UserGroupModelAccess({
   if (!shown) return null;
 
   const groups = policy?.groups ?? [];
+  const own = policy?.subject_policies ?? [];
   const pools = policy?.token_pools ?? [];
 
   return (
     <div id={USER_MODEL_ACCESS_ANCHOR} ref={ref}>
       <ShowPage.Section
         title={t("group_policies.title")}
-        description={t("group_policies.userHint")}
+        hint={t("group_policies.userHint")}
         actions={
           workspace === null ? undefined : (
             <Select value={workspace} onValueChange={setPicked}>
@@ -199,7 +210,7 @@ export function UserGroupModelAccess({
                 </div>
               </dl>
             )}
-            {groups.length === 0 ? (
+            {groups.length === 0 && own.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("group_policies.effective.noGroups")}
               </p>
@@ -258,25 +269,64 @@ export function UserGroupModelAccess({
                       </TableRow>
                     );
                   })}
+                  {own.map((policy) => (
+                    <TableRow
+                      key={policy.name}
+                      data-testid={`user-model-access-own-${policy.name}`}
+                    >
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5">
+                          <PolicySourceLabel
+                            source={subjectPolicySource(policy)}
+                            renderTeam={renderTeam}
+                            renderOrgUnit={renderOrgUnit}
+                          />
+                          {!policy.in_scope && (
+                            <InactiveBadge
+                              title={t("group_policies.subject.notInScope")}
+                            />
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <ModelEntryList
+                          entries={inWorkspace(
+                            policy.allowed_models,
+                            workspace,
+                          )}
+                          emptyText={EMPTY_VALUE}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <ModelEntryList
+                          entries={inWorkspace(policy.denied_models, workspace)}
+                          emptyText={EMPTY_VALUE}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}
             {pools.length > 0 && (
               <div className="space-y-2" data-testid="user-token-pools">
-                <div className="text-xs font-medium text-muted-foreground">
+                <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   {t("group_policies.pool.userTitle")}
+                  <InfoHint label={t("group_policies.pool.userHint")} />
                 </div>
                 <ul className="space-y-2 text-sm">
                   {pools.map((pool) => (
                     <li
-                      key={`${pool.kind}/${pool.name}`}
+                      key={`${pool.kind}/${pool.name}/${pool.scope_kind ?? ""}/${pool.scope_name ?? ""}`}
                       className="flex flex-wrap items-start gap-x-3 gap-y-1"
-                      data-testid={`user-token-pool-${pool.kind}-${pool.name}`}
+                      data-testid={`user-token-pool-${pool.kind}-${pool.scope_name ?? pool.name}`}
                     >
                       <span className="min-w-32 font-medium">
-                        {pool.kind === "Team"
-                          ? renderTeam(pool.name, pool.display_name)
-                          : renderOrgUnit(pool.name, pool.display_name)}
+                        <PolicySourceLabel
+                          source={tokenPoolSource(pool)}
+                          renderTeam={renderTeam}
+                          renderOrgUnit={renderOrgUnit}
+                        />
                       </span>
                       <TokenPoolSummary
                         quota={{ limit: pool.token_limit, period: pool.period }}
@@ -285,9 +335,6 @@ export function UserGroupModelAccess({
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-muted-foreground">
-                  {t("group_policies.pool.userHint")}
-                </p>
               </div>
             )}
             <p className="text-xs text-muted-foreground">

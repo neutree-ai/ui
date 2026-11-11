@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   CHART_MORE_COLOR,
@@ -199,14 +200,10 @@ export const ApiKeyRankingOverview = ({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-base font-semibold">
-              {t("api_keys.ranking.title")}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {t("api_keys.ranking.subtitle")}
-            </p>
-          </div>
+          <CardTitle className="flex items-center gap-1 text-base font-semibold">
+            {t("api_keys.ranking.title")}
+            <InfoHint label={t("api_keys.ranking.subtitle")} />
+          </CardTitle>
           <Badge variant="secondary" className="shrink-0">
             {t("api_keys.ranking.window")}
           </Badge>

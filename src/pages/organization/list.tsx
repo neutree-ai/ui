@@ -1,17 +1,32 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GroupModelAccess } from "@/domains/group-policy/components/GroupModelAccess";
+import { useSubjectQuotaColumn } from "@/domains/group-policy/hooks/use-subject-quota-column";
+import type { PolicySubject } from "@/domains/group-policy/types";
 import { DepartmentsPanel } from "@/domains/organization/components/DepartmentsPanel";
+import type { MemberRow } from "@/domains/organization/components/MemberTable";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamsPanel } from "@/domains/organization/components/TeamsPanel";
 import { useOrganizationView } from "@/domains/organization/hooks/use-organization-view";
 import { GroupRoleAssignments } from "@/domains/role-assignment/components/GroupRoleAssignments";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { LabeledScope } from "@/foundation/types/group-scope";
 import { TeamDetailTabs } from "@/pages/organization/team-detail-tabs";
 import { useTeamDeleteCheck } from "@/pages/organization/use-team-delete-check";
 
 const renderOrgUnit = (name: string) => <OrgUnitLabel name={name} />;
+
+const memberSubject = (row: MemberRow): PolicySubject => ({
+  kind: "User",
+  id: row.key,
+  label: row.profile ? displayName(row.profile.metadata) : row.key,
+});
+
+// Each member's limits set in the selected Team or department.
+const useMemberLimits = (scope: LabeledScope | undefined) =>
+  useSubjectQuotaColumn(scope, memberSubject);
 
 /**
  * Departments and teams synced from identity sources, which sync owns, and
@@ -31,14 +46,7 @@ export const OrganizationList = () => {
       : "departments";
 
   return (
-    <ListPage
-      canCreate={false}
-      extra={
-        <span className="text-sm text-muted-foreground">
-          {t("organization.readOnlyHint")}
-        </span>
-      }
-    >
+    <ListPage canCreate={false} hint={t("organization.readOnlyHint")}>
       {/* Tabs stay mounted while team:read is checked, so the departments
           panel keeps its state when the Teams tab appears. */}
       <Tabs
@@ -61,6 +69,7 @@ export const OrganizationList = () => {
         )}
         <TabsContent value="departments" className="mt-0">
           <DepartmentsPanel
+            useMemberColumn={useMemberLimits}
             renderRoleAssignments={(name, label) => (
               <>
                 <GroupRoleAssignments
@@ -77,6 +86,7 @@ export const OrganizationList = () => {
           <TabsContent value="teams" className="mt-0">
             <TeamsPanel
               useDeleteCheck={useTeamDeleteCheck}
+              useMemberColumn={useMemberLimits}
               renderTeamDetail={(team, members) => (
                 <TeamDetailTabs team={team} members={members} />
               )}

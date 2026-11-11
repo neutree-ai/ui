@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,6 +37,7 @@ import Timestamp from "@/foundation/components/Timestamp";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isValidResourceName } from "@/foundation/lib/validate";
+import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 type ServiceAccountPermissions = {
   canCreate: boolean;
@@ -57,12 +57,15 @@ export function TeamServiceAccounts({
   permissions,
   renderKeys,
   renderUsage,
+  extraColumn,
 }: {
   teamId: number;
   teamName: string;
   permissions: ServiceAccountPermissions;
   renderKeys: (account: ServiceAccount) => ReactNode;
   renderUsage: (account: ServiceAccount) => ReactNode;
+  /** A column another domain fills in, e.g. each application's limits. */
+  extraColumn?: ExtraColumn<ServiceAccount>;
 }) {
   const { t } = useTranslation();
   const { rows, isLoading, error } = useServiceAccounts(teamId);
@@ -225,7 +228,7 @@ export function TeamServiceAccounts({
       />
       <ShowPage.Section
         title={t("service_accounts.title")}
-        description={t("service_accounts.hint", { team: teamName })}
+        hint={t("service_accounts.hint", { team: teamName })}
         actions={
           permissions.canCreate ? (
             <Button
@@ -262,6 +265,7 @@ export function TeamServiceAccounts({
                 <TableHead>{t("common.fields.name")}</TableHead>
                 <TableHead>{t("common.fields.status")}</TableHead>
                 <TableHead>{t("common.fields.createdAt")}</TableHead>
+                {extraColumn && <TableHead>{extraColumn.header}</TableHead>}
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -290,6 +294,9 @@ export function TeamServiceAccounts({
                       relative
                     />
                   </TableCell>
+                  {extraColumn && (
+                    <TableCell>{extraColumn.render(account)}</TableCell>
+                  )}
                   <TableCell>{actions(account)}</TableCell>
                 </TableRow>
               ))}
@@ -361,10 +368,9 @@ function CreateServiceAccountDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("service_accounts.createTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("service_accounts.createHint")}
-          </DialogDescription>
+          <DialogTitle hint={t("service_accounts.createHint")}>
+            {t("service_accounts.createTitle")}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">

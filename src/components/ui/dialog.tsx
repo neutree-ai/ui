@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { cn } from "@/foundation/lib/utils";
 
 const Dialog = DialogPrimitive.Root;
@@ -86,17 +87,36 @@ DialogFooter.displayName = "DialogFooter";
 
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title> & {
+    /** An explanation of the dialog, behind a `?` beside the title. */
+    hint?: string;
+  }
+>(({ className, hint, ...props }, ref) => {
+  const title = (
+    <DialogPrimitive.Title
+      ref={ref}
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className,
+      )}
+      {...props}
+    />
+  );
+  if (!hint) return title;
+
+  // The hint sits outside the heading so the dialog's name stays the title,
+  // and doubles as the dialog's description for screen readers. Out of the
+  // tab order, so opening the dialog focuses its first field instead.
+  return (
+    <div className="flex items-center gap-1">
+      {title}
+      <InfoHint label={hint} tabIndex={-1} />
+      <DialogPrimitive.Description className="sr-only">
+        {hint}
+      </DialogPrimitive.Description>
+    </div>
+  );
+});
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 const DialogDescription = React.forwardRef<

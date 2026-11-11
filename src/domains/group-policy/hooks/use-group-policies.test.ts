@@ -14,11 +14,9 @@ vi.mock("@refinedev/core", () => ({
   useDataProvider: vi.fn(),
 }));
 
+import { GroupPolicyGoneError } from "@/domains/group-policy/lib/group-policy-errors";
 import type { GroupPolicy } from "@/domains/group-policy/types";
-import {
-  GroupPolicyGoneError,
-  useGroupPolicyWrites,
-} from "./use-group-policies";
+import { useGroupPolicyWrites } from "./use-group-policies";
 
 const spec = {
   subject_kind: "OrgUnit" as const,
@@ -69,6 +67,7 @@ describe("useGroupPolicyWrites", () => {
     const keys = [
       legacy("/rpc/get_group_token_pools"),
       current("/rpc/get_user_group_policy"),
+      current("/rpc/get_scope_subject_policies"),
       legacy("/rpc/get_workspace_models"),
     ];
     for (const key of keys) queryClient.setQueryData(key, { data: [] });
@@ -77,7 +76,7 @@ describe("useGroupPolicyWrites", () => {
     await result.current.save(policy, spec);
     expect(
       keys.map((key) => queryClient.getQueryState(key)?.isInvalidated),
-    ).toEqual([true, true, false]);
+    ).toEqual([true, true, true, false]);
   });
 
   it("patches the whole spec, both lists included", async () => {
@@ -96,6 +95,51 @@ describe("useGroupPolicyWrites", () => {
     await expect(result.current.remove(policy)).rejects.toBeInstanceOf(
       GroupPolicyGoneError,
     );
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  it("refreshes only the scope and the subject after a write to a user's own policy", async () => {
+    const current = (url: string, payload: Record<string, unknown>) => [
+      "data",
+      "default",
+      "custom",
+      { method: "post", url, payload },
+    ];
+    const keys = [
+      current("/rpc/get_scope_subject_policies", {
+        p_scope_kind: "Team",
+        p_scope_name: "sre",
+      }),
+      current("/rpc/get_scope_subject_policies", {
+        p_scope_kind: "Team",
+        p_scope_name: "ops",
+      }),
+      current("/rpc/get_user_group_policy", {
+        p_user_id: "u1",
+        p_workspace: null,
+      }),
+      current("/rpc/get_user_group_policy", {
+        p_user_id: "u2",
+        p_workspace: null,
+      }),
+      current("/rpc/get_group_token_pools", { p_kind: "Team", p_name: "sre" }),
+    ];
+    for (const key of keys) queryClient.setQueryData(key, { data: [] });
+    mutateAsync.mockResolvedValue({ data: [policy] });
+    const { result } = renderWrites();
+    await result.current.remove({
+      id: 9,
+      spec: {
+        subject_kind: "User",
+        subject_name: "u1",
+        scope_kind: "Team",
+        scope_name: "sre",
+      },
+    });
+    expect(mutateAsync.mock.calls[0][0].url).toBe("/group_policies?id=eq.9");
+    expect(
+      keys.map((key) => queryClient.getQueryState(key)?.isInvalidated),
+    ).toEqual([true, false, true, false, false]);
     expect(invalidate).not.toHaveBeenCalled();
   });
 });

@@ -24,6 +24,8 @@ import {
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   formatThousands,
+  QUOTA_PERIODS,
+  type QuotaPeriod,
   splitTokenQuota,
   type TokenQuotaUnit,
   toTokenCount,
@@ -37,9 +39,6 @@ import {
 //   set_api_key_limits(p_id, p_limits) - replace the limits object
 // Form types/constants live here; the shared ApiKeyLimits type comes from the
 // domain's types.ts and trace stats from the foundation API layer.
-
-export const QUOTA_PERIODS = ["daily", "weekly", "monthly", "yearly"] as const;
-export type QuotaPeriod = (typeof QUOTA_PERIODS)[number];
 
 // Clamp a period from the backend to a known value, so the i18n lookup never
 // renders a raw key when an unexpected/empty period comes back.

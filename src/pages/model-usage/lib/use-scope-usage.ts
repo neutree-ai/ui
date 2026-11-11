@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useGroupUsage } from "@/domains/api-key/hooks/use-group-usage";
 import { useWorkspaceUsage } from "@/domains/api-key/hooks/use-workspace-usage";
-import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
   useOrgUnitMembers,
   useTeamMembers,
@@ -11,7 +11,9 @@ import type { Team } from "@/domains/organization/types";
 import type { DateRange } from "@/foundation/components/DateRangePicker";
 import { profileDisplayName } from "@/foundation/lib/user-identity";
 import {
+  appFact,
   type BreakdownFact,
+  type BreakdownLabels,
   buildBreakdown,
   groupFact,
   groupOf,
@@ -23,7 +25,11 @@ import {
   type UsageFact,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
-import { aggregateSeries, modelOf } from "@/pages/model-usage/lib/usage-series";
+import {
+  aggregateSeries,
+  modelOf,
+  previousRange,
+} from "@/pages/model-usage/lib/usage-series";
 
 const modelMeta = (r: UsageFact) => ({ name: modelOf(r), description: null });
 const whoMeta = (r: UsageFact) => ({
@@ -40,6 +46,33 @@ const teamTarget = (r: UsageFact): UsageScope => ({
 const useFacts = <R>(rows: R[], toFact: (r: R) => UsageFact) =>
   useMemo(() => rows.map(toFact), [rows, toFact]);
 
+/**
+ * The usage of a scope's users and of its applications in one range. Each
+ * is fetched only when the scope has it.
+ */
+const useSubjectUsage = (
+  workspace: string,
+  { start, end }: DateRange,
+  queries: ReturnType<typeof scopeQueries>,
+) => ({
+  users: useGroupUsage(
+    workspace,
+    start,
+    end,
+    "User",
+    [queries.user ?? {}],
+    !!queries.user,
+  ),
+  apps: useGroupUsage(
+    workspace,
+    start,
+    end,
+    "ServiceAccount",
+    [queries.apps ?? {}],
+    !!queries.apps,
+  ),
+});
+
 type ScopeUsageInput = {
   workspace: string;
   range: DateRange;
@@ -53,14 +86,15 @@ type ScopeUsageInput = {
   roots: OrgTreeNode[];
   nodesByName: ReadonlyMap<string, OrgTreeNode>;
   teamsByName: ReadonlyMap<string, Team>;
-  unassignedLabel: string;
+  breakdownLabels: BreakdownLabels;
   /** Names a deleted API key by the start of its id. Keep it stable. */
   deletedKeyLabel: (shortId: string) => string;
 };
 
 /**
  * The usage of a scope, as every panel of the page shows it. A reader of
- * groups counts by user (each user once), everyone else by API key.
+ * groups counts by user (each user once) and by application, everyone else
+ * by API key.
  */
 export function useScopeUsage({
   workspace,
@@ -72,7 +106,7 @@ export function useScopeUsage({
   roots,
   nodesByName,
   teamsByName,
-  unassignedLabel,
+  breakdownLabels,
   deletedKeyLabel,
 }: ScopeUsageInput) {
   const queries = scopeQueries(scope);
@@ -80,13 +114,10 @@ export function useScopeUsage({
   // user is not split into departments.
   const unitFilter = queries.units ?? {};
 
-  const userUsage = useGroupUsage(
+  const { users: userUsage, apps: appUsage } = useSubjectUsage(
     workspace,
-    start,
-    end,
-    "User",
-    [queries.user],
-    !!scope,
+    { start, end },
+    queries,
   );
   const unitUsage = useGroupUsage(
     workspace,
@@ -119,7 +150,27 @@ export function useScopeUsage({
     queries.keyGroup,
   );
 
+  // The previous period of the same length, for the total's change. Only
+  // the scope's own rows are needed: users and applications, or API keys.
+  const previous = previousRange({ start, end });
+  const { users: prevUserUsage, apps: prevAppUsage } = useSubjectUsage(
+    workspace,
+    previous,
+    queries,
+  );
+  const prevKeyUsage = useWorkspaceUsage(
+    workspace,
+    previous.start,
+    previous.end,
+    !scope,
+  );
+
   const userFacts = useFacts(userUsage.usageData, groupFact);
+  const appFactOf = useCallback(
+    (r: GroupUsageRecord) => appFact(r, breakdownLabels.application),
+    [breakdownLabels.application],
+  );
+  const appFacts = useFacts(appUsage.usageData, appFactOf);
   const unitFacts = useFacts(unitUsage.usageData, groupFact);
   const directFacts = useFacts(directUsage.usageData, groupFact);
   const teamFacts = useFacts(teamUsage.usageData, groupFact);
@@ -128,6 +179,9 @@ export function useScopeUsage({
     [deletedKeyLabel],
   );
   const allKeyFacts = useFacts(keyUsage.usageData, keyFactOf);
+  const prevUserFacts = useFacts(prevUserUsage.usageData, groupFact);
+  const prevAppFacts = useFacts(prevAppUsage.usageData, groupFact);
+  const prevKeyFacts = useFacts(prevKeyUsage.usageData, keyFactOf);
 
   // The group's current members, so the breakdown lists those who used
   // nothing too. A department lists its direct members only: the members of
@@ -154,7 +208,10 @@ export function useScopeUsage({
     [memberUnit, memberTeam, unitMembers.members, teamMembers.members],
   );
 
-  const scopeRows = scope ? userFacts : allKeyFacts;
+  const scopeRows = useMemo(
+    () => (scope ? [...userFacts, ...appFacts] : allKeyFacts),
+    [scope, userFacts, appFacts, allKeyFacts],
+  );
   const models = useMemo(
     () => aggregateSeries(scopeRows, modelOf, modelMeta),
     [scopeRows],
@@ -169,9 +226,38 @@ export function useScopeUsage({
       model ? rows.filter((r) => modelOf(r) === model) : rows,
     [model],
   );
-  const facts = useMemo(() => inModel(scopeRows), [inModel, scopeRows]);
+  const userIn = useMemo(() => inModel(userFacts), [inModel, userFacts]);
+  const appIn = useMemo(() => inModel(appFacts), [inModel, appFacts]);
+  const keyFacts = useMemo(() => inModel(allKeyFacts), [inModel, allKeyFacts]);
+  const facts = useMemo(
+    () => (scope ? [...userIn, ...appIn] : keyFacts),
+    [scope, userIn, appIn, keyFacts],
+  );
   // Usage by group always counts requests, even when there are no rows.
   const totals = useMemo(() => sumUsage(facts, !!scope), [facts, scope]);
+  // Who made the usage: users and applications with any in the range.
+  const activity = useMemo(() => {
+    if (!scope) return null;
+    const used = (rows: UsageFact[]) =>
+      new Set(rows.map((r) => r.who.key)).size;
+    return { users: used(userIn), applications: used(appIn) };
+  }, [scope, userIn, appIn]);
+
+  // Counted as this period's total is: the same rows, the same model filter.
+  const prevQueries = scope ? [prevUserUsage, prevAppUsage] : [prevKeyUsage];
+  const prevSettled = !prevQueries.some(
+    (q) => q.isPlaceholder || q.error || (q.isLoading && !q.usageData.length),
+  );
+  const previousTotal = useMemo(
+    () =>
+      prevSettled
+        ? sumUsage(
+            inModel(scope ? [...prevUserFacts, ...prevAppFacts] : prevKeyFacts),
+            false,
+          ).total
+        : null,
+    [prevSettled, scope, inModel, prevUserFacts, prevAppFacts, prevKeyFacts],
+  );
 
   const breakdown = useMemo<BreakdownFact[]>(
     () =>
@@ -180,10 +266,11 @@ export function useScopeUsage({
             scope,
             nodes: nodesByName,
             roots,
-            userRows: inModel(userFacts),
+            userRows: userIn,
             unitRows: inModel(unitFacts),
             directRows: inModel(directFacts),
-            unassignedLabel,
+            appRows: appIn,
+            labels: breakdownLabels,
           })
         : [],
     [
@@ -191,10 +278,11 @@ export function useScopeUsage({
       nodesByName,
       roots,
       inModel,
-      userFacts,
+      userIn,
       unitFacts,
       directFacts,
-      unassignedLabel,
+      appIn,
+      breakdownLabels,
     ],
   );
   const breakdownSeries = useMemo(
@@ -202,7 +290,6 @@ export function useScopeUsage({
     [breakdown, members, group],
   );
 
-  const keyFacts = useMemo(() => inModel(allKeyFacts), [inModel, allKeyFacts]);
   const keyRows = useMemo(
     () => aggregateSeries(keyFacts, (r) => r.who.key, whoMeta),
     [keyFacts],
@@ -221,13 +308,21 @@ export function useScopeUsage({
   // breakdown would count different scopes. While any query still holds the
   // rows of its previous params, the last result whose rows all answered the
   // same params stays on screen.
-  const all = [userUsage, unitUsage, directUsage, teamUsage, keyUsage];
+  const all = [
+    userUsage,
+    appUsage,
+    unitUsage,
+    directUsage,
+    teamUsage,
+    keyUsage,
+  ];
   const settled = !all.some((q) => q.isPlaceholder);
   const view = {
     models,
     scopeTotal,
     facts,
     totals,
+    activity,
     breakdown,
     breakdownSeries,
     keyFacts,
@@ -243,6 +338,7 @@ export function useScopeUsage({
         scopeTotal: 0,
         facts: [],
         totals: sumUsage([], !!scope),
+        activity: null,
         breakdown: [],
         breakdownSeries: [],
         keyFacts: [],
@@ -252,10 +348,16 @@ export function useScopeUsage({
 
   return {
     ...shown,
+    // Null until the previous period is in, or when the page is between
+    // results: the change would compare different scopes.
+    previousTotal: settled ? previousTotal : null,
     loading:
       !settled ||
       (scope
-        ? userUsage.isLoading || unitUsage.isLoading || directUsage.isLoading
+        ? userUsage.isLoading ||
+          appUsage.isLoading ||
+          unitUsage.isLoading ||
+          directUsage.isLoading
         : keyUsage.isLoading),
     error: all.find((q) => q.error)?.error,
     refetch: () => {

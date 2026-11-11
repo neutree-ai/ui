@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   type EditingRow,
   INVALID_JSON_ERROR,
+  INVALID_PATTERN_ERROR,
   type Schema,
   useVariablesInput,
 } from "@/foundation/hooks/use-variables-input";
@@ -111,6 +112,7 @@ export const VariablesInput = React.forwardRef<
   // Track input refs and dropdown position for portal
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const hasManagedJsonErrorRef = useRef(false);
+  const prevActualValueRef = useRef<Record<string, unknown>>(actualValue);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
     left: number;
@@ -123,14 +125,28 @@ export const VariablesInput = React.forwardRef<
     Record<string, string>
   >({});
 
-  const setFormJsonError = useCallback(() => {
-    if (!name || !form) return;
-    hasManagedJsonErrorRef.current = true;
-    form.setError(name as FieldPath<FieldValues>, {
-      type: "manual",
-      message: t(INVALID_JSON_ERROR),
-    });
-  }, [form, name, t]);
+  const setFormVariableError = useCallback(
+    (errorKey = INVALID_JSON_ERROR) => {
+      if (!name || !form) return;
+      hasManagedJsonErrorRef.current = true;
+      form.setError(name as FieldPath<FieldValues>, {
+        type: "manual",
+        message: t(errorKey),
+      });
+    },
+    [form, name, t],
+  );
+
+  const getDraftErrorKey = useCallback(() => {
+    for (const row of editingRows) {
+      if (!row.key.trim() || !row.value.trim()) continue;
+      const pattern = schema[row.key]?.pattern;
+      if (pattern && !new RegExp(pattern).test(row.value)) {
+        return INVALID_PATTERN_ERROR;
+      }
+    }
+    return INVALID_JSON_ERROR;
+  }, [editingRows, schema]);
 
   const saveEditingRowNow = (id: string) => {
     flushSync(() => {
@@ -140,14 +156,13 @@ export const VariablesInput = React.forwardRef<
 
   useEffect(() => {
     if (!name || !form) return;
-    const hasJsonError =
-      Object.keys(jsonValueErrors).length > 0 ||
-      Object.keys(editingRowErrors).length > 0;
-    if (hasJsonError) {
+    const errorKey =
+      Object.values(jsonValueErrors)[0] ?? Object.values(editingRowErrors)[0];
+    if (errorKey) {
       hasManagedJsonErrorRef.current = true;
       form.setError(name as FieldPath<FieldValues>, {
         type: "manual",
-        message: t(INVALID_JSON_ERROR),
+        message: t(errorKey),
       });
       return;
     }
@@ -178,13 +193,21 @@ export const VariablesInput = React.forwardRef<
       flushSync(() => {
         isValid = saveEditingRows(editingRows.map((row) => row.id));
       });
-      if (!isValid) {
-        setFormJsonError();
+      const existingErrorKey = Object.values(jsonValueErrors)[0];
+      if (!isValid || existingErrorKey) {
+        setFormVariableError(existingErrorKey ?? getDraftErrorKey());
         return false;
       }
       return true;
     });
-  }, [editingRows, saveEditingRows, setFormJsonError, submitContext]);
+  }, [
+    editingRows,
+    getDraftErrorKey,
+    jsonValueErrors,
+    saveEditingRows,
+    setFormVariableError,
+    submitContext,
+  ]);
 
   const formatJsonValue = (val: unknown) =>
     typeof val === "string" ? val : JSON.stringify(val, null, 2);
@@ -192,6 +215,39 @@ export const VariablesInput = React.forwardRef<
   const formatPrimitiveValue = (val: unknown) => {
     if (typeof val === "string" || typeof val === "number") return val;
     return val == null ? "" : String(val);
+  };
+
+  const handleExistingPatternValueChange = (key: string, rawValue: string) => {
+    const pattern = schema[key]?.pattern;
+    if (!pattern) {
+      handleUpdateValue(key, rawValue);
+      return;
+    }
+
+    if (new RegExp(pattern).test(rawValue)) {
+      setJsonValueDrafts((prev) => {
+        if (!Object.hasOwn(prev, key)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      setJsonValueErrors((prev) => {
+        if (!prev[key]) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      flushSync(() => {
+        handleUpdateValue(key, rawValue);
+      });
+    } else {
+      setJsonValueDrafts((prev) => ({ ...prev, [key]: rawValue }));
+      setJsonValueErrors((prev) => ({
+        ...prev,
+        [key]: INVALID_PATTERN_ERROR,
+      }));
+      setFormVariableError(INVALID_PATTERN_ERROR);
+    }
   };
 
   const handleExistingJsonValueChange = (key: string, rawValue: string) => {
@@ -222,23 +278,48 @@ export const VariablesInput = React.forwardRef<
           ...prev,
           [key]: INVALID_JSON_ERROR,
         }));
-        setFormJsonError();
+        setFormVariableError();
       }
     } catch {
       setJsonValueErrors((prev) => ({
         ...prev,
         [key]: INVALID_JSON_ERROR,
       }));
-      setFormJsonError();
+      setFormVariableError();
     }
   };
 
   useEffect(() => {
+    const prevActualValue = prevActualValueRef.current;
+    prevActualValueRef.current = actualValue;
+
+    const activeDrafts = { ...jsonValueDrafts };
+    let draftsChanged = false;
+    for (const key of Object.keys(activeDrafts)) {
+      if (
+        !Object.hasOwn(actualValue, key) ||
+        (schema[key]?.pattern && prevActualValue[key] !== actualValue[key])
+      ) {
+        delete activeDrafts[key];
+        draftsChanged = true;
+      }
+    }
+    if (draftsChanged) {
+      setJsonValueDrafts(activeDrafts);
+    }
+
     setJsonValueErrors((prev) => {
       const nextErrors: Record<string, string> = {};
       for (const [key, val] of Object.entries(actualValue)) {
-        if (Object.hasOwn(jsonValueDrafts, key)) {
+        if (Object.hasOwn(activeDrafts, key)) {
           if (prev[key]) nextErrors[key] = prev[key];
+          continue;
+        }
+        const pattern = schema[key]?.pattern;
+        if (pattern) {
+          if (!new RegExp(pattern).test(String(val ?? ""))) {
+            nextErrors[key] = INVALID_PATTERN_ERROR;
+          }
           continue;
         }
         const type = schema[key]?.type;
@@ -356,11 +437,22 @@ export const VariablesInput = React.forwardRef<
           );
         default:
           return (
-            <Input
-              value={formatPrimitiveValue(val)}
-              onChange={(e) => handleUpdateValue(key, e.target.value)}
-              className="w-full"
-            />
+            <div className="space-y-1">
+              <Input
+                type="text"
+                value={jsonValueDrafts[key] ?? formatPrimitiveValue(val)}
+                aria-invalid={Boolean(jsonValueErrors[key])}
+                onChange={(e) =>
+                  handleExistingPatternValueChange(key, e.target.value)
+                }
+                className="w-full"
+              />
+              {jsonValueErrors[key] && (
+                <p className="text-xs text-destructive">
+                  {t(jsonValueErrors[key])}
+                </p>
+              )}
+            </div>
           );
       }
     }
@@ -470,15 +562,24 @@ export const VariablesInput = React.forwardRef<
       }
     }
 
-    // Default string input
+    // Default string input (including union types and pattern-validated strings)
     return (
-      <Input
-        placeholder={t("components.variablesInput.newValue")}
-        value={row.value}
-        onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
-        onBlur={() => saveEditingRowNow(row.id)}
-        className="w-full"
-      />
+      <div className="space-y-1">
+        <Input
+          type="text"
+          placeholder={t("components.variablesInput.newValue")}
+          value={row.value}
+          aria-invalid={Boolean(editingRowErrors[row.id])}
+          onChange={(e) => handleEditingValueChange(row.id, e.target.value)}
+          onBlur={() => saveEditingRowNow(row.id)}
+          className="w-full"
+        />
+        {editingRowErrors[row.id] && (
+          <p className="text-xs text-destructive">
+            {t(editingRowErrors[row.id])}
+          </p>
+        )}
+      </div>
     );
   };
 

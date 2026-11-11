@@ -153,14 +153,9 @@ export function ServiceAccountApiKeys({
   return (
     <ShowPage.Section
       title={t("api_keys.serviceAccount.title")}
-      data-testid="sa-api-keys"
-      contentClassName="space-y-3"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          {t("api_keys.serviceAccount.hint", { name: serviceAccountName })}
-        </p>
-        {canCreate && (
+      hint={t("api_keys.serviceAccount.hint", { name: serviceAccountName })}
+      actions={
+        canCreate && (
           <Button
             size="sm"
             onClick={() => setCreating(true)}
@@ -169,9 +164,11 @@ export function ServiceAccountApiKeys({
             <Plus className="mr-1 h-4 w-4" />
             {t("api_keys.create")}
           </Button>
-        )}
-      </div>
-
+        )
+      }
+      data-testid="sa-api-keys"
+      contentClassName="space-y-3"
+    >
       {query.isLoading ? (
         <div className="flex justify-center py-6">
           <Loader className="w-10 text-muted-foreground" />

@@ -7,8 +7,10 @@ import {
   isInactive,
   type OrgTreeNode,
 } from "@/domains/organization/lib/org-tree";
+import { isProjectTeam } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -44,10 +46,57 @@ const ScopeButton = ({
   </button>
 );
 
+/** A list of Teams, or of scenarios, to open as a scope; nothing when empty. */
+const TeamSection = ({
+  title,
+  teams,
+  icon,
+  selected,
+  onScopeChange,
+}: {
+  title: string;
+  teams: Team[];
+  icon: ReactNode;
+  selected: string | undefined;
+  onScopeChange: (scope: UsageScope) => void;
+}) =>
+  teams.length > 0 ? (
+    <section
+      className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-3"
+      aria-label={title}
+    >
+      <div className="mb-1 px-1 text-xs font-medium text-muted-foreground">
+        {title}
+      </div>
+      <ul className="space-y-0.5">
+        {teams.map((team) => {
+          const label = displayName(team.metadata);
+          return (
+            <li key={team.id}>
+              <ScopeButton
+                selected={selected === team.metadata.name}
+                icon={icon}
+                label={label}
+                inactive={isInactive(team)}
+                onClick={() =>
+                  onScopeChange({
+                    type: "team",
+                    name: team.metadata.name,
+                    label,
+                  })
+                }
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ) : null;
+
 /**
  * The scope picker: the whole platform for a reader of every group, or else
- * every API key the caller reads (no scope); the departments and Teams the
- * caller may read. A user is opened from the breakdown, not from here, so a
+ * every API key the caller reads (no scope); the departments, Teams and
+ * scenarios the caller may read. A user is opened from the breakdown, not from here, so a
  * user scope keeps the group it came from selected.
  */
 export const UsageScopePanel = ({
@@ -85,13 +134,17 @@ export const UsageScopePanel = ({
   return (
     <aside>
       <Card className="p-3">
-        <div className="mb-2 px-1 text-sm font-medium">
+        <div className="mb-2 flex items-center gap-1 px-1 text-sm font-medium">
           {t("model_usage.scope.title")}
+          <InfoHint label={t("model_usage.scope.hint")} />
         </div>
         <div className="mb-0.5">
           {canReadPlatform ? (
             <ScopeButton
-              selected={scope?.type === "platform"}
+              // The platform's applications are a part of the platform.
+              selected={
+                scope?.type === "platform" || scope?.type === "applications"
+              }
               icon={<Globe className="size-4 shrink-0 text-muted-foreground" />}
               label={t("model_usage.scope.platform")}
               onClick={() => onScopeChange({ type: "platform" })}
@@ -126,43 +179,20 @@ export const UsageScopePanel = ({
             }
           }}
         />
-        {teamList.length > 0 ? (
-          <section
-            className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-3"
-            aria-label={t("model_usage.scope.teams")}
-          >
-            <div className="mb-1 px-1 text-xs font-medium text-muted-foreground">
-              {t("model_usage.scope.teams")}
-            </div>
-            <ul className="space-y-0.5">
-              {teamList.map((team) => {
-                const label = displayName(team.metadata);
-                return (
-                  <li key={team.id}>
-                    <ScopeButton
-                      selected={selectedTeam === team.metadata.name}
-                      icon={
-                        <Users className="size-4 shrink-0 text-muted-foreground" />
-                      }
-                      label={label}
-                      inactive={isInactive(team)}
-                      onClick={() =>
-                        onScopeChange({
-                          type: "team",
-                          name: team.metadata.name,
-                          label,
-                        })
-                      }
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ) : null}
-        <p className="mt-3 border-t border-[var(--nt-stroke-neutral-trans-2)] px-1 pt-3 text-xs text-muted-foreground">
-          {t("model_usage.scope.hint")}
-        </p>
+        <TeamSection
+          title={t("model_usage.scope.teams")}
+          teams={teamList.filter((team) => !isProjectTeam(team))}
+          icon={<Users className="size-4 shrink-0 text-muted-foreground" />}
+          selected={selectedTeam}
+          onScopeChange={onScopeChange}
+        />
+        <TeamSection
+          title={t("model_usage.scope.scenarios")}
+          teams={teamList.filter(isProjectTeam)}
+          icon={<Users className="size-4 shrink-0 text-muted-foreground" />}
+          selected={selectedTeam}
+          onScopeChange={onScopeChange}
+        />
       </Card>
     </aside>
   );

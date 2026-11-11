@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAllApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { Link } from "@/foundation/components/Link";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -31,14 +32,10 @@ export const ApiKeyPerformanceCard = ({
     <Card className="mt-4">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-xl font-semibold">
-              {t("api_keys.performance.title")}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {t("api_keys.performance.subtitle")}
-            </p>
-          </div>
+          <CardTitle className="flex items-center gap-1 text-xl font-semibold">
+            {t("api_keys.performance.title")}
+            <InfoHint label={t("api_keys.performance.subtitle")} />
+          </CardTitle>
           <Link
             href={`/${encodeURIComponent(workspace)}/ai-traces?api_key_id=${encodeURIComponent(apiKeyId)}`}
             className="shrink-0 text-sm text-primary hover:underline"

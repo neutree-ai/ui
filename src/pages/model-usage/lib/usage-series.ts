@@ -1,4 +1,6 @@
+import dayjs from "dayjs";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
+import type { DateRange } from "@/foundation/components/DateRangePicker";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 
 // One aggregated series — in the multi-day chart a line, in the single-day
@@ -34,6 +36,23 @@ export const shareOf = (part: number, whole: number) =>
 
 export const formatShare = (part: number, whole: number) =>
   whole > 0 ? `${shareOf(part, whole).toFixed(1)}%` : "0%";
+
+/** The range of the same length that ends the day before `range` starts. */
+export function previousRange({ start, end }: DateRange): DateRange {
+  const days = dayjs(end).diff(dayjs(start), "day") + 1;
+  const previousEnd = dayjs(start).subtract(1, "day");
+  return {
+    start: previousEnd.subtract(days - 1, "day").format("YYYY-MM-DD"),
+    end: previousEnd.format("YYYY-MM-DD"),
+  };
+}
+
+/**
+ * How much `current` changed from `previous`, in percent; null when there is
+ * nothing to compare with.
+ */
+export const changeOf = (current: number, previous: number): number | null =>
+  previous > 0 ? ((current - previous) / previous) * 100 : null;
 
 /** The model a usage row names; rows without one share the empty value. */
 export const modelOf = (r: { model_name: string | null }) =>
@@ -109,19 +128,26 @@ export function foldRemainder(
   ];
 }
 
+/** What the trend chart counts: tokens, or requests (usage by group only). */
+export type TrendMetric = "tokens" | "requests";
+
+type TrendRow = Pick<ApiUsageRecord, "date" | "usage"> & { requests?: number };
+
 // Rows for the multi-day trend chart: one row per date with a numeric field per
 // series. Days a series did not use get 0 rather than a gap, so every line stays
 // continuous across the window.
-export function buildTrend<R extends Pick<ApiUsageRecord, "date" | "usage">>(
+export function buildTrend<R extends TrendRow>(
   rows: R[],
   series: UsageSeries[],
   keyOf: (r: R) => string,
+  metric: TrendMetric = "tokens",
 ): Array<Record<string, number | string>> {
   const byDate = new Map<string, Record<string, number>>();
   for (const r of rows) {
     const key = keyOf(r);
     const day = byDate.get(r.date) ?? {};
-    day[key] = (day[key] ?? 0) + (r.usage ?? 0);
+    const value = metric === "requests" ? (r.requests ?? 0) : (r.usage ?? 0);
+    day[key] = (day[key] ?? 0) + value;
     byDate.set(r.date, day);
   }
   // The folded "other" series has no key of its own in the rows: foldRemainder

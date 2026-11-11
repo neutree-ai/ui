@@ -5,7 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -121,10 +120,11 @@ export function AddTeamMembersDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("organization.teams.addMembersTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("organization.teams.addMembersHint", { team: teamName })}
-          </DialogDescription>
+          <DialogTitle
+            hint={t("organization.teams.addMembersHint", { team: teamName })}
+          >
+            {t("organization.teams.addMembersTitle")}
+          </DialogTitle>
         </DialogHeader>
         <SegmentedControl<ViewMode>
           className="self-start"

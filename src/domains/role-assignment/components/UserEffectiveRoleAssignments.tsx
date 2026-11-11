@@ -46,7 +46,7 @@ export function UserEffectiveRoleAssignments({
   return (
     <ShowPage.Section
       title={t("user_profiles.sections.effectiveRoles")}
-      description={t("role_assignments.effective.hint")}
+      hint={t("role_assignments.effective.hint")}
       data-testid="user-effective-roles-card"
     >
       <RoleAssignmentTable
