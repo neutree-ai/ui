@@ -84,6 +84,8 @@ const OWNER_WEIGHTS_TONE = 72;
 const OWNER_SECONDARY_TONE = 24;
 const ownerTone = (color: string, amount: number) =>
   `color-mix(in srgb, ${color} ${amount}%, var(--nt-fill-neutral-white))`;
+const ownerSoftTone = (color: string) =>
+  `color-mix(in srgb, ${color} ${OWNER_SECONDARY_TONE}%, var(--nt-text-neutral-ontint))`;
 const l0Pattern = (color: string) =>
   `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`;
 
@@ -314,7 +316,7 @@ function ReplicaSegmentComposition({
         className="h-full"
         data-testid="replica-composition-other"
         style={{
-          backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+          backgroundColor: ownerSoftTone(mark.color),
           width: `${(other / allocation.memoryMiB) * 100}%`,
         }}
       />
@@ -399,7 +401,7 @@ function AllocationTooltip({
           <TooltipLegendItem
             label={t("observations.otherReservation")}
             style={{
-              backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+              backgroundColor: ownerSoftTone(mark.color),
             }}
             value={gib(other)}
           />
@@ -556,7 +558,7 @@ function EndpointOwnershipMark({
               className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-other"
               style={{
-                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+                backgroundColor: ownerSoftTone(mark.color),
               }}
             />
           )}
@@ -578,7 +580,7 @@ function EndpointOwnershipMark({
               className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-unused"
               style={{
-                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+                backgroundColor: ownerSoftTone(mark.color),
               }}
             />
           )}
@@ -745,7 +747,7 @@ function AllocationBar({
               aria-hidden="true"
               className="absolute inset-0"
               style={{
-                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+                backgroundColor: ownerSoftTone(mark.color),
               }}
             />
             {actualMiB != null && (
@@ -926,10 +928,7 @@ function AllocationBar({
                           aria-hidden="true"
                           className="absolute inset-0"
                           style={{
-                            backgroundColor: ownerTone(
-                              mark.color,
-                              OWNER_SECONDARY_TONE,
-                            ),
+                            backgroundColor: ownerSoftTone(mark.color),
                           }}
                         />
                         {actualMiB != null && (
@@ -1098,7 +1097,7 @@ function AllocationCompositionLegend({
               aria-hidden="true"
               className="size-2 shrink-0 rounded-sm"
               style={{
-                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+                backgroundColor: ownerSoftTone(mark.color),
               }}
             />
             <span>{t("observations.allocatedUnused")}</span>
@@ -1165,7 +1164,7 @@ function AllocationCompositionLegend({
             aria-hidden="true"
             className="size-2 shrink-0 rounded-sm"
             style={{
-              backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
+              backgroundColor: ownerSoftTone(mark.color),
             }}
           />
           <span>{t("observations.otherReservation")}</span>
