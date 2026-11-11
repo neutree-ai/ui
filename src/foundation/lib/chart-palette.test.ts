@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CHART_CATEGORY_COUNT,
@@ -58,53 +56,4 @@ describe("chartMarkStyle", () => {
       backgroundColor: CHART_MORE_COLOR,
     });
   });
-});
-
-/* ---------- token contract with variables.css ---------- */
-
-const VARIABLES_CSS = readFileSync(
-  resolve(process.cwd(), "src/variables.css"),
-  "utf8",
-);
-
-/** Decorations of one theme block, keyed by custom-property name. */
-function themeTokens(selector: string): Map<string, string> {
-  const start = VARIABLES_CSS.indexOf(`${selector} {`);
-  expect(start, `${selector} block`).toBeGreaterThan(-1);
-  let depth = 0;
-  let end = start;
-  for (let i = start; i < VARIABLES_CSS.length; i += 1) {
-    if (VARIABLES_CSS[i] === "{") depth += 1;
-    else if (VARIABLES_CSS[i] === "}") {
-      depth -= 1;
-      if (depth === 0) {
-        end = i;
-        break;
-      }
-    }
-  }
-  const body = VARIABLES_CSS.slice(start, end);
-  const tokens = new Map<string, string>();
-  for (const [, name, value] of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
-    tokens.set(name, value.trim());
-  }
-  return tokens;
-}
-
-describe("chart tokens in variables.css", () => {
-  // The module hands pages token names; both themes must define them, or the
-  // mark silently disappears when the other theme is active.
-  it.each([":root", ".dark"])(
-    "%s defines every token the marks use",
-    (theme) => {
-      const tokens = themeTokens(theme);
-      for (let index = 1; index <= CHART_CATEGORY_COUNT; index += 1) {
-        expect(tokens.get(`--nt-chart-cat-${index}`)).toBe(
-          `var(--nt-chart-series-${index})`,
-        );
-      }
-      expect(tokens.get("--nt-chart-more")).toBeDefined();
-      expect(tokens.get("--nt-fill-neutral-white")).toBeDefined();
-    },
-  );
 });

@@ -93,6 +93,7 @@ import { NumberInput } from "@/foundation/components/NumberInput";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { VariablesInput } from "@/foundation/components/VariablesInput";
 import WorkspaceField from "@/foundation/components/WorkspaceField";
+import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import type { Schema } from "@/foundation/hooks/use-variables-input";
@@ -1538,6 +1539,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // that was just picked, so edit pages and preselected models get the same
   // value without replaying the picker's info write into the form.
   const directModelSelection = isEdit || modelSourceMode === "manual";
+  // The version is a free-text field; look it up once typing settles.
+  const modelSizeVersionName = useDebouncedValue(currentModelVersion);
   const modelSizeRef = useMemo<RegistryModelRef | null>(
     () =>
       directModelSelection &&
@@ -1549,12 +1552,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             workspace,
             registry: currentRegistry,
             model: currentModelName,
-            version: currentModelVersion || undefined,
+            version: modelSizeVersionName || undefined,
           }
         : null,
     [
       currentModelName,
-      currentModelVersion,
+      modelSizeVersionName,
       currentRegistry,
       directModelSelection,
       hidesModelFields,

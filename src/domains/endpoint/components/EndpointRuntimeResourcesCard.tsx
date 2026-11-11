@@ -64,6 +64,8 @@ type Props = {
   deviceObservationStatus?: string;
   onObservationRetry?: () => void;
   onDeviceObservationRetry?: () => void;
+  /** Fires when a GPU details sheet opens or closes. */
+  onGpuDetailsOpenChange?: (open: boolean) => void;
   tflopsOverrides?: Record<string, number>;
   endpointName?: string;
   workspace?: string;
@@ -1222,6 +1224,7 @@ function GpuResourceCard({
   deviceSamples,
   deviceObservationStatus,
   onDeviceObservationRetry,
+  onDetailsOpenChange,
 }: {
   device: EndpointGpuResourceGroup;
   index: number;
@@ -1242,9 +1245,14 @@ function GpuResourceCard({
   deviceSamples?: AcceleratorSample[];
   deviceObservationStatus?: string;
   onDeviceObservationRetry?: () => void;
+  onDetailsOpenChange?: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpenState] = useState(false);
+  const setDetailsOpen = (open: boolean) => {
+    setDetailsOpenState(open);
+    onDetailsOpenChange?.(open);
+  };
   const physicalMiB = device.physicalMemoryMiB;
   const endpointUtilizationValue = endpointUtilization(
     device,
@@ -1538,6 +1546,7 @@ export default function EndpointRuntimeResourcesCard({
   deviceObservationStatus = "",
   onObservationRetry,
   onDeviceObservationRetry,
+  onGpuDetailsOpenChange,
   tflopsOverrides = {},
   endpointName = "",
   workspace = "default",
@@ -1721,6 +1730,7 @@ export default function EndpointRuntimeResourcesCard({
                           deviceSamples={deviceSamples}
                           deviceObservationStatus={deviceObservationStatus}
                           onDeviceObservationRetry={onDeviceObservationRetry}
+                          onDetailsOpenChange={onGpuDetailsOpenChange}
                           requestedCorePerCard={requestedCorePerCard}
                           samples={samples}
                           selectedReplicaKey={selectedReplicaKey}

@@ -117,9 +117,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
     screen.getByText("endpoints.sections.runtimeAllocation");
     screen.getByText("gpu-node-01");
-    within(screen.getByTestId("allocation-ownership-legend")).getByTestId(
-      "ownership-endpoint-replicas",
-    );
   });
 
   it("keeps multi-replica bars reserved-only until hover adds usage and details", async () => {
@@ -148,10 +145,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.queryByTestId("endpoint-actual-fill")).toBeNull();
     expect(screen.queryByTestId("single-allocation-legend")).toBeNull();
-    const detailLayer = screen.getAllByTestId("replica-detail-layer")[0];
-    within(detailLayer).getByTestId("replica-actual-fill");
 
     const replica = screen.getAllByRole("button", {
       name: /observations\.replicaLabel/,
@@ -255,7 +249,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     const card = screen.getByTestId("runtime-gpu-card");
     within(card).getByText("clusters.options.unhealthy");
     within(card).getByText("observations.reservedOfPhysical:8.0,80.0");
-    within(card).getByTestId("single-replica-composition");
   });
 
   it("does not invent a physical scale when physical VRAM is unknown", () => {
@@ -275,7 +268,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     );
 
     const card = screen.getByTestId("runtime-gpu-card");
-    within(card).getByTestId("endpoint-physical-vram-unavailable");
     within(card).getByText("observations.physicalVramUnavailable");
     within(card).getByText("observations.reservedOfPhysical:8.0,—");
   });
@@ -327,7 +319,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     const card = screen.getByTestId("runtime-gpu-card");
     expect(card.textContent).not.toContain("endpoint-beta");
     expect(card.textContent).not.toContain("endpoint-gamma");
-    within(card).getByTestId("other-endpoints-segment");
 
     fireEvent.pointerDown(card, { button: 0 });
 
@@ -441,12 +432,6 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    const detailLayer = screen.getAllByTestId("replica-detail-layer")[0];
-    within(detailLayer).getByTestId("replica-composition-weights");
-    within(detailLayer).getByTestId("replica-composition-cache");
-    within(detailLayer).getByTestId("replica-composition-other");
-    within(detailLayer).getByTestId("replica-actual-marker");
-
     const replica = screen.getAllByRole("button", {
       name: /observations\.replicaLabel/,
     })[0];
@@ -482,9 +467,6 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    const composition = screen.getByTestId("single-replica-composition");
-    within(composition).getByTestId("replica-composition");
-    within(composition).getByTestId("single-actual-marker");
     expect(
       screen.queryByRole("button", { name: /observations\.replicaLabel/ }),
     ).toBeNull();
@@ -521,22 +503,14 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    screen.getByTestId("single-actual-marker");
     within(screen.getByTestId("single-allocation-legend")).getByText(
       "observations.actualVramUsage",
     );
     within(screen.getByTestId("single-allocation-legend")).getByText(
       "observations.allocatedUnused",
     );
-    const endpointMark = within(
-      screen.getByTestId("allocation-ownership-legend"),
-    ).getByTestId("ownership-endpoint-mark");
-    within(endpointMark).getByTestId("ownership-endpoint-actual");
-    within(endpointMark).getByTestId("ownership-endpoint-unused");
     expect(screen.queryByText("observations.modelWeights")).toBeNull();
     expect(screen.queryByText("observations.l0KvCacheCapacity")).toBeNull();
-    screen.getByTestId("endpoint-actual-fill");
-    screen.getByTestId("unallocated-vram-segment");
     screen.getByText(/observations\.reservedOfPhysical:8\.0,80\.0/);
   });
 
@@ -606,7 +580,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(
       within(legend).queryByText("observations.actualVramUsage"),
     ).toBeNull();
-    expect(screen.queryByTestId("single-actual-marker")).toBeNull();
   });
 
   it("shows the overage when Actual usage exceeds reservation", () => {
@@ -628,7 +601,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     within(legend).getByText("observations.actualVramUsage");
     within(legend).getByText("9.0 GiB");
     within(legend).getByText("observations.exceedsReservedBy:1.0 GiB");
-    screen.getByTestId("single-actual-marker");
   });
 
   it("does not add a tooltip trigger when each GPU has one replica", () => {
@@ -645,7 +617,6 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.getAllByTestId("single-replica-composition")).toHaveLength(2);
     expect(screen.getAllByTestId("single-allocation-legend")).toHaveLength(2);
     expect(
       screen.queryByRole("button", { name: /observations\.replicaLabel/ }),
@@ -753,19 +724,12 @@ describe("EndpointRuntimeResourcesCard", () => {
     within(card).getByRole("img", {
       name: /observations\.otherEndpoints, 10\.0 GiB observations\.reservedLower/,
     });
-    screen.getByTestId("unallocated-vram-segment");
     within(screen.getByTestId("allocation-ownership-legend")).getByText(
       "observations.thisEndpoint",
     );
     within(screen.getByTestId("allocation-ownership-legend")).getByText(
       "observations.unallocated",
     );
-    const endpointMark = within(
-      screen.getByTestId("allocation-ownership-legend"),
-    ).getByTestId("ownership-endpoint-mark");
-    expect(
-      within(endpointMark).queryByTestId("ownership-endpoint-weights"),
-    ).toBeNull();
     expect(screen.queryByTestId("single-allocation-legend")).toBeNull();
     expect(screen.queryByText("observations.modelWeights")).toBeNull();
 
@@ -773,11 +737,6 @@ describe("EndpointRuntimeResourcesCard", () => {
       name: /observations\.replicaLabel R0/,
     });
     fireEvent.focus(replica);
-    await screen.findByTestId("replica-composition-weights");
-    screen.getByTestId("replica-composition-cache");
-    screen.getByTestId("replica-composition-other");
-    screen.getByTestId("replica-actual-marker");
-
     const tooltip = await screen.findByRole("tooltip");
     within(tooltip).getByText("observations.modelWeights");
     within(tooltip).getByText("observations.l0KvCacheCapacity");

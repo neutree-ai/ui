@@ -137,7 +137,6 @@ type Readings = {
   utilization: AcceleratorSample | undefined;
   temperature: AcceleratorSample | undefined;
   power: AcceleratorSample | undefined;
-  hardware: Record<string, string>;
 };
 
 function getReadings(
@@ -175,7 +174,6 @@ function getReadings(
     ? (scopedUtilization ?? fallback?.utilization)
     : (fallback?.utilization ?? scopedUtilization);
   const physical = getDevice("neutree_accelerator_memory_total_bytes");
-  const hardware = deviceHardwareInfo(samples, device.node, device.uuid);
 
   return {
     total: physical ? physical.value / 1024 ** 2 : device.totalMiB,
@@ -183,7 +181,6 @@ function getReadings(
     utilization,
     temperature: getDevice("neutree_accelerator_temperature_celsius"),
     power: getDevice("neutree_accelerator_power_usage_watts"),
-    hardware,
   };
 }
 
@@ -1060,6 +1057,7 @@ function GpuObservationDetails({
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
   const readings = getReadings(device, samples, replica, assigned);
+  const hardware = deviceHardwareInfo(samples, device.node, device.uuid);
   const { sorted, hidden } = splitGpuEndpointAllocations(assigned);
   const nominalTflops = peakTflops(
     device.product,
@@ -1085,7 +1083,7 @@ function GpuObservationDetails({
   const label = (value?: string) =>
     !value || value === "unknown" || value === "-1" ? "—" : value;
   const hardwareValue = (key: string) => {
-    const value = readings.hardware[key];
+    const value = hardware[key];
     if (["nvlink", "nvswitch"].includes(key)) {
       return value === "1"
         ? t("observations.present")
@@ -1867,7 +1865,14 @@ export function GpuObservationCard({
   onRetry,
 }: Props) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  // The sheet derives its own readings, hardware and per-Endpoint rows, so it
+  // mounts on first open instead of doing that work for every closed card.
+  const [sheetMounted, setSheetMounted] = useState(false);
+  const setOpen = (next: boolean) => {
+    if (next) setSheetMounted(true);
+    setOpenState(next);
+  };
   const assigned = allocations.filter(
     (allocation) =>
       allocation.node === device.node && allocation.uuid === device.uuid,
@@ -1879,7 +1884,7 @@ export function GpuObservationCard({
     readings.actual != null &&
     readings.total != null &&
     readings.actual > readings.total;
-  const sheet = (
+  const sheet = sheetMounted && (
     <GpuObservationDetails
       open={open}
       onOpenChange={setOpen}

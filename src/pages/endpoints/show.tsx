@@ -160,11 +160,14 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     !inactive && onBasicTab,
   );
   const gpuSamples = inactive ? [] : observations.samples;
+  // Cluster-wide samples only feed the GPU details sheet, so they are polled
+  // only while one is open.
+  const [gpuDetailsOpen, setGpuDetailsOpen] = useState(false);
   const deviceObservations = useAcceleratorObservations(
     "clusters",
     record?.metadata.workspace,
     record?.spec.cluster,
-    !inactive && onBasicTab,
+    !inactive && onBasicTab && gpuDetailsOpen,
   );
   const deviceSamples = inactive ? [] : deviceObservations.samples;
 
@@ -433,6 +436,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 deviceObservationStatus={deviceObservations.status}
                 onObservationRetry={observations.refetch}
                 onDeviceObservationRetry={deviceObservations.refetch}
+                onGpuDetailsOpenChange={setGpuDetailsOpen}
                 tflopsOverrides={parseTflops(
                   clusterData?.data?.[0]?.metadata?.annotations?.[
                     TFLOPS_ANNOTATION

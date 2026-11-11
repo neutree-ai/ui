@@ -109,3 +109,16 @@ export function formatPerformanceTrendAxisTick(
     hour12: false,
   }).format(date);
 }
+
+/** Tooltip rows for the hovered point: each line, in line order, that has a
+ * numeric value in the chart payload. `index` is the line's position, which
+ * picks its colour when the line has none of its own. */
+export function performanceTooltipItems<Line extends { metric: string }>(
+  lines: Line[],
+  payload: Array<{ dataKey?: unknown; value?: unknown }> = [],
+): Array<{ line: Line; index: number; value: number }> {
+  return lines.flatMap((line, index) => {
+    const value = payload.find((item) => item.dataKey === line.metric)?.value;
+    return typeof value === "number" ? [{ line, index, value }] : [];
+  });
+}

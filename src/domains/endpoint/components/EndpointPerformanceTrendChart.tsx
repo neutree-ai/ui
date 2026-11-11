@@ -17,6 +17,7 @@ import type {
 import {
   formatPerformanceTrendAxisTick,
   formatPerformanceTrendTimestamp,
+  performanceTooltipItems,
   performanceTrendRows,
   performanceTrendTicks,
 } from "@/domains/endpoint/lib/performance-trends";
@@ -29,6 +30,7 @@ export type PerformanceTrendLine = {
   formatValue: (value: number) => string;
   formatAxisValue?: (value: number) => string;
   colorIndex?: number;
+  /** Lines on both sides render as two stacked rows, each with its own axis. */
   axis?: "left" | "right";
   dashed?: boolean;
   groupLabel?: string;
@@ -40,12 +42,6 @@ type PerformanceTrendChartProps = {
   lines: PerformanceTrendLine[];
   window: PerformanceWindow;
   status: string;
-};
-
-type TooltipPayload = {
-  dataKey?: string | number;
-  value?: number;
-  color?: string;
 };
 
 export function EndpointPerformanceTrendChart({
@@ -64,11 +60,8 @@ export function EndpointPerformanceTrendChart({
       ),
     [series, lines],
   );
-  const leftAxisLine = lines.find((line) => line.axis === "left");
-  const rightAxisLine = lines.find((line) => line.axis === "right");
-  const yAxisWidth = 34;
-  const leftAxisWidth = leftAxisLine ? yAxisWidth : 0;
-  const rightAxisWidth = rightAxisLine ? yAxisWidth : 0;
+  const leftLines = lines.filter((line) => line.axis === "left");
+  const rightLines = lines.filter((line) => line.axis === "right");
 
   if (status === "loading") {
     return (
@@ -94,12 +87,12 @@ export function EndpointPerformanceTrendChart({
 
   const ticks = performanceTrendTicks(rows);
 
-  if (leftAxisLine && rightAxisLine) {
+  if (leftLines.length > 0 && rightLines.length > 0) {
     return (
       <SplitLatencyTrend
         ariaLabel={ariaLabel}
-        leftLines={lines.filter((line) => line.axis === "left")}
-        rightLines={lines.filter((line) => line.axis === "right")}
+        leftLines={leftLines}
+        rightLines={rightLines}
         rows={rows}
         ticks={ticks}
         window={window}
@@ -121,44 +114,6 @@ export function EndpointPerformanceTrendChart({
               stroke="hsl(var(--border))"
               strokeDasharray="2 4"
             />
-            {leftAxisLine && (
-              <YAxis
-                axisLine={false}
-                domain={["auto", "auto"]}
-                orientation="left"
-                tick={{
-                  fill: chartCategoryColor(leftAxisLine.colorIndex ?? 0),
-                  fontSize: 10,
-                }}
-                tickFormatter={(value) =>
-                  (leftAxisLine.formatAxisValue ?? leftAxisLine.formatValue)(
-                    Number(value),
-                  )
-                }
-                tickLine={false}
-                width={yAxisWidth}
-                yAxisId="left"
-              />
-            )}
-            {rightAxisLine && (
-              <YAxis
-                axisLine={false}
-                domain={["auto", "auto"]}
-                orientation="right"
-                tick={{
-                  fill: chartCategoryColor(rightAxisLine.colorIndex ?? 1),
-                  fontSize: 10,
-                }}
-                tickFormatter={(value) =>
-                  (rightAxisLine.formatAxisValue ?? rightAxisLine.formatValue)(
-                    Number(value),
-                  )
-                }
-                tickLine={false}
-                width={yAxisWidth}
-                yAxisId="right"
-              />
-            )}
             <XAxis
               dataKey="timestamp"
               domain={["dataMin", "dataMax"]}
@@ -188,15 +143,14 @@ export function EndpointPerformanceTrendChart({
                 strokeDasharray={line.dashed ? "4 3" : undefined}
                 strokeWidth={2}
                 type="monotone"
-                yAxisId={line.axis}
               />
             ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
       <TrendTimeline
-        leftPadding={leftAxisWidth}
-        rightPadding={rightAxisWidth}
+        leftPadding={0}
+        rightPadding={0}
         ticks={ticks}
         window={window}
       />
@@ -364,17 +318,22 @@ function TrendLegend({ lines }: { lines: PerformanceTrendLine[] }) {
           <span
             aria-hidden="true"
             className="h-0.5 w-3 rounded-full"
-            style={{
-              background: line.dashed
-                ? `repeating-linear-gradient(90deg, ${chartCategoryColor(line.colorIndex ?? index)} 0 4px, transparent 4px 7px)`
-                : chartCategoryColor(line.colorIndex ?? index),
-            }}
+            style={lineSwatchStyle(line, index)}
           />
           {line.label}
         </span>
       ))}
     </div>
   );
+}
+
+function lineSwatchStyle(line: PerformanceTrendLine, index: number) {
+  const color = chartCategoryColor(line.colorIndex ?? index);
+  return {
+    background: line.dashed
+      ? `repeating-linear-gradient(90deg, ${color} 0 4px, transparent 4px 7px)`
+      : color,
+  };
 }
 
 function PerformanceTrendTooltip({
@@ -385,45 +344,32 @@ function PerformanceTrendTooltip({
   formatTimestamp,
 }: {
   active?: boolean;
-  payload?: TooltipPayload[];
+  payload?: Array<{ dataKey?: unknown; value?: unknown }>;
   label?: number;
   lines: PerformanceTrendLine[];
   formatTimestamp: (timestamp: number) => string;
 }) {
-  if (!active || !payload?.length || label == null) return null;
-
-  const rows = payload.filter(
-    (item): item is TooltipPayload & { dataKey: string; value: number } =>
-      typeof item.dataKey === "string" && typeof item.value === "number",
-  );
+  const items = performanceTooltipItems(lines, payload);
+  if (!active || label == null || items.length === 0) return null;
 
   return (
     <div className="rounded border bg-popover px-2 py-1.5 text-xs shadow">
       <div className="mb-1 font-medium">{formatTimestamp(label)}</div>
-      {lines.map((line, index) => {
-        const item = rows.find((row) => row.dataKey === line.metric);
-        if (!item) return null;
-
-        return (
-          <div
-            className="flex items-center gap-1.5 text-muted-foreground"
-            key={line.metric}
-          >
-            <span
-              className="inline-block h-0.5 w-3 shrink-0 rounded-full"
-              style={{
-                background: line.dashed
-                  ? `repeating-linear-gradient(90deg, ${chartCategoryColor(line.colorIndex ?? index)} 0 4px, transparent 4px 7px)`
-                  : chartCategoryColor(line.colorIndex ?? index),
-              }}
-            />
-            <span>{line.label}</span>
-            <span className="ml-auto font-mono text-foreground">
-              {line.formatValue(item.value)}
-            </span>
-          </div>
-        );
-      })}
+      {items.map(({ line, index, value }) => (
+        <div
+          className="flex items-center gap-1.5 text-muted-foreground"
+          key={line.metric}
+        >
+          <span
+            className="inline-block h-0.5 w-3 shrink-0 rounded-full"
+            style={lineSwatchStyle(line, index)}
+          />
+          <span>{line.label}</span>
+          <span className="ml-auto font-mono text-foreground">
+            {line.formatValue(value)}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

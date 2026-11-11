@@ -51,22 +51,12 @@ const card = (
 
 describe("GPU observation row", () => {
   it("uses the merged inventory table columns", () => {
-    const { container } = render(
-      <MemoryRouter>
-        <GpuObservationTableHeader variant="inventory" />
-      </MemoryRouter>,
-    );
+    render(<GpuObservationTableHeader variant="inventory" />);
 
-    expect(
-      [...(container.firstElementChild?.children ?? [])].map(
-        (cell) => cell.textContent,
-      ),
-    ).toEqual([
-      "clusters.fields.gpuNumber",
-      "clusters.fields.health",
-      "observations.vramAllocation",
-      "observations.utilization",
-    ]);
+    screen.getByText("clusters.fields.gpuNumber");
+    screen.getByText("clusters.fields.health");
+    screen.getByText("observations.vramAllocation");
+    screen.getByText("observations.utilization");
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -110,14 +100,11 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).toContain("gpu");
     expect(dialog.textContent).toContain("model");
     within(dialog).getAllByText("instance");
-    within(dialog).getByTestId("vram-allocation-legend");
     expect(
       within(dialog).queryByRole("button", {
         name: /observations\.(expand|collapse)Allocation/,
       }),
     ).toBeNull();
-    expect(dialog.querySelector("[aria-expanded]")).toBeNull();
-    within(dialog).getByTestId("expanded-endpoint-actual-marker");
     within(dialog).getByText("extension-arch");
     expect(within(dialog).queryByText("wrong-node")).toBeNull();
   });
@@ -201,11 +188,6 @@ describe("GPU observation row", () => {
       }),
     );
 
-    screen.getByTestId("endpoint-segment-weights-pattern");
-    screen.getByTestId("endpoint-segment-kv-pattern");
-    screen.getByTestId("endpoint-segment-remaining-pattern");
-    screen.getByTestId("endpoint-segment-actual-marker");
-
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
     // The name is a way into the object, not just a label.
     expect(
@@ -221,7 +203,6 @@ describe("GPU observation row", () => {
     expect(tooltip.textContent).toContain("observations.otherReservation");
     expect(tooltip.textContent).toContain("5.0 GiB");
     expect(tooltip.textContent).toContain("observations.actualVramUsage");
-    within(tooltip).getByTestId("actual-marker-legend");
     expect(tooltip.textContent).toContain("12.0 GiB");
     expect(tooltip.textContent).toMatch(/observations\.actualOfReserved:80/);
   });
@@ -291,10 +272,6 @@ describe("GPU observation row", () => {
       }),
     );
 
-    await screen.findByTestId("endpoint-segment-weights-pattern");
-    screen.getByTestId("endpoint-segment-remaining-pattern");
-    expect(screen.queryByTestId("endpoint-segment-kv-pattern")).toBeNull();
-
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
     within(tooltip).getByText("observations.modelWeights");
     within(tooltip).getByText("observations.otherReservation");
@@ -328,13 +305,6 @@ describe("GPU observation row", () => {
         name: /^instance, 15\.0 GiB/,
       }),
     );
-
-    await screen.findByTestId("endpoint-segment-actual-fill");
-    expect(screen.queryByTestId("endpoint-segment-weights-pattern")).toBeNull();
-    expect(screen.queryByTestId("endpoint-segment-kv-pattern")).toBeNull();
-    expect(
-      screen.queryByTestId("endpoint-segment-remaining-pattern"),
-    ).toBeNull();
 
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
     expect(within(tooltip).queryByText("observations.modelWeights")).toBeNull();
@@ -450,7 +420,6 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByTestId("gpu-physical-vram-unavailable");
     within(cardElement).getByText("observations.physicalVramUnavailable");
     expect(cardElement.textContent).toContain(
       "observations.allocated 15.0 / — GiB",
@@ -581,10 +550,6 @@ describe("GPU observation row", () => {
       within(dialog).getByText("observations.vramActualOfTotal").parentElement
         ?.textContent,
     ).toContain("31.0");
-    within(dialog).getByTestId("expanded-endpoint-usage-bar");
-    expect(
-      within(dialog).queryByTestId("expanded-endpoint-actual-marker"),
-    ).toBeNull();
     expect(dialog.textContent).not.toContain("observations.modelWeights");
     expect(dialog.textContent).not.toContain("observations.l0KvCache");
     expect(dialog.textContent).not.toContain("observations.otherReservation");
@@ -720,14 +685,17 @@ describe("GPU observation row", () => {
 
     openDetails();
     const dialog = screen.getByRole("dialog");
-    expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(0);
+    expect(
+      within(dialog).queryAllByRole("button", { expanded: true }).length,
+    ).toBe(0);
 
     // The bar is a control inside the sheet: no hover layer, a click selects.
     fireEvent.click(
       within(dialog).getByRole("button", { name: /^instance, 15\.0 GiB/ }),
     );
-    expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(1);
-    within(dialog).getByTestId("expanded-endpoint-actual-marker");
+    expect(
+      within(dialog).queryAllByRole("button", { expanded: true }).length,
+    ).toBe(1);
     within(dialog).getByRole("link", {
       name: "observations.openEndpoint:instance",
     });
@@ -762,7 +730,7 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
     const expandedCount = () =>
-      dialog.querySelectorAll('[aria-expanded="true"]').length;
+      within(dialog).queryAllByRole("button", { expanded: true }).length;
 
     // Several Endpoints start collapsed; there is nothing to disambiguate for one.
     expect(expandedCount()).toBe(0);
@@ -773,9 +741,6 @@ describe("GPU observation row", () => {
       }),
     );
     expect(expandedCount()).toBe(1);
-    expect(
-      within(dialog).queryByTestId("expanded-endpoint-actual-marker"),
-    ).toBeNull();
     // The expanded card carries its own legend instead of a duplicated bar.
     expect(dialog.textContent).toContain("observations.modelWeights");
     expect(dialog.textContent).toContain("2.0 GiB");

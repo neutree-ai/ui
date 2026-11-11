@@ -4,6 +4,7 @@ import {
   formatPerformanceTrendAxisTick,
   formatPerformanceTrendTimestamp,
   performanceRangeDisplayWindow,
+  performanceTooltipItems,
   performanceTrendLatestRow,
   performanceTrendRows,
   performanceTrendTicks,
@@ -131,5 +132,27 @@ describe("performance trend timestamp formatting", () => {
     ["5m", /03:04/],
   ] as const)("formats a %s axis tick", (window, expected) => {
     expect(formatPerformanceTrendAxisTick(timestamp, window)).toMatch(expected);
+  });
+});
+
+describe("performanceTooltipItems", () => {
+  const lines = [{ metric: "a" }, { metric: "b" }, { metric: "c" }];
+
+  it("keeps lines with a numeric value, in line order and with their index", () => {
+    expect(
+      performanceTooltipItems(lines, [
+        { dataKey: "c", value: 3 },
+        { dataKey: "a", value: 1 },
+        { dataKey: "b" },
+        { dataKey: 7, value: 9 },
+      ]),
+    ).toEqual([
+      { line: lines[0], index: 0, value: 1 },
+      { line: lines[2], index: 2, value: 3 },
+    ]);
+  });
+
+  it("returns nothing without a payload", () => {
+    expect(performanceTooltipItems(lines)).toEqual([]);
   });
 });
