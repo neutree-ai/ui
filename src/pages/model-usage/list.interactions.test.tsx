@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
 import type {
@@ -9,6 +10,13 @@ import type {
 } from "@/domains/api-key/types";
 import type { OrgUnit, Team } from "@/domains/organization/types";
 import { ModelUsageList } from "@/pages/model-usage/list";
+
+const renderPage = (url = "/") =>
+  render(
+    <MemoryRouter initialEntries={[url]}>
+      <ModelUsageList />
+    </MemoryRouter>,
+  );
 
 // Page wiring: which usage the page asks for in each scope, and that every
 // panel shows that scope. The breakdown arithmetic is covered in
@@ -113,7 +121,9 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
       teamIndex(
         (canReadAll
           ? teams
-          : teams.filter((team) => usageTeamIds.includes(team.id))) as Team[],
+          : teams.filter((team) =>
+              usageTeamIds.includes(team.id),
+            )) as unknown as Team[],
       ),
     // rnd's direct members: u2, and u5 who used nothing. Team A: u1.
     useOrgUnitMembers: (id: number | undefined) => ({
@@ -128,6 +138,14 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
 const teams = [
   { id: 7, metadata: { name: "team-a", display_name: "Team A" } },
   { id: 8, metadata: { name: "team-b", display_name: "Team B" } },
+  {
+    id: 9,
+    metadata: {
+      name: "launch",
+      display_name: "Launch",
+      labels: { "neutree.ai/team-kind": "project" },
+    },
+  },
 ];
 const member = (id: string, name: string) => ({
   user_id: id,
@@ -162,7 +180,7 @@ type Filter = {
 };
 
 // What get_usage_by_group answers. u1 used qwen in ml, u2 llama in rnd
-// itself, u3 qwen in no department.
+// itself, u3 qwen in no department; Team A's application sa1 used qwen.
 const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
   const key = `${kind}:${filter.orgUnit ?? filter.team ?? ""}${filter.direct ? ":direct" : ""}`;
   const answers: Record<string, GroupUsageRecord[]> = {
@@ -188,6 +206,8 @@ const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
     "Team:rnd": [group("Team", "team-a", 250)],
     // u1's usage while in Team A, part of their 300.
     "User:team-a": [group("User", "u1", 120)],
+    "ServiceAccount:": [group("ServiceAccount", "sa1", 80)],
+    "ServiceAccount:team-a": [group("ServiceAccount", "sa1", 30)],
   };
   const rows = answers[key] ?? [];
   return filter.name ? rows.filter((r) => r.name === filter.name) : rows;
@@ -285,7 +305,7 @@ const scopeButton = (name: string) =>
 
 describe("a reader of their own API keys", () => {
   it("counts the keys, with no scope to pick", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     expect(keyFetched).toBe(true);
     expect(groupCalls).toEqual([]);
@@ -295,7 +315,6 @@ describe("a reader of their own API keys", () => {
     expect(screen.queryByTestId("usage-summary-requests")).toBeNull();
     expect(tabs()).toEqual([
       "model_usage.tabs.apiKeys",
-      "model_usage.tabs.models",
       "model_usage.tabs.detail",
     ]);
     expect(tableRows()).toEqual(["key-a", "key-b"]);
@@ -307,28 +326,72 @@ describe("a reader of the whole platform", () => {
     canReadAll = true;
   });
 
-  it("opens on the platform, by department", () => {
-    render(<ModelUsageList />);
+  it("opens on the platform, by department, with its applications", () => {
+    renderPage();
 
     expect(groupCalls).toContain("User:{}");
+    expect(groupCalls).toContain("ServiceAccount:{}");
     expect(groupCalls).toContain("OrgUnit:{}");
     expect(groupCalls).toContain('User:{"direct":true}');
-    expect(summary("total")).toContain("450");
-    expect(summary("requests")).toContain("45");
+    expect(summary("total")).toContain("530");
+    expect(summary("requests")).toContain("53");
+    expect(summary("requests")).toContain("model_usage.summary.activity(3,1)");
     expect(tabs()).toEqual([
       "model_usage.tabs.departments",
       "model_usage.tabs.teams",
       "model_usage.tabs.apiKeys",
-      "model_usage.tabs.models",
       "model_usage.tabs.detail",
     ]);
-    expect(tableRows()).toEqual(["R&D", "model_usage.scope.unassigned"]);
+    expect(tableRows()).toEqual([
+      "R&D",
+      "model_usage.scope.applications",
+      "model_usage.scope.unassigned",
+    ]);
     // Key usage is fetched only for its tab.
     expect(keyFetched).toBe(false);
   });
 
+  it("opens the platform's applications from the breakdown", () => {
+    renderPage();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "model_usage.scope.applications" }),
+    );
+
+    expect(summary("total")).toContain("80");
+    expect(tabs()).toEqual([
+      "model_usage.tabs.applications",
+      "model_usage.tabs.detail",
+    ]);
+    expect(tableRows()).toEqual([
+      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+    ]);
+  });
+
+  it("lists scenarios apart from Teams", () => {
+    renderPage();
+
+    const panel = within(screen.getByRole("complementary"));
+    within(
+      panel.getByRole("region", { name: "model_usage.scope.teams" }),
+    ).getByRole("button", { name: "Team A" });
+    within(
+      panel.getByRole("region", { name: "model_usage.scope.scenarios" }),
+    ).getByRole("button", { name: "Launch" });
+  });
+
+  it("opens the scope the URL names", () => {
+    renderPage("/?team=team-a&tab=apiKey");
+
+    expect(scopeButton("Team A").ariaPressed).toBe("true");
+    expect(screen.getByRole("tab", { selected: true }).textContent).toBe(
+      "model_usage.tabs.apiKeys",
+    );
+    expect(keyGroups).toContainEqual({ team: "team-a" });
+  });
+
   it("follows a department picked in the tree on every panel", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     fireEvent.click(scopeButton("R&D"));
 
@@ -347,20 +410,23 @@ describe("a reader of the whole platform", () => {
     expect(tableRows()).toEqual(["team-a-name"]);
   });
 
-  it("counts a Team picked in the panel, by member", () => {
-    render(<ModelUsageList />);
+  it("counts a Team picked in the panel, by member and application", () => {
+    renderPage();
 
     fireEvent.click(scopeButton("Team A"));
 
     expect(groupCalls).toContain('User:{"team":"team-a"}');
-    expect(summary("total")).toContain("120");
+    expect(groupCalls).toContain('ServiceAccount:{"team":"team-a"}');
+    expect(summary("total")).toContain("150");
     expect(tabs()).toEqual([
-      "model_usage.tabs.members",
+      "model_usage.tabs.membersAndApplications",
       "model_usage.tabs.apiKeys",
-      "model_usage.tabs.models",
       "model_usage.tabs.detail",
     ]);
-    expect(tableRows()).toEqual(["u1-name"]);
+    expect(tableRows()).toEqual([
+      "u1-name",
+      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+    ]);
 
     // Opened from the Team, a user counts their usage in the Team only.
     fireEvent.click(screen.getByRole("button", { name: "u1-name" }));
@@ -369,7 +435,7 @@ describe("a reader of the whole platform", () => {
   });
 
   it("opens a Team from the Team tab", () => {
-    render(<ModelUsageList />);
+    renderPage();
     openTab("model_usage.tabs.teams");
 
     fireEvent.click(screen.getByRole("button", { name: "team-a-name" }));
@@ -378,7 +444,7 @@ describe("a reader of the whole platform", () => {
   });
 
   it("opens a user from the breakdown and leads back to the department", () => {
-    render(<ModelUsageList />);
+    renderPage();
     fireEvent.click(scopeButton("R&D"));
 
     fireEvent.click(screen.getByRole("button", { name: "u2-name" }));
@@ -388,10 +454,7 @@ describe("a reader of the whole platform", () => {
       'User:{"name":"u2","orgUnit":"rnd","direct":true}',
     );
     expect(summary("total")).toContain("100");
-    expect(tabs()).toEqual([
-      "model_usage.tabs.models",
-      "model_usage.tabs.detail",
-    ]);
+    expect(tabs()).toEqual(["model_usage.tabs.detail"]);
 
     const crumbs = within(
       screen.getByRole("navigation", { name: "model_usage.scope.title" }),
@@ -401,7 +464,7 @@ describe("a reader of the whole platform", () => {
   });
 
   it("narrows every panel to the model picked in the distribution", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /^llama/ }));
 
@@ -410,7 +473,7 @@ describe("a reader of the whole platform", () => {
   });
 
   it("scopes the page to the day picked in the chart", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
 
@@ -426,7 +489,7 @@ describe("a department admin", () => {
   });
 
   it("opens on their first department, without the platform or Teams", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     expect(groupCalls).not.toContain("User:{}");
     expect(groupCalls).toContain('User:{"orgUnit":"market"}');
@@ -439,7 +502,7 @@ describe("a department admin", () => {
   });
 
   it("lists the API keys used in their department", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     openTab("model_usage.tabs.apiKeys");
 
@@ -454,10 +517,11 @@ describe("a reader of one Team's usage", () => {
   });
 
   it("opens on every key they read, and picks their Team as a scope", () => {
-    render(<ModelUsageList />);
+    renderPage();
 
     expect(groupCalls).toEqual([]);
-    expect(keyGroups).toEqual([undefined]);
+    // This period's keys and the previous period's.
+    expect(keyGroups).toEqual([undefined, undefined]);
     expect(scopeButton("model_usage.scope.visible").ariaPressed).toBe("true");
     // Only the Teams whose usage they read.
     expect(

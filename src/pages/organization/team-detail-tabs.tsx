@@ -1,4 +1,6 @@
+import { ChevronRight } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAccountApiKeys } from "@/domains/api-key/components/ServiceAccountApiKeys";
 import {
@@ -15,6 +17,7 @@ import {
   useHasGlobalPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -113,6 +116,17 @@ export function TeamDetailTabs({
       )}
       {canReadUsage && (
         <TabsContent value="usage" className="mt-0 space-y-3">
+          <div className="flex justify-end">
+            <Link
+              className="inline-flex items-center gap-0.5 text-sm text-primary hover:underline"
+              to={`/${ALL_WORKSPACES}/model-usage?${new URLSearchParams({
+                team: team.metadata.name,
+              })}`}
+            >
+              {t("model_usage.openTeam")}
+              <ChevronRight className="size-3.5" />
+            </Link>
+          </div>
           <TeamTokenPool teamName={team.metadata.name} />
           <TeamUsage teamName={team.metadata.name} />
         </TabsContent>

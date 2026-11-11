@@ -1,6 +1,7 @@
 import { useParsed } from "@refinedev/core";
 import { RefreshCw } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -26,6 +27,7 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { ScopeBreadcrumb } from "@/pages/model-usage/components/ScopeBreadcrumb";
@@ -40,6 +42,7 @@ import {
   UsageTable,
 } from "@/pages/model-usage/components/UsageTables";
 import {
+  type BreakdownLabels,
   breakdownLabelKeys,
   groupOf,
   scopeTrail,
@@ -48,8 +51,15 @@ import {
 import {
   buildTrend,
   foldRemainder,
+  type TrendMetric,
   type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
+import {
+  readUsageView,
+  type UsageTab,
+  type UsageView,
+  writeUsageView,
+} from "@/pages/model-usage/lib/usage-view";
 import { useScopeUsage } from "@/pages/model-usage/lib/use-scope-usage";
 
 const RANGE_PRESETS = [7, 30, 90];
@@ -63,26 +73,63 @@ const TOP_K = 8;
 const ALL_MODELS = "__all__";
 const PLATFORM: UsageScope = { type: "platform" };
 
-type Tab = "breakdown" | "team" | "apiKey" | "model" | "detail";
+/**
+ * The page's view, kept in the URL. A new scope is a new history entry; the
+ * range, model and tab replace the current one.
+ */
+const useUsageView = () => {
+  const [params, setParams] = useSearchParams();
+  const read = useMemo(() => readUsageView(params), [params]);
+  // The scope keeps its identity while the URL names the same one, so a tab,
+  // model or range change does not rebuild what is computed per scope.
+  const lastScope = useRef(read.scope);
+  if (JSON.stringify(lastScope.current) !== JSON.stringify(read.scope)) {
+    lastScope.current = read.scope;
+  }
+  const view = { ...read, scope: lastScope.current };
+  const update = useCallback(
+    (change: Partial<UsageView>) =>
+      setParams((previous) => writeUsageView(previous, change), {
+        replace: !("scope" in change),
+      }),
+    [setParams],
+  );
+  return [view, update] as const;
+};
 
 export const ModelUsageList = () => {
   const { t } = useTranslation();
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
-  const [range, setRange] = useState<DateRange>(() =>
-    trailingRange(DEFAULT_RANGE_DAYS),
+  const [view, updateView] = useUsageView();
+  const range = useMemo(
+    () => view.range ?? trailingRange(DEFAULT_RANGE_DAYS),
+    [view.range],
   );
-  const [model, setModel] = useState("");
+  const setRange = useCallback(
+    (next: DateRange) => updateView({ range: next }),
+    [updateView],
+  );
+  const model = view.model;
+  const setModel = useCallback(
+    (next: string) => updateView({ model: next }),
+    [updateView],
+  );
   // The breakdown's entries never overlap, so a stacked bar shows the scope's
   // daily total and who made it up at once.
   const [chartType, setChartType] = useState<"line" | "bar">("bar");
+  const [pickedMetric, setMetric] = useState<TrendMetric>("tokens");
   // Series toggled off via the (clickable) chart legend.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
   // The range to come back to after drilling into a day, so the way back is
   // whatever the reader was looking at — a preset or their own custom window.
   const [lastRange, setLastRange] = useState<DateRange | null>(null);
-  const [pickedTab, setTab] = useState<Tab>("breakdown");
+  const pickedTab = view.tab ?? "breakdown";
+  const setTab = useCallback(
+    (next: UsageTab) => updateView({ tab: next }),
+    [updateView],
+  );
 
   // Usage by group includes other users' usage: a global workspace:usage-read
   // reads the whole platform, org_unit:usage-read the departments the caller
@@ -106,7 +153,7 @@ export const ModelUsageList = () => {
   // The page opens on the whole platform, or on the first department of a
   // department admin; null is the usage of every API key the caller reads.
   // Undefined until a scope is picked.
-  const [pickedScope, setPickedScope] = useState<UsageScope | null>();
+  const pickedScope = view.scope;
   const firstRoot = roots[0]?.unit.metadata.name;
   // Memoized: the scope keys the page's heavier memos.
   const defaultScope = useMemo<UsageScope | null>(
@@ -119,33 +166,57 @@ export const ModelUsageList = () => {
     [canReadAllGroups, firstRoot],
   );
   const picked = pickedScope === undefined ? defaultScope : pickedScope;
-  const scope =
-    picked && (canReadGroups || groupOf(picked)?.type === "team")
-      ? picked
-      : null;
-  const changeScope = useCallback((next: UsageScope | null) => {
-    setPickedScope(next);
-    setHidden(new Set());
-  }, []);
+  // A Team named in the URL takes its label from the Teams the caller reads.
+  const scope = useMemo<UsageScope | null>(() => {
+    if (!picked) return null;
+    const allowed =
+      picked.type === "platform" || picked.type === "applications"
+        ? canReadAllGroups
+        : canReadGroups || groupOf(picked)?.type === "team";
+    if (!allowed) return null;
+    const labeled = <S extends UsageScope | null>(s: S): S => {
+      const team = s?.type === "team" ? teamsByName.get(s.name) : undefined;
+      return team ? { ...s, label: displayName(team.metadata) } : s;
+    };
+    return picked.type === "user"
+      ? { ...picked, from: labeled(picked.from) }
+      : labeled(picked);
+  }, [picked, canReadAllGroups, canReadGroups, teamsByName]);
+  const changeScope = useCallback(
+    (next: UsageScope | null) => {
+      updateView({ scope: next });
+      setHidden(new Set());
+    },
+    [updateView],
+  );
 
   // The tabs this scope has. Every group scope counts API keys; Teams need a
-  // global reader.
-  const tabs = useMemo<Tab[]>(() => {
-    if (!scope) return ["apiKey", "model", "detail"];
-    if (scope.type === "user") return ["model", "detail"];
-    if (scope.type === "team")
-      return ["breakdown", "apiKey", "model", "detail"];
+  // global reader. The models are the card beside the chart.
+  const tabs = useMemo<UsageTab[]>(() => {
+    if (!scope) return ["apiKey", "detail"];
+    if (scope.type === "user") return ["detail"];
+    if (scope.type === "applications") return ["breakdown", "detail"];
+    if (scope.type === "team") return ["breakdown", "apiKey", "detail"];
     return [
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
       "apiKey",
-      "model",
       "detail",
     ];
   }, [scope, canReadAllGroups]);
   const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  // Usage by API key carries no request count.
+  const metric: TrendMetric = scope ? pickedMetric : "tokens";
   const deletedKeyLabel = useCallback(
     (id: string) => t("model_usage.deletedKey", { id }),
+    [t],
+  );
+  const breakdownLabels = useMemo<BreakdownLabels>(
+    () => ({
+      unassigned: t("model_usage.scope.unassigned"),
+      applications: t("model_usage.scope.applications"),
+      application: t("model_usage.group.kinds.ServiceAccount"),
+    }),
     [t],
   );
 
@@ -154,6 +225,8 @@ export const ModelUsageList = () => {
     scopeTotal,
     facts,
     totals,
+    previousTotal,
+    activity,
     breakdown,
     breakdownSeries,
     keyFacts,
@@ -172,7 +245,7 @@ export const ModelUsageList = () => {
     roots,
     nodesByName,
     teamsByName,
-    unassignedLabel: t("model_usage.scope.unassigned"),
+    breakdownLabels,
     deletedKeyLabel,
   });
 
@@ -181,12 +254,15 @@ export const ModelUsageList = () => {
   // scope and the date control is both the state and the way back.
   const isSingleDay = range.start === range.end;
 
-  const changeRange = useCallback((next: DateRange) => {
-    setRange(next);
-    // Remember where to come back to. A single day picked in the calendar is
-    // itself a drill-down, so it is not a place to come back to.
-    if (next.start !== next.end) setLastRange(next);
-  }, []);
+  const changeRange = useCallback(
+    (next: DateRange) => {
+      setRange(next);
+      // Remember where to come back to. A single day picked in the calendar is
+      // itself a drill-down, so it is not a place to come back to.
+      if (next.start !== next.end) setLastRange(next);
+    },
+    [setRange],
+  );
 
   const pickDay = useCallback(
     (day: string) => {
@@ -195,12 +271,12 @@ export const ModelUsageList = () => {
       );
       setRange({ start: day, end: day });
     },
-    [range],
+    [range, setRange],
   );
 
   const resetRange = useCallback(
     () => setRange(lastRange ?? trailingRange(DEFAULT_RANGE_DAYS)),
-    [lastRange],
+    [lastRange, setRange],
   );
 
   // "Back to last 30 days" when the previous range was a preset, otherwise name
@@ -227,7 +303,7 @@ export const ModelUsageList = () => {
           breakdownSeries.filter((s) => s.total > 0),
           "model_usage.daily.otherGroups",
           (series: UsageSeries[]) =>
-            buildTrend(breakdown, series, (r) => r.entry),
+            buildTrend(breakdown, series, (r) => r.entry, metric),
         ] as const)
       : ([
           keyRows,
@@ -237,13 +313,9 @@ export const ModelUsageList = () => {
         ] as const);
     const series = foldRemainder(base, TOP_K, (n) => t(otherKey, { n }));
     return { series, trend: trendOf(series) };
-  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, t]);
+  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, t]);
   const labelKeys = breakdownLabelKeys(scope);
 
-  const modelRows = useMemo(
-    () => (model ? models.filter((m) => m.key === model) : models),
-    [model, models],
-  );
   const detailRows = useMemo(
     () =>
       [...facts].sort(
@@ -260,8 +332,9 @@ export const ModelUsageList = () => {
         nodesByName,
         nodesById,
         platformLabel: t("model_usage.scope.platform"),
+        applicationsLabel: breakdownLabels.applications,
       }),
-    [scope, canReadAllGroups, nodesByName, nodesById, t],
+    [scope, canReadAllGroups, nodesByName, nodesById, breakdownLabels, t],
   );
 
   // The tables reset to page 1 when the scope changes — and only then. The
@@ -287,11 +360,10 @@ export const ModelUsageList = () => {
     });
   };
 
-  const tabLabel: Record<Tab, string> = {
+  const tabLabel: Record<UsageTab, string> = {
     breakdown: labelKeys.tab ? t(labelKeys.tab) : "",
     team: t("model_usage.tabs.teams"),
     apiKey: t("model_usage.tabs.apiKeys"),
-    model: t("model_usage.tabs.models"),
     detail: t("model_usage.tabs.detail"),
   };
 
@@ -299,7 +371,11 @@ export const ModelUsageList = () => {
     <div className="min-w-0 space-y-4">
       <ScopeBreadcrumb trail={trail} onScopeChange={changeScope} />
 
-      <UsageSummary totals={totals} />
+      <UsageSummary
+        totals={totals}
+        previousTotal={previousTotal}
+        activity={activity}
+      />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <UsageChart
@@ -310,6 +386,8 @@ export const ModelUsageList = () => {
           seriesLabel={t(labelKeys.series)}
           chartType={chartType}
           onChartTypeChange={setChartType}
+          metric={metric}
+          onMetricChange={scope ? setMetric : undefined}
           hidden={hidden}
           onToggleSeries={onToggleSeries}
           isLoading={loading}
@@ -330,7 +408,7 @@ export const ModelUsageList = () => {
       ) : null}
 
       <Card className="overflow-hidden">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as UsageTab)}>
           <div className="border-b border-[var(--nt-stroke-neutral-trans-2)] px-3 py-2">
             <TabsList>
               {tabs.map((value) => (
@@ -371,22 +449,11 @@ export const ModelUsageList = () => {
               total={keyRows.reduce((sum, r) => sum + r.total, 0)}
             />
           </TabsContent>
-          <TabsContent value="model" className="mt-0">
-            <UsageTable
-              nameHeader={t("model_usage.model")}
-              rows={modelRows}
-              resetKey={scopeKey}
-              total={totals.total}
-              showRequests={!!scope}
-            />
-          </TabsContent>
           <TabsContent value="detail" className="mt-0">
             <DetailTable
               rows={detailRows}
               resetKey={scopeKey}
-              whoHeader={t(
-                scope ? "model_usage.group.kinds.User" : "model_usage.apiKey",
-              )}
+              whoHeader={t(labelKeys.who)}
             />
           </TabsContent>
         </Tabs>

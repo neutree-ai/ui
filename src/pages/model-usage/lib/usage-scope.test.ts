@@ -3,6 +3,8 @@ import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import { buildOrgTree, indexNodes } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import {
+  APPLICATIONS_KEY,
+  appFact,
   buildBreakdown,
   groupFact,
   keyFact,
@@ -70,6 +72,7 @@ const breakdown = (
     userRows?: UsageFact[];
     unitRows?: UsageFact[];
     directRows?: UsageFact[];
+    appRows?: UsageFact[];
   },
 ) =>
   buildBreakdown({
@@ -79,8 +82,16 @@ const breakdown = (
     userRows: rows.userRows ?? [],
     unitRows: rows.unitRows ?? [],
     directRows: rows.directRows ?? [],
-    unassignedLabel: "No department",
+    appRows: rows.appRows ?? [],
+    labels: {
+      unassigned: "No department",
+      applications: "Applications",
+      application: "Application",
+    },
   });
+
+const app = (id: string, usage: number) =>
+  appFact(record("ServiceAccount", id, usage), "Application");
 
 const totalsByEntry = (facts: ReturnType<typeof breakdown>) => {
   const totals: Record<string, number> = {};
@@ -124,6 +135,16 @@ describe("scopeQueries", () => {
     expect(scopeQueries(null).direct).toBeUndefined();
   });
 
+  it("reads application usage on the platform and in a Team only", () => {
+    expect(scopeQueries({ type: "platform" }).apps).toEqual({});
+    expect(scopeQueries({ type: "applications" })).toEqual({ apps: {} });
+    expect(scopeQueries(team).apps).toEqual({ team: "t1" });
+    // Applications belong to no department, and are no user.
+    expect(scopeQueries(rnd).apps).toBeUndefined();
+    expect(scopeQueries(user(team)).apps).toBeUndefined();
+    expect(scopeQueries(null)).toEqual({});
+  });
+
   it("narrows usage by API key to a Team or a department scope", () => {
     expect(scopeQueries(team).keyGroup).toEqual({ team: "t1" });
     expect(scopeQueries(rnd).keyGroup).toEqual({ orgUnit: "rnd" });
@@ -142,6 +163,7 @@ describe("scopeTrail", () => {
       nodesByName: nodes,
       nodesById,
       platformLabel: "Platform",
+      applicationsLabel: "Applications",
     }).map((crumb) => crumb.label);
 
   it("leads up from a department through the departments above", () => {
@@ -174,6 +196,10 @@ describe("scopeTrail", () => {
       }),
     ).toEqual(["Platform", "RND", "ML", "U1"]);
     expect(trail({ type: "platform" })).toEqual(["Platform"]);
+    expect(trail({ type: "applications" })).toEqual([
+      "Platform",
+      "Applications",
+    ]);
     expect(trail(null)).toEqual([]);
   });
 
@@ -185,6 +211,7 @@ describe("scopeTrail", () => {
         nodesByName: nodes,
         nodesById,
         platformLabel: "Platform",
+        applicationsLabel: "Applications",
       },
     );
     expect(platform.scope).toEqual({ type: "platform" });
@@ -259,7 +286,7 @@ describe("sumUsage", () => {
 });
 
 describe("buildBreakdown", () => {
-  it("splits the platform into its top departments and the users in none", () => {
+  it("splits the platform into its top departments, the users in none and its applications", () => {
     const facts = breakdown(
       { type: "platform" },
       {
@@ -271,6 +298,7 @@ describe("buildBreakdown", () => {
           row("User", "u3", 50),
         ],
         directRows: [row("User", "u3", 50)],
+        appRows: [app("sa1", 70), app("sa2", 30)],
         // Every department's subtree total; only the top ones are entries.
         unitRows: [
           row("OrgUnit", "rnd", 300),
@@ -285,6 +313,7 @@ describe("buildBreakdown", () => {
       rnd: 300,
       market: 150,
       [UNASSIGNED_KEY]: 50,
+      [APPLICATIONS_KEY]: 100,
     });
     expect(facts.find((f) => f.entry === "rnd")).toMatchObject({
       label: "RND",
@@ -292,6 +321,24 @@ describe("buildBreakdown", () => {
     });
     expect(facts.find((f) => f.entry === UNASSIGNED_KEY)).toMatchObject({
       label: "No department",
+      target: null,
+    });
+    expect(facts.find((f) => f.entry === APPLICATIONS_KEY)).toMatchObject({
+      label: "Applications",
+      target: { type: "applications" },
+    });
+  });
+
+  it("splits every application on the platform into each one", () => {
+    const facts = breakdown(
+      { type: "applications" },
+      { appRows: [app("sa1", 70), app("sa2", 30)] },
+    );
+
+    expect(totalsByEntry(facts)).toEqual({ "app:sa1": 70, "app:sa2": 30 });
+    expect(facts[0]).toMatchObject({
+      label: "sa1 display",
+      description: "Application",
       target: null,
     });
   });
@@ -354,13 +401,18 @@ describe("buildBreakdown", () => {
     expect(facts.every((f) => f.target === null)).toBe(true);
   });
 
-  it("splits a Team into its users, who lead back to the Team", () => {
+  it("splits a Team into its users, who lead back to the Team, and its applications", () => {
     const team = { type: "team" as const, name: "alpha", label: "Alpha" };
     const facts = breakdown(team, {
       userRows: [row("User", "u1", 100), row("User", "u2", 40)],
+      appRows: [app("sa1", 25)],
     });
 
-    expect(totalsByEntry(facts)).toEqual({ "user:u1": 100, "user:u2": 40 });
+    expect(totalsByEntry(facts)).toEqual({
+      "user:u1": 100,
+      "user:u2": 40,
+      "app:sa1": 25,
+    });
     expect(facts[0].target).toMatchObject({ type: "user", from: team });
   });
 });

@@ -3,9 +3,11 @@ import type { ApiUsageRecord } from "@/domains/api-key/types";
 import {
   aggregateSeries,
   buildTrend,
+  changeOf,
   foldRemainder,
   OTHER_SERIES_KEY,
   orderSeries,
+  previousRange,
 } from "@/pages/model-usage/lib/usage-series";
 
 const record = (
@@ -138,6 +140,24 @@ describe("buildTrend", () => {
     ]);
   });
 
+  it("counts requests instead of tokens when asked", () => {
+    const rows = [
+      {
+        ...record({ date: "2026-09-01", api_key_id: "a", usage: 5 }),
+        requests: 2,
+      },
+      {
+        ...record({ date: "2026-09-01", api_key_id: "a", usage: 9 }),
+        requests: 3,
+      },
+    ];
+    const series = aggregateSeries(rows, byKey, metaOfKey);
+
+    expect(buildTrend(rows, series, byKey, "requests")).toEqual([
+      { date: "2026-09-01", a: 5 },
+    ]);
+  });
+
   it("fills the folded 'other' series with each day's remaining tokens", () => {
     const rows = [
       record({ date: "2026-09-01", api_key_id: "big", usage: 100 }),
@@ -176,5 +196,26 @@ describe("orderSeries", () => {
       (key) => ({ a: 0, b: 1 })[key],
     );
     expect(ordered.map((s) => s.key)).toEqual(["a", "b", "x", "y"]);
+  });
+});
+
+describe("previousRange", () => {
+  it("is the range of the same length just before", () => {
+    expect(previousRange({ start: "2026-10-01", end: "2026-10-30" })).toEqual({
+      start: "2026-09-01",
+      end: "2026-09-30",
+    });
+    expect(previousRange({ start: "2026-03-01", end: "2026-03-01" })).toEqual({
+      start: "2026-02-28",
+      end: "2026-02-28",
+    });
+  });
+});
+
+describe("changeOf", () => {
+  it("is the change in percent, and null with nothing to compare with", () => {
+    expect(changeOf(150, 100)).toBe(50);
+    expect(changeOf(50, 100)).toBe(-50);
+    expect(changeOf(50, 0)).toBeNull();
   });
 });

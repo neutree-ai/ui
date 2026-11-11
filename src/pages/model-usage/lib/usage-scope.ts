@@ -18,11 +18,13 @@ export type GroupScope =
   | { type: "team"; name: string; label: string };
 
 /**
- * What the page counts: the whole platform, a group, or one user. `from` is
- * the group a user was opened from, so the way back leads there.
+ * What the page counts: the whole platform, every application on it, a
+ * group, or one user. `from` is the group a user was opened from, so the way
+ * back leads there.
  */
 export type UsageScope =
   | { type: "platform" }
+  | { type: "applications" }
   | GroupScope
   | { type: "user"; id: string; label: string; from: GroupScope | null };
 
@@ -31,7 +33,11 @@ export type ScopeMember = { id: string; label: string };
 
 /** The group a scope belongs to: itself, or the group a user was opened from. */
 export const groupOf = (scope: UsageScope): GroupScope | null =>
-  scope.type === "user" ? scope.from : scope.type === "platform" ? null : scope;
+  scope.type === "user"
+    ? scope.from
+    : scope.type === "platform" || scope.type === "applications"
+      ? null
+      : scope;
 
 const groupFilter = (group: GroupScope | null): GroupUsageFilter =>
   group?.type === "orgUnit"
@@ -56,8 +62,14 @@ const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
 
 /** What the page asks the usage RPCs for in a scope. */
 type ScopeQueries = {
-  /** The filter of the scope's User rows. */
-  user: GroupUsageFilter;
+  /** The filter of the scope's User rows. Absent when it has none. */
+  user?: GroupUsageFilter;
+  /**
+   * The filter of the scope's ServiceAccount rows: application usage, which
+   * is recorded for the application and its Team, under no user and no
+   * department. Absent when the scope holds none.
+   */
+  apps?: GroupUsageFilter;
   /**
    * The filter of the OrgUnit and Team rows. Absent when the scope is not
    * split into departments: a Team, a user, or no scope.
@@ -75,9 +87,11 @@ type ScopeQueries = {
 export function scopeQueries(scope: UsageScope | null): ScopeQueries {
   switch (scope?.type) {
     case undefined:
-      return { user: {} };
+      return {};
     case "platform":
-      return { user: {}, units: {}, direct: { direct: true } };
+      return { user: {}, apps: {}, units: {}, direct: { direct: true } };
+    case "applications":
+      return { apps: {} };
     case "orgUnit":
       return {
         user: userUsageFilter(scope),
@@ -88,6 +102,7 @@ export function scopeQueries(scope: UsageScope | null): ScopeQueries {
     case "team":
       return {
         user: userUsageFilter(scope),
+        apps: { team: scope.name },
         keyGroup: { team: scope.name },
       };
     case "user":
@@ -108,17 +123,23 @@ export function scopeTrail(
     nodesByName,
     nodesById,
     platformLabel,
+    applicationsLabel,
   }: {
     canReadAllGroups: boolean;
     nodesByName: ReadonlyMap<string, OrgTreeNode>;
     nodesById: ReadonlyMap<number, OrgTreeNode>;
     platformLabel: string;
+    applicationsLabel: string;
   },
 ): ScopeCrumb[] {
   if (!scope) return [];
   const crumbs: ScopeCrumb[] = canReadAllGroups
     ? [{ label: platformLabel, scope: { type: "platform" } }]
     : [];
+  if (scope.type === "applications") {
+    crumbs.push({ label: applicationsLabel, scope });
+    return crumbs;
+  }
   const group = groupOf(scope);
   const groupNode =
     group?.type === "orgUnit" ? nodesByName.get(group.name) : undefined;
@@ -137,37 +158,51 @@ export function scopeTrail(
 }
 
 /**
- * The i18n keys that name a scope's breakdown: chart series, tab and column.
- * Without a scope or for a user there is no breakdown tab, only the chart.
+ * The i18n keys that name a scope's breakdown: chart series, tab and column,
+ * and who a detail row counts toward. Without a scope or for a user there is
+ * no breakdown tab, only the chart.
  */
 export function breakdownLabelKeys(scope: UsageScope | null): {
   series: string;
   tab?: string;
   column?: string;
+  who: string;
 } {
+  const user = "model_usage.group.kinds.User";
+  const userOrApp = "model_usage.columns.userOrApplication";
   switch (scope?.type) {
     case undefined:
-      return { series: "model_usage.series.apiKey" };
+      return { series: "model_usage.series.apiKey", who: "model_usage.apiKey" };
     case "platform":
       return {
+        who: userOrApp,
         series: "model_usage.series.department",
         tab: "model_usage.tabs.departments",
         column: "model_usage.group.kinds.OrgUnit",
       };
+    case "applications":
+      return {
+        who: "model_usage.group.kinds.ServiceAccount",
+        series: "model_usage.series.application",
+        tab: "model_usage.tabs.applications",
+        column: "model_usage.group.kinds.ServiceAccount",
+      };
     case "team":
       return {
-        series: "model_usage.series.member",
-        tab: "model_usage.tabs.members",
-        column: "model_usage.group.kinds.User",
+        who: userOrApp,
+        series: "model_usage.series.memberOrApplication",
+        tab: "model_usage.tabs.membersAndApplications",
+        column: "model_usage.columns.memberOrApplication",
       };
     case "orgUnit":
       return {
+        who: user,
         series: "model_usage.series.subUnit",
         tab: "model_usage.tabs.subUnits",
         column: "model_usage.columns.subUnitOrUser",
       };
     case "user":
-      return { series: "model_usage.series.model" };
+      return { series: "model_usage.series.model", who: user };
   }
 }
 
@@ -212,6 +247,12 @@ export const groupFact = (r: GroupUsageRecord): UsageFact => ({
   who: { key: r.name, name: displayName(r), description: null },
 });
 
+/** A get_usage_by_group ServiceAccount row, marked as an application's. */
+export const appFact = (r: GroupUsageRecord, label: string): UsageFact => ({
+  ...groupFact(r),
+  who: { key: r.name, name: displayName(r), description: label },
+});
+
 /**
  * A get_usage_by_dimension row as a fact of its API key. A deleted key's rows
  * carry no name: `deletedLabel` names it by the start of its id.
@@ -241,6 +282,9 @@ export type UsageTotals = {
 
 /** The usage of the platform's users that no department holds. */
 export const UNASSIGNED_KEY = "__unassigned";
+
+/** The platform's application usage, which no department holds either. */
+export const APPLICATIONS_KEY = "__applications";
 
 /** Adds up the rows; `requests` is counted, from 0, only when asked for. */
 export function sumUsage(
@@ -286,7 +330,18 @@ type BreakdownInput = {
   unitRows: UsageFact[];
   /** By User, recorded under the department itself, or under none. */
   directRows: UsageFact[];
-  unassignedLabel: string;
+  /** get_usage_by_group by ServiceAccount across the scope. */
+  appRows: UsageFact[];
+  labels: BreakdownLabels;
+};
+
+export type BreakdownLabels = {
+  /** The platform's usage under no department. */
+  unassigned: string;
+  /** The platform's application usage, as one entry. */
+  applications: string;
+  /** What an application's row is, under its name. */
+  application: string;
 };
 
 type Entry = Omit<BreakdownFact, keyof UsageFact>;
@@ -310,9 +365,11 @@ const userEntry = (id: string, label: string, from: GroupScope): Entry => ({
 
 /**
  * Splits a scope's usage into entries that do not overlap:
- * - the platform into its top departments, plus the usage in none;
+ * - the platform into its top departments, plus the users' usage in none,
+ *   plus its applications;
+ * - every application on the platform into each application;
  * - a department into its child departments, plus its direct users;
- * - a Team into its users;
+ * - a Team into its users and its applications;
  * - a user into the models they used.
  * Usage counts toward the department a user was in at the time.
  */
@@ -323,7 +380,8 @@ export function buildBreakdown({
   userRows,
   unitRows,
   directRows,
-  unassignedLabel,
+  appRows,
+  labels,
 }: BreakdownInput): BreakdownFact[] {
   if (scope.type === "user") {
     return userRows.map((r) => ({
@@ -340,8 +398,18 @@ export function buildBreakdown({
     ...userEntry(r.who.key, r.who.name, from),
   });
 
+  const byApp = (r: UsageFact): BreakdownFact => ({
+    ...r,
+    entry: `app:${r.who.key}`,
+    label: r.who.name,
+    description: r.who.description,
+    target: null,
+  });
+
+  if (scope.type === "applications") return appRows.map(byApp);
+
   if (scope.type === "team") {
-    return userRows.map((r) => byUser(r, scope));
+    return [...userRows.map((r) => byUser(r, scope)), ...appRows.map(byApp)];
   }
 
   const children =
@@ -360,9 +428,16 @@ export function buildBreakdown({
       ...directRows.map((r) => ({
         ...r,
         entry: UNASSIGNED_KEY,
-        label: unassignedLabel,
+        label: labels.unassigned,
         description: null,
         target: null,
+      })),
+      ...appRows.map((r) => ({
+        ...r,
+        entry: APPLICATIONS_KEY,
+        label: labels.applications,
+        description: null,
+        target: { type: "applications" } as const,
       })),
     ];
   }
