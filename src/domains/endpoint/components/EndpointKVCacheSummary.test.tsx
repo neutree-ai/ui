@@ -5,6 +5,23 @@ import type { Endpoint, EndpointClusterRef } from "../types";
 import { EndpointKVCacheSummary } from "./EndpointKVCacheSummary";
 
 describe("EndpointKVCacheSummary", () => {
+  it("omits the cluster link when the endpoint has no cluster context", () => {
+    render(
+      <MemoryRouter>
+        <EndpointKVCacheSummary
+          endpoint={
+            {
+              metadata: { workspace: "default" },
+              spec: { kv_cache: null },
+            } as Endpoint
+          }
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
   it.each([
     [true, true],
     [true, false],

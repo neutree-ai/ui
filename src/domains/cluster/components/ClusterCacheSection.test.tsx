@@ -295,6 +295,90 @@ describe("ClusterCacheSection", () => {
     within(nodeRow).getByText("status.phases.endpoint.Running");
   });
 
+  it.each([
+    {
+      endpointsLoading: true,
+      endpointsError: false,
+      text: "loading",
+    },
+    {
+      endpointsLoading: false,
+      endpointsError: true,
+      text: "clusters.zcache.dependencyCheckFailed",
+    },
+  ])(
+    "shows dependency state while the endpoint list is loading or failed",
+    ({ endpointsLoading, endpointsError, text }) => {
+      render(
+        <ClusterCacheSection
+          cluster={makeCluster(
+            { l1_size_gib: 8, target_nodes: ["a"] },
+            {
+              phase: "Ready",
+              details: {
+                observed_at: "now",
+                current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+                nodes: [node("a", 8)],
+              },
+            },
+          )}
+          endpointsLoading={endpointsLoading}
+          endpointsError={endpointsError}
+          endpoints={[
+            {
+              id: 1,
+              metadata: { name: "chat-api" },
+              spec: { kv_cache: { provider: "zcache" } },
+              status: {
+                resources: {
+                  replicas: [
+                    {
+                      instance_id: "chat-api-0",
+                      node_id: "a",
+                    },
+                  ],
+                },
+              },
+            },
+          ]}
+        />,
+      );
+      screen.getByText(text);
+    },
+  );
+
+  it("shows an endpoint without a resource name as plain text", () => {
+    render(
+      <ClusterCacheSection
+        cluster={makeCluster(
+          { l1_size_gib: 8, target_nodes: ["a"] },
+          {
+            phase: "Ready",
+            details: {
+              observed_at: "now",
+              current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+              nodes: [node("a", 8)],
+            },
+          },
+        )}
+        endpoints={[
+          {
+            id: 9,
+            spec: { kv_cache: { provider: "zcache" } },
+            status: {
+              resources: {
+                replicas: [{ instance_id: "orphan-0", node_id: "a" }],
+              },
+            },
+          },
+        ]}
+      />,
+    );
+
+    screen.getByText("9");
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
   it("does not label stale node observations ready", () => {
     render(
       <ClusterCacheSection

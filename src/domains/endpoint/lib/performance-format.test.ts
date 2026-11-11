@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatBandwidth,
   formatLatency,
+  formatLatencyAxis,
   formatPercent,
   formatTokenRate,
 } from "./performance-format";
@@ -26,6 +27,13 @@ it.each([
   [1.5, "1.50 s"],
 ])("formatLatency(%s) -> %s", (seconds, text) => {
   expect(formatLatency(seconds)).toBe(text);
+});
+
+it.each([
+  [0.185, "185"],
+  [1.5, "1.50"],
+])("formatLatencyAxis(%s) -> %s", (seconds, text) => {
+  expect(formatLatencyAxis(seconds)).toBe(text);
 });
 
 it.each([

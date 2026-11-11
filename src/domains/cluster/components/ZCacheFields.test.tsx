@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Cluster, ZCacheStatus } from "../types";
+import type { Cluster, ClusterCacheStatus, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
 const cacheDependencies = vi.hoisted(() => ({
@@ -61,11 +61,13 @@ function Form({
   status,
   isEdit = true,
   legacy = false,
+  summaryPhase,
 }: {
   onSubmit: (data: Cluster) => void;
   status?: ZCacheStatus;
   isEdit?: boolean;
   legacy?: boolean;
+  summaryPhase?: ClusterCacheStatus["phase"];
 }) {
   const form = useForm<Cluster>({
     defaultValues: {
@@ -98,7 +100,16 @@ function Form({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <ZCacheFields form={adapted} isEdit={isEdit} status={status} />
+        <ZCacheFields
+          form={adapted}
+          isEdit={isEdit}
+          status={status}
+          summary={
+            summaryPhase
+              ? { provider: "zcache", phase: summaryPhase, conditions: [] }
+              : undefined
+          }
+        />
         <button type="submit">Save</button>
       </form>
     </FormProvider>
@@ -128,6 +139,17 @@ const observed: ZCacheStatus = {
 };
 
 describe("ZCacheFields", () => {
+  it.each([
+    ["Ready", "clusters.zcache.applied"],
+    ["Reconciling", "clusters.zcache.reconciling"],
+    ["Failed", "clusters.zcache.failed"],
+    ["Unavailable", "clusters.zcache.unavailable"],
+    ["Disabled", "clusters.zcache.disabled"],
+  ] as const)("labels a %s cache summary", (phase, label) => {
+    render(<Form onSubmit={vi.fn()} summaryPhase={phase} />);
+    screen.getByText(label);
+  });
+
   it("blocks removal while endpoints still use cache, but allows expansion", () => {
     cacheDependencies.rows = [
       {
@@ -250,12 +272,22 @@ describe("ZCacheFields", () => {
       target_nodes: ["a"],
     });
   });
-  it("offers undeployed candidates, not just runtime nodes", () => {
-    render(<Form onSubmit={vi.fn()} status={observed} />);
+  it("adds an undeployed candidate, not just runtime nodes", async () => {
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} status={observed} />);
     expect(screen.getByRole("checkbox", { name: "c" })).toHaveProperty(
       "disabled",
       false,
     );
+    fireEvent.click(screen.getByRole("checkbox", { name: "c" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    expect(submit.mock.calls[0][0].spec.cache?.options.target_nodes).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
   });
   it("filters the cache node table", () => {
     render(<Form onSubmit={vi.fn()} status={observed} />);

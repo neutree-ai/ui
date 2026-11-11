@@ -16,6 +16,7 @@ import { cn } from "@/foundation/lib/utils";
 import {
   formatBandwidth,
   formatLatency,
+  formatLatencyAxis,
   formatPercent,
   formatTokenRate,
 } from "../lib/performance-format";
@@ -448,8 +449,3 @@ const CACHE_IO_LINES = (t: (key: string) => string): PerformanceTrendLine[] => [
     formatValue: formatBandwidth,
   },
 ];
-
-function formatLatencyAxis(seconds: number): string {
-  if (seconds < 1) return (seconds * 1000).toFixed(0);
-  return seconds.toFixed(2);
-}

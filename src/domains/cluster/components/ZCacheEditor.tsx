@@ -59,7 +59,7 @@ export function ZCacheEditor({
       setConfirmDiscard(false);
       return;
     }
-    if (form.formState.isDirty) setConfirmDiscard(true);
+    if (!unchanged) setConfirmDiscard(true);
     else onClose();
   };
 

@@ -447,6 +447,40 @@ describe("endpoint resource status helpers", () => {
     ).toEqual([0, 1]);
   });
 
+  it("uses the UUID as the final ordering key for identical device positions", () => {
+    const resourceStatus: EndpointResourceStatus = {
+      summary: null,
+      replicas: [
+        {
+          instance_id: "endpoint-abc",
+          replica_id: "replica-0",
+          devices: [
+            {
+              uuid: "GPU-z",
+              order: 0,
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+            {
+              uuid: "GPU-a",
+              order: 0,
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(
+      getEndpointGpuResourceGroups(resourceStatus).map((group) => group.uuid),
+    ).toEqual(["GPU-a", "GPU-z"]);
+  });
+
   it("returns empty rows when endpoint resources are missing", () => {
     expect(getEndpointResourceSummaryRows(null)).toEqual([]);
     expect(getEndpointReplicaResourceRows(undefined)).toEqual([]);

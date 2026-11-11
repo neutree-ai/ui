@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Cluster } from "../types";
 import { ZCacheEditor } from "./ZCacheEditor";
 
-const mocks = vi.hoisted(() => ({ update: vi.fn(), access: true }));
+const mocks = vi.hoisted(() => ({
+  update: vi.fn(),
+  access: true,
+  loading: false,
+}));
 vi.mock("@refinedev/core", () => ({
   useList: () => ({ data: { data: [] }, isLoading: false }),
   useCan: () => ({ data: { can: mocks.access } }),
-  useUpdate: () => ({ mutateAsync: mocks.update, isLoading: false }),
+  useUpdate: () => ({ mutateAsync: mocks.update, isLoading: mocks.loading }),
   useInvalidate: () => vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
@@ -40,6 +44,7 @@ const cluster = {
 beforeEach(() => {
   mocks.update.mockReset().mockResolvedValue({});
   mocks.access = true;
+  mocks.loading = false;
 });
 
 describe("ZCacheEditor", () => {
@@ -140,6 +145,57 @@ describe("ZCacheEditor", () => {
 
     expect(
       screen.getByRole("button", { name: "clusters.zcache.save" }),
+    ).toHaveProperty("disabled", true);
+  });
+
+  it("confirms before discarding a dirty draft", async () => {
+    const close = vi.fn();
+    render(<ZCacheEditor cluster={cluster} onClose={close} />);
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "5" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    await screen.findByRole("heading", {
+      name: "clusters.zcache.discardTitle",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    screen.getByRole("heading", { name: "clusters.zcache.edit" });
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    await screen.findByRole("heading", {
+      name: "clusters.zcache.discardTitle",
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.discardTitle" }),
+    );
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("closes directly when the cache configuration is unchanged", () => {
+    const close = vi.fn();
+    render(<ZCacheEditor cluster={cluster} onClose={close} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "buttons.cancel" }));
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("warns that edits are queued while a cache change is running", () => {
+    const running = structuredClone(cluster);
+    running.status!.cache!.details = {
+      change: { phase: "Running" },
+    };
+    render(<ZCacheEditor cluster={running} onClose={vi.fn()} />);
+
+    screen.getByText("clusters.zcache.editWhileBusy");
+    screen.getByRole("status");
+  });
+
+  it("shows the in-progress save label while the update is pending", () => {
+    mocks.loading = true;
+    render(<ZCacheEditor cluster={cluster} onClose={vi.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: "clusters.zcache.saving" }),
     ).toHaveProperty("disabled", true);
   });
 
