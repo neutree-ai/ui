@@ -1,13 +1,32 @@
-import { fireEvent, render as renderUI, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render as renderUI,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Cluster } from "../types";
 import { ClusterCacheSection } from "./ClusterCacheSection";
 
-const render = (ui: ReactNode) => renderUI(ui, { wrapper: MemoryRouter });
+const render = (ui: ReactNode) =>
+  renderUI(
+    <TooltipProvider>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </TooltipProvider>,
+  );
 
 vi.mock("@refinedev/core", () => ({ useCan: () => ({ data: { can: true } }) }));
+vi.mock("@/foundation/components/Link", () => ({
+  Link: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
+vi.mock("./ZCacheEditor", () => ({
+  ZCacheEditor: () => <div>cache editor</div>,
+}));
 vi.mock("./CacheRetry", () => ({
   CacheRetry: () => <button type="button">Retry service</button>,
 }));
@@ -56,7 +75,7 @@ type CacheOptions = {
 
 const makeCluster = (
   options: Partial<CacheOptions> | null,
-  cache: Record<string, unknown> | null,
+  cache: Record<string, unknown>,
 ) =>
   ({
     spec: options
@@ -72,9 +91,7 @@ const makeCluster = (
           },
         }
       : {},
-    status: cache
-      ? { cache: { provider: "zcache", conditions: [], ...cache } }
-      : {},
+    status: { cache: { provider: "zcache", conditions: [], ...cache } },
   }) as unknown as Cluster;
 
 const node = (name: string, gib: number) => ({
@@ -113,7 +130,7 @@ describe("ClusterCacheSection", () => {
     screen.getByText("clusters.zcache.reconciling");
   });
 
-  it("keeps cache configuration editing in the cluster edit page", () => {
+  it("opens cache configuration from an independent detail-page action", () => {
     render(
       <ClusterCacheSection
         cluster={makeCluster(
@@ -129,9 +146,10 @@ describe("ClusterCacheSection", () => {
       />,
     );
 
-    expect(
-      screen.queryByRole("button", { name: "clusters.zcache.edit" }),
-    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.zcache.edit" }),
+    );
+    screen.getByText("cache editor");
     screen.getByRole("button", { name: "clusters.cacheUpgrade.title" });
   });
 
@@ -220,6 +238,145 @@ describe("ClusterCacheSection", () => {
     expect(screen.getByRole("status").textContent).toContain(
       "clusters.zcache.latestTarget",
     );
+  });
+
+  it("shows per-node L1 usage and lists endpoints on their running nodes", () => {
+    render(
+      <ClusterCacheSection
+        cluster={makeCluster(
+          { l1_size_gib: 8, target_nodes: ["gpu-node-a"] },
+          {
+            phase: "Ready",
+            details: {
+              observed_at: "now",
+              nodes: [node("gpu-node-a", 8)],
+            },
+          },
+        )}
+        l1CacheByNode={{
+          "gpu-node-a": { usedGiB: 3.4, capacityGiB: 8 },
+        }}
+        endpoints={[
+          {
+            id: 1,
+            metadata: { name: "chat-api", display_name: "Chat API" },
+            spec: { kv_cache: { provider: "zcache" } },
+            status: {
+              phase: "Running",
+              resources: {
+                replicas: [
+                  {
+                    instance_id: "chat-api-0",
+                    node_id: "gpu-node-a",
+                  },
+                ],
+              },
+            },
+          },
+        ]}
+      />,
+    );
+
+    screen.getByText("3.4 / 8 GiB");
+    screen.getByText("43%");
+    expect(
+      screen
+        .getByRole("progressbar", {
+          name: /clusters\.zcache\.usageAria/,
+        })
+        .getAttribute("aria-valuenow"),
+    ).toBe("43");
+    screen.getByRole("columnheader", {
+      name: "clusters.zcache.usedBy",
+    });
+    const nodeRow = screen.getByText("gpu-node-a").closest("tr");
+    if (!nodeRow) throw new Error("cache node row not found");
+    within(nodeRow).getByRole("link", { name: "Chat API" });
+    within(nodeRow).getByText("status.phases.endpoint.Running");
+  });
+
+  it.each([
+    {
+      endpointsLoading: true,
+      endpointsError: false,
+      text: "loading",
+    },
+    {
+      endpointsLoading: false,
+      endpointsError: true,
+      text: "clusters.zcache.dependencyCheckFailed",
+    },
+  ])(
+    "shows dependency state while the endpoint list is loading or failed",
+    ({ endpointsLoading, endpointsError, text }) => {
+      render(
+        <ClusterCacheSection
+          cluster={makeCluster(
+            { l1_size_gib: 8, target_nodes: ["a"] },
+            {
+              phase: "Ready",
+              details: {
+                observed_at: "now",
+                current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+                nodes: [node("a", 8)],
+              },
+            },
+          )}
+          endpointsLoading={endpointsLoading}
+          endpointsError={endpointsError}
+          endpoints={[
+            {
+              id: 1,
+              metadata: { name: "chat-api" },
+              spec: { kv_cache: { provider: "zcache" } },
+              status: {
+                resources: {
+                  replicas: [
+                    {
+                      instance_id: "chat-api-0",
+                      node_id: "a",
+                    },
+                  ],
+                },
+              },
+            },
+          ]}
+        />,
+      );
+      screen.getByText(text);
+    },
+  );
+
+  it("shows an endpoint without a resource name as plain text", () => {
+    render(
+      <ClusterCacheSection
+        cluster={makeCluster(
+          { l1_size_gib: 8, target_nodes: ["a"] },
+          {
+            phase: "Ready",
+            details: {
+              observed_at: "now",
+              current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+              nodes: [node("a", 8)],
+            },
+          },
+        )}
+        endpoints={[
+          {
+            id: 9,
+            spec: { kv_cache: { provider: "zcache" } },
+            status: {
+              resources: {
+                replicas: [{ instance_id: "orphan-0", node_id: "a" }],
+              },
+            },
+          },
+        ]}
+      />,
+    );
+
+    screen.getByText("9");
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("does not label stale node observations ready", () => {
@@ -334,19 +491,26 @@ describe("ClusterCacheSection", () => {
     );
     expect(screen.queryByText(/^clusters\.zcache\.readyCount/)).toBeNull();
   });
+});
 
-  it("shows disabled when cache has never been configured or observed", () => {
-    render(<ClusterCacheSection cluster={makeCluster(null, null)} />);
-    screen.getByText("clusters.zcache.disabled");
-    expect(screen.queryByText("clusters.zcache.reconciling")).toBeNull();
-    expect(screen.queryByText("clusters.zcache.lastObservation")).toBeNull();
-  });
+it("shows disabled when cache has never been configured or observed", () => {
+  render(<ClusterCacheSection cluster={{ spec: {}, status: {} } as Cluster} />);
+  screen.getByText("clusters.zcache.disabled");
+  expect(screen.queryByText("clusters.zcache.reconciling")).toBeNull();
+  expect(screen.queryByText("clusters.zcache.lastObservation")).toBeNull();
+});
 
-  it("shows pending enablement when the first cache observation is missing", () => {
-    render(
-      <ClusterCacheSection cluster={makeCluster({ l1_size_gib: 1 }, null)} />,
-    );
-    screen.getByText("clusters.zcache.reconciling");
-    screen.getByText("clusters.zcache.waiting");
-  });
+it("shows pending enablement when the first cache observation is missing", () => {
+  const cluster = {
+    spec: {
+      cache: {
+        provider: "zcache",
+        options: { enabled: true, l1_size_gib: 1, target_nodes: ["a"] },
+      },
+    },
+    status: {},
+  } as unknown as Cluster;
+  render(<ClusterCacheSection cluster={cluster} />);
+  screen.getByText("clusters.zcache.reconciling");
+  screen.getByText("clusters.zcache.waiting");
 });

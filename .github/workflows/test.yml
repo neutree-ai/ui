@@ -48,6 +48,9 @@ jobs:
       - name: Check unit-test patterns
         run: node tools/check-test-patterns.cjs
 
+      - name: Check chart colours
+        run: node tools/check-chart-colors.cjs
+
       - name: Run tests
         run: yarn test:coverage
 

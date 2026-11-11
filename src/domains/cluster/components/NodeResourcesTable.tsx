@@ -339,7 +339,7 @@ export const NodeResourcesTable = ({
                       ) : (
                         <div
                           role="list"
-                          className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]"
+                          className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))]"
                         >
                           {gpuRows}
                         </div>

@@ -83,7 +83,11 @@ export const ClustersShow = () => {
     record?.metadata.name,
     polling,
   );
-  const { data: clusterEndpoints } = useList<Endpoint>({
+  const {
+    data: clusterEndpoints,
+    isLoading: endpointsLoading,
+    isError: endpointsError,
+  } = useList<Endpoint>({
     resource: "endpoints",
     meta: { workspace: record?.metadata.workspace, workspaced: true },
     filters: [
@@ -539,7 +543,13 @@ export const ClustersShow = () => {
               value="cache"
               className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
             >
-              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
+              <ClusterCacheSection
+                cluster={record}
+                l1CacheByNode={l1ByNode}
+                endpoints={clusterEndpoints?.data}
+                endpointsLoading={endpointsLoading}
+                endpointsError={endpointsError}
+              />
             </TabsContent>
           )}
           {showMonitorTab && (

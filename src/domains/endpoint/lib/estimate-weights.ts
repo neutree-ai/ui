@@ -5,6 +5,20 @@ import {
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
+const SIZE_UNIT_BYTES: Record<string, number> = {
+  b: 1,
+  byte: 1,
+  bytes: 1,
+  kb: 1e3,
+  kib: 1024,
+  mb: 1e6,
+  mib: 1024 ** 2,
+  gb: 1e9,
+  gib: 1024 ** 3,
+  tb: 1e12,
+  tib: 1024 ** 4,
+};
+
 const parameterCount = (value: string | undefined): number | null => {
   if (!value) return null;
   const match = value
@@ -45,12 +59,33 @@ const bytesPerParameter = (info: ModelInfo): number | null => {
 };
 
 /**
- * Estimates checkpoint weights from the model metadata Neutree already reads,
- * in the same 1024³-byte GB as the KV cache estimate it is added to. This is a
- * deployment-sizing estimate, not a replacement for a catalog's measured
- * `vram_minimum_gb` when that number is available.
+ * Converts the registry's human-readable model size to the same 1024³-byte GB
+ * the KV cache estimate uses. Private registries report the model version's
+ * folder size; public registries may report no size at all.
  */
-export function estimateModelWeightsGb(info: ModelInfo | null | undefined) {
+export function estimateModelWeightsGb(size: string | null | undefined) {
+  const match = size?.trim().match(/^(\d+(?:\.\d+)?)\s+([kmgt]?i?b|bytes?)$/i);
+  if (!match) return null;
+
+  const amount = Number(match[1]);
+  const bytesPerUnit = SIZE_UNIT_BYTES[match[2].toLowerCase()];
+  if (!Number.isFinite(amount) || amount <= 0 || bytesPerUnit == null) {
+    return null;
+  }
+
+  return (amount * bytesPerUnit) / BYTES_PER_GB;
+}
+
+/**
+ * Catalog variants usually declare a measured VRAM minimum. When one omits
+ * that field, retain the checkpoint-based fallback that predates model-size
+ * estimation. Direct registry selections use their reported folder size
+ * instead, because mixed-precision checkpoints cannot be sized reliably from
+ * parameter count and one nominal quantization width.
+ */
+export function estimateCheckpointWeightsGb(
+  info: ModelInfo | null | undefined,
+) {
   if (!info) return null;
 
   const parameters = parameterCount(info.parameter_count);

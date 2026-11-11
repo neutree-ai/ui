@@ -19,13 +19,21 @@ export type DateRange = { start: string; end: string };
 
 const DEFAULT_PRESETS = [7, 30, 90];
 
+// A YYYY-MM-DD day as a short month and day in the reader's language.
+const formatDay = (day: string, locale: string | undefined): string =>
+  new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${day}T00:00:00Z`));
+
 // The control's label, shared with callers that need to name a range in copy
 // (e.g. the model-usage chart's "back to ..." button). A single-day range reads
 // as one date rather than "Sep 7 – Sep 7".
-export const formatRangeLabel = (value: DateRange): string =>
+export const formatRangeLabel = (value: DateRange, locale = "en-US"): string =>
   value.start === value.end
-    ? dayjs(value.start).format("MMM D")
-    : `${dayjs(value.start).format("MMM D")} – ${dayjs(value.end).format("MMM D")}`;
+    ? formatDay(value.start, locale)
+    : `${formatDay(value.start, locale)} – ${formatDay(value.end, locale)}`;
 
 // trailingRange returns the inclusive window covering the last `days` days up to
 // and including today.
@@ -53,13 +61,13 @@ export function DateRangePicker({
   className?: string;
   presets?: number[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // The first calendar click only anchors a new start; the committed `value`
   // stays untouched until a second click closes the range. Without this draft,
   // react-day-picker extends the existing range instead of starting a new one,
   // so re-picking a narrower window inside the current one keeps the old start.
   const [draftStart, setDraftStart] = useState<string | null>(null);
-  const label = formatRangeLabel(value);
+  const label = formatRangeLabel(value, i18n?.language);
   const selected: RdpRange = draftStart
     ? { from: dayjs(draftStart).toDate(), to: undefined }
     : { from: dayjs(value.start).toDate(), to: dayjs(value.end).toDate() };

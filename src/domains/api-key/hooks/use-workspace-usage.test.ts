@@ -10,7 +10,7 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { useWorkspaceUsage } from "./use-workspace-usage";
+import { type KeyUsageFilter, useWorkspaceUsage } from "./use-workspace-usage";
 
 let queryClient: QueryClient;
 const wrapper = ({ children }: { children: ReactNode }) =>
@@ -79,5 +79,65 @@ describe("useWorkspaceUsage", () => {
     // The literal "_all_" must never reach the backend, or the RPC's
     // `workspace = p_workspace` filter would match nothing.
     expect(call.values).not.toHaveProperty("p_workspace");
+  });
+
+  it("narrows to one owner's keys in a group, apart from the group's own rows", async () => {
+    mockMutateAsync.mockImplementation(async ({ values }) => ({
+      data: [{ owner: values.p_user_id ?? values.p_service_account_id ?? "" }],
+    }));
+    const { result, rerender } = renderHook(
+      ({ filter }) =>
+        useWorkspaceUsage("default", "2025-01-01", "2025-02-01", true, filter),
+      {
+        wrapper,
+        initialProps: {
+          filter: { orgUnit: "rnd" } as KeyUsageFilter,
+        },
+      },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(result.current.usageData).toEqual([{ owner: "" }]);
+
+    rerender({ filter: { orgUnit: "rnd", direct: true, user: "u1" } });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(mockMutateAsync).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        values: {
+          p_start_date: "2025-01-01",
+          p_end_date: "2025-02-01",
+          p_workspace: "default",
+          p_org_unit: "rnd",
+          p_direct: true,
+          p_user_id: "u1",
+        },
+      }),
+    );
+    expect(result.current.usageData).toEqual([{ owner: "u1" }]);
+
+    rerender({ filter: { team: "t1", serviceAccount: "sa1" } });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(mockMutateAsync.mock.lastCall?.[0].values).toMatchObject({
+      p_team: "t1",
+      p_service_account_id: "sa1",
+    });
+    expect(result.current.usageData).toEqual([{ owner: "sa1" }]);
+    expect(mockMutateAsync).toHaveBeenCalledTimes(3);
+  });
+
+  it("yields no cached rows while disabled", async () => {
+    mockMutateAsync.mockResolvedValueOnce({ data: [{ usage: 1 }] });
+    const { result, rerender } = renderHook(
+      ({ enabled }) =>
+        useWorkspaceUsage("default", "2025-01-01", "2025-02-01", enabled),
+      { wrapper, initialProps: { enabled: true } },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(result.current.usageData).toHaveLength(1);
+
+    // The same params from a caller that has no use for them.
+    rerender({ enabled: false });
+
+    expect(result.current.usageData).toEqual([]);
+    expect(result.current.isPlaceholder).toBe(false);
   });
 });

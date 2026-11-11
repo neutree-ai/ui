@@ -104,6 +104,8 @@ describe("scopeQueries", () => {
   const team = { type: "team", name: "t1", label: "T1" } as const;
   const user = (from: UsageScope | null) =>
     ({ type: "user", id: "u1", label: "U1", from }) as UsageScope;
+  const application = (from: UsageScope | null) =>
+    ({ type: "application", id: "sa1", label: "SA1", from }) as UsageScope;
 
   it("narrows a scope's User rows to its group, and a user to that group", () => {
     expect(scopeQueries({ type: "platform" }).user).toEqual({});
@@ -145,13 +147,38 @@ describe("scopeQueries", () => {
     expect(scopeQueries(null)).toEqual({});
   });
 
+  it("reads one application's usage in the Team it was opened from", () => {
+    expect(scopeQueries(application(team)).apps).toEqual({
+      name: "sa1",
+      team: "t1",
+    });
+    expect(scopeQueries(application(team)).user).toBeUndefined();
+    expect(scopeQueries(application(null)).apps).toEqual({ name: "sa1" });
+  });
+
   it("narrows usage by API key to a Team or a department scope", () => {
-    expect(scopeQueries(team).keyGroup).toEqual({ team: "t1" });
-    expect(scopeQueries(rnd).keyGroup).toEqual({ orgUnit: "rnd" });
-    expect(scopeQueries(null).keyGroup).toBeUndefined();
-    expect(scopeQueries({ type: "platform" }).keyGroup).toBeUndefined();
-    expect(scopeQueries(user(team)).keyGroup).toBeUndefined();
-    expect(scopeQueries(user(rnd)).keyGroup).toBeUndefined();
+    expect(scopeQueries(team).keys).toEqual({ team: "t1" });
+    expect(scopeQueries(rnd).keys).toEqual({ orgUnit: "rnd" });
+    expect(scopeQueries(null).keys).toBeUndefined();
+    expect(scopeQueries({ type: "platform" }).keys).toBeUndefined();
+  });
+
+  it("narrows usage by API key to an owner's keys, as their row counted", () => {
+    expect(scopeQueries(user(team)).keys).toEqual({ team: "t1", user: "u1" });
+    // In a department, the usage recorded under it directly.
+    expect(scopeQueries(user(rnd)).keys).toEqual({
+      orgUnit: "rnd",
+      direct: true,
+      user: "u1",
+    });
+    expect(scopeQueries(user(null)).keys).toEqual({ user: "u1" });
+    expect(scopeQueries(application(team)).keys).toEqual({
+      team: "t1",
+      serviceAccount: "sa1",
+    });
+    expect(scopeQueries(application(null)).keys).toEqual({
+      serviceAccount: "sa1",
+    });
   });
 });
 
@@ -195,6 +222,12 @@ describe("scopeTrail", () => {
         from: { type: "orgUnit", name: "ml" },
       }),
     ).toEqual(["Platform", "RND", "ML", "U1"]);
+    expect(
+      trail({ type: "application", id: "sa1", label: "SA1", from: team }),
+    ).toEqual(["Platform", "T1", "SA1"]);
+    expect(
+      trail({ type: "application", id: "sa1", label: "SA1", from: null }),
+    ).toEqual(["Platform", "Applications", "SA1"]);
     expect(trail({ type: "platform" })).toEqual(["Platform"]);
     expect(trail({ type: "applications" })).toEqual([
       "Platform",
@@ -339,7 +372,7 @@ describe("buildBreakdown", () => {
     expect(facts[0]).toMatchObject({
       label: "sa1 display",
       description: "Application",
-      target: null,
+      target: { type: "application", id: "sa1", from: null },
     });
   });
 
@@ -414,6 +447,31 @@ describe("buildBreakdown", () => {
       "app:sa1": 25,
     });
     expect(facts[0].target).toMatchObject({ type: "user", from: team });
+    expect(facts[2].target).toEqual({
+      type: "application",
+      id: "sa1",
+      label: "sa1 display",
+      from: team,
+    });
+  });
+
+  it("splits an application into the models it used", () => {
+    const team = { type: "team" as const, name: "alpha", label: "Alpha" };
+    const facts = breakdown(
+      { type: "application", id: "sa1", label: "SA1", from: team },
+      {
+        appRows: [
+          app("sa1", 30),
+          appFact(
+            record("ServiceAccount", "sa1", 10, { model_name: "llama" }),
+            "Application",
+          ),
+        ],
+      },
+    );
+
+    expect(totalsByEntry(facts)).toEqual({ qwen: 30, llama: 10 });
+    expect(facts.every((f) => f.target === null)).toBe(true);
   });
 });
 

@@ -15,6 +15,11 @@ export function formatLatency(seconds?: number | null): string {
   return `${seconds.toFixed(2)} s`;
 }
 
+export function formatLatencyAxis(seconds: number): string {
+  if (seconds < 1) return (seconds * 1000).toFixed(0);
+  return seconds.toFixed(2);
+}
+
 export function formatTokenRate(tokensPerSec?: number | null): string {
   if (!isMeasurement(tokensPerSec)) return "—";
   return `${tokensPerSec >= 100 ? tokensPerSec.toFixed(1) : tokensPerSec.toFixed(2).replace(/\.?0+$/, "")} tok/s`;
