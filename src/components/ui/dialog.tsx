@@ -105,11 +105,12 @@ const DialogTitle = React.forwardRef<
   if (!hint) return title;
 
   // The hint sits outside the heading so the dialog's name stays the title,
-  // and doubles as the dialog's description for screen readers.
+  // and doubles as the dialog's description for screen readers. Out of the
+  // tab order, so opening the dialog focuses its first field instead.
   return (
     <div className="flex items-center gap-1">
       {title}
-      <InfoHint label={hint} />
+      <InfoHint label={hint} tabIndex={-1} />
       <DialogPrimitive.Description className="sr-only">
         {hint}
       </DialogPrimitive.Description>

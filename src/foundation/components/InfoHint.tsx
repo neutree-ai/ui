@@ -22,7 +22,14 @@ const ignoreProgrammaticFocus = (event: FocusEvent<HTMLButtonElement>) => {
 // explanation for a section title that would otherwise crowd the title
 // itself. Self-contained (owns its own TooltipProvider) so a caller never
 // has to wrap it, the same way SegmentedControl owns its own.
-export const InfoHint = ({ label }: { label: string }) => (
+export const InfoHint = ({
+  label,
+  tabIndex,
+}: {
+  label: string;
+  /** -1 where the text is exposed elsewhere, e.g. as a dialog's description. */
+  tabIndex?: number;
+}) => (
   <TooltipProvider delayDuration={0}>
     <Tooltip>
       <TooltipTrigger asChild onFocus={ignoreProgrammaticFocus}>
@@ -30,6 +37,7 @@ export const InfoHint = ({ label }: { label: string }) => (
           type="button"
           className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label={label}
+          tabIndex={tabIndex}
         >
           <CircleHelp className="size-3.5" aria-hidden="true" />
         </button>

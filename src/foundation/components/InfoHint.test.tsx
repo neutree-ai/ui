@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,7 @@ describe("InfoHint", () => {
     ).toBe("What this creates.");
   });
 
-  it("keeps the tooltip closed when a dialog opened by mouse focuses it", () => {
+  it("focuses a dialog's first field on open, not its hint", () => {
     render(
       <Dialog>
         <DialogTrigger>Open</DialogTrigger>
@@ -52,22 +52,27 @@ describe("InfoHint", () => {
           <DialogHeader>
             <DialogTitle hint="What this creates.">Create</DialogTitle>
           </DialogHeader>
+          <input aria-label="Name" />
         </DialogContent>
       </Dialog>,
     );
 
-    const open = screen.getByRole("button", { name: "Open" });
-    fireEvent.pointerDown(open);
-    fireEvent.mouseDown(open);
-    act(() => open.focus());
-    fireEvent.pointerUp(open);
-    fireEvent.mouseUp(open);
-    fireEvent.click(open);
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
 
-    // Radix moves focus to the first tabbable element: the hint button.
-    expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "What this creates." }),
-    );
+    expect(document.activeElement).toBe(screen.getByLabelText("Name"));
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("keeps the tooltip closed on focus that is not from the keyboard", () => {
+    render(<InfoHint label="Why this matters." />);
+    const hint = screen.getByRole("button", { name: "Why this matters." });
+    // jsdom's :focus-visible heuristic depends on earlier tests' focus, so
+    // pin the answer a mouse-driven focus gets in a browser.
+    vi.spyOn(hint, "matches").mockReturnValue(false);
+
+    act(() => hint.focus());
+
+    expect(document.activeElement).toBe(hint);
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
