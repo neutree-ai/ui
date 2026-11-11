@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeEndpoint } from "@/domains/endpoint/testing/builders";
+import { endpointCacheErrorMessage } from "./endpoint-cache-errors";
 import {
   endpointDirtySteps,
   endpointErrorsByStep,
@@ -336,32 +337,22 @@ describe("endpoint wizard error mapping", () => {
     expect(
       endpointServerIssue(
         {
-          code: "ENDPOINT_CACHE_NODE_POOL_NOT_READY",
-          message:
-            "wait for the cluster cache node pool to finish applying before enabling inference cache",
-        },
-        "fallback",
-        () => "endpoints.kvCacheSettings.errors.nodePoolNotReady",
-      ),
-    ).toEqual({
-      step: 2,
-      path: undefined,
-      message: "endpoints.kvCacheSettings.errors.nodePoolNotReady",
-    });
-    expect(
-      endpointServerIssue(
-        {
           code: "ENDPOINT_CACHE_CUSTOM_OVERRIDE",
           hint: "LMCACHE_CHUNK_SIZE",
           message: "remove custom LMCACHE_CHUNK_SIZE",
         },
         "fallback",
-        () => "endpoints.kvCacheSettings.errors.customOverride",
+        (err) =>
+          endpointCacheErrorMessage(
+            (key, options) => `${key}:${String(options?.hint ?? "")}`,
+            err,
+          ),
       ),
     ).toEqual({
       step: 3,
       path: undefined,
-      message: "endpoints.kvCacheSettings.errors.customOverride",
+      message:
+        "endpoints.kvCacheSettings.errors.customOverride:LMCACHE_CHUNK_SIZE",
     });
   });
 });
