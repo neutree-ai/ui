@@ -482,18 +482,17 @@ function EndpointOwnershipMark({
     return (
       <span
         aria-hidden="true"
-        className="flex h-2 w-3 shrink-0 overflow-hidden rounded-sm"
+        className="flex h-2.5 w-6 shrink-0 overflow-hidden rounded-sm shadow-[inset_0_0_0_1px_var(--nt-stroke-neutral-trans-3)]"
         data-testid="ownership-endpoint-replicas"
       >
         {allocations.map((allocation, index) => {
           const allocationMark = chartCategoryMark(allocation.replicaIndex);
           return (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               key={allocation.replicaKey}
               style={{
                 ...chartMarkStyle(allocationMark),
-                flexGrow: allocation.memoryMiB,
                 boxShadow:
                   index === 0
                     ? undefined
@@ -535,32 +534,29 @@ function EndpointOwnershipMark({
         <>
           {weights > 0 && (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-weights"
               style={{
                 backgroundColor: ownerTone(mark.color, OWNER_WEIGHTS_TONE),
-                flexGrow: weights,
               }}
             />
           )}
           {cache != null && cache > 0 && (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-cache"
               style={{
                 backgroundColor: "var(--nt-fill-neutral-white)",
                 backgroundImage: l0Pattern(mark.color),
-                flexGrow: cache,
               }}
             />
           )}
           {other > 0 && (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-other"
               style={{
                 backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
-                flexGrow: other,
               }}
             />
           )}
@@ -569,22 +565,20 @@ function EndpointOwnershipMark({
         <>
           {actual != null && actual > 0 && (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-actual"
               style={{
                 backgroundColor: mark.color,
-                flexGrow: actual,
                 boxShadow: `inset -1px 0 0 var(--nt-fill-neutral-white)`,
               }}
             />
           )}
           {unused > 0 && (
             <span
-              className="h-full min-w-0"
+              className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-unused"
               style={{
                 backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
-                flexGrow: unused,
               }}
             />
           )}
