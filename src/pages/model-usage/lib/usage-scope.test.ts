@@ -153,6 +153,7 @@ describe("scopeQueries", () => {
       team: "t1",
     });
     expect(scopeQueries(application(team)).user).toBeUndefined();
+    expect(scopeQueries(application(null)).apps).toEqual({ name: "sa1" });
   });
 
   it("narrows usage by API key to a Team or a department scope", () => {
@@ -173,6 +174,9 @@ describe("scopeQueries", () => {
     expect(scopeQueries(user(null)).keys).toEqual({ user: "u1" });
     expect(scopeQueries(application(team)).keys).toEqual({
       team: "t1",
+      serviceAccount: "sa1",
+    });
+    expect(scopeQueries(application(null)).keys).toEqual({
       serviceAccount: "sa1",
     });
   });
@@ -221,6 +225,9 @@ describe("scopeTrail", () => {
     expect(
       trail({ type: "application", id: "sa1", label: "SA1", from: team }),
     ).toEqual(["Platform", "T1", "SA1"]);
+    expect(
+      trail({ type: "application", id: "sa1", label: "SA1", from: null }),
+    ).toEqual(["Platform", "Applications", "SA1"]);
     expect(trail({ type: "platform" })).toEqual(["Platform"]);
     expect(trail({ type: "applications" })).toEqual([
       "Platform",
@@ -365,7 +372,7 @@ describe("buildBreakdown", () => {
     expect(facts[0]).toMatchObject({
       label: "sa1 display",
       description: "Application",
-      target: null,
+      target: { type: "application", id: "sa1", from: null },
     });
   });
 

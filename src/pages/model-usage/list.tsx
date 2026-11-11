@@ -181,7 +181,9 @@ export const ModelUsageList = () => {
   const scope = useMemo<UsageScope | null>(() => {
     if (!picked) return null;
     const allowed =
-      picked.type === "platform" || picked.type === "applications"
+      picked.type === "platform" ||
+      picked.type === "applications" ||
+      (picked.type === "application" && !picked.from)
         ? canReadAllGroups
         : canReadGroups || groupOf(picked)?.type === "team";
     if (!allowed) return null;

@@ -366,6 +366,29 @@ describe("a reader of the whole platform", () => {
     expect(tableRows()).toEqual([
       "sa1-namemodel_usage.group.kinds.ServiceAccount",
     ]);
+
+    // An application opens on its keys across the platform, with no group.
+    fireEvent.click(screen.getByRole("button", { name: /^sa1-name/ }));
+    expect(groupCalls).toContain('ServiceAccount:{"name":"sa1"}');
+    expect(summary("total")).toContain("80");
+    expect(tabs()).toEqual([
+      "model_usage.tabs.apiKeys",
+      "model_usage.tabs.detail",
+    ]);
+    expect(keyGroups).toContainEqual({ serviceAccount: "sa1" });
+    // Read across the platform, the keys hold all of its usage.
+    expect(screen.queryByTestId("usage-key-coverage-hint")).toBeNull();
+
+    const crumbs = within(
+      screen.getByRole("navigation", { name: "model_usage.scope.title" }),
+    );
+    fireEvent.click(
+      crumbs.getByRole("button", { name: "model_usage.scope.applications" }),
+    );
+    expect(tabs()).toEqual([
+      "model_usage.tabs.applications",
+      "model_usage.tabs.detail",
+    ]);
   });
 
   it("lists scenarios apart from Teams", () => {
@@ -508,6 +531,13 @@ describe("a department admin", () => {
       }),
     ).toBeNull();
     expect(tabs()).not.toContain("model_usage.tabs.teams");
+  });
+
+  it("does not open an application outside a Team", () => {
+    renderPage("/?application=sa1");
+
+    expect(groupCalls).not.toContain('ServiceAccount:{"name":"sa1"}');
+    expect(keyGroups).not.toContainEqual({ serviceAccount: "sa1" });
   });
 
   it("lists the API keys used in their department", () => {

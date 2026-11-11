@@ -163,6 +163,14 @@ export function scopeTrail(
     crumbs.push({ label: applicationsLabel, scope });
     return crumbs;
   }
+  // An application opened from the platform's applications leads back there.
+  if (scope.type === "application" && !scope.from) {
+    crumbs.push(
+      { label: applicationsLabel, scope: { type: "applications" } },
+      { label: scope.label, scope },
+    );
+    return crumbs;
+  }
   const group = groupOf(scope);
   const groupNode =
     group?.type === "orgUnit" ? nodesByName.get(group.name) : undefined;
@@ -433,9 +441,7 @@ export function buildBreakdown({
     entry: `app:${r.who.key}`,
     label: r.who.name,
     description: r.who.description,
-    target: from
-      ? { type: "application", id: r.who.key, label: r.who.name, from }
-      : null,
+    target: { type: "application", id: r.who.key, label: r.who.name, from },
   });
 
   if (scope.type === "applications") {
