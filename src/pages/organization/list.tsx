@@ -46,14 +46,7 @@ export const OrganizationList = () => {
       : "departments";
 
   return (
-    <ListPage
-      canCreate={false}
-      extra={
-        <span className="text-sm text-muted-foreground">
-          {t("organization.readOnlyHint")}
-        </span>
-      }
-    >
+    <ListPage canCreate={false} hint={t("organization.readOnlyHint")}>
       {/* Tabs stay mounted while team:read is checked, so the departments
           panel keeps its state when the Teams tab appears. */}
       <Tabs

@@ -13,6 +13,8 @@ type ListProps = {
   className?: string;
   canCreate?: boolean;
   extra?: React.ReactNode;
+  /** An explanation of the page, behind a `?` beside the title. */
+  hint?: string;
   children?: React.ReactNode;
 };
 
@@ -24,6 +26,7 @@ export const ListPage: FC<ListProps> = ({
   className,
   canCreate = true,
   extra,
+  hint,
   children,
 }) => {
   const { t: translate } = useTranslation();
@@ -45,6 +48,7 @@ export const ListPage: FC<ListProps> = ({
           )
         }
         breadcrumb={isValidElement(breadcrumb) ? breadcrumb : null}
+        hint={hint}
         extra={
           extra ?? (
             <div className="inline-flex flex-row gap-4">

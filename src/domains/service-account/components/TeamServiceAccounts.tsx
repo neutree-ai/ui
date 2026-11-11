@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -32,6 +31,7 @@ import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors
 import type { ServiceAccount } from "@/domains/service-account/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/components/EmptyState";
+import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
@@ -229,7 +229,7 @@ export function TeamServiceAccounts({
       />
       <ShowPage.Section
         title={t("service_accounts.title")}
-        description={t("service_accounts.hint", { team: teamName })}
+        hint={t("service_accounts.hint", { team: teamName })}
         actions={
           permissions.canCreate ? (
             <Button
@@ -367,12 +367,16 @@ function CreateServiceAccountDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        aria-describedby={undefined}
+        onOpenAutoFocus={skipInfoHintOnOpen}
+      >
         <DialogHeader>
-          <DialogTitle>{t("service_accounts.createTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("service_accounts.createHint")}
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-1">
+            {t("service_accounts.createTitle")}
+            <InfoHint label={t("service_accounts.createHint")} />
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">

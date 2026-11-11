@@ -15,6 +15,7 @@ import {
   useInvokableModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   isValidTokenQuota,
@@ -102,12 +103,10 @@ export const ApiKeyPolicyFields = ({
     <div className="space-y-3">
       {/* Allowed models + per-model quota */}
       <div className="space-y-2 rounded-md border p-3">
-        <div className="text-sm font-medium">
+        <div className="flex items-center gap-1 text-sm font-medium">
           {t("api_keys.limits.allowedModels")}
+          <InfoHint label={t("api_keys.limits.allowedModelsHint")} />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t("api_keys.limits.allowedModelsHint")}
-        </p>
         {serviceAccountId !== undefined && (
           <p
             className="text-xs text-muted-foreground"
@@ -177,14 +176,15 @@ export const ApiKeyPolicyFields = ({
 
       {/* Token quota */}
       <div className="space-y-2 rounded-md border p-3">
-        <div className="text-sm font-medium">
+        <div className="flex items-center gap-1 text-sm font-medium">
           {t("api_keys.limits.quotaTitle")}
+          <InfoHint label={t("api_keys.limits.quotaHint")} />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {perModel
-            ? t("api_keys.limits.perModel.overallSuspended")
-            : t("api_keys.limits.quotaHint")}
-        </p>
+        {perModel && (
+          <p className="text-xs text-muted-foreground">
+            {t("api_keys.limits.perModel.overallSuspended")}
+          </p>
+        )}
         <TokenQuotaField form={form} amountDisabled={perModel} />
       </div>
 

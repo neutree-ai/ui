@@ -32,6 +32,7 @@ import type { GroupPolicyModel } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
@@ -134,7 +135,7 @@ export function UserGroupModelAccess({
     <div id={USER_MODEL_ACCESS_ANCHOR} ref={ref}>
       <ShowPage.Section
         title={t("group_policies.title")}
-        description={t("group_policies.userHint")}
+        hint={t("group_policies.userHint")}
         actions={
           workspace === null ? undefined : (
             <Select value={workspace} onValueChange={setPicked}>
@@ -309,8 +310,9 @@ export function UserGroupModelAccess({
             )}
             {pools.length > 0 && (
               <div className="space-y-2" data-testid="user-token-pools">
-                <div className="text-xs font-medium text-muted-foreground">
+                <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   {t("group_policies.pool.userTitle")}
+                  <InfoHint label={t("group_policies.pool.userHint")} />
                 </div>
                 <ul className="space-y-2 text-sm">
                   {pools.map((pool) => (
@@ -333,9 +335,6 @@ export function UserGroupModelAccess({
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-muted-foreground">
-                  {t("group_policies.pool.userHint")}
-                </p>
               </div>
             )}
             <p className="text-xs text-muted-foreground">

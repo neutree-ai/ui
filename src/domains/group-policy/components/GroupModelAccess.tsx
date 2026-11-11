@@ -110,7 +110,7 @@ export function GroupModelAccess({
   return (
     <ShowPage.Section
       title={t("group_policies.title")}
-      description={t(
+      hint={t(
         kind === "Team"
           ? "group_policies.groupHint.Team"
           : "group_policies.groupHint.OrgUnit",

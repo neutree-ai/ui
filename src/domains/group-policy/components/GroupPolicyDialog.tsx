@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,6 +23,7 @@ import type {
   GroupPolicyModel,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
+import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /** Edits the lists and the token pool of a group's policy. Mount it when opening. */
@@ -57,16 +57,20 @@ export function GroupPolicyDialog({
     setEntries: (next: GroupPolicyModel[]) => void,
   ) => (
     <div className="space-y-2">
-      <Label>
-        {id === "allowed"
-          ? t("group_policies.fields.allowed")
-          : t("group_policies.fields.denied")}
-      </Label>
-      <p className="text-xs text-muted-foreground">
-        {id === "allowed"
-          ? t("group_policies.hints.allowed")
-          : t("group_policies.hints.denied")}
-      </p>
+      <div className="flex items-center gap-1">
+        <Label>
+          {id === "allowed"
+            ? t("group_policies.fields.allowed")
+            : t("group_policies.fields.denied")}
+        </Label>
+        <InfoHint
+          label={
+            id === "allowed"
+              ? t("group_policies.hints.allowed")
+              : t("group_policies.hints.denied")
+          }
+        />
+      </div>
       <ModelEntryList
         entries={entries}
         onRemove={(entry) => setEntries(removeEntry(entries, entry))}
@@ -84,23 +88,27 @@ export function GroupPolicyDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        className="sm:max-w-xl"
+        aria-describedby={undefined}
+        onOpenAutoFocus={skipInfoHintOnOpen}
+      >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-1">
             {t("group_policies.editTitle", { group: groupLabel })}
+            <InfoHint label={t("group_policies.editHint")} />
           </DialogTitle>
-          <DialogDescription>{t("group_policies.editHint")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-5">
           {list("allowed", allowed, setAllowed)}
           {list("denied", denied, setDenied)}
           <div className="space-y-2">
-            <Label htmlFor="group-policy-pool-amount">
-              {t("group_policies.pool.title")}
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {t("group_policies.pool.hint")}
-            </p>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="group-policy-pool-amount">
+                {t("group_policies.pool.title")}
+              </Label>
+              <InfoHint label={t("group_policies.pool.hint")} />
+            </div>
             <TokenQuotaFields
               input={quota}
               id="group-policy-pool-amount"

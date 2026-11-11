@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -22,6 +21,7 @@ import {
 import { isManagementRole } from "@/domains/service-account/lib/application-permissions";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { TeamApplicationPermissions } from "@/domains/service-account/types";
+import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { Metadata } from "@/foundation/types/basic-types";
@@ -46,7 +46,7 @@ export function TeamApplicationPermissionsCard({
   return (
     <ShowPage.Section
       title={t("service_accounts.appPermissions.title")}
-      description={t("service_accounts.appPermissions.hint")}
+      hint={t("service_accounts.appPermissions.hint")}
       data-testid="team-application-permissions"
       actions={
         canEdit && appPermissions ? (
@@ -211,14 +211,16 @@ function AppPermissionsDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-lg"
+        aria-describedby={undefined}
+        onOpenAutoFocus={skipInfoHintOnOpen}
+      >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-1">
             {t("service_accounts.appPermissions.editTitle")}
+            <InfoHint label={t("service_accounts.appPermissions.editHint")} />
           </DialogTitle>
-          <DialogDescription>
-            {t("service_accounts.appPermissions.editHint")}
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <fieldset className="space-y-2">

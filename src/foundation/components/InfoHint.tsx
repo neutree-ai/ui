@@ -18,6 +18,7 @@ export const InfoHint = ({ label }: { label: string }) => (
           type="button"
           className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label={label}
+          data-info-hint=""
         >
           <CircleHelp className="size-3.5" aria-hidden="true" />
         </button>
@@ -28,3 +29,22 @@ export const InfoHint = ({ label }: { label: string }) => (
     </Tooltip>
   </TooltipProvider>
 );
+
+const FOCUSABLE = [
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "button:not([disabled]):not([data-info-hint])",
+  "[tabindex]:not([tabindex='-1']):not([data-info-hint])",
+].join(",");
+
+/**
+ * `onOpenAutoFocus` for a dialog with an InfoHint in its header: focus the
+ * first control that is not a hint, else the dialog itself, so opening the
+ * dialog does not open a tooltip.
+ */
+export const skipInfoHintOnOpen = (event: Event) => {
+  event.preventDefault();
+  const content = event.target as HTMLElement;
+  (content.querySelector<HTMLElement>(FOCUSABLE) ?? content).focus();
+};

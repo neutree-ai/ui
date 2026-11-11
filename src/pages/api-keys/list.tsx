@@ -64,6 +64,7 @@ import type {
 } from "@/domains/api-key/types";
 import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { PaginationControls } from "@/foundation/components/PaginationControls";
@@ -527,12 +528,16 @@ export const ApiKeysList = () => {
     <ListPage createButtonProps={{ onClick: () => createKey() }}>
       <ApiKeyRankingOverview keys={rankingKeys} traffic={trafficByKey} />
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent
+          className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+          aria-describedby={undefined}
+          onOpenAutoFocus={skipInfoHintOnOpen}
+        >
           <DialogHeader>
-            <DialogTitle>{t("api_keys.create")}</DialogTitle>
-            <DialogDescription>
-              {t("api_keys.messages.createDescription")}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-1">
+              {t("api_keys.create")}
+              <InfoHint label={t("api_keys.messages.createDescription")} />
+            </DialogTitle>
           </DialogHeader>
           <CreateApiKeyForm
             key={createKeySession}
@@ -675,12 +680,15 @@ export const ApiKeysList = () => {
         open={Boolean(editing)}
         onOpenChange={(v) => !v && setEditing(undefined)}
       >
-        <DialogContent>
+        <DialogContent
+          aria-describedby={undefined}
+          onOpenAutoFocus={skipInfoHintOnOpen}
+        >
           <DialogHeader>
-            <DialogTitle>{t("api_keys.projects.edit")}</DialogTitle>
-            <DialogDescription>
-              {t("api_keys.projects.editDescription")}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-1">
+              {t("api_keys.projects.edit")}
+              <InfoHint label={t("api_keys.projects.editDescription")} />
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <label htmlFor="project-name" className="block text-sm font-medium">

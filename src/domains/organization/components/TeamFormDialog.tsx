@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -19,6 +18,7 @@ import {
   validateTeamName,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamFormValues } from "@/domains/organization/types";
+import { InfoHint, skipInfoHintOnOpen } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 const NAME_ERROR_KEYS: Record<TeamNameError, string> = {
@@ -75,20 +75,26 @@ export function TeamFormDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        aria-describedby={undefined}
+        onOpenAutoFocus={skipInfoHintOnOpen}
+      >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-1">
             {team
               ? t("organization.teams.editTitle")
               : project
                 ? t("organization.teams.createScenarioTitle")
                 : t("organization.teams.createTitle")}
+            <InfoHint
+              label={
+                team
+                  ? t("organization.teams.editHint")
+                  : t("organization.teams.createHint")
+              }
+            />
           </DialogTitle>
-          <DialogDescription>
-            {team
-              ? t("organization.teams.editHint")
-              : t("organization.teams.createHint")}
-          </DialogDescription>
         </DialogHeader>
         <form
           className="space-y-4"
