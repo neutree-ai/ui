@@ -11,7 +11,7 @@ function Harness({
   after: { enabled: boolean; l1_size_gib: number };
   save: () => void;
 }) {
-  const { confirmCapacity, capacityConfirmation } =
+  const { confirmCapacity, pending, cancel, confirm } =
     useCacheCapacityConfirmation();
   return (
     <>
@@ -21,7 +21,28 @@ function Harness({
       >
         save
       </button>
-      {capacityConfirmation}
+      {pending && (
+        <>
+          <p>
+            {pending.disable
+              ? "clusters.zcache.disableTitle"
+              : "clusters.zcache.capacityChangeTitle"}
+          </p>
+          <p>
+            {pending.disable
+              ? "clusters.zcache.disableDescription"
+              : "clusters.zcache.capacityChangeDescription"}
+          </p>
+          <button type="button" onClick={cancel}>
+            buttons.cancel
+          </button>
+          <button type="button" onClick={confirm}>
+            {pending.disable
+              ? "clusters.zcache.disableTitle"
+              : "clusters.zcache.confirmSave"}
+          </button>
+        </>
+      )}
     </>
   );
 }
@@ -60,7 +81,9 @@ describe("capacity change confirmation", () => {
       render(<Harness before={before} after={after!} save={save} />);
       fireEvent.click(screen.getByText("save"));
       expect(save).toHaveBeenCalledTimes(1);
-      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(
+        screen.queryByText("clusters.zcache.capacityChangeTitle"),
+      ).toBeNull();
     },
   );
 });

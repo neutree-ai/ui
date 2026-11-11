@@ -1,5 +1,4 @@
 import { CircleAlert, CircleCheck, Copy } from "lucide-react";
-import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -8,7 +7,6 @@ import {
 } from "@/components/ui/tooltip";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { ObservedGpu } from "@/foundation/lib/accelerator-observations";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
@@ -33,34 +31,6 @@ export const GiBValue = ({ mib }: { mib: number | null | undefined }) =>
 
 export const formatUtilization = (ratio: number) =>
   `${(ratio * 100).toFixed(0)}%`;
-
-export function DeviceProduct({ device }: { device: ObservedGpu }) {
-  const productRef = useRef<HTMLSpanElement>(null);
-  const truncated = useIsTruncated(productRef);
-  const label = (
-    <span
-      ref={productRef}
-      data-testid="gpu-observation-product"
-      tabIndex={truncated ? 0 : undefined}
-      className={cn(
-        "mt-0.5 block min-w-0 truncate text-xs leading-4 text-muted-foreground",
-        truncated &&
-          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
-      )}
-    >
-      {device.product || <EmptyValue />}
-    </span>
-  );
-  if (!truncated) return label;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{label}</TooltipTrigger>
-      <TooltipContent className="max-w-md break-all">
-        {device.product || <EmptyValue />}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function DeviceHealth({
   device,

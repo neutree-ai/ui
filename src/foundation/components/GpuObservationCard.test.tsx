@@ -2,10 +2,11 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import type { GpuAllocation } from "@/foundation/lib/accelerator-observations";
-import { makeAcceleratorSample as sample } from "@/foundation/testing/resource-builders";
+import type {
+  AcceleratorSample,
+  GpuAllocation,
+} from "@/foundation/lib/accelerator-observations";
 import {
   GpuObservationCard,
   GpuObservationTableHeader,
@@ -35,6 +36,17 @@ const allocation: GpuAllocation = {
   kvCacheCapacityMiB: 8192,
 };
 
+const sample = (
+  metric: string,
+  value: number,
+  labels: Record<string, string> = {},
+): AcceleratorSample => ({
+  metric,
+  value,
+  observed_at: 1,
+  labels: { node: "node", accelerator_uuid: "gpu", ...labels },
+});
+
 const card = (
   props: Partial<Parameters<typeof GpuObservationCard>[0]> = {},
 ) => (
@@ -51,11 +63,23 @@ const card = (
 );
 
 describe("GPU observation row", () => {
-  it("labels the merged inventory table columns", () => {
-    render(<GpuObservationTableHeader variant="inventory" />);
+  it("uses the merged inventory table columns", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <GpuObservationTableHeader variant="inventory" />
+      </MemoryRouter>,
+    );
 
-    screen.getByText("clusters.fields.health");
-    screen.getByText("observations.vramAllocation");
+    expect(
+      [...(container.firstElementChild?.children ?? [])].map(
+        (cell) => cell.textContent,
+      ),
+    ).toEqual([
+      "clusters.fields.gpuNumber",
+      "clusters.fields.health",
+      "observations.vramAllocation",
+      "observations.utilization",
+    ]);
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -98,20 +122,15 @@ describe("GPU observation row", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog.textContent).toContain("gpu");
     expect(dialog.textContent).toContain("model");
-    const legend = within(dialog).getByTestId("vram-allocation-legend");
-    within(legend).getByText("instance");
+    within(dialog).getAllByText("instance");
+    within(dialog).getByTestId("vram-allocation-legend");
     expect(
-      within(legend).queryByText("observations.actualVramUsage"),
+      within(dialog).queryByRole("button", {
+        name: /observations\.(expand|collapse)Allocation/,
+      }),
     ).toBeNull();
-    const segment = within(dialog).getByRole("button", {
-      name: /^instance, 15\.0 GiB/,
-    });
-    fireEvent.focus(segment);
-    within(legend).getByText("observations.actualVramUsage");
-    fireEvent.blur(segment);
-    expect(
-      within(legend).queryByText("observations.actualVramUsage"),
-    ).toBeNull();
+    expect(dialog.querySelector("[aria-expanded]")).toBeNull();
+    within(dialog).getByTestId("expanded-endpoint-actual-marker");
     within(dialog).getByText("extension-arch");
     expect(within(dialog).queryByText("wrong-node")).toBeNull();
   });
@@ -121,10 +140,38 @@ describe("GPU observation row", () => {
 
     screen.getByText("observations.noMeasurement");
     const row = screen.getByTestId("gpu-allocation-row");
-    expect(row.textContent).toContain(EMPTY_VALUE);
+    expect(row.textContent).toContain("—");
     // "Unused" is reserved minus actual, so with no measurement there is no
     // number to print — the line is omitted rather than shown as a dash.
     expect(row.textContent).not.toContain("observations.allocatedUnused");
+  });
+
+  it("keeps the physical-card allocation bar when one Endpoint owns the GPU", () => {
+    const partialAllocation = {
+      ...allocation,
+      memoryMiB: 8 * 1024,
+    };
+    render(
+      card({
+        allocations: [partialAllocation],
+        device: {
+          ...device,
+          allocatedMiB: 8 * 1024,
+        },
+        replica: partialAllocation,
+      }),
+    );
+
+    fireEvent.click(screen.getByTestId("gpu-allocation-row"));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("8.0 / 15.0 GiB");
+    within(dialog).getByRole("group", {
+      name: "observations.allocationByEndpoint",
+    });
+    within(dialog).getByRole("button", {
+      name: /instance, 8\.0 GiB observations\.reservedLower/,
+    });
+    within(dialog).getByText("observations.endpointCount:1");
   });
 
   it("keeps a truncated product name reachable from the keyboard", async () => {
@@ -147,7 +194,7 @@ describe("GPU observation row", () => {
     );
   });
 
-  it("shows the hovered Endpoint's composition in its tooltip", async () => {
+  it("shows composition in the tooltip and on the hovered segment", async () => {
     render(
       card({
         variant: "inventory",
@@ -167,6 +214,11 @@ describe("GPU observation row", () => {
       }),
     );
 
+    screen.getByTestId("endpoint-segment-weights-pattern");
+    screen.getByTestId("endpoint-segment-kv-pattern");
+    screen.getByTestId("endpoint-segment-remaining-pattern");
+    screen.getByTestId("endpoint-segment-actual-marker");
+
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
     // The name is a way into the object, not just a label.
     expect(
@@ -182,8 +234,129 @@ describe("GPU observation row", () => {
     expect(tooltip.textContent).toContain("observations.otherReservation");
     expect(tooltip.textContent).toContain("5.0 GiB");
     expect(tooltip.textContent).toContain("observations.actualVramUsage");
+    within(tooltip).getByTestId("actual-marker-legend");
     expect(tooltip.textContent).toContain("12.0 GiB");
     expect(tooltip.textContent).toMatch(/observations\.actualOfReserved:80/);
+  });
+
+  it("omits composition rows that have no data from the tooltip", async () => {
+    render(
+      card({
+        variant: "inventory",
+        allocations: [
+          {
+            ...allocation,
+            modelWeightsMiB: null,
+            kvCacheCapacityMiB: null,
+          },
+        ],
+        samples: [
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            12 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: /^instance, 15\.0 GiB/,
+      }),
+    );
+
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    within(tooltip).getByText("observations.reservedVram");
+    within(tooltip).getByText("observations.actualVramUsage");
+    expect(within(tooltip).queryByText("observations.modelWeights")).toBeNull();
+    expect(
+      within(tooltip).queryByText("observations.l0KvCacheCapacity"),
+    ).toBeNull();
+    expect(
+      within(tooltip).queryByText("observations.otherReservation"),
+    ).toBeNull();
+  });
+
+  it("keeps weights when L0 is missing and hides only the L0 row", async () => {
+    render(
+      card({
+        variant: "inventory",
+        allocations: [
+          {
+            ...allocation,
+            kvCacheCapacityMiB: null,
+          },
+        ],
+        samples: [
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            12 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: /^instance, 15\.0 GiB/,
+      }),
+    );
+
+    await screen.findByTestId("endpoint-segment-weights-pattern");
+    screen.getByTestId("endpoint-segment-remaining-pattern");
+    expect(screen.queryByTestId("endpoint-segment-kv-pattern")).toBeNull();
+
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    within(tooltip).getByText("observations.modelWeights");
+    within(tooltip).getByText("observations.otherReservation");
+    expect(
+      within(tooltip).queryByText("observations.l0KvCacheCapacity"),
+    ).toBeNull();
+  });
+
+  it("does not infer composition from L0 when weights are missing", async () => {
+    render(
+      card({
+        variant: "inventory",
+        allocations: [
+          {
+            ...allocation,
+            modelWeightsMiB: null,
+          },
+        ],
+        samples: [
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            12 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: /^instance, 15\.0 GiB/,
+      }),
+    );
+
+    await screen.findByTestId("endpoint-segment-actual-fill");
+    expect(screen.queryByTestId("endpoint-segment-weights-pattern")).toBeNull();
+    expect(screen.queryByTestId("endpoint-segment-kv-pattern")).toBeNull();
+    expect(
+      screen.queryByTestId("endpoint-segment-remaining-pattern"),
+    ).toBeNull();
+
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    expect(within(tooltip).queryByText("observations.modelWeights")).toBeNull();
+    expect(
+      within(tooltip).queryByText("observations.l0KvCacheCapacity"),
+    ).toBeNull();
+    expect(
+      within(tooltip).queryByText("observations.otherReservation"),
+    ).toBeNull();
   });
 
   it("keeps the first eight Endpoints individual and exposes the rest from More", async () => {
@@ -262,20 +435,215 @@ describe("GPU observation row", () => {
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
     within(cardElement).getByText("observations.vramAllocation");
-    within(cardElement).getByText("observations.utilization");
     within(cardElement).getByRole("img", {
       name: "observations.noEndpointAllocation",
     });
+    expect(
+      within(cardElement).queryByText("observations.actualMemory"),
+    ).toBeNull();
+    expect(
+      within(cardElement).queryByText("observations.utilization"),
+    ).toBeNull();
     expect(
       within(cardElement).queryByText("observations.endpoints"),
     ).toBeNull();
     expect(within(cardElement).queryByText("clusters.options.free")).toBeNull();
   });
 
+  it("does not invent a physical scale when physical VRAM is unknown", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        device: {
+          ...device,
+          totalMiB: null,
+        },
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByTestId("gpu-physical-vram-unavailable");
+    within(cardElement).getByText("observations.physicalVramUnavailable");
+    expect(cardElement.textContent).toContain(
+      "observations.allocated 15.0 / — GiB",
+    );
+  });
+
+  it("aligns actual VRAM and GPU utilization in the cluster card", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
+          sample("neutree_accelerator_utilization_ratio", 0.5),
+        ],
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByText("observations.actualMemory");
+    within(cardElement).getByText("8.0 GiB");
+    within(cardElement).getByText("50%");
+    within(cardElement).getByRole("progressbar", {
+      name: "observations.actualMemory",
+    });
+    within(cardElement).getByRole("progressbar", {
+      name: "observations.utilization",
+    });
+    expect(cardElement.textContent).toContain(
+      "observations.allocated 15.0 / 16.0 GiB",
+    );
+  });
+
+  it("keeps allocation visible when the GPU is unhealthy", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        device: {
+          ...device,
+          healthy: false,
+        },
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByText("clusters.options.unhealthy");
+    within(cardElement).getByRole("button", { name: /^instance,/ });
+    within(cardElement).getByText("observations.vramAllocation");
+  });
+
+  it("shows Actual VRAM as unavailable without hiding allocation", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        samples: [],
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByText("observations.actualMemory");
+    within(cardElement).getByText("observations.unavailable");
+    within(cardElement).getByRole("button", { name: /^instance,/ });
+  });
+
+  it("shows allocation unknown without fabricating owner segments", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        device: {
+          ...device,
+          allocatedMiB: null,
+        },
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByRole("img", {
+      name: "observations.allocationUnknown",
+    });
+    within(cardElement).getByText("observations.allocationUnknown");
+    expect(
+      within(cardElement).queryByRole("button", { name: /^instance,/ }),
+    ).toBeNull();
+  });
+
   const openDetails = () =>
     fireEvent.click(
       screen.getByRole("button", { name: "observations.detailsForGpu:0" }),
     );
+
+  it("shows an over-reservation usage bar without an empty composition legend", () => {
+    const usageOnly = {
+      ...allocation,
+      memoryMiB: 24 * 1024,
+      modelWeightsMiB: null,
+      kvCacheCapacityMiB: null,
+    };
+    render(
+      card({
+        allocations: [usageOnly],
+        device: { ...device, totalMiB: 48 * 1024 },
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 48 * 1024 ** 2),
+          sample("neutree_accelerator_memory_used_bytes", 0),
+          sample("neutree_accelerator_utilization_ratio", 0),
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            31 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("31.0 GiB");
+    expect(dialog.textContent).toContain("/ 24.0 GiB");
+    expect(dialog.textContent).toContain(
+      "observations.exceedsReservedBy:7.0 GiB",
+    );
+    expect(dialog.textContent).not.toContain("observations.usedShare:129");
+    expect(
+      within(dialog).getByText("observations.vramActualOfTotal").parentElement
+        ?.textContent,
+    ).toContain("31.0");
+    within(dialog).getByTestId("expanded-endpoint-usage-bar");
+    expect(
+      within(dialog).queryByTestId("expanded-endpoint-actual-marker"),
+    ).toBeNull();
+    expect(dialog.textContent).not.toContain("observations.modelWeights");
+    expect(dialog.textContent).not.toContain("observations.l0KvCache");
+    expect(dialog.textContent).not.toContain("observations.otherReservation");
+  });
+
+  it("reports allocation that exceeds physical VRAM", () => {
+    render(
+      card({
+        device: {
+          ...device,
+          totalMiB: 10 * 1024,
+        },
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    within(dialog).getByText(
+      "observations.allocationExceedsPhysicalBy:5.0 GiB",
+    );
+  });
+
+  it("marks stale observations without discarding allocation", () => {
+    const staleSample = sample("neutree_accelerator_utilization_ratio", 0.5);
+    staleSample.observed_at = Math.floor(Date.now() / 1000) - 3 * 60 * 60;
+    render(card({ samples: [staleSample] }));
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    within(dialog).getByText("observations.staleSample");
+    within(dialog).getByText("observations.vramAllocation");
+  });
+
+  it("keeps allocation when runtime observations are unavailable", () => {
+    render(
+      card({
+        observationStatus: "unavailable",
+        samples: [],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    within(dialog).getByText("observations.status.unavailable");
+    within(dialog).getByText("observations.vramAllocation");
+  });
 
   it("shows an idle card as real zeros, not as a missing measurement", () => {
     render(
@@ -321,7 +689,7 @@ describe("GPU observation row", () => {
     within(dialog).getByText("observations.hardwareFields.numa_node");
     // No reported counter: the fixed grid shows the gaps itself.
     expect(dialog.textContent).not.toContain("observations.hardwareReported");
-    expect(within(dialog).getAllByText(EMPTY_VALUE).length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText("—").length).toBeGreaterThan(0);
   });
 
   it("derives the FP16 estimate from utilisation and labels it as an estimate", () => {
@@ -372,7 +740,7 @@ describe("GPU observation row", () => {
       within(dialog).getByRole("button", { name: /^instance, 15\.0 GiB/ }),
     );
     expect(dialog.querySelectorAll('[aria-expanded="true"]').length).toBe(1);
-    within(dialog).getByText("observations.usedShare:67");
+    within(dialog).getByTestId("expanded-endpoint-actual-marker");
     within(dialog).getByRole("link", {
       name: "observations.openEndpoint:instance",
     });
@@ -418,7 +786,9 @@ describe("GPU observation row", () => {
       }),
     );
     expect(expandedCount()).toBe(1);
-    within(dialog).getByText("observations.noMeasurement");
+    expect(
+      within(dialog).queryByTestId("expanded-endpoint-actual-marker"),
+    ).toBeNull();
     // The expanded card carries its own legend instead of a duplicated bar.
     expect(dialog.textContent).toContain("observations.modelWeights");
     expect(dialog.textContent).toContain("2.0 GiB");

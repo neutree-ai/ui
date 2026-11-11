@@ -377,7 +377,7 @@ export function GpuAllocationBar({
       <div className="absolute inset-0 flex overflow-hidden rounded-full">
         {visible.map((allocation, position) => {
           const key = allocationKey(allocation);
-          const color = allocationColor(allocation.endpoint, position);
+          const color = allocationColor(position);
           const isSelected = mode === "select" && selectedKey === key;
           const button = (
             <button
@@ -486,7 +486,7 @@ export function GpuAllocationBar({
               aria-hidden
               className="size-2 shrink-0 rounded-sm"
               style={{
-                backgroundColor: allocationColor(allocation.endpoint, position),
+                backgroundColor: allocationColor(position),
               }}
             />
             <span className="truncate">{allocation.endpoint}</span>

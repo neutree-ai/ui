@@ -3,6 +3,7 @@ import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
   allocationColor,
   allocationComposition,
+  allocationFallbackReadings,
   endpointAllocationUsedMiB,
   type GpuAllocation,
   gpuAllocations,
@@ -16,7 +17,6 @@ import {
   sampleAge,
   splitGpuEndpointAllocations,
 } from "./accelerator-observations";
-import { CHART_MORE_COLOR, chartCategoryMark } from "./chart-palette";
 
 const metric = "neutree_endpoint_replica_accelerator_memory_used_bytes";
 const allocation: GpuAllocation = {
@@ -179,18 +179,14 @@ it("groups ownership per Endpoint and keeps the first eight sorted allocations",
   expect(hiddenMemoryMiB).toBe(3);
 });
 
-it("colours an Endpoint by name so it keeps its colour across GPUs", () => {
-  // The largest allocation always takes the first colour.
-  expect(allocationColor("any", 0)).toBe(chartCategoryMark(0).color);
-  const second = ["a", "b", "c", "d", "e"].map((name) =>
-    allocationColor(name, 1),
-  );
-  expect(new Set(second).size).toBeGreaterThan(1);
-  expect(second).not.toContain(chartCategoryMark(0).color);
-  // Hashed colours stay on the solid main sequence; past the palette is More.
-  for (const color of second)
-    expect(color).not.toMatch(/--nt-chart-cat-[78]\)/);
-  expect(allocationColor("a", 8)).toBe(CHART_MORE_COLOR);
+it("uses the same categorical colour sequence on every GPU", () => {
+  expect([0, 1, 2, 3].map(allocationColor)).toEqual([
+    "var(--nt-chart-cat-1)",
+    "var(--nt-chart-cat-2)",
+    "var(--nt-chart-cat-3)",
+    "var(--nt-chart-cat-4)",
+  ]);
+  expect(allocationColor(8)).toBe("var(--nt-chart-more)");
 });
 
 it.each([
@@ -357,4 +353,56 @@ it("totals the replicas that report usage and keeps the others unknown", () => {
   expect(usage.rows.map((row) => row.usedMiB)).toEqual([2048, null]);
   expect(usage.usedMiB).toBe(2048);
   expect(replicaUsage([], group).usedMiB).toBeNull();
+});
+
+it("infers device memory and peak utilization from every Endpoint allocation", () => {
+  const readbacks = [
+    { ...allocation, replica: "pod-a", instance: "pod-a" },
+    { ...allocation, replica: "pod-b", instance: "pod-b" },
+  ];
+  const samples = [
+    sample(2 * 1024 ** 3, {
+      replica: "pod-a",
+      instance_id: "pod-a",
+      vdevice_index: "0",
+    }),
+    sample(3 * 1024 ** 3, {
+      replica: "pod-b",
+      instance_id: "pod-b",
+      vdevice_index: "1",
+    }),
+    {
+      ...sample(0.4, {
+        replica: "pod-a",
+        instance_id: "pod-a",
+        vdevice_index: "0",
+      }),
+      metric: "neutree_endpoint_replica_accelerator_utilization_ratio",
+    },
+    {
+      ...sample(0.75, {
+        replica: "pod-b",
+        instance_id: "pod-b",
+        vdevice_index: "1",
+      }),
+      metric: "neutree_endpoint_replica_accelerator_utilization_ratio",
+    },
+  ];
+
+  expect(allocationFallbackReadings(samples, readbacks)).toMatchObject({
+    memoryUsedMiB: 5 * 1024,
+    utilization: { value: 0.75 },
+  });
+  expect(
+    allocationFallbackReadings(samples.slice(0, 3), readbacks),
+  ).toMatchObject({
+    memoryUsedMiB: 5 * 1024,
+    utilization: undefined,
+  });
+  expect(
+    allocationFallbackReadings(samples.slice(0, 1), readbacks),
+  ).toMatchObject({
+    memoryUsedMiB: null,
+    utilization: undefined,
+  });
 });

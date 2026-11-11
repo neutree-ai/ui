@@ -26,6 +26,7 @@ import {
   type AcceleratorSample,
   allocationColor,
   allocationComposition,
+  allocationFallbackReadings,
   allocationKey,
   type DeviceReadings,
   deviceReadings,
@@ -114,7 +115,17 @@ function GpuDetails({
   onSelectionChange: (selection: Selection) => void;
 }) {
   const { t } = useTranslation();
-  const readings = deviceReadings(device, samples, replica);
+  const directReadings = deviceReadings(device, samples, replica);
+  const allocationReadings = allocationFallbackReadings(samples, assigned);
+  const readings = {
+    ...directReadings,
+    actual: directReadings.actual ?? allocationReadings.memoryUsedMiB,
+    utilization:
+      directReadings.utilization ??
+      (allocationReadings.utilization
+        ? { ...allocationReadings.utilization }
+        : undefined),
+  };
   const { sorted, hidden } = splitGpuEndpointAllocations(assigned);
 
   // One Endpoint at a time, and only one: the bar establishes the relationship
@@ -179,6 +190,7 @@ function GpuDetails({
               {t("observations.vramAllocation")}
             </h3>
             <span className="text-[11px] tabular-nums text-muted-foreground">
+              {t("observations.allocated")}{" "}
               <GiBValue mib={device.allocatedMiB} /> /{" "}
               <GiBValue mib={readings.total} /> GiB
             </span>
@@ -421,7 +433,7 @@ function EndpointAllocationRow({
   samples: AcceleratorSample[];
 }) {
   const { t } = useTranslation();
-  const color = allocationColor(allocation.endpoint, position);
+  const color = allocationColor(position);
   const summary = replicaSummary(allocation);
   const summaryText =
     summary?.kind === "ofTotal"

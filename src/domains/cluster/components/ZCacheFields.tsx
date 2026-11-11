@@ -1,13 +1,8 @@
 import { useList } from "@refinedev/core";
 import { useMemo, useState } from "react";
-import { type UseFormReturn, useWatch } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -29,67 +24,63 @@ import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 import {
-  CACHE_DEPENDENT_SELECT,
-  type CacheDependentEndpoint,
-  cacheDependents,
-  cacheRemovalBlocked,
-  nodeSelectionState,
-} from "../lib/zcache-node-selection";
-import {
-  cacheMessage,
-  isValidCacheCapacity,
-  MAX_CACHE_CAPACITY_GIB,
-  resolveZCacheState,
-} from "../lib/zcache-presentation";
-import {
-  type ClusterCacheStatus,
-  type ZCacheSpec,
-  type ZCacheStatus,
-  zcacheSpec,
-} from "../types";
+  type CacheEndpointCandidate,
+  cacheEndpointRefs,
+} from "../lib/cache-endpoints";
+import { cacheMessage } from "../lib/zcache-presentation";
+import type { ClusterCacheStatus, ZCacheStatus } from "../types";
+import { CacheEndpointLinks } from "./CacheEndpointLinks";
 
 const CONTROL_PLANE_REASON =
   "control-plane nodes are not used for the ZCache runtime by default";
 
-const PHASE_BADGE_CLASS: Record<ClusterCacheStatus["phase"], string> = {
-  Ready:
-    "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-  Reconciling:
-    "border-primary/20 bg-primary/10 text-[var(--nt-text-colorful-outstanding)]",
-  Failed:
-    "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-  Unavailable:
-    "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-  Disabled:
-    "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
-};
-
 function CacheStatusBadge({
-  desired,
-  status,
-  summary,
+  phase,
 }: {
-  desired?: ZCacheSpec;
-  status?: ZCacheStatus;
-  summary?: ClusterCacheStatus;
+  phase: ClusterCacheStatus["phase"] | undefined;
 }) {
   const { t } = useTranslation();
-  if (!summary?.phase) return null;
+  if (!phase) return null;
 
-  const { phase, resultLabelKey } = resolveZCacheState({
-    desired,
-    status,
-    summary,
-  });
+  const meta =
+    phase === "Ready"
+      ? {
+          label: t("clusters.zcache.applied"),
+          className:
+            "border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
+        }
+      : phase === "Reconciling"
+        ? {
+            label: t("clusters.zcache.reconciling"),
+            className:
+              "border-primary/20 bg-primary/10 text-[var(--nt-text-colorful-outstanding)]",
+          }
+        : phase === "Failed"
+          ? {
+              label: t("clusters.zcache.failed"),
+              className:
+                "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
+            }
+          : phase === "Unavailable"
+            ? {
+                label: t("clusters.zcache.unavailable"),
+                className:
+                  "border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
+              }
+            : {
+                label: t("clusters.zcache.disabled"),
+                className:
+                  "border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
+              };
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-        PHASE_BADGE_CLASS[phase],
+        meta.className,
       )}
     >
-      {t(resultLabelKey)}
+      {meta.label}
     </span>
   );
 }
@@ -165,67 +156,6 @@ function CacheRuntimeStatus({
   );
 }
 
-function CacheDependencyCell({
-  endpoints,
-  error,
-}: {
-  endpoints: string[];
-  error: boolean;
-}) {
-  const { t } = useTranslation();
-
-  if (!error && endpoints.length === 0) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  return (
-    <HoverCard openDelay={120} closeDelay={120}>
-      <HoverCardTrigger asChild>
-        <button
-          type="button"
-          className="text-left text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
-        >
-          {error
-            ? t("clusters.zcache.dependencyCheckFailed")
-            : t("clusters.zcache.dependencyCount", {
-                count: endpoints.length,
-              })}
-        </button>
-      </HoverCardTrigger>
-      <HoverCardContent
-        side="top"
-        align="start"
-        className="w-[300px] p-3 text-xs leading-5"
-      >
-        <div className="font-semibold">
-          {error
-            ? t("clusters.zcache.dependencyCheckFailedTitle")
-            : t("clusters.zcache.dependencyCardTitle", {
-                count: endpoints.length,
-              })}
-        </div>
-        {!error && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {endpoints.map((endpoint) => (
-              <span
-                key={endpoint}
-                className="rounded border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-white)] px-1.5 py-0.5 font-mono text-[11px]"
-              >
-                {endpoint}
-              </span>
-            ))}
-          </div>
-        )}
-        <p className="mt-2 text-muted-foreground">
-          {error
-            ? t("clusters.zcache.dependencyCheckFailedHint")
-            : t("clusters.zcache.dependencyInstruction")}
-        </p>
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
-
 export function ZCacheFields({
   form,
   isEdit,
@@ -242,21 +172,17 @@ export function ZCacheFields({
   const { t } = useTranslation();
   const name = form.watch("metadata.name");
   const workspace = form.watch("metadata.workspace");
-  // useWatch, unlike form.watch, also re-renders when the whole options
-  // object is replaced (see setCacheEnabled).
-  const enabled =
-    useWatch({ control: form.control, name: "spec.cache.options.enabled" }) ===
-    true;
+  const enabled = form.watch("spec.cache.options.enabled") === true;
   const savedEnabled =
     form.formState.defaultValues?.spec?.cache?.options?.enabled === true;
-  const dependencies = useList<CacheDependentEndpoint>({
+  const dependencies = useList<CacheEndpointCandidate>({
     resource: "endpoints",
     pagination: { mode: "off" },
     filters: [{ field: "spec->>cluster", operator: "eq", value: name }],
     meta: {
       workspace,
       workspaced: true,
-      select: CACHE_DEPENDENT_SELECT,
+      select: "id,metadata,spec,status",
     },
     queryOptions: {
       enabled: isEdit && !!name && !!workspace && (enabled || savedEnabled),
@@ -264,16 +190,13 @@ export function ZCacheFields({
     },
   });
   const dependentEndpoints = useMemo(
-    () => cacheDependents(dependencies.data?.data ?? []),
-    [dependencies.data?.data],
+    () => cacheEndpointRefs(dependencies.data?.data ?? [], workspace),
+    [dependencies.data?.data, workspace],
   );
   const inUse = dependentEndpoints.length > 0;
-  const dependencyCheck = {
-    inUse,
-    loading: dependencies.isLoading,
-    error: dependencies.isError,
-  };
-  const guardRemoval = cacheRemovalBlocked(dependencyCheck);
+  const guardRemoval = inUse || dependencies.isLoading || dependencies.isError;
+  // Only nodes the cache service has applied are protected; a saved node that
+  // never took effect can be withdrawn (mirrors the database guard).
   const appliedNodes: string[] =
     status?.current?.target_nodes ??
     form.formState.defaultValues?.spec?.cache?.options?.target_nodes ??
@@ -295,7 +218,10 @@ export function ZCacheFields({
     : names;
   const capacity = form.watch("spec.cache.options.l1_size_gib");
   const capacityNumber = Number(capacity);
-  const capacityIsValid = isValidCacheCapacity(capacity);
+  const capacityIsValid =
+    Number.isInteger(capacityNumber) &&
+    capacityNumber >= 1 &&
+    capacityNumber <= 2147483647;
   const totalCapacity = capacityIsValid
     ? capacityNumber * selected.length
     : null;
@@ -325,6 +251,10 @@ export function ZCacheFields({
       },
       { shouldDirty: true, shouldValidate: true },
     );
+    form.setValue("spec.cache.options.enabled", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const fields = (
@@ -382,14 +312,17 @@ export function ZCacheFields({
                 className="sm:col-span-2"
                 rules={{
                   validate: (value) =>
-                    isValidCacheCapacity(value) ||
-                    t("clusters.zcache.invalidCapacity"),
+                    Number.isInteger(Number(value)) &&
+                    Number(value) >= 1 &&
+                    Number(value) <= 2147483647
+                      ? true
+                      : t("clusters.zcache.invalidCapacity"),
                 }}
               >
                 <Input
                   type="number"
                   min={1}
-                  max={MAX_CACHE_CAPACITY_GIB}
+                  max={2147483647}
                   step={1}
                   onChange={(event) =>
                     form.setValue(
@@ -464,107 +397,102 @@ export function ZCacheFields({
                     {t("clusters.zcache.noMatchingNodes")}
                   </p>
                 ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-10">
-                            <span className="sr-only">
-                              {t("clusters.zcache.selectNode")}
-                            </span>
-                          </TableHead>
-                          <TableHead className="w-[34%]">
-                            {t("clusters.zcache.node")}
-                          </TableHead>
-                          <TableHead className="w-[22%]">
-                            {t("clusters.zcache.runtimeShort")}
-                          </TableHead>
-                          <TableHead className="w-[18%]">
-                            {t("clusters.zcache.capacityShort")}
-                          </TableHead>
-                          <TableHead className="w-[26%]">
-                            {t("clusters.zcache.usedBy")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {visibleNames.map((nodeName) => {
-                          const candidate = candidates.find(
-                            (node) => node.name === nodeName,
-                          );
-                          const node = nodes.find(
-                            (node) => node.name === nodeName,
-                          );
-                          const selection = nodeSelectionState({
-                            nodeName,
-                            selected,
-                            applied: appliedNodes,
-                            selectable: candidate?.selectable === true,
-                            inventoryStale: !!status?.observation_error,
-                            dependencies: dependencyCheck,
-                          });
-                          const capacityGiB =
-                            node && node.capacity_bytes > 0
-                              ? formatToDecimal(
-                                  node.capacity_bytes / 2 ** 30,
-                                  0,
-                                )
-                              : null;
-                          return (
-                            <TableRow key={nodeName} className="h-10">
-                              <TableCell className="py-2">
-                                <Checkbox
-                                  aria-label={nodeName}
-                                  checked={selection.selected}
-                                  disabled={selection.disabled}
-                                  onCheckedChange={(checked) =>
-                                    form.setValue(
-                                      "spec.cache.options.target_nodes",
-                                      checked === true
-                                        ? [...selected, nodeName]
-                                        : selected.filter(
-                                            (name) => name !== nodeName,
-                                          ),
-                                      {
-                                        shouldDirty: true,
-                                        shouldValidate: true,
-                                      },
-                                    )
-                                  }
+                  <Table className="border">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10">
+                          <span className="sr-only">
+                            {t("clusters.zcache.selectNode")}
+                          </span>
+                        </TableHead>
+                        <TableHead className="w-[34%]">
+                          {t("clusters.zcache.node")}
+                        </TableHead>
+                        <TableHead className="w-[22%]">
+                          {t("clusters.zcache.runtimeShort")}
+                        </TableHead>
+                        <TableHead className="w-[18%]">
+                          {t("clusters.zcache.capacityShort")}
+                        </TableHead>
+                        <TableHead className="w-[26%]">
+                          {t("clusters.zcache.usedBy")}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {visibleNames.map((nodeName) => {
+                        const candidate = candidates.find(
+                          (node) => node.name === nodeName,
+                        );
+                        const node = nodes.find(
+                          (node) => node.name === nodeName,
+                        );
+                        const selectedNode = selected.includes(nodeName);
+                        const blockAppliedRemoval =
+                          guardRemoval && appliedNodes.includes(nodeName);
+                        const blockNewSelection =
+                          !selectedNode &&
+                          (!candidate?.selectable ||
+                            !!status?.observation_error);
+                        const capacityGiB =
+                          node && node.capacity_bytes > 0
+                            ? formatToDecimal(node.capacity_bytes / 2 ** 30, 0)
+                            : null;
+                        return (
+                          <TableRow key={nodeName} className="h-10">
+                            <TableCell className="py-2">
+                              <Checkbox
+                                aria-label={nodeName}
+                                checked={selectedNode}
+                                disabled={
+                                  blockAppliedRemoval || blockNewSelection
+                                }
+                                onCheckedChange={(checked) =>
+                                  form.setValue(
+                                    "spec.cache.options.target_nodes",
+                                    checked === true
+                                      ? [...selected, nodeName]
+                                      : selected.filter(
+                                          (name) => name !== nodeName,
+                                        ),
+                                    {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    },
+                                  )
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <span className="whitespace-nowrap font-mono text-xs font-semibold text-[var(--nt-text-neutral-super)]">
+                                {nodeName}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <CacheRuntimeStatus
+                                node={node}
+                                candidate={candidate}
+                              />
+                            </TableCell>
+                            <TableCell className="py-2 font-mono text-xs">
+                              {capacityGiB ? `${capacityGiB} GiB` : "—"}
+                            </TableCell>
+                            <TableCell className="py-2">
+                              {appliedNodes.includes(nodeName) &&
+                              (inUse || dependencies.isError) ? (
+                                <CacheEndpointLinks
+                                  endpoints={dependentEndpoints}
+                                  error={dependencies.isError}
                                 />
-                              </TableCell>
-                              <TableCell className="py-2">
-                                <span className="whitespace-nowrap font-mono text-xs font-semibold text-[var(--nt-text-neutral-super)]">
-                                  {nodeName}
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-2">
-                                <CacheRuntimeStatus
-                                  node={node}
-                                  candidate={candidate}
-                                />
-                              </TableCell>
-                              <TableCell className="py-2 font-mono text-xs">
-                                {capacityGiB ? `${capacityGiB} GiB` : "—"}
-                              </TableCell>
-                              <TableCell className="py-2">
-                                {selection.showDependents ? (
-                                  <CacheDependencyCell
-                                    endpoints={dependentEndpoints}
-                                    error={dependencies.isError}
-                                  />
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    —
-                                  </span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 )}
                 <input
                   type="hidden"
@@ -600,13 +528,7 @@ export function ZCacheFields({
       title={
         <span className="inline-flex items-center gap-2">
           {t("clusters.cache.title")}
-          <CacheStatusBadge
-            desired={zcacheSpec({
-              spec: { cache: form.formState.defaultValues?.spec?.cache },
-            })}
-            status={status}
-            summary={summary}
-          />
+          <CacheStatusBadge phase={summary?.phase} />
         </span>
       }
       variant="section"

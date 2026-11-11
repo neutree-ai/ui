@@ -1,19 +1,19 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import type { UseFormReturnType } from "@refinedev/react-hook-form";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { type FieldValues, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fillField } from "@/foundation/testing/interactions";
-import { renderForm } from "@/foundation/testing/render-form";
-import {
-  CACHE_DEPENDENT_SELECT,
-  type CacheDependentEndpoint,
-} from "../lib/zcache-node-selection";
-import type { ClusterCacheStatus, ZCacheStatus } from "../types";
+import type { Cluster, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
 const cacheDependencies = vi.hoisted(() => ({
   query: vi.fn(),
-  rows: [] as CacheDependentEndpoint[],
+  rows: [] as Array<{
+    id: number;
+    metadata?: { name?: string; display_name?: string; workspace?: string };
+    spec: { kv_cache?: { provider: string } | null };
+    status?: { kv_cache?: { provider: string; details: { in_use: boolean } } };
+  }>,
 }));
 vi.mock("@refinedev/core", () => ({
   useList: (options: unknown) => {
@@ -40,12 +40,70 @@ vi.mock("@/components/ui/tooltip", () => ({
     <div role="tooltip">{children}</div>
   ),
 }));
+vi.mock("@/foundation/components/Link", () => ({
+  Link: ({
+    href,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
 beforeEach(() => {
   cacheDependencies.rows = [];
   cacheDependencies.query.mockClear();
 });
 
-const saved = { enabled: true, l1_size_gib: 8, target_nodes: ["a", "b"] };
+function Form({
+  onSubmit,
+  status,
+  isEdit = true,
+  legacy = false,
+}: {
+  onSubmit: (data: Cluster) => void;
+  status?: ZCacheStatus;
+  isEdit?: boolean;
+  legacy?: boolean;
+}) {
+  const form = useForm<Cluster>({
+    defaultValues: {
+      metadata: { name: "test-cluster", workspace: "default" },
+      spec: {
+        type: "kubernetes",
+        config: {},
+        cache: legacy
+          ? undefined
+          : {
+              provider: "zcache",
+              options: {
+                enabled: true,
+                l1_size_gib: 8,
+                target_nodes: ["a", "b"],
+              },
+            },
+      },
+    },
+  });
+  const adapted = Object.assign(form, {
+    refineCore: {
+      query: {
+        data: {
+          data: { status: { cache: { provider: "zcache", details: status } } },
+        },
+      },
+    },
+  }) as unknown as UseFormReturnType<Cluster>;
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <ZCacheFields form={adapted} isEdit={isEdit} status={status} />
+        <button type="submit">Save</button>
+      </form>
+    </FormProvider>
+  );
+}
 const observed: ZCacheStatus = {
   candidates: [
     { name: "a", selectable: true },
@@ -69,145 +127,210 @@ const observed: ZCacheStatus = {
   ],
 };
 
-function renderFields({
-  status,
-  summary,
-  isEdit = true,
-  legacy = false,
-}: {
-  status?: ZCacheStatus;
-  summary?: ClusterCacheStatus;
-  isEdit?: boolean;
-  legacy?: boolean;
-} = {}) {
-  const { result } = renderForm(
-    () => ({
-      form: useForm<FieldValues>({
-        defaultValues: {
-          metadata: { name: "test-cluster", workspace: "default" },
-          spec: {
-            type: "kubernetes",
-            config: {},
-            cache: legacy ? undefined : { provider: "zcache", options: saved },
-          },
-        },
-      }),
-    }),
-    ({ form }) => (
-      <ZCacheFields
-        form={form}
-        isEdit={isEdit}
-        status={status}
-        summary={summary}
-      />
-    ),
-  );
-  const submit = async () => {
-    const onValid = vi.fn();
-    await act(() => result.current.form.handleSubmit(onValid)());
-    return onValid.mock.calls[0]?.[0];
-  };
-  return { submit };
-}
-
-const lastQuery = () => cacheDependencies.query.mock.lastCall?.[0];
-const checkbox = (name: string) => screen.getByRole("checkbox", { name });
-const cacheSwitch = () =>
-  screen.getByRole("switch", { name: "clusters.zcache.enable" });
-
 describe("ZCacheFields", () => {
   it("blocks removal while endpoints still use cache, but allows expansion", () => {
     cacheDependencies.rows = [
       {
         id: 1,
-        name: "endpoint-a",
-        observed_kv_cache: { provider: "zcache", details: { in_use: true } },
+        metadata: { name: "endpoint-a" },
+        spec: { kv_cache: null },
+        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
-    renderFields({ status: observed });
-    expect(checkbox("a")).toHaveProperty("disabled", true);
-    expect(checkbox("c")).toHaveProperty("disabled", false);
-    expect(cacheSwitch()).toHaveProperty("disabled", true);
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "c" }).hasAttribute("disabled"),
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole("switch", { name: "clusters.zcache.enable" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
     screen.getAllByText("clusters.zcache.dependencyCount:1");
     screen.getAllByText("endpoint-a");
+    screen.getAllByText("clusters.zcache.dependencyInstruction");
     screen.getByText("cache runtime unavailable");
   });
-  it("polls only the endpoint fields it needs, while saved or edited cache is enabled", async () => {
-    renderFields({ legacy: true });
-    expect(lastQuery().queryOptions.enabled).toBe(false);
-    fireEvent.click(cacheSwitch());
-    await waitFor(() => expect(lastQuery().queryOptions.enabled).toBe(true));
-    expect(lastQuery().meta.select).toBe(CACHE_DEPENDENT_SELECT);
-    fireEvent.click(cacheSwitch());
-    await waitFor(() => expect(lastQuery().queryOptions.enabled).toBe(false));
+  it("links each dependent endpoint to its detail route by resource name", () => {
+    cacheDependencies.rows = [
+      {
+        id: 7,
+        metadata: {
+          name: "endpoint-resource",
+          display_name: "Endpoint display name",
+          workspace: "team-a",
+        },
+        spec: { kv_cache: { provider: "zcache" } },
+      },
+    ];
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    const links = screen.getAllByRole("link", {
+      name: "Endpoint display name",
+    });
+    expect(links).toHaveLength(2);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/team-a/endpoints/show/endpoint-resource",
+      "/team-a/endpoints/show/endpoint-resource",
+    ]);
+  });
+  it("lets a saved but never-applied node be withdrawn while inference uses cache", () => {
+    cacheDependencies.rows = [
+      {
+        id: 1,
+        metadata: { name: "endpoint-a" },
+        spec: { kv_cache: { provider: "zcache" } },
+        status: undefined,
+      },
+    ];
+    render(
+      <Form
+        onSubmit={vi.fn()}
+        status={{
+          ...observed,
+          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen.getByRole("checkbox", { name: "b" }).hasAttribute("disabled"),
+    ).toBe(false);
+  });
+  it("queries dependencies only when saved or edited cache is enabled", async () => {
+    render(<Form onSubmit={vi.fn()} legacy />);
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(false);
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    await waitFor(() =>
+      expect(
+        cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+      ).toBe(true),
+    );
+    expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe(
+      "id,metadata,spec,status",
+    );
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    await waitFor(() =>
+      expect(
+        cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+      ).toBe(false),
+    );
   });
   it("keeps checking dependencies while disabling a saved cache configuration", () => {
-    renderFields({ status: observed });
-    fireEvent.click(cacheSwitch());
-    expect(lastQuery().queryOptions.enabled).toBe(true);
-  });
-  it("labels the section with the resolved state, not the raw phase", () => {
-    renderFields({
-      status: { ...observed, current: { ...saved, l1_size_gib: 4 } },
-      summary: { provider: "zcache", phase: "Ready", conditions: [] },
-    });
-    screen.getByText("clusters.zcache.reconciling");
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    expect(
+      cacheDependencies.query.mock.lastCall?.[0].queryOptions.enabled,
+    ).toBe(true);
   });
   it("sends a numeric capacity and preserves the successful node when removing a failed node", async () => {
-    const { submit } = renderFields({ status: observed });
-    fillField("spec.cache.options.l1_size_gib", "1");
-    fireEvent.click(checkbox("b"));
-    expect((await submit()).spec.cache.options).toEqual({
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} status={observed} />);
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "b" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    expect(submit.mock.calls[0][0].spec.cache?.options).toEqual({
       enabled: true,
       l1_size_gib: 1,
       target_nodes: ["a"],
     });
   });
+  it("offers undeployed candidates, not just runtime nodes", () => {
+    render(<Form onSubmit={vi.fn()} status={observed} />);
+    expect(screen.getByRole("checkbox", { name: "c" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+  });
   it("filters the cache node table", () => {
-    renderFields({ status: observed });
+    render(<Form onSubmit={vi.fn()} status={observed} />);
     fireEvent.change(
       screen.getByRole("searchbox", { name: "clusters.zcache.searchNodes" }),
       { target: { value: "c" } },
     );
     expect(screen.queryByRole("checkbox", { name: "a" })).toBeNull();
-    checkbox("c");
+    screen.getByRole("checkbox", { name: "c" });
   });
-  it("reports stale inventory and stops adding its candidates", () => {
-    renderFields({ status: { ...observed, observation_error: "unavailable" } });
-    expect(checkbox("c")).toHaveProperty("disabled", true);
+  it("keeps selected nodes visible during inventory failure and prevents adding stale candidates", () => {
+    render(
+      <Form
+        onSubmit={vi.fn()}
+        status={{ ...observed, observation_error: "unavailable" }}
+      />,
+    );
+    expect(screen.getByRole("checkbox", { name: "a" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+    expect(screen.getByRole("checkbox", { name: "c" })).toHaveProperty(
+      "disabled",
+      true,
+    );
     expect(screen.getByRole("alert").textContent).toContain("unavailable");
   });
-  it("keeps invalid capacity visible with an explanation", async () => {
-    renderFields({ status: observed });
-    fillField("spec.cache.options.l1_size_gib", "1.5");
-    expect(screen.getByRole("spinbutton")).toHaveProperty("value", "1.5");
-    await screen.findByText("clusters.zcache.invalidCapacity");
-  });
-  it("rejects an empty node selection", async () => {
-    const { submit } = renderFields({ status: observed });
-    fireEvent.click(checkbox("a"));
-    fireEvent.click(checkbox("b"));
-    expect(await submit()).toBeUndefined();
+  it("rejects fractional capacity and empty selection", async () => {
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} status={observed} />);
+    fireEvent.change(screen.getByRole("spinbutton"), {
+      target: { value: "1.5" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "a" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "b" }));
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Save" }).closest("form")!,
+    );
     await screen.findByText("clusters.zcache.selectNodes");
+    expect(submit).not.toHaveBeenCalled();
   });
+  it.each(["0", "1.5", "2147483648", ""])(
+    "keeps invalid capacity %s visible with an explanation",
+    async (input) => {
+      render(<Form onSubmit={vi.fn()} status={observed} />);
+      const capacity = screen.getByRole("spinbutton") as HTMLInputElement;
+      fireEvent.change(capacity, { target: { value: input } });
+      fireEvent.blur(capacity);
+      expect(capacity.value).toBe(input);
+      await screen.findByText("clusters.zcache.invalidCapacity");
+    },
+  );
   it("can disable runtime even after clearing the target selection", async () => {
-    const { submit } = renderFields({ status: observed });
-    fireEvent.click(checkbox("a"));
-    fireEvent.click(checkbox("b"));
-    fireEvent.click(cacheSwitch());
-    expect((await submit()).spec.cache.options.enabled).toBe(false);
+    const submit = vi.fn();
+    render(<Form onSubmit={submit} status={observed} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "a" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "b" }));
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(submit).toHaveBeenCalled());
+    expect(submit.mock.calls[0][0].spec.cache?.options.enabled).toBe(false);
   });
   it("explains bootstrap before enabling runtime on a new cluster", () => {
-    renderFields({ isEdit: false });
+    render(<Form onSubmit={vi.fn()} isEdit={false} />);
     screen.getByText("clusters.zcache.createHint");
     expect(screen.queryByRole("switch")).toBeNull();
   });
   it("allows clearing capacity before entering a replacement", () => {
-    renderFields();
-    const input = screen.getByRole("spinbutton");
+    render(<Form onSubmit={vi.fn()} />);
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "" } });
-    expect(input).toHaveProperty("value", "");
+    expect(input.value).toBe("");
     fireEvent.change(input, { target: { value: "16" } });
-    expect(input).toHaveProperty("value", "16");
+    expect(input.value).toBe("16");
   });
 });

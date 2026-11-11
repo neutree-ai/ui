@@ -4,6 +4,7 @@ import type {
   EndpointResourceStatus,
 } from "@/foundation/types/resource-types";
 import {
+  getEndpointGpuResourceGroups,
   getEndpointReplicaResourceGroups,
   getEndpointReplicaResourceRows,
   getEndpointResourceSummaryRows,
@@ -350,6 +351,100 @@ describe("endpoint resource status helpers", () => {
       { order: 1, uuid: "GPU-node-a-bbbbbbbb" },
       { order: null, uuid: "GPU-node-a-zzzzzzzz" },
     ]);
+  });
+
+  it("merges a Replica split across backend rows by Replica identity", () => {
+    const resourceStatus: EndpointResourceStatus = {
+      summary: null,
+      replicas: [
+        {
+          instance_id: "endpoint-abc",
+          replica_id: "replica-0",
+          node_id: "node-1",
+          devices: [
+            {
+              uuid: "GPU-1",
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+        {
+          instance_id: "endpoint-abc",
+          replica_id: "replica-0",
+          node_id: "node-2",
+          devices: [
+            {
+              uuid: "GPU-2",
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-2",
+            },
+          ],
+        },
+      ],
+    };
+
+    const groups = getEndpointReplicaResourceGroups(resourceStatus);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      replicaId: "replica-0",
+      deviceCount: 2,
+      nodeCount: 2,
+    });
+  });
+
+  it("groups allocations by physical GPU for the capacity map", () => {
+    const resourceStatus: EndpointResourceStatus = {
+      summary: null,
+      replicas: [
+        {
+          instance_id: "endpoint-abc",
+          replica_id: "replica-0",
+          devices: [
+            {
+              uuid: "GPU-1",
+              order: 0,
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+        {
+          instance_id: "endpoint-abc",
+          replica_id: "replica-1",
+          devices: [
+            {
+              uuid: "GPU-1",
+              order: 0,
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+            {
+              uuid: "GPU-2",
+              order: 1,
+              product: "Tesla-T4",
+              memory_mib: 8192,
+              core_units: 50,
+              node_id: "node-1",
+            },
+          ],
+        },
+      ],
+    };
+
+    const groups = getEndpointGpuResourceGroups(resourceStatus);
+    expect(groups.map((group) => group.uuid)).toEqual(["GPU-1", "GPU-2"]);
+    expect(
+      groups[0].allocations.map((allocation) => allocation.replicaIndex),
+    ).toEqual([0, 1]);
   });
 
   it("returns empty rows when endpoint resources are missing", () => {

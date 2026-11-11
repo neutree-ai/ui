@@ -1,8 +1,9 @@
-import { ArrowRight, Database } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Switch } from "@/components/ui/switch";
+import { badgeVariants } from "@/components/ui/badge";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
+import { Section } from "@/foundation/components/Section";
 import type { Endpoint, EndpointClusterRef } from "../types";
 
 export function EndpointKVCacheSummary({
@@ -15,62 +16,51 @@ export function EndpointKVCacheSummary({
   const { t } = useTranslation();
   const enabled = endpoint.spec.kv_cache?.provider === "zcache";
   const configured = endpointZCacheOptions(cluster)?.enabled === true;
-  if (endpoint.spec.kv_cache && !enabled) return null;
+  if (!configured || (endpoint.spec.kv_cache && !enabled)) return null;
   return (
-    <section
-      aria-label={t("endpoints.kvCacheSettings.enable")}
-      className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-md border bg-muted/10 px-4 py-3"
-    >
-      <div className="flex items-center gap-4">
-        <div className="rounded-md bg-muted p-2 text-muted-foreground">
-          <Database className="h-4 w-4" />
-        </div>
-        <span className="font-semibold">
+    <Section
+      title={
+        <span className="inline-flex flex-wrap items-center gap-2">
           {t("endpoints.kvCacheSettings.enable")}
+          <span className={badgeVariants({ variant: "secondary" })}>
+            {t(enabled ? "common.options.enabled" : "common.options.disabled")}
+          </span>
         </span>
-        <Switch
-          aria-label={t("endpoints.kvCacheSettings.enable")}
-          checked={enabled}
-          disabled
-          className="disabled:opacity-100 disabled:cursor-default"
-        />
-      </div>
-      {!enabled && (
-        <span className="text-sm text-muted-foreground">
-          {t("endpoints.kvCacheSettings.endpointDisabled")}
+      }
+      description={
+        <span className="inline-flex flex-wrap items-baseline gap-x-2">
+          {enabled ? (
+            <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+              {t("endpoints.kvCacheSettings.timeoutLabel")}
+              <span className="font-semibold text-foreground">
+                {t("endpoints.kvCacheSettings.timeoutValue", {
+                  seconds:
+                    endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5,
+                })}
+              </span>
+            </span>
+          ) : (
+            <span>{t("endpoints.kvCacheSettings.endpointDisabled")}</span>
+          )}
         </span>
-      )}
-      {enabled && (
-        <div className="border-l pl-8">
-          <div className="text-xs font-medium text-muted-foreground">
-            {t("endpoints.kvCacheSettings.timeoutLabel")}
+      }
+      actions={
+        cluster ? (
+          <div className="text-right">
+            <Link
+              className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-primary hover:underline"
+              to={`/${encodeURIComponent(endpoint.metadata.workspace ?? "default")}/clusters/show/${encodeURIComponent(cluster.metadata.name)}?section=cache`}
+            >
+              {t("endpoints.kvCacheSettings.viewCluster")}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="mt-1 max-w-64 break-all text-xs text-muted-foreground">
+              {cluster.metadata.name}
+            </div>
           </div>
-          <div className="mt-1 text-sm font-semibold">
-            {t("endpoints.kvCacheSettings.timeoutValue", {
-              seconds: endpoint.spec.kv_cache?.options?.timeout_seconds ?? 5,
-            })}
-          </div>
-        </div>
-      )}
-      {cluster && !configured && (
-        <span className="text-sm text-muted-foreground">
-          {t("endpoints.kvCacheSettings.clusterUnconfigured")}
-        </span>
-      )}
-      {cluster && configured && (
-        <div className="ml-auto text-right">
-          <Link
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-            to={`/${encodeURIComponent(endpoint.metadata.workspace ?? "default")}/clusters/show/${encodeURIComponent(cluster.metadata.name)}?section=cache`}
-          >
-            {t("endpoints.kvCacheSettings.viewCluster")}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {cluster.metadata.name}
-          </div>
-        </div>
-      )}
-    </section>
+        ) : undefined
+      }
+      contentClassName="h-3 p-0"
+    />
   );
 }

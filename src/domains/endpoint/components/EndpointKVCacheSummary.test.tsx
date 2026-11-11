@@ -7,6 +7,7 @@ import { EndpointKVCacheSummary } from "./EndpointKVCacheSummary";
 describe("EndpointKVCacheSummary", () => {
   it.each([
     [true, true],
+    [true, false],
     [false, true],
     [false, false],
   ])("renders enabled=%s configured=%s", (enabled, configured) => {
@@ -27,10 +28,19 @@ describe("EndpointKVCacheSummary", () => {
         <EndpointKVCacheSummary endpoint={endpoint} cluster={cluster} />
       </MemoryRouter>,
     );
-    expect(screen.queryByText("ZCache")).toBeNull();
-    const toggle = screen.getByRole("switch") as HTMLButtonElement;
-    expect(toggle.disabled).toBe(true);
-    expect(toggle.getAttribute("aria-checked")).toBe(String(enabled));
+    if (!configured) {
+      expect(
+        screen.queryByRole("heading", {
+          name: /endpoints\.kvCacheSettings\.enable/,
+        }),
+      ).toBeNull();
+      return;
+    }
+
+    expect(screen.queryByRole("switch")).toBeNull();
+    screen.getByText(
+      enabled ? "common.options.enabled" : "common.options.disabled",
+    );
     expect(
       Boolean(screen.queryByText("endpoints.kvCacheSettings.timeoutValue:2")),
     ).toBe(enabled);
@@ -40,10 +50,5 @@ describe("EndpointKVCacheSummary", () => {
       expect(link.getAttribute("href")).toBe(
         "/default/clusters/show/gpu-cluster?section=cache",
       );
-    expect(
-      Boolean(
-        screen.queryByText("endpoints.kvCacheSettings.clusterUnconfigured"),
-      ),
-    ).toBe(!configured);
   });
 });
