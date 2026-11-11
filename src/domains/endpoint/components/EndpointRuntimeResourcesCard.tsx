@@ -766,7 +766,7 @@ function AllocationBar({
             )}
           </>
         )}
-        {actualMiB != null && (hasComposition || actualExceedsReserved) && (
+        {actualMiB != null && (
           <span
             aria-hidden="true"
             className="absolute -bottom-0.5 -top-0.5 z-10 w-0.5 shadow-[0_0_0_1px_var(--nt-fill-neutral-white)]"
@@ -921,25 +921,10 @@ function AllocationBar({
                     data-testid="replica-detail-layer"
                   >
                     {hasComposition ? (
-                      <>
-                        <ReplicaSegmentComposition
-                          allocation={allocation}
-                          mark={mark}
-                        />
-                        {actualMiB != null && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute -bottom-0.5 -top-0.5 z-10 w-0.5 shadow-[0_0_0_1px_var(--nt-fill-neutral-white)]"
-                            data-testid="replica-actual-marker"
-                            style={{
-                              left: `${Math.min(100, (actualMiB / allocation.memoryMiB) * 100)}%`,
-                              backgroundColor: actualExceedsReserved
-                                ? "var(--nt-fill-serious-base)"
-                                : "var(--nt-text-neutral-super)",
-                            }}
-                          />
-                        )}
-                      </>
+                      <ReplicaSegmentComposition
+                        allocation={allocation}
+                        mark={mark}
+                      />
                     ) : (
                       <>
                         <span
@@ -963,17 +948,20 @@ function AllocationBar({
                             }}
                           />
                         )}
-                        {actualExceedsReserved && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute -bottom-0.5 -top-0.5 z-10 w-0.5 -translate-x-full shadow-[0_0_0_1px_var(--nt-fill-neutral-white)]"
-                            style={{
-                              left: "100%",
-                              backgroundColor: "var(--nt-fill-serious-base)",
-                            }}
-                          />
-                        )}
                       </>
+                    )}
+                    {actualMiB != null && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -bottom-0.5 -top-0.5 z-10 w-0.5 shadow-[0_0_0_1px_var(--nt-fill-neutral-white)]"
+                        data-testid="replica-actual-marker"
+                        style={{
+                          left: `${Math.min(100, (actualMiB / allocation.memoryMiB) * 100)}%`,
+                          backgroundColor: actualExceedsReserved
+                            ? "var(--nt-fill-serious-base)"
+                            : "var(--nt-text-neutral-super)",
+                        }}
+                      />
                     )}
                   </span>
                   <span className="relative z-10 truncate px-1">

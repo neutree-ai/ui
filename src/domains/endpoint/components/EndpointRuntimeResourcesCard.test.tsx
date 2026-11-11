@@ -521,7 +521,7 @@ describe("EndpointRuntimeResourcesCard", () => {
       />,
     );
 
-    expect(screen.queryByTestId("single-actual-marker")).toBeNull();
+    screen.getByTestId("single-actual-marker");
     within(screen.getByTestId("single-allocation-legend")).getByText(
       "observations.actualVramUsage",
     );
