@@ -29,16 +29,18 @@ export const getOverviewDashboardProps = (
   },
 });
 
-export type ClusterSplitDashboardType = "overview";
+export type ClusterSplitDashboardType = "overview" | "routing";
 
 const CLUSTER_SPLIT_DASHBOARD_IDS: Record<ClusterSplitDashboardType, string> = {
   overview: "neutree-cluster-overview-embed",
+  routing: "router",
 };
 
 export const getClusterSplitDashboardProps = (
   grafanaUrl: string,
   dashboardType: ClusterSplitDashboardType,
   clusterName: string,
+  workspace: string,
 ): GrafanaDashboardProps => ({
   dashboardConfig: {
     ...getBaseDashboardConfig(grafanaUrl),
@@ -46,6 +48,11 @@ export const getClusterSplitDashboardProps = (
     variables: {
       ...getCommonVariables(),
       Cluster: clusterName,
+      ...(dashboardType === "routing"
+        ? {
+            Workspace: workspace,
+          }
+        : {}),
     },
   },
   hideVariables: true,

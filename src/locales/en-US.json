@@ -551,7 +551,8 @@
 		"monitor": {
 			"overviewMetrics": "Cluster Overview",
 			"overview": "Overview",
-			"cache": "Cache"
+			"cache": "Cache",
+			"routing": "Router"
 		},
 		"actions": {
 			"addModelCache": "Add Model Cache",

@@ -58,6 +58,7 @@ import type { BaseStatus } from "@/foundation/types/basic-types";
 
 const MONITOR_PANEL_LABELS = {
   overview: "clusters.monitor.overview",
+  routing: "clusters.monitor.routing",
   cache: "clusters.monitor.cache",
 } as const;
 
@@ -154,8 +155,9 @@ export const ClustersShow = () => {
         })
       : getClusterSplitDashboardProps(
           grafanaUrl,
-          "overview",
+          selectedPanel,
           record.metadata.name,
+          record.metadata.workspace ?? "default",
         );
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
