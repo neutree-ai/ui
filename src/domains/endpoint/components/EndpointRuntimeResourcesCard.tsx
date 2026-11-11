@@ -1,8 +1,7 @@
 /** Endpoint-scoped allocation map. GPU facts are grouped by physical device. */
-import { Copy, Server } from "lucide-react";
+import { Server } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -19,18 +18,22 @@ import {
 } from "@/domains/endpoint/lib/resource-status";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { GpuDetailsSheet } from "@/foundation/components/GpuDetailsSheet";
+import {
+  CopyUuidButton,
+  GpuDetailsSheet,
+} from "@/foundation/components/GpuObservationCard";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { Section } from "@/foundation/components/Section";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
   type AcceleratorSample,
+  allocationComposition,
   allocationFallbackReadings,
   formatL1CacheUsage,
   type GpuAllocation,
   type NodeL1CacheUsage,
   reading,
+  sampleAge,
 } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import {
@@ -40,6 +43,12 @@ import {
   chartMarkStyle,
   chartMoreMark,
 } from "@/foundation/lib/chart-palette";
+import {
+  l0Pattern,
+  OWNER_SECONDARY_TONE,
+  OWNER_WEIGHTS_TONE,
+  ownerTone,
+} from "@/foundation/lib/gpu-ownership";
 import {
   formatMiBAsGiB,
   formatMiBAsGiBValue,
@@ -82,20 +91,10 @@ type NodeGroup = {
 
 const OTHER_ENDPOINT_BACKGROUND =
   "color-mix(in srgb, var(--nt-chart-more) 36%, var(--nt-fill-neutral-white))";
-const OWNER_WEIGHTS_TONE = 72;
-const OWNER_SECONDARY_TONE = 24;
-const ownerTone = (color: string, amount: number) =>
-  `color-mix(in srgb, ${color} ${amount}%, var(--nt-fill-neutral-white))`;
 const ownerSoftTone = (color: string) =>
   `color-mix(in srgb, ${color} ${OWNER_SECONDARY_TONE}%, var(--nt-text-neutral-ontint))`;
-const l0Pattern = (color: string) =>
-  `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`;
-
-const gib = (mib: number | null | undefined) =>
-  mib == null ? <EmptyValue /> : `${(mib / 1024).toFixed(1)} GiB`;
-
-const gibValue = (mib: number | null | undefined) =>
-  mib == null ? <EmptyValue /> : (mib / 1024).toFixed(1);
+const gibValue = (mib: number | null | undefined): ReactNode =>
+  formatMiBAsGiBValue(mib) ?? <EmptyValue />;
 
 const replicaCode = (index: number) => `R${index}`;
 
@@ -144,12 +143,8 @@ const nodeGroups = (devices: EndpointGpuResourceGroup[]): NodeGroup[] => {
 };
 
 const latestSampleAge = (samples: AcceleratorSample[]): string | null => {
-  const latest = samples.reduce(
-    (value, sample) => Math.max(value, sample.observed_at),
-    0,
-  );
-  if (latest <= 0) return null;
-  const seconds = Math.max(0, Math.floor(Date.now() / 1000) - latest);
+  const seconds = sampleAge(Date.now(), samples)?.seconds;
+  if (seconds == null) return null;
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   return `${Math.floor(seconds / 3600)}h`;
@@ -247,36 +242,6 @@ export function EndpointRuntimeResourcesSummary({
   );
 }
 
-function CopyUuidButton({ uuid, index }: { uuid: string; index: number }) {
-  const { t } = useTranslation();
-  const { copy } = useCopyToClipboard();
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          title={t("clusters.actions.copyUuid")}
-          aria-label={`${t("clusters.fields.gpuNumber")} ${index} ${t("clusters.actions.copyUuid")}`}
-          className="h-6 w-6 shrink-0 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            copy(uuid, {
-              successMessage: t("clusters.messages.copyUuidSuccess"),
-              errorMessage: t("clusters.messages.copyUuidFailed"),
-            });
-          }}
-        >
-          <Copy className="h-3 w-3" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{t("clusters.actions.copyUuid")}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function ReplicaSegmentComposition({
   allocation,
   mark,
@@ -287,7 +252,7 @@ function ReplicaSegmentComposition({
   const weights = allocation.modelWeightsMiB;
   const cache = allocation.kvCacheCapacityMiB;
   if (weights == null) return null;
-  const other = Math.max(0, allocation.memoryMiB - weights - (cache ?? 0));
+  const other = allocationComposition(allocation).otherMiB ?? 0;
 
   return (
     <span
@@ -340,10 +305,7 @@ function AllocationTooltip({
   const { t } = useTranslation();
   const weights = allocation.modelWeightsMiB;
   const cache = allocation.kvCacheCapacityMiB;
-  const other =
-    weights == null
-      ? null
-      : Math.max(0, allocation.memoryMiB - weights - (cache ?? 0));
+  const other = allocationComposition(allocation).otherMiB;
   const actualPercent =
     actualMiB == null || allocation.memoryMiB <= 0
       ? null
@@ -378,7 +340,7 @@ function AllocationTooltip({
           {t("observations.reservedVram")}
         </span>
         <span className="font-semibold tabular-nums">
-          {gib(allocation.memoryMiB)}
+          {formatMemoryGiB(allocation.memoryMiB)}
         </span>
       </div>
       {weights != null && (
@@ -388,7 +350,7 @@ function AllocationTooltip({
             style={{
               backgroundColor: ownerTone(mark.color, OWNER_WEIGHTS_TONE),
             }}
-            value={gib(weights)}
+            value={formatMemoryGiB(weights)}
           />
           {cache != null && (
             <TooltipLegendItem
@@ -397,7 +359,7 @@ function AllocationTooltip({
                 backgroundColor: "var(--nt-fill-neutral-white)",
                 backgroundImage: l0Pattern(mark.color),
               }}
-              value={gib(cache)}
+              value={formatMemoryGiB(cache)}
             />
           )}
           <TooltipLegendItem
@@ -405,7 +367,7 @@ function AllocationTooltip({
             style={{
               backgroundColor: ownerSoftTone(mark.color),
             }}
-            value={gib(other)}
+            value={formatMemoryGiB(other)}
           />
         </div>
       )}
@@ -427,14 +389,16 @@ function AllocationTooltip({
             className="shrink-0 text-right font-semibold tabular-nums"
             data-testid="actual-vram-value"
           >
-            <span className="block whitespace-nowrap">{gib(actualMiB)}</span>
+            <span className="block whitespace-nowrap">
+              {formatMemoryGiB(actualMiB)}
+            </span>
             {actualPercent != null && (
               <span className="block text-[10px] font-normal text-muted-foreground">
                 <span className="block whitespace-nowrap">
                   {actualExceedsReserved
                     ? t("observations.usedAndExceedsReserved", {
                         percent: actualPercent,
-                        memory: gib(overageMiB),
+                        memory: formatMemoryGiB(overageMiB),
                       })
                     : t("observations.actualOfReserved", {
                         percent: actualPercent,
@@ -523,8 +487,9 @@ function EndpointOwnershipMark({
   const weights = allocation?.modelWeightsMiB;
   const cache = allocation?.kvCacheCapacityMiB;
   const reserved = allocation?.memoryMiB ?? 0;
-  const other =
-    weights == null ? 0 : Math.max(0, reserved - weights - (cache ?? 0));
+  const other = allocation
+    ? (allocationComposition(allocation).otherMiB ?? 0)
+    : 0;
   const actual =
     actualMiB == null ? null : Math.min(Math.max(0, actualMiB), reserved);
   const unused = actual == null ? reserved : Math.max(0, reserved - actual);
@@ -886,7 +851,7 @@ function AllocationBar({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`${t("observations.replicaLabel")} ${replicaCode(allocation.replicaIndex)}, ${gib(allocation.memoryMiB)} ${t("observations.reservedVram")}`}
+                  aria-label={`${t("observations.replicaLabel")} ${replicaCode(allocation.replicaIndex)}, ${formatMemoryGiB(allocation.memoryMiB)} ${t("observations.reservedVram")}`}
                   aria-pressed={selectedReplicaKey === allocation.replicaKey}
                   className={cn(
                     "group/slice relative flex min-w-0 shrink-0 items-center justify-center overflow-hidden text-[9px] font-semibold tabular-nums transition-opacity focus-visible:z-10 focus-visible:[outline:2px_solid_var(--nt-stroke-outstanding-base)] focus-visible:[outline-offset:2px]",
@@ -987,7 +952,7 @@ function AllocationBar({
                 type="button"
                 aria-label={t("observations.moreReplicasLabel", {
                   count: hidden.length,
-                  memory: gib(hiddenMemory),
+                  memory: formatMemoryGiB(hiddenMemory),
                 })}
                 className="flex min-w-0 shrink-0 items-center justify-center overflow-hidden border-0 p-0 text-[10px] font-semibold text-[var(--nt-chart-more-foreground)]"
                 onPointerDown={(event) => event.stopPropagation()}
@@ -1007,7 +972,7 @@ function AllocationBar({
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {t("observations.moreReplicasLabel", {
                   count: hidden.length,
-                  memory: gib(hiddenMemory),
+                  memory: formatMemoryGiB(hiddenMemory),
                 })}
               </p>
             </TooltipContent>
@@ -1063,10 +1028,7 @@ function AllocationCompositionLegend({
   const { t } = useTranslation();
   const weights = allocation.modelWeightsMiB;
   const cache = allocation.kvCacheCapacityMiB;
-  const other =
-    weights == null
-      ? null
-      : Math.max(0, allocation.memoryMiB - weights - (cache ?? 0));
+  const other = allocationComposition(allocation).otherMiB;
 
   if (weights == null) {
     if (actualMiB == null) return null;
@@ -1111,7 +1073,7 @@ function AllocationCompositionLegend({
         {exceedsReserved && (
           <span className="inline-flex min-w-0 items-center gap-1.5 text-[var(--nt-text-colorful-serious)]">
             {t("observations.exceedsReservedBy", {
-              memory: gib(actualMiB - allocation.memoryMiB),
+              memory: formatMemoryGiB(actualMiB - allocation.memoryMiB),
             })}
           </span>
         )}
@@ -1196,7 +1158,7 @@ function AllocationCompositionLegend({
       {actualMiB != null && actualMiB > allocation.memoryMiB && (
         <span className="inline-flex min-w-0 items-center gap-1.5 text-[var(--nt-text-colorful-serious)]">
           {t("observations.exceedsReservedBy", {
-            memory: gib(actualMiB - allocation.memoryMiB),
+            memory: formatMemoryGiB(actualMiB - allocation.memoryMiB),
           })}
         </span>
       )}
@@ -1360,7 +1322,7 @@ function GpuResourceCard({
                 )}
               </span>
             )}
-            <CopyUuidButton index={index} uuid={device.uuid} />
+            <CopyUuidButton index={index} size="sm" uuid={device.uuid} />
           </div>
           {showProduct && (
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -1440,7 +1402,7 @@ function GpuResourceCard({
       </div>
 
       <GpuDetailsSheet
-        assigned={cardAllocations}
+        allocations={cardAllocations}
         device={observedGpu}
         observationStatus={detailsStatus}
         onOpenChange={setDetailsOpen}
@@ -1632,7 +1594,7 @@ export default function EndpointRuntimeResourcesCard({
                 />
                 <AggregateStat
                   label={t("observations.vramInUse")}
-                  value={gib(
+                  value={formatMemoryGiB(
                     measuredEndpointMemory(devices, samples, identity),
                   )}
                 />

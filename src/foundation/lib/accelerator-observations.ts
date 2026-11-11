@@ -1,5 +1,4 @@
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
-import { chartCategoryMark } from "./chart-palette";
 import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
@@ -311,20 +310,27 @@ export function reading(
   return matching[0];
 }
 
-export type DeviceReadings = {
+type DeviceReadings = {
   total: number | null;
   actual: number | null;
   utilization: AcceleratorSample | undefined;
   temperature: AcceleratorSample | undefined;
   power: AcceleratorSample | undefined;
-  hardware: Record<string, string>;
 };
 
-/** What a card shows for one device; replica-scoped where a replica is given. */
+/** What a card shows for one device; replica-scoped where a replica is given.
+ *
+ * A whole device can be read two ways: its own gauge, or the sum of the
+ * Endpoints allocated on it. The card cannot use less than its Endpoints
+ * report, so the larger reading wins and utilization follows the same source.
+ * Either one stands in when the other is missing. A replica-scoped reading has
+ * no such second source.
+ */
 export function deviceReadings(
   device: ObservedGpu,
   samples: AcceleratorSample[],
   replica?: GpuAllocation,
+  allocations: GpuAllocation[] = [],
 ): DeviceReadings {
   const getScoped = (name: string) =>
     reading(samples, name, device.node, device.uuid, replica);
@@ -333,19 +339,28 @@ export function deviceReadings(
   const used = getScoped(
     replica ? REPLICA_MEMORY_METRIC : "neutree_accelerator_memory_used_bytes",
   );
+  const utilization = getScoped(
+    replica
+      ? "neutree_endpoint_replica_accelerator_utilization_ratio"
+      : "neutree_accelerator_utilization_ratio",
+  );
   const physical = getDevice("neutree_accelerator_memory_total_bytes");
+  const directMiB = used ? used.value / 1024 ** 2 : null;
+  const fallback = replica
+    ? { memoryUsedMiB: null, utilization: undefined }
+    : allocationFallbackReadings(samples, allocations);
+  const useFallback =
+    fallback.memoryUsedMiB != null &&
+    (directMiB == null || fallback.memoryUsedMiB > directMiB);
 
   return {
     total: physical ? physical.value / 1024 ** 2 : device.totalMiB,
-    actual: used ? used.value / 1024 ** 2 : null,
-    utilization: getScoped(
-      replica
-        ? "neutree_endpoint_replica_accelerator_utilization_ratio"
-        : "neutree_accelerator_utilization_ratio",
-    ),
+    actual: useFallback ? fallback.memoryUsedMiB : directMiB,
+    utilization: useFallback
+      ? (fallback.utilization ?? utilization)
+      : (utilization ?? fallback.utilization),
     temperature: getDevice("neutree_accelerator_temperature_celsius"),
     power: getDevice("neutree_accelerator_power_usage_watts"),
-    hardware: deviceHardwareInfo(samples, device.node, device.uuid),
   };
 }
 
@@ -408,16 +423,6 @@ export function nodeL1CacheByNode(
   return result;
 }
 
-/** Use the same categorical sequence on every GPU card.
- *
- * The visible allocation order is already stable within a card. Assigning by
- * position keeps parallel GPU bars readable as the same sequence instead of
- * giving each card a different hash-derived rainbow.
- */
-export function allocationColor(index: number): string {
-  return chartCategoryMark(index).color;
-}
-
 type EndpointRef = { workspace: string; endpoint: string };
 
 /** Identity of one Endpoint's allocation within a GPU. */
@@ -444,7 +449,7 @@ type Reservation = {
 
 /** How a reservation splits into weights, KV cache and the rest, and how much
  * of it is actually in use. Percentages are of the reservation and stack to at
- * most 100; without both weights and KV the split is unknown (`otherMiB` null).
+ * most 100; without model weights the split is unknown (`otherMiB` null).
  */
 export function allocationComposition(
   allocation: Reservation,
@@ -455,16 +460,29 @@ export function allocationComposition(
     modelWeightsMiB: weights,
     kvCacheCapacityMiB: kv,
   } = allocation;
-  const known = weights != null && kv != null;
-  const weightsPct = known ? percentOf(weights, memory) : 0;
-  const kvPct = known ? Math.min(100 - weightsPct, percentOf(kv, memory)) : 0;
+  const actualPct =
+    actualMiB != null && memory > 0 ? percentOf(actualMiB, memory) : null;
+  // The split needs model weights. Without L0 KV, the rest of the reservation
+  // still reads as "other" rather than hiding the weights.
+  if (weights == null || memory <= 0)
+    return {
+      known: false,
+      weightsPct: 0,
+      kvPct: 0,
+      otherPct: 0,
+      otherMiB: null,
+      actualPct,
+    };
+  const weightsPct = percentOf(weights, memory);
+  const kvPct =
+    kv == null ? 0 : Math.min(100 - weightsPct, percentOf(kv, memory));
   return {
+    known: true,
     weightsPct,
     kvPct,
-    otherPct: known && memory > 0 ? Math.max(0, 100 - weightsPct - kvPct) : 0,
-    otherMiB: known ? Math.max(0, memory - weights - kv) : null,
-    actualPct:
-      actualMiB != null && memory > 0 ? percentOf(actualMiB, memory) : null,
+    otherPct: Math.max(0, 100 - weightsPct - kvPct),
+    otherMiB: Math.max(0, memory - weights - (kv ?? 0)),
+    actualPct,
   };
 }
 

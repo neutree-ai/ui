@@ -514,57 +514,6 @@ describe("EndpointRuntimeResourcesCard", () => {
     screen.getByText(/observations\.reservedOfPhysical:8\.0,80\.0/);
   });
 
-  it("shows weights with the remaining reservation when L0 is missing", () => {
-    render(
-      <EndpointRuntimeResourcesCard
-        endpointName="endpoint-abc"
-        resources={withReplicas(
-          makeReplica({
-            model_weights_mib: 2048,
-            kv_cache_capacity_mib: null,
-          }),
-        )}
-      />,
-    );
-
-    const legend = screen.getByTestId("single-allocation-legend");
-    within(legend).getByText("observations.modelWeights");
-    within(legend).getByText("observations.otherReservation");
-    within(legend).getByText("6.0 GiB");
-    expect(
-      within(legend).queryByText("observations.l0KvCacheCapacity"),
-    ).toBeNull();
-  });
-
-  it("does not infer composition when only L0 data is present", () => {
-    render(
-      <EndpointRuntimeResourcesCard
-        endpointName="endpoint-abc"
-        resources={withReplicas(
-          makeReplica({
-            model_weights_mib: null,
-            kv_cache_capacity_mib: 4096,
-          }),
-        )}
-        samples={[
-          sample(
-            "neutree_endpoint_replica_accelerator_memory_used_bytes",
-            6 * 1024 ** 3,
-            endpointLabels("gpu-node-01", "GPU-t4-01"),
-          ),
-        ]}
-      />,
-    );
-
-    const legend = screen.getByTestId("single-allocation-legend");
-    within(legend).getByText("observations.actualVramUsage");
-    within(legend).getByText("observations.allocatedUnused");
-    expect(within(legend).queryByText("observations.modelWeights")).toBeNull();
-    expect(
-      within(legend).queryByText("observations.l0KvCacheCapacity"),
-    ).toBeNull();
-  });
-
   it("keeps known composition when Actual usage is unavailable", () => {
     render(
       <EndpointRuntimeResourcesCard

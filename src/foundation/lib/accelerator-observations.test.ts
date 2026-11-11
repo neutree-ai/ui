@@ -3,6 +3,7 @@ import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
   allocationComposition,
   allocationFallbackReadings,
+  deviceReadings,
   endpointAllocationUsedMiB,
   type GpuAllocation,
   gpuAllocations,
@@ -188,6 +189,7 @@ it.each([
     },
     actual: 80,
     expected: {
+      known: true,
       weightsPct: 20,
       kvPct: 50,
       otherPct: 30,
@@ -204,6 +206,7 @@ it.each([
     },
     actual: 150,
     expected: {
+      known: true,
       weightsPct: 70,
       kvPct: 30,
       otherPct: 0,
@@ -212,7 +215,7 @@ it.each([
     },
   },
   {
-    name: "leaves an unknown split empty",
+    name: "keeps weights and counts the rest as other without L0 KV",
     reservation: {
       memoryMiB: 100,
       modelWeightsMiB: 20,
@@ -220,11 +223,29 @@ it.each([
     },
     actual: null,
     expected: {
+      known: true,
+      weightsPct: 20,
+      kvPct: 0,
+      otherPct: 80,
+      otherMiB: 80,
+      actualPct: null,
+    },
+  },
+  {
+    name: "leaves the split unknown without model weights",
+    reservation: {
+      memoryMiB: 100,
+      modelWeightsMiB: null,
+      kvCacheCapacityMiB: 50,
+    },
+    actual: 40,
+    expected: {
+      known: false,
       weightsPct: 0,
       kvPct: 0,
       otherPct: 0,
       otherMiB: null,
-      actualPct: null,
+      actualPct: 40,
     },
   },
   {
@@ -232,10 +253,11 @@ it.each([
     reservation: { memoryMiB: 0, modelWeightsMiB: 0, kvCacheCapacityMiB: 0 },
     actual: 10,
     expected: {
+      known: false,
       weightsPct: 0,
       kvPct: 0,
       otherPct: 0,
-      otherMiB: 0,
+      otherMiB: null,
       actualPct: null,
     },
   },
@@ -393,5 +415,80 @@ it("infers device memory and peak utilization from every Endpoint allocation", (
   ).toMatchObject({
     memoryUsedMiB: null,
     utilization: undefined,
+  });
+});
+
+describe("deviceReadings", () => {
+  const gpu = {
+    node: "node",
+    uuid: "gpu",
+    index: 0,
+    product: "T4",
+    totalMiB: 1024,
+    allocatedMiB: 100,
+  };
+  const gib = 1024 ** 3;
+  const device = (name: string, value: number) =>
+    makeAcceleratorSample(`neutree_accelerator_${name}`, value);
+  const endpoint = (name: string, value: number) => ({
+    ...sample(value),
+    metric: `neutree_endpoint_replica_accelerator_${name}`,
+  });
+
+  it.each([
+    {
+      name: "the device gauge when it covers its Endpoints",
+      samples: [
+        device("memory_used_bytes", 3 * gib),
+        endpoint("memory_used_bytes", 2 * gib),
+      ],
+      actual: 3 * 1024,
+    },
+    {
+      name: "the Endpoint sum when the device gauge reads lower",
+      samples: [
+        device("memory_used_bytes", 1 * gib),
+        endpoint("memory_used_bytes", 2 * gib),
+      ],
+      actual: 2 * 1024,
+    },
+    {
+      name: "the Endpoint sum when the device gauge is missing",
+      samples: [endpoint("memory_used_bytes", 2 * gib)],
+      actual: 2 * 1024,
+    },
+    {
+      name: "the device gauge when no Endpoint reports",
+      samples: [device("memory_used_bytes", 3 * gib)],
+      actual: 3 * 1024,
+    },
+    { name: "nothing without either reading", samples: [], actual: null },
+  ])("uses $name", ({ samples, actual }) => {
+    expect(deviceReadings(gpu, samples, undefined, [allocation]).actual).toBe(
+      actual,
+    );
+  });
+
+  it("takes utilization from the same source as the memory reading", () => {
+    const samples = [
+      device("memory_used_bytes", 1 * gib),
+      device("utilization_ratio", 0.2),
+      endpoint("memory_used_bytes", 2 * gib),
+      endpoint("utilization_ratio", 0.6),
+    ];
+    expect(
+      deviceReadings(gpu, samples, undefined, [allocation]).utilization?.value,
+    ).toBe(0.6);
+    expect(
+      deviceReadings(gpu, samples.slice(1), undefined, []).utilization?.value,
+    ).toBe(0.2);
+  });
+
+  it("reads a replica only from its own gauge", () => {
+    const samples = [endpoint("memory_used_bytes", 2 * gib)];
+    expect(deviceReadings(gpu, samples, allocation, [allocation]).actual).toBe(
+      2 * 1024,
+    );
+    expect(deviceReadings(gpu, [], allocation, [allocation]).actual).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { GpuAllocation } from "@/foundation/lib/accelerator-observations";
 import { makeAcceleratorSample as sample } from "@/foundation/testing/resource-builders";
@@ -114,7 +115,7 @@ describe("GPU observation row", () => {
 
     screen.getByText("observations.noMeasurement");
     const row = screen.getByTestId("gpu-allocation-row");
-    expect(row.textContent).toContain("—");
+    expect(row.textContent).toContain(EMPTY_VALUE);
     // "Unused" is reserved minus actual, so with no measurement there is no
     // number to print — the line is omitted rather than shown as a dash.
     expect(row.textContent).not.toContain("observations.allocatedUnused");
@@ -246,76 +247,6 @@ describe("GPU observation row", () => {
     ).toBeNull();
   });
 
-  it("keeps weights when L0 is missing and hides only the L0 row", async () => {
-    render(
-      card({
-        variant: "inventory",
-        allocations: [
-          {
-            ...allocation,
-            kvCacheCapacityMiB: null,
-          },
-        ],
-        samples: [
-          sample(
-            "neutree_endpoint_replica_accelerator_memory_used_bytes",
-            12 * 1024 ** 3,
-            { endpoint: "instance", replica: "pod" },
-          ),
-        ],
-      }),
-    );
-
-    fireEvent.focus(
-      screen.getByRole("button", {
-        name: /^instance, 15\.0 GiB/,
-      }),
-    );
-
-    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
-    within(tooltip).getByText("observations.modelWeights");
-    within(tooltip).getByText("observations.otherReservation");
-    expect(
-      within(tooltip).queryByText("observations.l0KvCacheCapacity"),
-    ).toBeNull();
-  });
-
-  it("does not infer composition from L0 when weights are missing", async () => {
-    render(
-      card({
-        variant: "inventory",
-        allocations: [
-          {
-            ...allocation,
-            modelWeightsMiB: null,
-          },
-        ],
-        samples: [
-          sample(
-            "neutree_endpoint_replica_accelerator_memory_used_bytes",
-            12 * 1024 ** 3,
-            { endpoint: "instance", replica: "pod" },
-          ),
-        ],
-      }),
-    );
-
-    fireEvent.focus(
-      screen.getByRole("button", {
-        name: /^instance, 15\.0 GiB/,
-      }),
-    );
-
-    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
-    expect(within(tooltip).queryByText("observations.modelWeights")).toBeNull();
-    expect(
-      within(tooltip).queryByText("observations.l0KvCacheCapacity"),
-    ).toBeNull();
-    expect(
-      within(tooltip).queryByText("observations.otherReservation"),
-    ).toBeNull();
-  });
-
   it("keeps the first eight Endpoints individual and exposes the rest from More", async () => {
     const many = Array.from({ length: 9 }, (_, index) => ({
       ...allocation,
@@ -422,7 +353,7 @@ describe("GPU observation row", () => {
     const cardElement = screen.getByTestId("gpu-inventory-card");
     within(cardElement).getByText("observations.physicalVramUnavailable");
     expect(cardElement.textContent).toContain(
-      "observations.allocated 15.0 / — GiB",
+      `observations.allocated 15.0 / ${EMPTY_VALUE} GiB`,
     );
   });
 
@@ -641,7 +572,7 @@ describe("GPU observation row", () => {
     within(dialog).getByText("observations.hardwareFields.numa_node");
     // No reported counter: the fixed grid shows the gaps itself.
     expect(dialog.textContent).not.toContain("observations.hardwareReported");
-    expect(within(dialog).getAllByText("—").length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText(EMPTY_VALUE).length).toBeGreaterThan(0);
   });
 
   it("derives the FP16 estimate from utilisation and labels it as an estimate", () => {

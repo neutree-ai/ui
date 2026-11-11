@@ -26,23 +26,26 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { MetricBar } from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
-  allocationFallbackReadings,
+  allocationComposition,
   allocationKey,
   deviceHardwareInfo,
+  deviceReadings,
   type EndpointGpuAllocation,
   endpointAllocationUsedMiB,
   endpointHref,
   type GpuAllocation,
+  hardwareValue,
   type ObservedGpu,
   percentOf,
   reading,
+  sampleAge,
   splitGpuEndpointAllocations,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
@@ -51,7 +54,14 @@ import {
   chartCategoryMark,
   chartOutlineStyle,
 } from "@/foundation/lib/chart-palette";
+import {
+  l0Pattern,
+  OWNER_SECONDARY_TONE,
+  OWNER_WEIGHTS_TONE,
+  ownerTone,
+} from "@/foundation/lib/gpu-ownership";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 
 type GpuObservationVariant = "inventory" | "allocation";
@@ -80,15 +90,9 @@ const GPU_BAR_TRACK_CLASS =
   "relative rounded-full border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)]";
 
 const gib = (mib: number | null | undefined) =>
-  mib == null ? "—" : `${(mib / 1024).toFixed(1)} GiB`;
+  formatMiBAsGiB(mib) ?? EMPTY_VALUE;
 const gibValue = (mib: number | null | undefined) =>
-  mib == null ? "—" : (mib / 1024).toFixed(1);
-const OWNER_WEIGHTS_TONE = 72;
-const OWNER_SECONDARY_TONE = 24;
-const ownerTone = (color: string, amount: number) =>
-  `color-mix(in srgb, ${color} ${amount}%, var(--nt-fill-neutral-white))`;
-const l0Pattern = (color: string) =>
-  `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`;
+  formatMiBAsGiBValue(mib) ?? EMPTY_VALUE;
 
 export function GpuObservationTableHeader({
   variant = "allocation",
@@ -129,59 +133,6 @@ export function GpuObservationTableHeader({
       ))}
     </div>
   );
-}
-
-type Readings = {
-  total: number | null;
-  actual: number | null;
-  utilization: AcceleratorSample | undefined;
-  temperature: AcceleratorSample | undefined;
-  power: AcceleratorSample | undefined;
-};
-
-function getReadings(
-  device: ObservedGpu,
-  samples: AcceleratorSample[],
-  replica?: GpuAllocation,
-  allocations: GpuAllocation[] = [],
-): Readings {
-  const getScoped = (name: string) =>
-    reading(samples, name, device.node, device.uuid, replica);
-  const getDevice = (name: string) =>
-    reading(samples, name, device.node, device.uuid);
-  const scopedUsed = getScoped(
-    replica
-      ? "neutree_endpoint_replica_accelerator_memory_used_bytes"
-      : "neutree_accelerator_memory_used_bytes",
-  );
-  const scopedUtilization = getScoped(
-    replica
-      ? "neutree_endpoint_replica_accelerator_utilization_ratio"
-      : "neutree_accelerator_utilization_ratio",
-  );
-  const fallback = replica
-    ? null
-    : allocationFallbackReadings(samples, allocations);
-  const scopedActualMiB = scopedUsed ? scopedUsed.value / 1024 ** 2 : null;
-  const fallbackActualMiB = fallback?.memoryUsedMiB ?? null;
-  const deviceActualCoversEndpoints =
-    scopedActualMiB != null &&
-    (fallbackActualMiB == null || scopedActualMiB + 1 >= fallbackActualMiB);
-  const actual = deviceActualCoversEndpoints
-    ? scopedActualMiB
-    : (fallbackActualMiB ?? scopedActualMiB);
-  const utilization = deviceActualCoversEndpoints
-    ? (scopedUtilization ?? fallback?.utilization)
-    : (fallback?.utilization ?? scopedUtilization);
-  const physical = getDevice("neutree_accelerator_memory_total_bytes");
-
-  return {
-    total: physical ? physical.value / 1024 ** 2 : device.totalMiB,
-    actual,
-    utilization,
-    temperature: getDevice("neutree_accelerator_temperature_celsius"),
-    power: getDevice("neutree_accelerator_power_usage_watts"),
-  };
 }
 
 function DeviceProduct({ device }: { device: ObservedGpu }) {
@@ -229,7 +180,7 @@ function DeviceIdentity({
         <span className="whitespace-nowrap text-sm font-semibold leading-5">
           {t("clusters.fields.gpuNumber")} {device.index}
         </span>
-        <CopyUuidButton device={device} />
+        <CopyUuidButton uuid={device.uuid} index={device.index} />
         {showHealth && device.healthy != null && (
           <span
             className={cn(
@@ -293,15 +244,7 @@ function EndpointAllocationTooltip({
   actualUsedMiB: number | null;
 }) {
   const { t } = useTranslation();
-  const remainingMiB =
-    allocation.modelWeightsMiB != null
-      ? Math.max(
-          0,
-          allocation.memoryMiB -
-            allocation.modelWeightsMiB -
-            (allocation.kvCacheCapacityMiB ?? 0),
-        )
-      : null;
+  const remainingMiB = allocationComposition(allocation).otherMiB;
   const actualPercent =
     actualUsedMiB != null && allocation.memoryMiB > 0
       ? (actualUsedMiB / allocation.memoryMiB) * 100
@@ -441,32 +384,13 @@ function EndpointSegmentPattern({
   color: string;
   actualUsedMiB: number | null;
 }) {
-  const hasComposition =
-    allocation.modelWeightsMiB != null && allocation.memoryMiB > 0;
-  const weightsPct = hasComposition
-    ? Math.min(
-        100,
-        Math.max(
-          0,
-          ((allocation.modelWeightsMiB ?? 0) / allocation.memoryMiB) * 100,
-        ),
-      )
-    : 0;
-  const kvPct =
-    hasComposition && allocation.kvCacheCapacityMiB != null
-      ? Math.min(
-          100 - weightsPct,
-          Math.max(
-            0,
-            (allocation.kvCacheCapacityMiB / allocation.memoryMiB) * 100,
-          ),
-        )
-      : 0;
-  const remainingPct = Math.max(0, 100 - weightsPct - kvPct);
-  const actualPct =
-    actualUsedMiB != null && allocation.memoryMiB > 0
-      ? Math.min(100, Math.max(0, (actualUsedMiB / allocation.memoryMiB) * 100))
-      : null;
+  const {
+    known: hasComposition,
+    weightsPct,
+    kvPct,
+    otherPct: remainingPct,
+    actualPct,
+  } = allocationComposition(allocation, actualUsedMiB);
   const actualExceedsReserved =
     actualUsedMiB != null && actualUsedMiB > allocation.memoryMiB;
 
@@ -1037,26 +961,39 @@ function Utilization({
   );
 }
 
-function GpuObservationDetails({
+type GpuDetailsSheetProps = Pick<
+  Props,
+  | "device"
+  | "samples"
+  | "allocations"
+  | "replica"
+  | "tflopsOverrides"
+  | "observationStatus"
+  | "onRetry"
+> & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+/** Side sheet with one physical GPU's live state, per-Endpoint allocation and
+ * hardware details. Shared by the cluster and Endpoint runtime views. */
+export function GpuDetailsSheet({
   open,
   onOpenChange,
   device,
   samples,
   allocations,
   replica,
-  tflopsOverrides,
+  tflopsOverrides = {},
   observationStatus,
   onRetry,
-}: Props & {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+}: GpuDetailsSheetProps) {
   const { t } = useTranslation();
   const assigned = allocations.filter(
     (allocation) =>
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
-  const readings = getReadings(device, samples, replica, assigned);
+  const readings = deviceReadings(device, samples, replica, assigned);
   const hardware = deviceHardwareInfo(samples, device.node, device.uuid);
   const { sorted, hidden } = splitGpuEndpointAllocations(assigned);
   const nominalTflops = peakTflops(
@@ -1080,20 +1017,11 @@ function GpuObservationDetails({
       key: selectedKey === key ? null : key,
     });
 
-  const label = (value?: string) =>
-    !value || value === "unknown" || value === "-1" ? "—" : value;
-  const hardwareValue = (key: string) => {
-    const value = hardware[key];
-    if (["nvlink", "nvswitch"].includes(key)) {
-      return value === "1"
-        ? t("observations.present")
-        : value === "0"
-          ? t("observations.absent")
-          : "—";
-    }
-    if (key === "pcie_generation") return value ? `Gen ${value}` : "—";
-    if (key === "pcie_width") return value ? `x${value}` : "—";
-    return label(value);
+  const hardwareLabelValue = (key: string) => {
+    const value = hardwareValue(hardware, key);
+    if (value === true) return t("observations.present");
+    if (value === false) return t("observations.absent");
+    return value ?? EMPTY_VALUE;
   };
   const baseHardwareFields = [
     "architecture",
@@ -1123,31 +1051,20 @@ function GpuObservationDetails({
     readings.utilization || readings.temperature || readings.power,
   );
   const isLoading = observationStatus === "loading";
-  const sampleTime = [
+  const age = sampleAge(Date.now(), [
     readings.utilization,
     readings.temperature,
     readings.power,
-  ]
-    .filter(Boolean)
-    .map((sample) => sample?.observed_at ?? 0)
-    .reduce((latest, value) => Math.max(latest, value), 0);
+  ]);
   const ageLabel = (seconds: number) => {
     if (seconds < 60) return t("observations.ageSeconds", { count: seconds });
     if (seconds < 3600)
       return t("observations.ageMinutes", { count: Math.floor(seconds / 60) });
     return t("observations.ageHours", { count: Math.floor(seconds / 3600) });
   };
-  const sampleAgeSeconds =
-    sampleTime > 0
-      ? Math.max(0, Math.floor(Date.now() / 1000) - sampleTime)
-      : null;
-  const updatedAge =
-    sampleAgeSeconds != null ? ageLabel(sampleAgeSeconds) : null;
-  // Beyond this the values are history, not state; the spec asks for a visible
-  // marker rather than dropping the readings or passing them off as live.
-  const STALE_AFTER_SECONDS = 2 * 60 * 60;
-  const isStale =
-    sampleAgeSeconds != null && sampleAgeSeconds > STALE_AFTER_SECONDS;
+  const updatedAge = age ? ageLabel(age.seconds) : null;
+  // Stale values are history, not state: they stay visible with a marker.
+  const isStale = age?.stale ?? false;
   const estimatedTflops =
     nominalTflops != null && readings.utilization
       ? nominalTflops * readings.utilization.value
@@ -1166,7 +1083,7 @@ function GpuObservationDetails({
             <span className="rounded border border-[var(--nt-stroke-neutral-trans-3)] bg-[var(--nt-fill-neutral-opaque-2)] px-1.5 py-0.5 text-xs font-semibold tabular-nums">
               {t("clusters.fields.gpuNumber")} {device.index}
             </span>
-            <CopyUuidButton device={device} />
+            <CopyUuidButton uuid={device.uuid} index={device.index} />
             <span className="break-all">
               {device.product || <EmptyValue />}
             </span>
@@ -1804,7 +1721,7 @@ function GpuObservationDetails({
                   <dt className="text-[11px] text-muted-foreground">
                     {hardwareLabel(key)}
                   </dt>
-                  <dd className="break-all">{hardwareValue(key)}</dd>
+                  <dd className="break-all">{hardwareLabelValue(key)}</dd>
                 </div>
               ))}
             </dl>
@@ -1823,7 +1740,16 @@ function GpuObservationDetails({
   );
 }
 
-function CopyUuidButton({ device }: { device: ObservedGpu }) {
+/** Copies a GPU's UUID without triggering the row or card it sits in. */
+export function CopyUuidButton({
+  uuid,
+  index,
+  size = "md",
+}: {
+  uuid: string;
+  index: number;
+  size?: "sm" | "md";
+}) {
   const { t } = useTranslation();
   const { copy } = useCopyToClipboard();
   return (
@@ -1834,17 +1760,23 @@ function CopyUuidButton({ device }: { device: ObservedGpu }) {
           variant="ghost"
           size="icon"
           title={t("clusters.actions.copyUuid")}
-          aria-label={`${t("clusters.fields.gpuNumber")} ${device.index} ${t("clusters.actions.copyUuid")}`}
-          className="h-7 w-7 text-muted-foreground"
+          aria-label={`${t("clusters.fields.gpuNumber")} ${index} ${t("clusters.actions.copyUuid")}`}
+          className={cn(
+            "shrink-0",
+            size === "sm"
+              ? "h-6 w-6 text-[var(--nt-text-neutral-quaternary)] hover:text-[var(--nt-text-neutral-secondary)]"
+              : "h-7 w-7 text-muted-foreground",
+          )}
+          onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation();
-            copy(device.uuid, {
+            copy(uuid, {
               successMessage: t("clusters.messages.copyUuidSuccess"),
               errorMessage: t("clusters.messages.copyUuidFailed"),
             });
           }}
         >
-          <Copy className="h-3.5 w-3.5" />
+          <Copy className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />
         </Button>
       </TooltipTrigger>
       <TooltipContent>{t("clusters.actions.copyUuid")}</TooltipContent>
@@ -1877,7 +1809,7 @@ export function GpuObservationCard({
     (allocation) =>
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
-  const readings = getReadings(device, samples, replica, assigned);
+  const readings = deviceReadings(device, samples, replica, assigned);
   const hasEndpointAllocation =
     device.allocatedMiB == null || device.allocatedMiB > 0;
   const actualExceedsPhysical =
@@ -1885,7 +1817,7 @@ export function GpuObservationCard({
     readings.total != null &&
     readings.actual > readings.total;
   const sheet = sheetMounted && (
-    <GpuObservationDetails
+    <GpuDetailsSheet
       open={open}
       onOpenChange={setOpen}
       device={device}
@@ -1925,7 +1857,7 @@ export function GpuObservationCard({
                 <span className="min-w-0 truncate text-sm font-semibold leading-5 text-foreground">
                   {t("clusters.fields.gpuNumber")} {device.index}
                 </span>
-                <CopyUuidButton device={device} />
+                <CopyUuidButton uuid={device.uuid} index={device.index} />
               </div>
               {showProduct && <DeviceProduct device={device} />}
             </div>
