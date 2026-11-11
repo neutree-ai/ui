@@ -528,7 +528,7 @@ function EndpointOwnershipMark({
   return (
     <span
       aria-hidden="true"
-      className="flex h-2 w-3 shrink-0 overflow-hidden rounded-sm bg-[var(--nt-fill-neutral-trans-3)]"
+      className="flex h-2.5 w-6 shrink-0 overflow-hidden rounded-sm bg-[var(--nt-fill-neutral-trans-3)] shadow-[inset_0_0_0_1px_var(--nt-stroke-neutral-trans-3)]"
       data-testid="ownership-endpoint-mark"
     >
       {weights != null ? (
@@ -574,6 +574,7 @@ function EndpointOwnershipMark({
               style={{
                 backgroundColor: mark.color,
                 flexGrow: actual,
+                boxShadow: `inset -1px 0 0 var(--nt-fill-neutral-white)`,
               }}
             />
           )}

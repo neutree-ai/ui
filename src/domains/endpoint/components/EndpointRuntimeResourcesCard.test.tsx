@@ -528,6 +528,11 @@ describe("EndpointRuntimeResourcesCard", () => {
     within(screen.getByTestId("single-allocation-legend")).getByText(
       "observations.allocatedUnused",
     );
+    const endpointMark = within(
+      screen.getByTestId("allocation-ownership-legend"),
+    ).getByTestId("ownership-endpoint-mark");
+    within(endpointMark).getByTestId("ownership-endpoint-actual");
+    within(endpointMark).getByTestId("ownership-endpoint-unused");
     expect(screen.queryByText("observations.modelWeights")).toBeNull();
     expect(screen.queryByText("observations.l0KvCacheCapacity")).toBeNull();
     screen.getByTestId("endpoint-actual-fill");
