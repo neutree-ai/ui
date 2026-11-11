@@ -2940,6 +2940,8 @@
 			"noMatch": "No teams match the filter.",
 			"create": "Create Team",
 			"createTitle": "Create Team",
+			"createScenario": "Create Scenario",
+			"createScenarioTitle": "Create Scenario",
 			"createHint": "A team created in Neutree. Add any user, local or from an identity source.",
 			"editTitle": "Edit Team",
 			"editHint": "Change the display name of the team, or whether it is a scenario.",

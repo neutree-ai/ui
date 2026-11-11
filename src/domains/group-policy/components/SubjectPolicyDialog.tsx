@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -34,6 +33,7 @@ import type {
 } from "@/domains/group-policy/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { LabeledScope } from "@/foundation/types/group-scope";
@@ -69,28 +69,35 @@ export function SubjectPolicyDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+        aria-describedby={undefined}
+        // Focus the dialog, not its first info button, whose tooltip would open.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.target as HTMLElement).focus();
+        }}
+      >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-1">
             {t("group_policies.subject.dialogTitle", {
               subject: subject.label,
               scope: scope.label,
             })}
+            <InfoHint label={t("group_policies.subject.dialogHint")} />
           </DialogTitle>
-          <DialogDescription>
-            {t("group_policies.subject.dialogHint")}
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label>{t("group_policies.fields.allowed")}</Label>
-            <p className="text-xs text-muted-foreground">
-              {t(`group_policies.subject.allowedHint.${subject.kind}`)}
-            </p>
+            <div className="flex items-center gap-1">
+              <Label>{t("group_policies.fields.allowed")}</Label>
+              <InfoHint
+                label={t(`group_policies.subject.allowedHint.${subject.kind}`)}
+              />
+            </div>
             <ModelEntryList
               entries={allowed}
               onRemove={(entry) => setAllowed(removeEntry(allowed, entry))}
-              emptyText={t("group_policies.noRule")}
               data-testid="subject-policy-allowed-entries"
             />
             <ModelEntryPicker
@@ -101,12 +108,14 @@ export function SubjectPolicyDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="subject-policy-quota-amount">
-              {t("group_policies.subject.quota")}
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {t(`group_policies.subject.quotaHint.${subject.kind}`)}
-            </p>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="subject-policy-quota-amount">
+                {t("group_policies.subject.quota")}
+              </Label>
+              <InfoHint
+                label={t(`group_policies.subject.quotaHint.${subject.kind}`)}
+              />
+            </div>
             <TokenQuotaFields
               input={quota}
               id="subject-policy-quota-amount"
@@ -177,8 +186,9 @@ function EffectiveLimits({
       className="space-y-2 rounded-md border p-3"
       data-testid="subject-effective"
     >
-      <div className="text-sm font-medium">
+      <div className="flex items-center gap-1 text-sm font-medium">
         {t("group_policies.subject.effectiveTitle")}
+        <InfoHint label={t("group_policies.subject.mergeRules")} />
       </div>
       {isLoading ? (
         <Loader className="h-4 text-primary" />
@@ -245,9 +255,6 @@ function EffectiveLimits({
           ))}
         </ul>
       )}
-      <p className="text-xs text-muted-foreground">
-        {t("group_policies.subject.mergeRules")}
-      </p>
     </div>
   );
 }

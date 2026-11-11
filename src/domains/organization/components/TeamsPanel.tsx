@@ -1,7 +1,13 @@
-import { Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { ChevronDown, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -58,7 +64,7 @@ import type { ExtraColumn } from "@/foundation/types/extra-column";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 
 type OpenDialog =
-  | { kind: "create" }
+  | { kind: "create"; project: boolean }
   | { kind: "edit" }
   | { kind: "add-members" }
   | { kind: "delete" }
@@ -170,6 +176,9 @@ export function TeamsPanel({
     setDialog(next);
   };
   const close = () => setDialog(undefined);
+  // The create menu opens its dialog once closed: the menu still moves focus
+  // while closing, which would blur the name field and show its error at once.
+  const pendingCreate = useRef<boolean | undefined>(undefined);
 
   const select = (name: string | undefined) => {
     updateView({ team: name });
@@ -427,14 +436,42 @@ export function TeamsPanel({
           title={t("organization.teams.title")}
           actions={
             canCreate && (
-              <Button
-                size="sm"
-                onClick={() => open({ kind: "create" })}
-                data-testid="team-create"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                {t("organization.teams.create")}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" data-testid="team-create">
+                    <Plus className="mr-1 h-4 w-4" />
+                    {t("buttons.create")}
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onCloseAutoFocus={(event) => {
+                    const project = pendingCreate.current;
+                    if (project === undefined) return;
+                    pendingCreate.current = undefined;
+                    event.preventDefault();
+                    open({ kind: "create", project });
+                  }}
+                >
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      pendingCreate.current = false;
+                    }}
+                    data-testid="team-create-team"
+                  >
+                    {t("organization.teams.create")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      pendingCreate.current = true;
+                    }}
+                    data-testid="team-create-scenario"
+                  >
+                    {t("organization.teams.createScenario")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )
           }
           contentClassName="max-h-[calc(100vh-300px)] min-h-40 overflow-auto px-3 pb-4 pt-3"
@@ -494,6 +531,7 @@ export function TeamsPanel({
       {dialog?.kind === "create" && (
         <TeamFormDialog
           onOpenChange={(next) => !next && close()}
+          initialProject={dialog.project}
           saving={teamWrites.isPending}
           error={dialogError}
           onSave={(values) =>

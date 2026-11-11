@@ -32,6 +32,8 @@ type TeamFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   /** The Team to edit; a new Team when absent. */
   team?: Team;
+  /** Whether a new Team starts marked as a scenario. */
+  initialProject?: boolean;
   saving?: boolean;
   error?: string;
   onSave: (values: TeamFormValues) => void;
@@ -44,6 +46,7 @@ type TeamFormDialogProps = {
 export function TeamFormDialog({
   onOpenChange,
   team,
+  initialProject = false,
   saving,
   error,
   onSave,
@@ -53,7 +56,9 @@ export function TeamFormDialog({
   const [displayName, setDisplayName] = useState(
     team?.metadata.display_name ?? "",
   );
-  const [project, setProject] = useState(!!team && isProjectTeam(team));
+  const [project, setProject] = useState(
+    team ? isProjectTeam(team) : initialProject,
+  );
   const [touched, setTouched] = useState(false);
 
   const nameError = team ? undefined : validateTeamName(name.trim());
@@ -75,7 +80,9 @@ export function TeamFormDialog({
           <DialogTitle>
             {team
               ? t("organization.teams.editTitle")
-              : t("organization.teams.createTitle")}
+              : project
+                ? t("organization.teams.createScenarioTitle")
+                : t("organization.teams.createTitle")}
           </DialogTitle>
           <DialogDescription>
             {team

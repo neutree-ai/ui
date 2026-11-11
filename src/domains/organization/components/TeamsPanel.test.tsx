@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,6 +36,37 @@ vi.mock("@/foundation/components/ShowPage", () => ({
       </section>
     ),
   },
+}));
+
+// The menu renders flat, so a test picks an item without opening it; picking
+// one closes the menu, as Radix does after onSelect.
+vi.mock("@/components/ui/dropdown-menu", () => ({
+  DropdownMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
+  DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
+    <>{children}</>
+  ),
+  DropdownMenuContent: ({
+    children,
+    onCloseAutoFocus,
+  }: {
+    children: ReactNode;
+    onCloseAutoFocus?: (event: Event) => void;
+  }) => (
+    <div onClick={() => onCloseAutoFocus?.(new Event("focus"))}>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onSelect,
+    "data-testid": testId,
+  }: {
+    children: ReactNode;
+    onSelect: () => void;
+    "data-testid"?: string;
+  }) => (
+    <button type="button" onClick={onSelect} data-testid={testId}>
+      {children}
+    </button>
+  ),
 }));
 
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
@@ -327,7 +358,7 @@ describe("TeamsPanel", () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "corp-0123456789ab" },
     });
@@ -355,11 +386,35 @@ describe("TeamsPanel", () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
+    screen.getByText("organization.teams.createTitle");
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "launch" },
     });
     fireEvent.click(screen.getByTestId("team-form-project"));
+    screen.getByText("organization.teams.createScenarioTitle");
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(writes.create).toHaveBeenCalledWith({
+        name: "launch",
+        displayName: "",
+        project: true,
+      }),
+    );
+  });
+
+  it("creates a scenario with the mark preset, which can be turned off", async () => {
+    grant("team:create");
+    writes.create.mockResolvedValue({ ...manual, id: 9 });
+    render(<Panel />);
+    fireEvent.click(screen.getByTestId("team-create-scenario"));
+    screen.getByText("organization.teams.createScenarioTitle");
+    expect(
+      screen.getByTestId("team-form-project").getAttribute("aria-checked"),
+    ).toBe("true");
+    fireEvent.change(screen.getByTestId("team-form-name"), {
+      target: { value: "launch" },
+    });
     fireEvent.click(screen.getByTestId("team-form-save"));
     await waitFor(() =>
       expect(writes.create).toHaveBeenCalledWith({
@@ -420,7 +475,7 @@ describe("TeamsPanel", () => {
       message: "duplicate key",
     });
     render(<Panel />);
-    fireEvent.click(screen.getByTestId("team-create"));
+    fireEvent.click(screen.getByTestId("team-create-team"));
     fireEvent.change(screen.getByTestId("team-form-name"), {
       target: { value: "guild" },
     });
