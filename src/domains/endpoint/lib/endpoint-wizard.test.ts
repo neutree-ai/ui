@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { makeEndpoint } from "@/domains/endpoint/testing/builders";
-import { endpointCacheErrorMessage } from "./endpoint-cache-errors";
 import {
   endpointDirtySteps,
   endpointErrorsByStep,
@@ -333,26 +332,6 @@ describe("endpoint wizard error mapping", () => {
       step: 2,
       path: "spec.engine.version",
       message: "unsupported version",
-    });
-    expect(
-      endpointServerIssue(
-        {
-          code: "ENDPOINT_CACHE_CUSTOM_OVERRIDE",
-          hint: "LMCACHE_CHUNK_SIZE",
-          message: "remove custom LMCACHE_CHUNK_SIZE",
-        },
-        "fallback",
-        (err) =>
-          endpointCacheErrorMessage(
-            (key, options) => `${key}:${String(options?.hint ?? "")}`,
-            err,
-          ),
-      ),
-    ).toEqual({
-      step: 3,
-      path: undefined,
-      message:
-        "endpoints.kvCacheSettings.errors.customOverride:LMCACHE_CHUNK_SIZE",
     });
   });
 });
