@@ -64,6 +64,15 @@ const CACHE_MANAGER_DISPLAY: Record<
   },
 };
 
+const CACHE_MANAGER_PHASE_KEYS: Readonly<Record<string, string>> = {
+  Ready: "endpoints.kvCacheSettings.phases.Ready",
+  Reconciling: "endpoints.kvCacheSettings.phases.Reconciling",
+  Failed: "endpoints.kvCacheSettings.phases.Failed",
+  Unavailable: "endpoints.kvCacheSettings.phases.Unavailable",
+  Disabled: "endpoints.kvCacheSettings.phases.Disabled",
+  Unknown: "endpoints.kvCacheSettings.phases.Unknown",
+};
+
 export function EndpointKVCacheFields({
   form,
   cluster,
@@ -81,8 +90,14 @@ export function EndpointKVCacheFields({
   const [configOpen, setConfigOpen] = useState(false);
   const cache = form.watch("spec.kv_cache");
   const enabled = cache != null;
+  const phaseKey =
+    "phase" in cacheManager
+      ? CACHE_MANAGER_PHASE_KEYS[cacheManager.phase]
+      : undefined;
   const phaseValues =
-    "phase" in cacheManager ? { phase: cacheManager.phase } : {};
+    "phase" in cacheManager
+      ? { phase: phaseKey ? t(phaseKey) : cacheManager.phase }
+      : {};
   const supported = unavailableReason === null;
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
@@ -195,6 +210,7 @@ export function EndpointKVCacheFields({
           <InfoHint
             label={t(
               unavailableReason ?? "endpoints.kvCacheSettings.scheduling",
+              phaseValues,
             )}
           />
         </div>
