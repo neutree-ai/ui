@@ -8,7 +8,7 @@
   "src/pages/workspaces/show.tsx": "0d3dd014888eb2f181d2b6f5a3f81e3a",
   "src/pages/users/create.tsx": "390446d8eda46dad0cb2755d730d18fe",
   "src/pages/users/edit.tsx": "4ef9f5dbac208347e1eabea7fe030590",
-  "src/pages/users/list.tsx": "c3e57c51e4e7a190fd38ce30e9077b00",
+  "src/pages/users/list.tsx": "e195178d320d21ba13390f57c24752d0",
   "src/pages/users/show.tsx": "c4b9f6f0a43a21dc6d7ca64d39b1eb27",
   "src/pages/roles/create.tsx": "47ca26f5f8fe1da9523d55c7f66222c9",
   "src/pages/roles/edit.tsx": "a29fb364e33335131654e52c24ea9811",
@@ -627,6 +627,8 @@
   "src/domains/endpoint/hooks/use-endpoint-performance-trends.ts": "6f90e1f82bbf6aa01e018f99daca0eac",
   "src/domains/endpoint/lib/performance-trends.ts": "c8161109deabccdf461f328271754266",
   "src/foundation/lib/gpu-ownership.ts": "e118bb4aaa8eb606c2729abe466c7a16",
+  "src/pages/users/lib/user-department.ts": "cb15cead66e6d0e9d1d12e499afa6211",
+  "src/pages/users/components/UserSourceFilter.tsx": "4460e56a3e07bb8b7a30347be7e55345",
   "src/domains/endpoint/lib/endpoint-cache-errors.ts": "acb326460173cf64f9ccd85edad5246d",
   "src/domains/cluster/lib/zcache-errors.ts": "e8278743f3017abd5bab34eb24c94bbb"
 }

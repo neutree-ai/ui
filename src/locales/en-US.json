@@ -2094,6 +2094,9 @@
 			"displayName": "Display Name",
 			"identitySource": "Identity Source"
 		},
+		"filters": {
+			"source": "Filter by Identity Source"
+		},
 		"hints": {
 			"externalEmail": "This user comes from an identity source, which manages the email. Change it there."
 		},

@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useOrgUnits } from "@/domains/organization/hooks/use-organization";
 import { isInactive } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import type { UserProfile } from "@/domains/user/types";
@@ -11,10 +13,21 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import {
   profileDisplayName,
   profileEmail,
+  profileIdentitySourceName,
 } from "@/foundation/lib/user-identity";
+import { UserSourceFilter } from "./components/UserSourceFilter";
+import { userDepartmentPath } from "./lib/user-department";
 
-const useUserColumns = () => {
+const NO_UNITS: OrgUnit[] = [];
+
+const useUserColumns = (canReadOrgUnits: boolean) => {
   const { t } = useTranslation();
+  // One list of the readable departments names every user's path.
+  const { data: orgUnits } = useOrgUnits(canReadOrgUnits);
+  const unitsById = useMemo(
+    () => new Map((orgUnits?.data ?? NO_UNITS).map((u) => [u.id, u])),
+    [orgUnits],
+  );
 
   return {
     displayName: (
@@ -37,6 +50,19 @@ const useUserColumns = () => {
         }
       />
     ),
+    source: (
+      <Table.Column
+        header={t("user_profiles.fields.identitySource")}
+        accessorKey="metadata.labels"
+        id="identity_source"
+        enableHiding
+        enableSorting={false}
+        cell={({ row }) =>
+          profileIdentitySourceName(row.original.metadata) ||
+          t("user_profiles.values.local")
+        }
+      />
+    ),
     department: (
       <Table.Column
         header={t("organization.fields.department")}
@@ -48,9 +74,14 @@ const useUserColumns = () => {
           const unit: OrgUnit | undefined =
             row.original.org_unit_members?.org_units;
           if (!unit) return <EmptyValue />;
+          const path =
+            userDepartmentPath(unit, unitsById) || displayName(unit.metadata);
           return (
-            <span className={isInactive(unit) ? "text-muted-foreground" : ""}>
-              {displayName(unit.metadata)}
+            <span
+              className={isInactive(unit) ? "text-muted-foreground" : ""}
+              title={path}
+            >
+              {path}
             </span>
           );
         }}
@@ -61,13 +92,13 @@ const useUserColumns = () => {
 
 // One query: org_unit_members.user_id is both the key and a foreign key to
 // user_profiles, so PostgREST embeds it as a single object.
-const USER_SELECT = "*,org_unit_members(org_units(id,metadata,status))";
+const USER_SELECT = "*,org_unit_members(org_units(id,metadata,status,path))";
 
 export const UsersList = () => {
   const metadataColumns = useMetadataColumns();
-  const userColumns = useUserColumns();
   // Membership rows need org_unit:read; without it the column would read empty.
   const { allowed: canReadOrgUnits } = useHasPermission("org_unit:read");
+  const userColumns = useUserColumns(canReadOrgUnits === true);
 
   return (
     <ListPage>
@@ -80,10 +111,14 @@ export const UsersList = () => {
           sorters: defaultSorters,
           meta: { select: USER_SELECT },
         }}
+        filters={({ filters, setFilters }) => (
+          <UserSourceFilter filters={filters} setFilters={setFilters} />
+        )}
       >
         {metadataColumns.name}
         {userColumns.displayName}
         {userColumns.email}
+        {userColumns.source}
         {canReadOrgUnits === true && userColumns.department}
 
         {metadataColumns.creation_timestamp}
