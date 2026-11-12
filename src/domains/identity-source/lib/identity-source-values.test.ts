@@ -3,6 +3,7 @@ import type { IdentitySource } from "@/domains/identity-source/types";
 import {
   createFormDefaults,
   defaultOidcRedirectUrl,
+  hasSyncBaseDn,
   hasUsernamePlaceholder,
   type IdentitySourceFormValues,
   isAllowedRedirectUrl,
@@ -223,6 +224,13 @@ describe("organization sync", () => {
     expect(isValidPageSize("")).toBe(true);
     expect(isValidPageSize(0)).toBe(true);
     expect(isValidPageSize(-1)).toBe(false);
+  });
+
+  it("needs a department or team base DN for sync", () => {
+    expect(hasSyncBaseDn("", undefined)).toBe(false);
+    expect(hasSyncBaseDn("  ", "")).toBe(false);
+    expect(hasSyncBaseDn("ou=org,dc=example,dc=org", "")).toBe(true);
+    expect(hasSyncBaseDn(undefined, "ou=groups,dc=example,dc=org")).toBe(true);
   });
 
   it("fills sync defaults into the form when the source has none", () => {

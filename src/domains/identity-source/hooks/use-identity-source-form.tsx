@@ -16,6 +16,7 @@ import { StringListInput } from "@/domains/identity-source/components/StringList
 import { identitySourceErrorMessage } from "@/domains/identity-source/lib/identity-source-errors";
 import {
   createFormDefaults,
+  hasSyncBaseDn,
   hasUsernamePlaceholder,
   type IdentitySourceFormValues,
   isAllowedRedirectUrl,
@@ -104,6 +105,18 @@ export const useIdentitySourceForm = ({
   const syncEnabled = form.watch("spec.sync.enabled") === true;
   const userFilter = form.watch("spec.ldap.user_filter") ?? "";
 
+  const syncBaseDnValidate = (
+    name: "org_unit_base_dn" | "group_base_dn",
+    value: string,
+  ) => {
+    const other = form.getValues(
+      `spec.ldap.sync.${name === "org_unit_base_dn" ? "group_base_dn" : "org_unit_base_dn"}`,
+    );
+    return (
+      hasSyncBaseDn(value, other) || t("identity_sources.validation.syncBaseDn")
+    );
+  };
+
   const secretDescription = (createHint: string) =>
     isEdit ? t("identity_sources.hints.keepSecret") : createHint;
 
@@ -139,6 +152,7 @@ export const useIdentitySourceForm = ({
     placeholder: string,
     description?: string,
     validate?: (value: string) => true | string,
+    deps?: string[],
   ) => (
     <FormFieldGroup
       {...form}
@@ -146,7 +160,7 @@ export const useIdentitySourceForm = ({
       label={label}
       description={description}
       className="col-span-2"
-      rules={validate ? { validate } : undefined}
+      rules={validate ? { validate, deps } : undefined}
     >
       <Input placeholder={placeholder} />
     </FormFieldGroup>
@@ -195,12 +209,16 @@ export const useIdentitySourceForm = ({
             t("identity_sources.fields.orgUnitBaseDn"),
             "ou=departments,dc=example,dc=org",
             t("identity_sources.hints.orgUnitBaseDn"),
+            (value) => syncBaseDnValidate("org_unit_base_dn", value),
+            ["spec.ldap.sync.group_base_dn"],
           )}
           {syncText(
             "group_base_dn",
             t("identity_sources.fields.groupBaseDn"),
             "ou=groups,dc=example,dc=org",
             t("identity_sources.hints.groupBaseDn"),
+            (value) => syncBaseDnValidate("group_base_dn", value),
+            ["spec.ldap.sync.org_unit_base_dn"],
           )}
           {syncText(
             "disabled_user_filter",

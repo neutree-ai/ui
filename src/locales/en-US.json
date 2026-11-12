@@ -2944,6 +2944,7 @@
 			"allowedRedirectsRequired": "Add at least one URL",
 			"allowedRedirect": "Each URL must be an absolute http(s) URL without user, query or fragment",
 			"syncInterval": "Enter a whole number of seconds, 60 or more",
+			"syncBaseDn": "Set at least one of the department base DN and the team base DN",
 			"pageSize": "Enter a whole number, 0 or more",
 			"userListFilter": "The user list filter must not contain {username}"
 		},
@@ -2974,6 +2975,7 @@
 			"secretsUnavailable": "The server cannot store secrets right now. Contact your administrator.",
 			"invalid": "The identity source is not valid: {{hint}}",
 			"invalidSync": "The organization sync settings are not valid. {{hint}}",
+			"syncBaseDnRequired": "Set at least one of the department base DN and the team base DN. Otherwise nothing is synced.",
 			"notFound": "The identity source no longer exists.",
 			"syncNotEnabled": "Organization sync is not enabled for this identity source. Turn it on in the settings first.",
 			"syncPaused": "The identity source is disabled, so its sync is paused. Enable the source first."

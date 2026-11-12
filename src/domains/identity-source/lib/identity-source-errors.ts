@@ -20,6 +20,7 @@ const IDENTITY_SOURCE_ERROR_KEYS: Readonly<Record<string, string>> = {
   "10263": "identity_sources.errors.notFound",
   "10264": "identity_sources.errors.syncNotEnabled",
   "10304": "identity_sources.errors.syncPaused",
+  "10330": "identity_sources.errors.syncBaseDnRequired",
 };
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;

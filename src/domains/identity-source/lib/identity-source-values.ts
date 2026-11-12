@@ -78,6 +78,12 @@ export const isValidSyncInterval = (value: unknown): boolean =>
 export const isValidPageSize = (value: unknown): boolean =>
   isBlank(value) || (Number.isInteger(Number(value)) && Number(value) >= 0);
 
+/** Sync reads nothing unless the department or the team base DN is set. */
+export const hasSyncBaseDn = (orgUnitBaseDn: unknown, groupBaseDn: unknown) =>
+  [orgUnitBaseDn, groupBaseDn].some(
+    (dn) => typeof dn === "string" && dn.trim() !== "",
+  );
+
 const cleanList = (values: string[] | null | undefined): string[] =>
   (values ?? []).map((v) => v.trim()).filter(Boolean);
 
