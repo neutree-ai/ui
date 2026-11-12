@@ -94,17 +94,10 @@ export function EndpointKVCacheFields({
     "phase" in cacheManager
       ? CACHE_MANAGER_PHASE_KEYS[cacheManager.phase]
       : undefined;
-  const phaseLabel =
+  const phaseValues =
     "phase" in cacheManager
-      ? phaseKey
-        ? t(phaseKey)
-        : cacheManager.phase
-      : undefined;
-  const translateWithPhase = (key: string) =>
-    key === "endpoints.kvCacheSettings.managerPending" &&
-    phaseLabel !== undefined
-      ? t(key, { phase: phaseLabel })
-      : t(key);
+      ? { phase: phaseKey ? t(phaseKey) : cacheManager.phase }
+      : {};
   const supported = unavailableReason === null;
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
@@ -140,7 +133,7 @@ export function EndpointKVCacheFields({
           </span>{" "}
         </>
       )}
-      {translateWithPhase(unavailableReason)}
+      {t(unavailableReason, phaseValues)}
     </p>
   ) : null;
   const cacheTimeoutField = cache?.provider ? (
@@ -185,7 +178,7 @@ export function EndpointKVCacheFields({
             )}
           />
           <span className={cn("font-medium", managerDisplay.tone)}>
-            {translateWithPhase(managerDisplay.key)}
+            {t(managerDisplay.key, phaseValues)}
           </span>
           {l1CapacityGiB != null && (
             <span className="text-muted-foreground">
@@ -215,8 +208,9 @@ export function EndpointKVCacheFields({
             {t("endpoints.sections.kvCache")}
           </h2>
           <InfoHint
-            label={translateWithPhase(
+            label={t(
               unavailableReason ?? "endpoints.kvCacheSettings.scheduling",
+              phaseValues,
             )}
           />
         </div>
