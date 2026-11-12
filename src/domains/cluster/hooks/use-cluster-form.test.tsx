@@ -36,13 +36,6 @@ vi.mock("@/domains/cluster/components/ModelCacheFields", () => ({
   ModelCacheFields: () => <div data-testid="model-cache-fields-mock" />,
 }));
 
-vi.mock("@/foundation/hooks/use-system-api", () => ({
-  useSystemApi: vi.fn(() => ({
-    systemInfo: { capabilities: { cluster_cache_providers: [] } },
-  })),
-}));
-
-import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useClusterForm } from "./use-cluster-form";
 
@@ -61,7 +54,6 @@ const renderCluster = (action: "create" | "edit" = "create") =>
         {r.routerFields}
         {r.acceleratorVirtualizationFields}
         {r.authFields}
-        {r.cacheFields}
       </>
     ),
   );
@@ -73,7 +65,6 @@ describe("useClusterForm", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.mocked(useWorkspace).mockReset();
-    vi.mocked(useSystemApi).mockReset();
   });
 
   it.each([
@@ -180,24 +171,12 @@ describe("useClusterForm", () => {
     },
   );
 
-  it.each([false, true])(
-    "offers cache configuration only when the server supports it (%s)",
-    async (supported) => {
-      vi.mocked(useSystemApi).mockReturnValue({
-        systemInfo: {
-          capabilities: {
-            cluster_cache_providers: supported ? ["zcache"] : [],
-          },
-        },
-      } as unknown as ReturnType<typeof useSystemApi>);
-      renderCluster();
+  it("keeps KV Cache configuration out of the cluster form", async () => {
+    renderCluster();
 
-      switchType("kubernetes");
+    switchType("kubernetes");
 
-      await screen.findByTestId(KUBECONFIG);
-      expect(screen.queryByText("clusters.cache.title") !== null).toBe(
-        supported,
-      );
-    },
-  );
+    await screen.findByTestId(KUBECONFIG);
+    expect(screen.queryByText("clusters.cache.title")).toBeNull();
+  });
 });

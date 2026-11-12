@@ -10,10 +10,6 @@ export type CacheDependentEndpoint = {
   } | null;
 };
 
-/** PostgREST projection matching {@link CacheDependentEndpoint}. */
-export const CACHE_DEPENDENT_SELECT =
-  "id,name:metadata->>name,display_name:metadata->>display_name,kv_cache:spec->kv_cache,observed_kv_cache:status->kv_cache";
-
 /**
  * Labels of the endpoints reported as actively using ZCache, deduplicated.
  */
@@ -38,11 +34,7 @@ type CacheDependencyCheck = {
 };
 
 /** Removal stays blocked until the check proves no endpoint uses the cache. */
-export function cacheRemovalBlocked({
-  inUse,
-  loading,
-  error,
-}: CacheDependencyCheck) {
+function cacheRemovalBlocked({ inUse, loading, error }: CacheDependencyCheck) {
   return inUse || loading || error;
 }
 

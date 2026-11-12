@@ -48,8 +48,8 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
   const upgrade = effectiveUpgrade(cluster);
   return (
     <div className="space-y-3 rounded-md border p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-sm">
+      <div className="flex flex-col items-stretch gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 text-sm">
           <div>
             {t("clusters.cacheUpgrade.current", {
               version: readyVersion ?? t("clusters.zcache.unknown"),
@@ -62,6 +62,7 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
           )}
         </div>
         <Button
+          className="shrink-0 self-start lg:self-auto"
           size="sm"
           variant="outline"
           disabled={

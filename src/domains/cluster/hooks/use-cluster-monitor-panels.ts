@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { type Cluster, hasZCache } from "../types";
 
-type ClusterMonitorPanelType = "overview" | "cache";
+type ClusterMonitorPanelType = "overview" | "routing" | "cache";
 
-const PANELS: ClusterMonitorPanelType[] = ["overview"];
-const PANELS_WITH_CACHE: ClusterMonitorPanelType[] = ["overview", "cache"];
-
-/** The cache panel is offered only on a cluster that runs ZCache. */
 export const useClusterMonitorPanels = (cluster?: Cluster) => {
   const [selection, setSelectedPanel] =
     useState<ClusterMonitorPanelType>("overview");
   const cacheAvailable = hasZCache(cluster);
+  const panels: ClusterMonitorPanelType[] = [
+    "overview",
+    ...(cluster?.spec.type === "kubernetes" ? (["routing"] as const) : []),
+    ...(cacheAvailable ? (["cache"] as const) : []),
+  ];
   return {
-    panels: cacheAvailable ? PANELS_WITH_CACHE : PANELS,
-    selectedPanel: cacheAvailable ? selection : ("overview" as const),
+    panels,
+    selectedPanel: panels.includes(selection)
+      ? selection
+      : ("overview" as const),
     setSelectedPanel,
     showMonitorTab: true,
-    showSelector: cacheAvailable,
+    showSelector: panels.length > 1,
   };
 };

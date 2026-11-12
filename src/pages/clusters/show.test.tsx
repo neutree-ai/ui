@@ -15,6 +15,7 @@ const { useShowMock } = vi.hoisted(() => ({
 }));
 const systemCapabilities = vi.hoisted(() => ({
   cacheProviders: ["zcache"] as string[],
+  grafanaUrl: null as string | null,
 }));
 
 vi.mock("@refinedev/core", () => ({
@@ -99,9 +100,6 @@ vi.mock("@/domains/endpoint/components/EndpointModel", () => ({
 vi.mock("@/domains/endpoint/components/EndpointStatus", () => ({
   default: () => null,
 }));
-vi.mock("@/foundation/components/GrafanaDashboard", () => ({
-  default: () => null,
-}));
 vi.mock("@/foundation/components/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
@@ -116,15 +114,9 @@ vi.mock("@/foundation/components/Table", () => {
 vi.mock("@/foundation/components/metadata-columns", () => ({
   useMetadataColumns: () => ({ name: null, creation_timestamp: null }),
 }));
-vi.mock("@/domains/cluster/hooks/use-cluster-monitor-panels", () => ({
-  useClusterMonitorPanels: () => ({
-    selectedPanel: null,
-    showMonitorTab: false,
-  }),
-}));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
-    grafanaUrl: null,
+    grafanaUrl: systemCapabilities.grafanaUrl,
     systemInfo: {
       capabilities: {
         cluster_cache_providers: systemCapabilities.cacheProviders,
@@ -137,10 +129,12 @@ import { ClustersShow } from "./show";
 
 const showCluster = ({
   name = "gpu-cluster",
+  workspace = "design-lab",
   spec = {},
   status = {},
 }: {
   name?: string;
+  workspace?: string;
   spec?: Record<string, unknown>;
   status?: Record<string, unknown>;
 } = {}) =>
@@ -151,7 +145,7 @@ const showCluster = ({
         data: {
           metadata: {
             name,
-            workspace: "design-lab",
+            workspace,
             creation_timestamp: "2026-08-25T00:00:00Z",
           },
           spec: {
@@ -173,6 +167,7 @@ describe("ClustersShow", () => {
     useShowMock.mockReset();
     window.localStorage.clear();
     systemCapabilities.cacheProviders = ["zcache"];
+    systemCapabilities.grafanaUrl = null;
   });
 
   it("renders loading and missing-record states", () => {
@@ -282,5 +277,54 @@ describe("ClustersShow", () => {
 
     expect(screen.queryByText("clusters.cache.title")).toBeNull();
     expect(screen.queryByTestId("cluster-cache-section")).toBeNull();
+  });
+
+  it("scopes the Router iframe to the current record and hides routing on SSH", () => {
+    systemCapabilities.grafanaUrl = "http://grafana";
+    showCluster();
+    const view = render(<ClustersShow />);
+    const iframeUrl = (id: string) =>
+      new URL(
+        screen.getByTitle(`Grafana Dashboard ${id}`).getAttribute("src")!,
+      );
+    expect(
+      iframeUrl("neutree-cluster-overview-embed").searchParams.get(
+        "_dash.hideVariables",
+      ),
+    ).toBe("true");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.monitor.routing" }),
+    );
+    expect(iframeUrl("router").searchParams.get("var-Workspace")).toBe(
+      "design-lab",
+    );
+    showCluster({ name: "other-cluster", workspace: "other-team" });
+    view.rerender(<ClustersShow />);
+    expect(iframeUrl("router").searchParams.get("var-Cluster")).toBe(
+      "other-cluster",
+    );
+    expect(iframeUrl("router").searchParams.get("var-Workspace")).toBe(
+      "other-team",
+    );
+
+    showCluster({
+      spec: { cache: { provider: "zcache", options: { enabled: true } } },
+    });
+    view.rerender(<ClustersShow />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.monitor.cache" }),
+    );
+    iframeUrl("neutree-zcache-embed");
+    fireEvent.click(
+      screen.getByRole("button", { name: "clusters.monitor.routing" }),
+    );
+
+    showCluster({ spec: { type: "ssh" } });
+    view.rerender(<ClustersShow />);
+    expect(
+      screen.queryByRole("button", { name: "clusters.monitor.routing" }),
+    ).toBeNull();
+    iframeUrl("neutree-cluster-overview-embed");
   });
 });

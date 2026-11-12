@@ -22,7 +22,14 @@ const {
     current: null as { engineParameters: Record<string, unknown> } | null,
   },
   runtimeCardProps: {
-    current: null as { clusterResourceInfo?: unknown } | null,
+    current: null as {
+      clusterResourceInfo?: unknown;
+      gpuAllocations?: Array<{
+        endpoint: string;
+        memoryMiB: number;
+        coreUnits?: number | null;
+      }>;
+    } | null,
   },
   useListMock: vi.fn(),
   useOneMock: vi.fn(),
@@ -219,15 +226,20 @@ describe("EndpointsShow", () => {
       query: { data: { data: endpoint }, isLoading: false },
     });
     useOneMock.mockReturnValue({ data: undefined });
-    useListMock.mockReturnValue({
-      data: {
-        data: [
-          {
-            spec: { type: "kubernetes" },
-            status: { resource_info: clusterResourceInfo },
-          },
-        ],
-      },
+    useListMock.mockImplementation(({ resource }: { resource: string }) => {
+      if (resource === "endpoints") {
+        return { data: { data: [] } };
+      }
+      return {
+        data: {
+          data: [
+            {
+              spec: { type: "kubernetes" },
+              status: { resource_info: clusterResourceInfo },
+            },
+          ],
+        },
+      };
     });
   });
 
@@ -245,8 +257,121 @@ describe("EndpointsShow", () => {
     );
   });
 
-  it("shows cache status when the platform supports ZCache", () => {
-    systemApiState.clusterCacheProviders = ["zcache"];
+  it("passes every Endpoint allocation in the cluster to the GPU details", () => {
+    const sharedEndpoint = (name: string) => ({
+      metadata: { name, workspace: "workspace-a" },
+      spec: {
+        cluster: "cluster-a",
+        model: { name: "shared-model" },
+      },
+      status: {
+        phase: "Running",
+        resources: {
+          replicas: [
+            {
+              instance_id: `${name}-0`,
+              replica_id: `${name}-0`,
+              node_id: "gpu-node-01",
+              devices: [
+                {
+                  uuid: "GPU-shared",
+                  node_id: "gpu-node-01",
+                  memory_mib: 16 * 1024,
+                  core_units: 25,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    useListMock.mockImplementation(({ resource }: { resource: string }) => {
+      if (resource === "endpoints") {
+        return {
+          data: {
+            data: [sharedEndpoint("endpoint-a"), sharedEndpoint("endpoint-b")],
+          },
+        };
+      }
+      return {
+        data: {
+          data: [
+            {
+              spec: { type: "kubernetes" },
+              status: { resource_info: clusterResourceInfo },
+            },
+          ],
+        },
+      };
+    });
+
+    render(<EndpointsShow />);
+
+    expect(useListMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: "endpoints",
+        filters: [
+          {
+            field: "spec->cluster",
+            operator: "eq",
+            value: JSON.stringify("cluster-a"),
+          },
+        ],
+        pagination: { mode: "off" },
+      }),
+    );
+    expect(runtimeCardProps.current?.gpuAllocations).toEqual([
+      expect.objectContaining({
+        endpoint: "endpoint-a",
+        memoryMiB: 16 * 1024,
+        coreUnits: 25,
+      }),
+      expect.objectContaining({
+        endpoint: "endpoint-b",
+        memoryMiB: 16 * 1024,
+        coreUnits: 25,
+      }),
+    ]);
+  });
+
+  it("shows cache status when the Endpoint's cluster has ZCache enabled", () => {
+    useListMock.mockReturnValue({
+      data: {
+        data: [
+          {
+            spec: {
+              type: "kubernetes",
+              cache: { provider: "zcache", options: { enabled: true } },
+            },
+            status: { resource_info: clusterResourceInfo },
+          },
+        ],
+      },
+    });
+
+    render(<EndpointsShow />);
+
+    screen.getByTestId("endpoint-kv-cache-summary");
+  });
+
+  it("hides cache status when the cluster cache is disabled even if the Endpoint retains ZCache", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            spec: {
+              ...endpoint.spec,
+              kv_cache: {
+                provider: "zcache",
+                options: { timeout_seconds: 2 },
+              },
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
     useListMock.mockReturnValue({
       data: {
         data: [
@@ -263,17 +388,8 @@ describe("EndpointsShow", () => {
 
     render(<EndpointsShow />);
 
-    screen.getByTestId("endpoint-kv-cache-summary");
-  });
-
-  it("hides cache status when neither the Endpoint nor its cluster can use ZCache", () => {
-    systemApiState.clusterCacheProviders = ["zcache"];
-
-    render(<EndpointsShow />);
-
     expect(screen.queryByTestId("endpoint-kv-cache-summary")).toBeNull();
   });
-
   it.each(["Paused", "Deleted"])(
     "hides retained runtime allocations once the endpoint is %s",
     (phase) => {

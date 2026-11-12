@@ -4,7 +4,7 @@ import {
   useOne,
   useShow,
 } from "@refinedev/core";
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
@@ -17,9 +17,7 @@ import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKV
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
 import { EndpointPerformanceCard } from "@/domains/endpoint/components/EndpointPerformanceCard";
-import EndpointRuntimeResourcesCard, {
-  EndpointRuntimeResourcesSummary,
-} from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
+import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
 import {
   EndpointSaveAsCatalogAction,
   EndpointSaveAsCatalogProvider,
@@ -29,7 +27,10 @@ import { ServedModelName } from "@/domains/endpoint/components/ServedModelName";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
-import { endpointCacheDashboard } from "@/domains/endpoint/lib/zcache";
+import {
+  endpointCacheDashboard,
+  endpointZCacheOptions,
+} from "@/domains/endpoint/lib/zcache";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
@@ -42,14 +43,16 @@ import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { ObservationStatus } from "@/foundation/components/ObservationStatus";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { ShowButton } from "@/foundation/components/ShowButton";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { nodeL1CacheByNode } from "@/foundation/lib/accelerator-observations";
+import {
+  gpuAllocations as collectGpuAllocations,
+  nodeL1CacheByNode,
+} from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
   TFLOPS_ANNOTATION,
@@ -137,7 +140,7 @@ const RayDashboardTab = ({
 
 export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
   const { t } = useTranslation();
-  const { grafanaUrl, systemInfo } = useSystemApi();
+  const { grafanaUrl } = useSystemApi();
   // Live observations and the polling that feeds them only serve the basic
   // tab, so the other tabs do not keep refetching and re-rendering the page.
   const [tab, setTab] = useState("basic");
@@ -157,6 +160,16 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     !inactive && onBasicTab,
   );
   const gpuSamples = inactive ? [] : observations.samples;
+  // Cluster-wide samples only feed the GPU details sheet, so they are polled
+  // only while one is open.
+  const [gpuDetailsOpen, setGpuDetailsOpen] = useState(false);
+  const deviceObservations = useAcceleratorObservations(
+    "clusters",
+    record?.metadata.workspace,
+    record?.spec.cluster,
+    !inactive && onBasicTab && gpuDetailsOpen,
+  );
+  const deviceSamples = inactive ? [] : deviceObservations.samples;
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
@@ -184,17 +197,37 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
       refetchInterval: onBasicTab ? 30_000 : false,
     },
   });
+  const { data: clusterEndpoints } = useList<Endpoint>({
+    resource: "endpoints",
+    meta: {
+      workspace: record?.metadata.workspace,
+      workspaced: true,
+    },
+    filters: [
+      {
+        field: "spec->cluster",
+        operator: "eq",
+        value: JSON.stringify(record?.spec.cluster),
+      },
+    ],
+    pagination: { mode: "off" },
+    queryOptions: {
+      enabled: Boolean(record?.metadata.workspace && record?.spec.cluster),
+      refetchInterval: onBasicTab ? 15_000 : false,
+    },
+  });
+  const clusterGpuAllocations = useMemo(
+    () => collectGpuAllocations(clusterEndpoints?.data ?? []),
+    [clusterEndpoints?.data],
+  );
 
   const cluster = clusterData?.data?.[0];
   const cacheStatus = zcacheStatus(cluster);
   const clusterType = cluster?.spec?.type;
   const isSSHCluster = clusterType === "ssh";
   const shouldShowRayDashboard = isSSHCluster;
-  const showCacheSummary =
-    record?.spec.kv_cache != null ||
-    (systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-      true &&
-      cluster?.spec.cache?.provider === "zcache");
+  const cacheConfigured =
+    endpointZCacheOptions(clusterData?.data?.[0])?.enabled === true;
 
   const {
     panels,
@@ -379,48 +412,47 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {showCacheSummary && (
-              <EndpointKVCacheSummary endpoint={record} cluster={cluster} />
+            {cacheConfigured && (
+              <EndpointKVCacheSummary
+                endpoint={record}
+                cluster={clusterData?.data?.[0]}
+              />
             )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
               paused={inactive}
+              showKvCache={cacheConfigured}
             />
             {!inactive && (
-              <div className="space-y-3">
-                <ShowPage.Section
-                  title={t("endpoints.sections.runtimeAllocation")}
-                  actions={
-                    <EndpointRuntimeResourcesSummary
-                      resources={record.status?.resources}
-                    />
-                  }
-                >
-                  <div className="space-y-6">
-                    <ObservationStatus status={observations.status} />
-                    <EndpointRuntimeResourcesCard
-                      endpointName={record.metadata.name}
-                      workspace={record.metadata.workspace ?? "default"}
-                      modelName={record.spec.model?.name ?? ""}
-                      samples={gpuSamples}
-                      observationStatus={observations.status}
-                      onObservationRetry={observations.refetch}
-                      tflopsOverrides={parseTflops(
-                        cluster?.metadata?.annotations?.[TFLOPS_ANNOTATION],
-                      )}
-                      l1CacheByNode={
-                        record.spec.kv_cache?.provider === "zcache"
-                          ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
-                          : undefined
-                      }
-                      resources={record.status?.resources}
-                      requestedResources={record.spec.resources}
-                      clusterResourceInfo={cluster?.status?.resource_info}
-                    />
-                  </div>
-                </ShowPage.Section>
-              </div>
+              <EndpointRuntimeResourcesCard
+                endpointName={record.metadata.name}
+                workspace={record.metadata.workspace ?? "default"}
+                modelName={record.spec.model?.name ?? ""}
+                gpuAllocations={clusterGpuAllocations}
+                samples={gpuSamples}
+                deviceSamples={deviceSamples}
+                observationStatus={observations.status}
+                deviceObservationStatus={deviceObservations.status}
+                onObservationRetry={observations.refetch}
+                onDeviceObservationRetry={deviceObservations.refetch}
+                onGpuDetailsOpenChange={setGpuDetailsOpen}
+                tflopsOverrides={parseTflops(
+                  clusterData?.data?.[0]?.metadata?.annotations?.[
+                    TFLOPS_ANNOTATION
+                  ],
+                )}
+                l1CacheByNode={
+                  record.spec.kv_cache?.provider === "zcache"
+                    ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
+                    : undefined
+                }
+                resources={record.status?.resources}
+                requestedResources={record.spec.resources}
+                clusterResourceInfo={
+                  clusterData?.data?.[0]?.status?.resource_info
+                }
+              />
             )}
             <EndpointAdvancedParameters
               engineParameters={{

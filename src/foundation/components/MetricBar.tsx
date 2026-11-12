@@ -53,26 +53,26 @@ const SEGMENT_GAP =
  * class names, so deriving one from the other with a `[&>div]:` prefix would
  * leave every variant unbuilt. */
 export const METRIC_BAR_SERIES_FILL_CLASSES: Record<MetricBarSeries, string> = {
-  blue: `bg-[var(--nt-chart-cat-1)]`,
-  orange: `bg-[var(--nt-chart-cat-2)]`,
-  cyan: `bg-[var(--nt-chart-cat-3)]`,
-  red: `bg-[var(--nt-chart-cat-4)]`,
-  teal: `bg-[var(--nt-chart-cat-5)]`,
-  magenta: `bg-[var(--nt-chart-cat-6)]`,
-  gold: `bg-[var(--nt-chart-cat-7)]`,
-  violet: `bg-[var(--nt-chart-cat-8)]`,
+  blue: `bg-[var(--nt-chart-series-1)]`,
+  orange: `bg-[var(--nt-chart-series-2)]`,
+  cyan: `bg-[var(--nt-chart-series-3)]`,
+  red: `bg-[var(--nt-chart-series-4)]`,
+  teal: `bg-[var(--nt-chart-series-5)]`,
+  magenta: `bg-[var(--nt-chart-series-6)]`,
+  gold: `bg-[var(--nt-chart-series-7)]`,
+  violet: `bg-[var(--nt-chart-series-8)]`,
   neutral: `bg-[var(--nt-chart-more)]`,
 };
 
 const seriesClasses: Record<MetricBarSeries, string> = {
-  blue: `[&>div]:bg-[var(--nt-chart-cat-1)] ${SEGMENT_GAP}`,
-  orange: `[&>div]:bg-[var(--nt-chart-cat-2)] ${SEGMENT_GAP}`,
-  cyan: `[&>div]:bg-[var(--nt-chart-cat-3)] ${SEGMENT_GAP}`,
-  red: `[&>div]:bg-[var(--nt-chart-cat-4)] ${SEGMENT_GAP}`,
-  teal: `[&>div]:bg-[var(--nt-chart-cat-5)] ${SEGMENT_GAP}`,
-  magenta: `[&>div]:bg-[var(--nt-chart-cat-6)] ${SEGMENT_GAP}`,
-  gold: `[&>div]:bg-[var(--nt-chart-cat-7)] ${SEGMENT_GAP}`,
-  violet: `[&>div]:bg-[var(--nt-chart-cat-8)] ${SEGMENT_GAP}`,
+  blue: `[&>div]:bg-[var(--nt-chart-series-1)] ${SEGMENT_GAP}`,
+  orange: `[&>div]:bg-[var(--nt-chart-series-2)] ${SEGMENT_GAP}`,
+  cyan: `[&>div]:bg-[var(--nt-chart-series-3)] ${SEGMENT_GAP}`,
+  red: `[&>div]:bg-[var(--nt-chart-series-4)] ${SEGMENT_GAP}`,
+  teal: `[&>div]:bg-[var(--nt-chart-series-5)] ${SEGMENT_GAP}`,
+  magenta: `[&>div]:bg-[var(--nt-chart-series-6)] ${SEGMENT_GAP}`,
+  gold: `[&>div]:bg-[var(--nt-chart-series-7)] ${SEGMENT_GAP}`,
+  violet: `[&>div]:bg-[var(--nt-chart-series-8)] ${SEGMENT_GAP}`,
   neutral: `[&>div]:bg-[var(--nt-chart-more)] ${SEGMENT_GAP}`,
 };
 

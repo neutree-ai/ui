@@ -1,5 +1,5 @@
 import type { GroupUsageFilter } from "@/domains/api-key/hooks/use-group-usage";
-import type { KeyUsageGroup } from "@/domains/api-key/hooks/use-workspace-usage";
+import type { KeyUsageFilter } from "@/domains/api-key/hooks/use-workspace-usage";
 import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
   type OrgTreeNode,
@@ -19,21 +19,33 @@ export type GroupScope =
 
 /**
  * What the page counts: the whole platform, every application on it, a
- * group, or one user. `from` is the group a user was opened from, so the way
- * back leads there.
+ * group, one user, or one application. `from` is the group a user or an
+ * application was opened from, so the way back leads there.
  */
 export type UsageScope =
   | { type: "platform" }
   | { type: "applications" }
   | GroupScope
-  | { type: "user"; id: string; label: string; from: GroupScope | null };
+  | { type: "user"; id: string; label: string; from: GroupScope | null }
+  | { type: "application"; id: string; label: string; from: GroupScope | null };
 
 /** A member of the scope's group, listed even without usage. */
 export type ScopeMember = { id: string; label: string };
 
-/** The group a scope belongs to: itself, or the group a user was opened from. */
+/** A user or an application, opened on its own from a group or the platform. */
+export type OwnerScope = Extract<UsageScope, { type: "user" | "application" }>;
+
+export const isOwnerScope = (
+  scope: UsageScope | null | undefined,
+): scope is OwnerScope =>
+  scope?.type === "user" || scope?.type === "application";
+
+/**
+ * The group a scope belongs to: itself, or the group a user or an application
+ * was opened from.
+ */
 export const groupOf = (scope: UsageScope): GroupScope | null =>
-  scope.type === "user"
+  isOwnerScope(scope)
     ? scope.from
     : scope.type === "platform" || scope.type === "applications"
       ? null
@@ -46,6 +58,10 @@ const groupFilter = (group: GroupScope | null): GroupUsageFilter =>
       ? { team: group.name }
       : {};
 
+/** A department's own usage, not its sub-departments': only OrgUnits count direct. */
+const directIn = (group: GroupScope | null): { direct?: true } =>
+  group?.type === "orgUnit" ? { direct: true } : {};
+
 /**
  * The get_usage_by_group filter of a scope's User rows. A user opened from a
  * group counts only their usage in that group, as their row there did: in a
@@ -56,9 +72,21 @@ const userUsageFilter = (scope: UsageScope): GroupUsageFilter =>
     ? {
         name: scope.id,
         ...groupFilter(scope.from),
-        ...(scope.from?.type === "orgUnit" ? { direct: true } : {}),
+        ...directIn(scope.from),
       }
     : groupFilter(groupOf(scope));
+
+/**
+ * The get_usage_by_dimension filter of a user's or an application's keys:
+ * the usage their row in the group counted, by key.
+ */
+const ownerKeyFilter = (scope: OwnerScope): KeyUsageFilter => ({
+  ...groupFilter(scope.from),
+  ...directIn(scope.from),
+  ...(scope.type === "user"
+    ? { user: scope.id }
+    : { serviceAccount: scope.id }),
+});
 
 /** What the page asks the usage RPCs for in a scope. */
 type ScopeQueries = {
@@ -80,8 +108,8 @@ type ScopeQueries = {
    * department, or a department's own. Absent when not split into departments.
    */
   direct?: GroupUsageFilter;
-  /** The group to narrow usage by API key to. */
-  keyGroup?: KeyUsageGroup;
+  /** What to narrow usage by API key to: a group, and in it one owner. */
+  keys?: KeyUsageFilter;
 };
 
 export function scopeQueries(scope: UsageScope | null): ScopeQueries {
@@ -97,16 +125,21 @@ export function scopeQueries(scope: UsageScope | null): ScopeQueries {
         user: userUsageFilter(scope),
         units: { orgUnit: scope.name },
         direct: { orgUnit: scope.name, direct: true },
-        keyGroup: { orgUnit: scope.name },
+        keys: { orgUnit: scope.name },
       };
     case "team":
       return {
         user: userUsageFilter(scope),
         apps: { team: scope.name },
-        keyGroup: { team: scope.name },
+        keys: { team: scope.name },
       };
     case "user":
-      return { user: userUsageFilter(scope) };
+      return { user: userUsageFilter(scope), keys: ownerKeyFilter(scope) };
+    case "application":
+      return {
+        apps: { name: scope.id, ...groupFilter(scope.from) },
+        keys: ownerKeyFilter(scope),
+      };
   }
 }
 
@@ -136,8 +169,15 @@ export function scopeTrail(
   const crumbs: ScopeCrumb[] = canReadAllGroups
     ? [{ label: platformLabel, scope: { type: "platform" } }]
     : [];
-  if (scope.type === "applications") {
-    crumbs.push({ label: applicationsLabel, scope });
+  // An application opened from the platform's applications leads back there.
+  if (
+    scope.type === "applications" ||
+    (scope.type === "application" && !scope.from)
+  ) {
+    crumbs.push({ label: applicationsLabel, scope: { type: "applications" } });
+    if (scope.type === "application") {
+      crumbs.push({ label: scope.label, scope });
+    }
     return crumbs;
   }
   const group = groupOf(scope);
@@ -153,7 +193,9 @@ export function scopeTrail(
   } else if (group?.type === "team") {
     crumbs.push({ label: group.label, scope: group });
   }
-  if (scope.type === "user") crumbs.push({ label: scope.label, scope });
+  if (isOwnerScope(scope)) {
+    crumbs.push({ label: scope.label, scope });
+  }
   return crumbs;
 }
 
@@ -203,6 +245,11 @@ export function breakdownLabelKeys(scope: UsageScope | null): {
       };
     case "user":
       return { series: "model_usage.series.model", who: user };
+    case "application":
+      return {
+        series: "model_usage.series.model",
+        who: "model_usage.group.kinds.ServiceAccount",
+      };
   }
 }
 
@@ -370,7 +417,7 @@ const userEntry = (id: string, label: string, from: GroupScope): Entry => ({
  * - every application on the platform into each application;
  * - a department into its child departments, plus its direct users;
  * - a Team into its users and its applications;
- * - a user into the models they used.
+ * - a user or an application into the models they used.
  * Usage counts toward the department a user was in at the time.
  */
 export function buildBreakdown({
@@ -383,8 +430,8 @@ export function buildBreakdown({
   appRows,
   labels,
 }: BreakdownInput): BreakdownFact[] {
-  if (scope.type === "user") {
-    return userRows.map((r) => ({
+  if (isOwnerScope(scope)) {
+    return (scope.type === "user" ? userRows : appRows).map((r) => ({
       ...r,
       entry: modelOf(r),
       label: modelOf(r),
@@ -398,18 +445,23 @@ export function buildBreakdown({
     ...userEntry(r.who.key, r.who.name, from),
   });
 
-  const byApp = (r: UsageFact): BreakdownFact => ({
+  const byApp = (r: UsageFact, from: GroupScope | null): BreakdownFact => ({
     ...r,
     entry: `app:${r.who.key}`,
     label: r.who.name,
     description: r.who.description,
-    target: null,
+    target: { type: "application", id: r.who.key, label: r.who.name, from },
   });
 
-  if (scope.type === "applications") return appRows.map(byApp);
+  if (scope.type === "applications") {
+    return appRows.map((r) => byApp(r, null));
+  }
 
   if (scope.type === "team") {
-    return [...userRows.map((r) => byUser(r, scope)), ...appRows.map(byApp)];
+    return [
+      ...userRows.map((r) => byUser(r, scope)),
+      ...appRows.map((r) => byApp(r, scope)),
+    ];
   }
 
   const children =

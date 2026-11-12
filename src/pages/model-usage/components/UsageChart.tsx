@@ -19,6 +19,7 @@ import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import {
+  CHART_CATEGORY_COUNT,
   CHART_CATEGORY_TOKENS,
   CHART_SERIES_SEPARATOR,
   type ChartMark,
@@ -37,7 +38,9 @@ import {
 const CHART_MARGIN = { top: 4, right: 8, bottom: 0, left: 4 };
 
 // SVG marks cannot paint a CSS background-image, so the Gold / Violet extension
-// slots are drawn as an SVG <pattern>.
+// slots are drawn as an SVG <pattern>. Past those eight identities the chart
+// collapses to the solid neutral "more" bucket rather than recycling a hue.
+const MAX_SVG_MARKS = CHART_CATEGORY_COUNT;
 const STRIPE_PATTERN_PREFIX = "usage-chart-stripes";
 const SOFT_STRIPE_PATTERN_PREFIX = "usage-chart-stripes-soft";
 
@@ -87,6 +90,7 @@ const StripePatterns = ({ soft = false }: { soft?: boolean }) => (
 function seriesMark(series: UsageSeries[], key: string): ChartMark {
   const index = series.findIndex((s) => s.key === key);
   if (key === OTHER_SERIES_KEY || index < 0) return chartMoreMark();
+  if (index >= MAX_SVG_MARKS) return chartMoreMark();
   return chartCategoryMark(index);
 }
 

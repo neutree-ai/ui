@@ -30,6 +30,7 @@ describe("getClusterSplitDashboardProps", () => {
         "http://grafana",
         dashboardType,
         "cluster-a",
+        "workspace-a",
       );
 
       expect(props.dashboardConfig.dashboardId).toBe(dashboardId);
@@ -39,6 +40,22 @@ describe("getClusterSplitDashboardProps", () => {
       });
     },
   );
+
+  it("scopes Router embeds to the record's cluster and workspace", () => {
+    const props = getClusterSplitDashboardProps(
+      "http://grafana",
+      "routing",
+      "cluster-a",
+      "team-a",
+    );
+    expect(props.dashboardConfig.dashboardId).toBe("router");
+    expect(props.dashboardConfig.variables).toEqual({
+      datasource: "neutree-cluster",
+      Cluster: "cluster-a",
+      Workspace: "team-a",
+    });
+    expect(props.hideVariables).toBe(true);
+  });
 });
 
 describe("getEndpointSplitDashboardProps", () => {

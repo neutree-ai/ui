@@ -22,6 +22,9 @@ describe("usage view in the URL", () => {
     expect(
       roundTrip({ type: "user", id: "u1", label: "Ann", from: team }),
     ).toEqual({ type: "user", id: "u1", label: "Ann", from: team });
+    expect(
+      roundTrip({ type: "application", id: "sa1", label: "Bot", from: team }),
+    ).toEqual({ type: "application", id: "sa1", label: "Bot", from: team });
   });
 
   it("leaves the scope to the page when the URL names none", () => {
@@ -35,6 +38,13 @@ describe("usage view in the URL", () => {
     const next = writeUsageView(params, { scope: { type: "platform" } });
 
     expect(next.toString()).toBe("tab=detail&scope=platform");
+
+    const app = writeUsageView(params, {
+      scope: { type: "application", id: "sa1", label: "Bot", from: null },
+    });
+    expect(
+      writeUsageView(app, { scope: { type: "platform" } }).toString(),
+    ).toBe("tab=detail&scope=platform");
   });
 
   it("reads a valid range only, and a known tab only", () => {

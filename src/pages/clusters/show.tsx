@@ -58,6 +58,7 @@ import type { BaseStatus } from "@/foundation/types/basic-types";
 
 const MONITOR_PANEL_LABELS = {
   overview: "clusters.monitor.overview",
+  routing: "clusters.monitor.routing",
   cache: "clusters.monitor.cache",
 } as const;
 
@@ -82,7 +83,11 @@ export const ClustersShow = () => {
     record?.metadata.name,
     polling,
   );
-  const { data: clusterEndpoints } = useList<Endpoint>({
+  const {
+    data: clusterEndpoints,
+    isLoading: endpointsLoading,
+    isError: endpointsError,
+  } = useList<Endpoint>({
     resource: "endpoints",
     meta: { workspace: record?.metadata.workspace, workspaced: true },
     filters: [
@@ -150,8 +155,9 @@ export const ClustersShow = () => {
         })
       : getClusterSplitDashboardProps(
           grafanaUrl,
-          "overview",
+          selectedPanel,
           record.metadata.name,
+          record.metadata.workspace ?? "default",
         );
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
@@ -537,7 +543,13 @@ export const ClustersShow = () => {
               value="cache"
               className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
             >
-              <ClusterCacheSection cluster={record} l1CacheByNode={l1ByNode} />
+              <ClusterCacheSection
+                cluster={record}
+                l1CacheByNode={l1ByNode}
+                endpoints={clusterEndpoints?.data}
+                endpointsLoading={endpointsLoading}
+                endpointsError={endpointsError}
+              />
             </TabsContent>
           )}
           {showMonitorTab && (
