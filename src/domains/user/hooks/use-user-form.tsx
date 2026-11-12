@@ -1,5 +1,6 @@
 import { useTranslation } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
+import type { ReactElement } from "react";
 import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
 import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
@@ -10,7 +11,17 @@ import {
   profileIdentitySource,
 } from "@/foundation/lib/user-identity";
 
-export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
+export const useUserForm = ({
+  action,
+  departmentField,
+  onCreated,
+}: {
+  action: "create" | "edit";
+  /** Optional department picker for a new user, named `orgUnit`. */
+  departmentField?: ReactElement;
+  /** Runs once the user exists; `orgUnit` is the picked department, if any. */
+  onCreated?: (user: { id: string; orgUnit: string }) => unknown;
+}) => {
   const isEdit = action === "edit";
   const { translate } = useTranslation();
 
@@ -32,8 +43,18 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
           email: "",
           password: "",
           confirmPassword: "",
+          orgUnit: "",
         },
-    refineCoreProps: {},
+    refineCoreProps: {
+      onMutationSuccess: (data, variables) => {
+        if (isEdit) return;
+        const { orgUnit } = variables as unknown as { orgUnit?: string };
+        return onCreated?.({
+          id: String((data as { data: { id: string } }).data.id),
+          orgUnit: orgUnit ?? "",
+        });
+      },
+    },
     warnWhenUnsavedChanges: true,
   });
 
@@ -91,7 +112,17 @@ export const useUserForm = ({ action }: { action: "create" | "edit" }) => {
               type="email"
             />
           </FormFieldGroup>
-          <div className="col-span-2" />
+          {departmentField ? (
+            <FormFieldGroup
+              {...form}
+              name="orgUnit"
+              label={translate("user_profiles.fields.department")}
+            >
+              {departmentField}
+            </FormFieldGroup>
+          ) : (
+            <div className="col-span-2" />
+          )}
           <FormFieldGroup
             {...form}
             label={translate("common.fields.password")}

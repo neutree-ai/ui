@@ -2092,7 +2092,8 @@
 		"fields": {
 			"confirmPassword": "Confirm Password",
 			"displayName": "Display Name",
-			"identitySource": "Identity Source"
+			"identitySource": "Identity Source",
+			"department": "Department (optional)"
 		},
 		"filters": {
 			"source": "Filter by Identity Source"
@@ -2129,6 +2130,7 @@
 			"removeHint": "The user will not belong to any department.",
 			"none": "Not in a department.",
 			"errors": {
+				"createdNotAssigned": "The user was created, but the department could not be assigned. Assign it from the user's page.",
 				"targetOutsideScope": "The target department is outside the departments you manage.",
 				"currentOutsideScope": "This user's department is outside the departments you manage."
 			}
@@ -2984,6 +2986,8 @@
 			"pending": "Requested"
 		},
 		"syncCounts": {
+			"heading": "Last sync",
+			"hint": "Writes made by the most recent sync only. Each sync replaces these counts, and a sync with nothing to change shows zeros. Created, updated, reactivated and deactivated cover departments, teams and users together.",
 			"created": "Created",
 			"updated": "Updated",
 			"reactivated": "Reactivated",
