@@ -200,6 +200,22 @@ export const useAssignOrgUnit = (userId: string) => {
 };
 
 /**
+ * Puts a user just created by hand into a department. The user id comes from
+ * the create response, so it is an argument, not part of the hook.
+ */
+export const useCreateOrgUnitMembership = () => {
+  const { run } = useRowWrite({
+    invalidates: ["org_unit_members", "user_profiles"],
+  });
+  return async (userId: string, orgUnitId: number) => {
+    await run("/org_unit_members", "post", {
+      user_id: userId,
+      org_unit_id: orgUnitId,
+    });
+  };
+};
+
+/**
  * A PATCH or DELETE that changed no row: the Team or membership is gone, or
  * RLS hides it from the caller.
  */

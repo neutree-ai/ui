@@ -122,4 +122,16 @@ describe("useUserForm", () => {
     expect(emailInput().disabled).toBe(false);
     expect(screen.queryByText("user_profiles.hints.externalEmail")).toBeNull();
   });
+
+  it("shows the department field only when one is passed", () => {
+    renderForm(
+      () =>
+        useUserForm({
+          action: "create",
+          departmentField: <i data-testid="dept" />,
+        }),
+      (r) => r.registerFields,
+    );
+    screen.getByTestId("dept");
+  });
 });

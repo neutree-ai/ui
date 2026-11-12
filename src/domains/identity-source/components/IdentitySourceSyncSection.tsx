@@ -8,6 +8,7 @@ import type {
   IdentitySourceSyncStatus,
 } from "@/domains/identity-source/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { InfoHint } from "@/foundation/components/InfoHint";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -94,18 +95,26 @@ export function IdentitySourceSyncSection({
             {time(last.finished_at)}
           </ShowPage.Row>
           <div />
-          <div className="grid grid-cols-3 gap-5 lg:col-span-4 lg:grid-cols-6">
-            {COUNTS.map((key) => (
-              <ShowPage.SummaryItem
-                key={key}
-                label={t(`identity_sources.syncCounts.${key}`)}
-                value={
-                  <span data-testid={`identity-source-sync-count-${key}`}>
-                    {last[key] ?? 0}
-                  </span>
-                }
-              />
-            ))}
+          <div className="lg:col-span-4">
+            <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+              <span data-testid="identity-source-sync-counts-heading">
+                {t("identity_sources.syncCounts.heading")}
+              </span>
+              <InfoHint label={t("identity_sources.syncCounts.hint")} />
+            </div>
+            <div className="grid grid-cols-3 gap-5 lg:grid-cols-6">
+              {COUNTS.map((key) => (
+                <ShowPage.SummaryItem
+                  key={key}
+                  label={t(`identity_sources.syncCounts.${key}`)}
+                  value={
+                    <span data-testid={`identity-source-sync-count-${key}`}>
+                      {last[key] ?? 0}
+                    </span>
+                  }
+                />
+              ))}
+            </div>
           </div>
           <div className="lg:col-span-4">
             <ShowPage.Row title={t("common.fields.message")}>
