@@ -120,7 +120,7 @@ export const ModelUsageList = () => {
   );
   // The breakdown's entries never overlap, so a stacked bar shows the scope's
   // daily total and who made it up at once.
-  const [chartType, setChartType] = useState<"line" | "bar">("bar");
+  const [chartType, setChartType] = useState<"line" | "bar">("line");
   const [pickedMetric, setMetric] = useState<TrendMetric>("tokens");
   // Series toggled off via the (clickable) chart legend.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
