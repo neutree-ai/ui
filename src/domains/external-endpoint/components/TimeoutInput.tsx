@@ -20,7 +20,7 @@ interface TimeoutInputProps {
 }
 
 const TimeoutInput = forwardRef<HTMLInputElement, TimeoutInputProps>(
-  ({ value = 60000, onChange }, ref) => {
+  ({ value = 300000, onChange }, ref) => {
     const { t } = useTranslation();
     const [unit, setUnit] = useState<TimeoutUnit>("s");
 
