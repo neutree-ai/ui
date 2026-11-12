@@ -146,10 +146,15 @@ export const ModelUsageList = () => {
     roots,
     byId: nodesById,
     byName: nodesByName,
+    isLoading: orgLoading,
   } = useOrgTree(canReadGroups);
   // The Teams the caller may open as a scope: the RPC refuses usage by Team
   // to everyone else.
-  const { list: teamList, byName: teamsByName } = useReadableUsageTeams();
+  const {
+    list: teamList,
+    byName: teamsByName,
+    isLoading: teamsLoading,
+  } = useReadableUsageTeams();
   const hasScopes = canReadGroups || teamList.length > 0;
 
   // The page opens on the whole platform, on the first department of a
@@ -546,6 +551,7 @@ export const ModelUsageList = () => {
               nodesById={nodesById}
               scope={scope}
               canReadPlatform={canReadAllGroups}
+              loading={orgLoading || teamsLoading}
               teams={teamList}
               onScopeChange={changeScope}
             />

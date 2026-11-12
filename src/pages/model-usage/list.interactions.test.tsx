@@ -96,10 +96,15 @@ vi.mock("@/foundation/components/DateRangePicker", async () => {
 
 let canReadAll = false;
 let canReadSubtree = false;
+let canCreateTeam = false;
+let hasOrg = true;
 // The Teams whose usage the caller reads through a Team-scoped grant.
 let usageTeamIds: number[] = [];
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
-  useHasGlobalPermission: () => ({ allowed: canReadAll, isLoading: false }),
+  useHasGlobalPermission: (permission: string) => ({
+    allowed: permission === "team:create" ? canCreateTeam : canReadAll,
+    isLoading: false,
+  }),
   useHasPermission: () => ({ allowed: canReadSubtree, isLoading: false }),
 }));
 
@@ -115,11 +120,11 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
   );
   return {
     useOrgTree: (enabled: boolean) =>
-      orgTreeIndex(enabled ? (orgUnits as OrgUnit[]) : []),
+      orgTreeIndex(enabled && hasOrg ? (orgUnits as OrgUnit[]) : []),
     // As get_readable_usage_teams: every Team for a global reader.
     useReadableUsageTeams: () =>
       teamIndex(
-        (canReadAll
+        (canReadAll && hasOrg
           ? teams
           : teams.filter((team) =>
               usageTeamIds.includes(team.id),
@@ -279,6 +284,8 @@ vi.mock("@/domains/api-key/hooks/use-workspace-usage", () => ({
 beforeEach(() => {
   canReadAll = false;
   canReadSubtree = false;
+  canCreateTeam = false;
+  hasOrg = true;
   usageTeamIds = [];
   keyFetched = false;
   keyGroups.length = 0;
@@ -318,6 +325,32 @@ describe("a reader of their own API keys", () => {
       "model_usage.tabs.detail",
     ]);
     expect(tableRows()).toEqual(["key-a", "key-b"]);
+  });
+});
+
+describe("a platform without departments or Teams", () => {
+  beforeEach(() => {
+    canReadAll = true;
+    hasOrg = false;
+  });
+
+  it("points a Team creator to the organization page", () => {
+    canCreateTeam = true;
+    renderPage();
+
+    expect(screen.getByText("model_usage.scope.empty")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "model_usage.scope.goToOrganization" })
+        .getAttribute("href"),
+    ).toBe("/organization");
+  });
+
+  it("only says so to everyone else", () => {
+    renderPage();
+
+    expect(screen.getByText("model_usage.scope.empty")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
   });
 });
 
