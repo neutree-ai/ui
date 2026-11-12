@@ -334,4 +334,14 @@ describe("endpoint wizard error mapping", () => {
       message: "unsupported version",
     });
   });
+
+  it("places a cache admission error on its step with the translated message", () => {
+    expect(
+      endpointServerIssue(
+        { code: "ENDPOINT_CACHE_CUSTOM_OVERRIDE", message: "raw" },
+        "fallback",
+        () => "translated",
+      ),
+    ).toEqual({ step: 3, path: undefined, message: "translated" });
+  });
 });

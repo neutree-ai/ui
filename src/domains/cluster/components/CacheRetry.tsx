@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/foundation/lib/error-message";
+import { clusterCacheErrorMessage } from "../lib/zcache-errors";
 import { cacheMessage } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
 
@@ -44,7 +45,10 @@ export function CacheRetry({ cluster }: { cluster: Cluster }) {
         invalidates: ["detail", "list"],
       });
     } catch (e) {
-      setError(getErrorMessage(e, t("clusters.zcache.saveFailed")));
+      setError(
+        clusterCacheErrorMessage(t, e) ??
+          getErrorMessage(e, t("clusters.zcache.saveFailed")),
+      );
     }
   };
   return (

@@ -685,7 +685,17 @@
 			},
 			"serviceName": "Cache service",
 			"dependencyHint": "Inference instances still use the cache. Turn off their cache before disabling the cluster cache.",
-			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds."
+			"dependencyChecking": "Cache dependencies could not yet be confirmed. Removal stays disabled until the check succeeds.",
+			"errors": {
+				"invalidOptions": "Invalid cache configuration options.",
+				"invalidTargetNode": "Invalid cache target node \"{{hint}}\". Enter a valid Kubernetes node name.",
+				"unsupportedRuntime": "Unsupported cache runtime version.",
+				"useUpgradeAction": "Use the cache upgrade action to change the runtime version.",
+				"versionRequired": "Cache runtime version is required.",
+				"invalidSpec": "KV cache requires a Kubernetes cluster, a positive L1 capacity, and at least one target node.",
+				"invalidTargetNodes": "Cache target nodes must be non-empty and unique.",
+				"inUseByEndpoints": "Inference instances still use this cache. Disable their cache and wait for deployment to finish before removing cache nodes."
+			}
 		},
 		"cacheUpgrade": {
 			"title": "Upgrade cache version",
@@ -710,6 +720,20 @@
 				"Updating": "Updating",
 				"Paused": "Paused",
 				"Removed": "Removed"
+			},
+			"errors": {
+				"licenseRequired": "An active license is required to upgrade the cache.",
+				"permissionDenied": "You do not have permission to upgrade this cluster cache or its inference instances.",
+				"invalidRequest": "Invalid cache upgrade request.",
+				"clusterPaused": "Resume the cluster before upgrading the cache.",
+				"alreadyInProgress": "A cache upgrade is already in progress.",
+				"clusterUnavailable": "The cluster is unavailable.",
+				"cacheUnavailable": "Cluster cache is unavailable.",
+				"unsupportedVersion": "The target cache runtime version is unsupported or cluster cache is disabled.",
+				"incompleteChoices": "Choose an upgrade action for every inference instance that uses this cache.",
+				"invalidChoice": "Invalid or duplicate inference instance upgrade choice.",
+				"missingEngine": "Inference instance \"{{hint}}\" has no engine configuration.",
+				"engineIncompatible": "Inference instance \"{{hint}}\" uses an engine version that is incompatible with the target cache runtime."
 			}
 		},
 		"gpuInventory": {
@@ -1804,7 +1828,25 @@
 			"cpuMemory": "CPU memory",
 			"clusterNotSelected": "No cluster selected",
 			"noConfig": "KV cache is not enabled. There is no cache configuration to show.",
-			"platformManaged": "Connection and transfer settings are managed by the platform and are not editable here."
+			"platformManaged": "Connection and transfer settings are managed by the platform and are not editable here.",
+			"phases": {
+				"Ready": "Ready",
+				"Reconciling": "Reconciling",
+				"Failed": "Failed",
+				"Unavailable": "Unavailable",
+				"Disabled": "Disabled",
+				"Unknown": "Unknown"
+			},
+			"errors": {
+				"engineIncompatible": "The selected engine version is incompatible with the cluster cache runtime. Upgrade the cluster cache or disable KV cache.",
+				"nodePoolNotReady": "Wait for the cluster cache node pool to finish applying before enabling inference cache.",
+				"clusterDisabled": "Enable KV cache on a Kubernetes cluster before using inference cache.",
+				"requiresVllm": "Inference cache requires the vLLM engine.",
+				"requiresTextGeneration": "Inference cache requires a text-generation model.",
+				"invalidOptions": "Invalid KV cache configuration options.",
+				"invalidTimeout": "Cache timeout must be between 0.1 and 60 seconds.",
+				"customOverride": "Remove custom {{hint}} before enabling managed KV cache."
+			}
 		},
 		"performance": {
 			"window5m": "Last 5m",

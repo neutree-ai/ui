@@ -4,6 +4,7 @@ import type { FieldErrors } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { EndpointDeploymentWizard } from "@/domains/endpoint/components/EndpointDeploymentWizard";
 import { useEndpointForm } from "@/domains/endpoint/hooks/use-endpoint-form";
+import { endpointCacheErrorMessage } from "@/domains/endpoint/lib/endpoint-cache-errors";
 import { endpointReviewChanges } from "@/domains/endpoint/lib/endpoint-review-changes";
 import {
   type EndpointServerIssue,
@@ -202,6 +203,7 @@ export function EndpointDeploymentForm({
         const issue = endpointServerIssue(
           error,
           t("endpoints.wizard.errors.serverFallback"),
+          (err) => endpointCacheErrorMessage(t, err),
         );
         setActiveStep(issue.step);
         if (issue.path) {
