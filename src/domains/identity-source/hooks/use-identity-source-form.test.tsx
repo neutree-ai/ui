@@ -282,5 +282,26 @@ describe("useIdentitySourceForm", () => {
       screen.getByText("identity_sources.validation.userListFilter");
       expect(refineForm.onFinish).not.toHaveBeenCalled();
     });
+
+    it("needs a department or team base DN while sync is on", async () => {
+      const { submit } = renderIdentitySourceForm("edit", syncRecord);
+      await waitFor(() =>
+        expect(input("spec.ldap.sync.org_unit_base_dn").value).toBe(
+          "ou=org,dc=example,dc=org",
+        ),
+      );
+      fillField("spec.ldap.sync.org_unit_base_dn", "");
+      await submit();
+      await waitFor(() =>
+        expect(
+          screen.getAllByText("identity_sources.validation.syncBaseDn"),
+        ).toHaveLength(2),
+      );
+      expect(refineForm.onFinish).not.toHaveBeenCalled();
+
+      fillField("spec.ldap.sync.group_base_dn", "ou=groups,dc=example,dc=org");
+      await submit();
+      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledTimes(1));
+    });
   });
 });
