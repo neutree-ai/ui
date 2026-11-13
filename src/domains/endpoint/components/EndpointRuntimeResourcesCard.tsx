@@ -795,6 +795,21 @@ function AllocationBar({
     );
   }
 
+  const forceReplicaDetails = visible.length === 1 && hidden.length === 0;
+  const soleReplica = forceReplicaDetails ? visible[0] : null;
+  const soleReplicaActual = soleReplica
+    ? reading(
+        samples,
+        "neutree_endpoint_replica_accelerator_memory_used_bytes",
+        soleReplica.nodeId,
+        soleReplica.uuid,
+        toAllocation(soleReplica, identity),
+      )
+    : undefined;
+  const soleReplicaActualMiB = soleReplicaActual
+    ? soleReplicaActual.value / 1024 ** 2
+    : null;
+
   return (
     <div className="relative">
       <div
@@ -867,7 +882,12 @@ function AllocationBar({
                   }}
                 >
                   <span
-                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover/slice:opacity-100 group-focus-visible/slice:opacity-100 group-data-[state=delayed-open]/slice:opacity-100 group-data-[state=instant-open]/slice:opacity-100"
+                    className={cn(
+                      "pointer-events-none absolute inset-0 transition-opacity",
+                      forceReplicaDetails
+                        ? "opacity-100"
+                        : "opacity-0 group-hover/slice:opacity-100 group-focus-visible/slice:opacity-100 group-data-[state=delayed-open]/slice:opacity-100 group-data-[state=instant-open]/slice:opacity-100",
+                    )}
                     data-testid="replica-detail-layer"
                   >
                     {hasComposition ? (
@@ -914,9 +934,11 @@ function AllocationBar({
                       />
                     )}
                   </span>
-                  <span className="relative z-10 truncate px-1">
-                    {replicaCode(allocation.replicaIndex)}
-                  </span>
+                  {!forceReplicaDetails && (
+                    <span className="relative z-10 truncate px-1">
+                      {replicaCode(allocation.replicaIndex)}
+                    </span>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent
@@ -993,14 +1015,21 @@ function AllocationBar({
         )}
       </div>
       <AllocationOwnershipLegend
-        actualMiB={null}
+        actualMiB={soleReplicaActualMiB}
         allocations={device.allocations}
         endpointMiB={endpointReservedMiB}
         mark={chartCategoryMark(0)}
         otherMiB={otherReservedMiB}
-        showEndpointComposition={false}
+        showEndpointComposition={forceReplicaDetails}
         unallocatedMiB={unallocatedMiB}
       />
+      {soleReplica && (
+        <AllocationCompositionLegend
+          allocation={soleReplica}
+          actualMiB={soleReplicaActualMiB}
+          mark={chartCategoryMark(soleReplica.replicaIndex)}
+        />
+      )}
     </div>
   );
 }

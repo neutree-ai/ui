@@ -651,7 +651,7 @@ describe("EndpointRuntimeResourcesCard", () => {
     expect(card.textContent).not.toContain("90%");
   });
 
-  it("keeps current Endpoint composition in hover on a shared GPU", async () => {
+  it("shows current Endpoint composition when it has one replica on a shared GPU", async () => {
     const currentDevice = makeDevice({
       memory_mib: 56 * 1024,
       allocatable: { memory_mib: 80 * 1024, core_units: 100 },
@@ -716,8 +716,11 @@ describe("EndpointRuntimeResourcesCard", () => {
     within(screen.getByTestId("allocation-ownership-legend")).getByText(
       "observations.unallocated",
     );
-    expect(screen.queryByTestId("single-allocation-legend")).toBeNull();
-    expect(screen.queryByText("observations.modelWeights")).toBeNull();
+    within(card).getByTestId("single-allocation-legend");
+    within(card).getByText("observations.modelWeights");
+    within(card).getByText("observations.l0KvCacheCapacity");
+    within(card).getByText("observations.otherReservation");
+    expect(within(card).queryByText("R0")).toBeNull();
 
     const replica = screen.getByRole("button", {
       name: /observations\.replicaLabel R0/,
