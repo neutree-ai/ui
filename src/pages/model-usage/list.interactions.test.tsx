@@ -338,7 +338,7 @@ describe("a platform without departments or Teams", () => {
     canCreateTeam = true;
     renderPage();
 
-    expect(screen.getByText("model_usage.scope.empty")).toBeTruthy();
+    screen.getByText("model_usage.scope.empty");
     expect(
       screen
         .getByRole("link", { name: "model_usage.scope.goToOrganization" })
@@ -349,7 +349,7 @@ describe("a platform without departments or Teams", () => {
   it("only says so to everyone else", () => {
     renderPage();
 
-    expect(screen.getByText("model_usage.scope.empty")).toBeTruthy();
+    screen.getByText("model_usage.scope.empty");
     expect(screen.queryByRole("link")).toBeNull();
   });
 });
@@ -713,7 +713,7 @@ describe("collapsing the scope panel", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "model_usage.scope.expand" }),
     );
-    expect(screen.getByText("model_usage.scope.platform")).toBeTruthy();
+    screen.getByText("model_usage.scope.platform");
     expect(localStorage.getItem("neutree_model_usage_scope_collapsed")).toBe(
       "0",
     );
