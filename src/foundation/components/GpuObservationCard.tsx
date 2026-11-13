@@ -132,9 +132,11 @@ export function GpuObservationTableHeader({
     >
       {labels.map((label, index) => (
         <span
-          // The final column is an unlabeled action column.
           key={`${label}:${index}`}
-          className="min-w-0 truncate"
+          className={cn(
+            "min-w-0 truncate",
+            variant === "inventory" && index === 3 && "text-right",
+          )}
         >
           {label}
         </span>
@@ -519,9 +521,11 @@ function GpuActualUsageMarker({
 function ActualVramUsageLegend({
   usedMiB,
   showLabel = true,
+  className,
 }: {
   usedMiB: number | null;
   showLabel?: boolean;
+  className?: string;
 }) {
   const { t } = useTranslation();
   if (usedMiB == null) return <EmptyValue />;
@@ -529,7 +533,10 @@ function ActualVramUsageLegend({
   return (
     <span
       data-testid="gpu-actual-usage-legend"
-      className="flex min-w-0 items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 text-[11px] leading-4 text-muted-foreground",
+        className,
+      )}
     >
       <span
         aria-hidden
@@ -2121,6 +2128,7 @@ export function GpuObservationCard({
             <ActualVramUsageLegend
               usedMiB={readings.actual}
               showLabel={false}
+              className="justify-end"
             />
             <CompactComputeAllocation device={device} showLabel={false} />
             <CompactUtilization
