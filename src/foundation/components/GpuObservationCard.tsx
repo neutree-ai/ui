@@ -557,7 +557,7 @@ function InventoryAllocationBar({
     ) : null;
   const actualLegend =
     cardUsedMiB != null && total != null && total > 0 ? (
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground">
         <span
           aria-hidden
           className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
