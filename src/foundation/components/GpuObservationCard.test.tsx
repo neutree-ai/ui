@@ -323,16 +323,14 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.vramAllocation");
+    within(cardElement).getByText("observations.vramUsageAllocationTotal");
     within(cardElement).getByRole("img", {
       name: "observations.noEndpointAllocation",
     });
     expect(
       within(cardElement).queryByText("observations.actualMemory"),
     ).toBeNull();
-    expect(
-      within(cardElement).queryByText("observations.utilization"),
-    ).toBeNull();
+    within(cardElement).getByText("observations.utilization");
     expect(
       within(cardElement).queryByText("observations.endpoints"),
     ).toBeNull();
@@ -354,11 +352,11 @@ describe("GPU observation row", () => {
     const cardElement = screen.getByTestId("gpu-inventory-card");
     within(cardElement).getByText("observations.physicalVramUnavailable");
     expect(cardElement.textContent).toContain(
-      `observations.allocated 15.0 / ${EMPTY_VALUE} GiB`,
+      `${EMPTY_VALUE} / 15.0 / ${EMPTY_VALUE} GiB`,
     );
   });
 
-  it("aligns actual VRAM and GPU utilization in the cluster card", () => {
+  it("shows VRAM usage, allocation, total and GPU utilization", () => {
     render(
       card({
         variant: "inventory",
@@ -372,21 +370,15 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.actualMemory");
-    within(cardElement).getByText("8.0 GiB");
+    within(cardElement).getByText("observations.vramUsageAllocationTotal");
+    expect(cardElement.textContent).toContain("8.0 / 15.0 / 16.0 GiB");
     within(cardElement).getByText("50%");
-    within(cardElement).getByRole("progressbar", {
-      name: "observations.actualMemory",
-    });
     within(cardElement).getByRole("progressbar", {
       name: "observations.utilization",
     });
-    expect(cardElement.textContent).toContain(
-      "observations.allocated 15.0 / 16.0 GiB",
-    );
   });
 
-  it("shows allocated and remaining GPU compute in the cluster card", () => {
+  it("shows allocated GPU compute in the cluster card", () => {
     render(
       card({
         variant: "inventory",
@@ -402,8 +394,6 @@ describe("GPU observation row", () => {
     const cardElement = screen.getByTestId("gpu-inventory-card");
     within(cardElement).getByText("observations.computeShare");
     expect(cardElement.textContent).toContain("100 / 100");
-    expect(cardElement.textContent).toContain("100%");
-    expect(cardElement.textContent).toContain("clusters.fields.remaining 0");
     within(cardElement).getByRole("progressbar", {
       name: "observations.computeAllocation",
     });
@@ -424,10 +414,10 @@ describe("GPU observation row", () => {
     const cardElement = screen.getByTestId("gpu-inventory-card");
     within(cardElement).getByText("clusters.options.unhealthy");
     within(cardElement).getByRole("button", { name: /^instance,/ });
-    within(cardElement).getByText("observations.vramAllocation");
+    within(cardElement).getByText("observations.vramUsageAllocationTotal");
   });
 
-  it("shows Actual VRAM as unavailable without hiding allocation", () => {
+  it("keeps usage unknown without hiding allocation", () => {
     render(
       card({
         variant: "inventory",
@@ -437,8 +427,10 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.actualMemory");
-    within(cardElement).getByText("observations.unavailable");
+    within(cardElement).getByText("observations.vramUsageAllocationTotal");
+    expect(cardElement.textContent).toContain(
+      `${EMPTY_VALUE} / 15.0 / 15.0 GiB`,
+    );
     within(cardElement).getByRole("button", { name: /^instance,/ });
   });
 
