@@ -281,7 +281,7 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "3492d93c7442ce8aa362363f129bf06d",
-  "src/pages/model-usage/list.tsx": "1b8104b70534a23d4d79789370b261ef",
+  "src/pages/model-usage/list.tsx": "dd6aa41ac50b532cf7b6d335a7189557",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "8382415b07ff22c5e0fd372976849e38",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "caf2d9d9863cb3c64eaacd6a62c05be3",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
@@ -602,7 +602,7 @@
   "src/domains/endpoint/components/ServedModelName.tsx": "814999d25440001ff2f249b531381a54",
   "src/pages/model-usage/lib/usage-scope.ts": "31b1e0e47fdf189d5295807f7194f31b",
   "src/pages/model-usage/components/UsageOverview.tsx": "c7f178bfaadbe95a1cbcefed42140055",
-  "src/pages/model-usage/components/UsageScopePanel.tsx": "e6918d67146612a152f5d420c1e37a1b",
+  "src/pages/model-usage/components/UsageScopePanel.tsx": "dd06c433fbdcc96ffc61214cb205dae4",
   "src/pages/model-usage/components/UsageTables.tsx": "9608f699928849e488a6ef1457f5592d",
   "src/domains/api-key/hooks/use-usage-rpc.ts": "75ebd95ca14ce19227769121c787dcbd",
   "src/pages/model-usage/lib/use-scope-usage.ts": "a61dc9cc92950d142d0c71d6564d8346",
@@ -630,5 +630,6 @@
   "src/pages/users/lib/user-department.ts": "cb15cead66e6d0e9d1d12e499afa6211",
   "src/pages/users/components/UserSourceFilter.tsx": "4460e56a3e07bb8b7a30347be7e55345",
   "src/domains/endpoint/lib/endpoint-cache-errors.ts": "acb326460173cf64f9ccd85edad5246d",
-  "src/domains/cluster/lib/zcache-errors.ts": "e8278743f3017abd5bab34eb24c94bbb"
+  "src/domains/cluster/lib/zcache-errors.ts": "e8278743f3017abd5bab34eb24c94bbb",
+  "src/pages/model-usage/lib/use-scope-collapsed.ts": "7536814d56d50752716cf69d10078341"
 }

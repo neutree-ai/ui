@@ -1,4 +1,4 @@
-import { Eye, Globe, Users } from "lucide-react";
+import { Eye, Globe, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,8 @@ export const UsageScopePanel = ({
   scope,
   canReadPlatform,
   loading,
+  collapsed,
+  onToggleCollapsed,
   onScopeChange,
 }: {
   roots: OrgTreeNode[];
@@ -119,6 +121,8 @@ export const UsageScopePanel = ({
   scope: UsageScope | null;
   canReadPlatform: boolean;
   loading: boolean;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   onScopeChange: (scope: UsageScope | null) => void;
 }) => {
   const { t } = useTranslation();
@@ -138,12 +142,43 @@ export const UsageScopePanel = ({
   const isEmpty = !loading && roots.length === 0 && teams.length === 0;
   const canCreateTeam = useHasGlobalPermission("team:create").allowed === true;
 
+  const toggleLabel = collapsed
+    ? t("model_usage.scope.expand")
+    : t("model_usage.scope.collapse");
+  const toggle = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-7 shrink-0"
+      aria-label={toggleLabel}
+      aria-expanded={!collapsed}
+      title={toggleLabel}
+      onClick={onToggleCollapsed}
+    >
+      {collapsed ? (
+        <PanelLeftOpen className="size-4" />
+      ) : (
+        <PanelLeftClose className="size-4" />
+      )}
+    </Button>
+  );
+
+  if (collapsed) {
+    return (
+      <aside>
+        <Card className="flex justify-center p-1.5">{toggle}</Card>
+      </aside>
+    );
+  }
+
   return (
     <aside>
       <Card className="p-3">
         <div className="mb-2 flex items-center gap-1 px-1 text-sm font-medium">
           {t("model_usage.scope.title")}
           <InfoHint label={t("model_usage.scope.hint")} />
+          <span className="ml-auto">{toggle}</span>
         </div>
         <div className="mb-0.5">
           {canReadPlatform ? (

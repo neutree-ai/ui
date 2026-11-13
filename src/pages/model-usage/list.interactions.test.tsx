@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KeyUsageFilter } from "@/domains/api-key/hooks/use-workspace-usage";
 import type {
   ApiUsageRecord,
@@ -678,6 +678,44 @@ describe("a reader of one Team's usage", () => {
     // The keys' 90 of the Team's 150.
     expect(screen.getByTestId("usage-key-coverage-hint").textContent).toBe(
       "model_usage.tabs.apiKeyCoverageHint",
+    );
+  });
+});
+
+describe("collapsing the scope panel", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
+    canReadAll = true;
+  });
+
+  it("folds to a rail, remembers it, and opens again", () => {
+    const first = renderPage();
+    expect(scopeButton("model_usage.scope.platform")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "model_usage.scope.collapse" }),
+    );
+    expect(screen.queryByText("model_usage.scope.platform")).toBeNull();
+    expect(localStorage.getItem("neutree_model_usage_scope_collapsed")).toBe(
+      "1",
+    );
+    first.unmount();
+
+    renderPage();
+    expect(screen.queryByText("model_usage.scope.platform")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "model_usage.scope.expand" }),
+    );
+    expect(screen.getByText("model_usage.scope.platform")).toBeTruthy();
+    expect(localStorage.getItem("neutree_model_usage_scope_collapsed")).toBe(
+      "0",
     );
   });
 });

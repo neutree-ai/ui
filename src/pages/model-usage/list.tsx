@@ -62,6 +62,7 @@ import {
   type UsageView,
   writeUsageView,
 } from "@/pages/model-usage/lib/usage-view";
+import { useScopeCollapsed } from "@/pages/model-usage/lib/use-scope-collapsed";
 import { useScopeUsage } from "@/pages/model-usage/lib/use-scope-usage";
 
 const RANGE_PRESETS = [7, 30, 90];
@@ -104,6 +105,7 @@ export const ModelUsageList = () => {
   const { params } = useParsed();
   const workspace = (params?.workspace as string) ?? "";
 
+  const [scopeCollapsed, toggleScopeCollapsed] = useScopeCollapsed();
   const [view, updateView] = useUsageView();
   const range = useMemo(
     () => view.range ?? trailingRange(DEFAULT_RANGE_DAYS),
@@ -543,7 +545,14 @@ export const ModelUsageList = () => {
       </div>
 
       {hasScopes ? (
-        <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div
+          className={cn(
+            "grid items-start gap-4",
+            scopeCollapsed
+              ? "lg:grid-cols-[44px_minmax(0,1fr)]"
+              : "lg:grid-cols-[240px_minmax(0,1fr)]",
+          )}
+        >
           <div className="lg:sticky lg:top-4">
             <UsageScopePanel
               roots={roots}
@@ -552,6 +561,8 @@ export const ModelUsageList = () => {
               scope={scope}
               canReadPlatform={canReadAllGroups}
               loading={orgLoading || teamsLoading}
+              collapsed={scopeCollapsed}
+              onToggleCollapsed={toggleScopeCollapsed}
               teams={teamList}
               onScopeChange={changeScope}
             />
