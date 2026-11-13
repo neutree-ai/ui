@@ -3634,7 +3634,6 @@
 		"vramInUse": "VRAM in use",
 		"deviceAndHealth": "Device / health",
 		"vramAllocation": "VRAM allocation",
-		"vramUsageAllocationTotal": "VRAM usage / allocation / total",
 		"usedAndReserved": "used / reserved",
 		"reservedOfPhysical": "Reserved {{reserved}} / {{total}} GiB",
 		"physicalVram": "Physical VRAM",

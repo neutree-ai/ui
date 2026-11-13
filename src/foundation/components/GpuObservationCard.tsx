@@ -111,7 +111,7 @@ export function GpuObservationTableHeader({
       ? [
           t("clusters.fields.gpuNumber"),
           t("clusters.fields.health"),
-          t("observations.vramUsageAllocationTotal"),
+          t("observations.vramAllocation"),
           t("observations.computeShare"),
           t("observations.utilization"),
         ]
@@ -557,12 +557,18 @@ function InventoryAllocationBar({
     ) : null;
   const actualLegend =
     cardUsedMiB != null && total != null && total > 0 ? (
-      <span className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground">
+      <span
+        data-testid="gpu-actual-usage-legend"
+        className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"
+      >
         <span
           aria-hidden
           className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
         />
         {t("observations.actualVramUsage")}
+        <span className="font-semibold tabular-nums text-foreground">
+          {gib(cardUsedMiB)}
+        </span>
       </span>
     ) : null;
   if (device.allocatedMiB == null) {
@@ -1010,14 +1016,12 @@ function Utilization({
   );
 }
 
-function VramUsageAllocationTotal({
-  actual,
+function VramAllocationReading({
   allocated,
   total,
   showLabel = true,
   className,
 }: {
-  actual: number | null;
   allocated: number | null;
   total: number | null;
   showLabel?: boolean;
@@ -1026,6 +1030,7 @@ function VramUsageAllocationTotal({
   const { t } = useTranslation();
   return (
     <div
+      data-testid="vram-allocation-reading"
       className={cn(
         "flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4",
         className,
@@ -1033,7 +1038,7 @@ function VramUsageAllocationTotal({
     >
       {showLabel && (
         <span className="min-w-0 text-muted-foreground">
-          {t("observations.vramUsageAllocationTotal")}
+          {t("observations.vramAllocation")}
         </span>
       )}
       <span
@@ -1042,9 +1047,7 @@ function VramUsageAllocationTotal({
           !showLabel && "ml-auto",
         )}
       >
-        {actual != null ? gibValue(actual) : EMPTY_VALUE}
-        {" / "}
-        {gibValue(allocated)}
+        {t("observations.allocated")} {gibValue(allocated)}
         {" / "}
         {gibValue(total)}
         <span className="font-normal text-muted-foreground"> GiB</span>
@@ -1317,8 +1320,7 @@ export function GpuDetailsSheet({
               ) : hasRuntimeMetric ? (
                 <>
                   <div className="space-y-1">
-                    <VramUsageAllocationTotal
-                      actual={actual}
+                    <VramAllocationReading
                       allocated={reserved}
                       total={physical}
                     />
@@ -2020,8 +2022,7 @@ export function GpuObservationCard({
           </div>
           <div className="mt-3 space-y-2.5">
             <div>
-              <VramUsageAllocationTotal
-                actual={readings.actual}
+              <VramAllocationReading
                 allocated={device.allocatedMiB}
                 total={readings.total}
                 className="mb-1"
@@ -2090,10 +2091,10 @@ export function GpuObservationCard({
                   samples={samples}
                   cardUsedMiB={readings.actual}
                   total={readings.total}
+                  showActualLegend
                 />
               </div>
-              <VramUsageAllocationTotal
-                actual={readings.actual}
+              <VramAllocationReading
                 allocated={device.allocatedMiB}
                 total={readings.total}
                 showLabel={false}
