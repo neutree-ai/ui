@@ -87,6 +87,7 @@ describe("GPU observation row", () => {
     expect(
       within(row).getByTestId("gpu-actual-usage-legend").textContent,
     ).toContain("8.0 GiB");
+    expect(within(row).queryByText("observations.actualVramUsage")).toBeNull();
     within(row).getByRole("progressbar", {
       name: "observations.computeAllocation",
     });

@@ -516,7 +516,13 @@ function GpuActualUsageMarker({
   );
 }
 
-function ActualVramUsageLegend({ usedMiB }: { usedMiB: number | null }) {
+function ActualVramUsageLegend({
+  usedMiB,
+  showLabel = true,
+}: {
+  usedMiB: number | null;
+  showLabel?: boolean;
+}) {
   const { t } = useTranslation();
   if (usedMiB == null) return <EmptyValue />;
 
@@ -529,7 +535,9 @@ function ActualVramUsageLegend({ usedMiB }: { usedMiB: number | null }) {
         aria-hidden
         className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
       />
-      <span className="truncate">{t("observations.actualVramUsage")}</span>
+      {showLabel && (
+        <span className="truncate">{t("observations.actualVramUsage")}</span>
+      )}
       <span className="shrink-0 font-semibold tabular-nums text-foreground">
         {gib(usedMiB)}
       </span>
@@ -2110,7 +2118,10 @@ export function GpuObservationCard({
                 className="shrink-0"
               />
             </div>
-            <ActualVramUsageLegend usedMiB={readings.actual} />
+            <ActualVramUsageLegend
+              usedMiB={readings.actual}
+              showLabel={false}
+            />
             <CompactComputeAllocation device={device} showLabel={false} />
             <CompactUtilization
               reading={readings.utilization}
