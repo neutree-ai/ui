@@ -226,6 +226,7 @@ describe("GPU observation row", () => {
     );
 
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    screen.getByTestId("endpoint-segment-remaining-pattern");
     // The name is a way into the object, not just a label.
     expect(
       within(tooltip)

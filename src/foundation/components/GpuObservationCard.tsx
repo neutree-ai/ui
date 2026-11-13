@@ -351,35 +351,33 @@ function EndpointAllocationTooltip({
         )}
       </div>
       <div className="mt-2.5 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-1.5 pt-0.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-1.5">
             <span
               data-testid="actual-marker-legend"
               aria-hidden="true"
               className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
             />
-            <span className="text-[10px] leading-4 text-muted-foreground">
+            <span className="whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
               {t("observations.actualVramUsage")}
             </span>
           </div>
-          <div className="flex shrink-0 flex-col items-end text-right">
-            <strong className="whitespace-nowrap text-sm leading-5 tabular-nums">
-              {gib(actualUsedMiB)}
-            </strong>
-            <span className="mt-0.5 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
-              {actualPercent == null
-                ? t("observations.noMeasurement")
-                : actualPercent > 100
-                  ? t("observations.usedAndExceedsReserved", {
-                      percent: Math.round(actualPercent),
-                      memory: gib((actualUsedMiB ?? 0) - allocation.memoryMiB),
-                    })
-                  : t("observations.actualOfReserved", {
-                      percent: Math.round(actualPercent),
-                    })}
-            </span>
-          </div>
+          <strong className="shrink-0 whitespace-nowrap text-sm leading-5 tabular-nums">
+            {gib(actualUsedMiB)}
+          </strong>
         </div>
+        <p className="mt-1 text-right text-[10px] leading-4 text-muted-foreground">
+          {actualPercent == null
+            ? t("observations.noMeasurement")
+            : actualPercent > 100
+              ? t("observations.usedAndExceedsReserved", {
+                  percent: Math.round(actualPercent),
+                  memory: gib((actualUsedMiB ?? 0) - allocation.memoryMiB),
+                })
+              : t("observations.actualOfReserved", {
+                  percent: Math.round(actualPercent),
+                })}
+        </p>
       </div>
     </HoverCardContent>
   );
