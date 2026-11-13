@@ -21,6 +21,25 @@ describe("getUnavailableModels", () => {
     );
   });
 
+  it("keeps a model callable while its backup is ready", () => {
+    const primary: UpstreamStatus = {
+      ref: "primary",
+      phase: "Failed",
+      models: ["chat", "embedding"],
+    };
+    const backup: UpstreamStatus = {
+      ref: "backup",
+      phase: "Ready",
+      models: ["chat"],
+    };
+    expect(getUnavailableModels([primary, backup])).toEqual(
+      new Set(["embedding"]),
+    );
+    expect(
+      getUnavailableModels([primary, { ...backup, phase: "Failed" }]),
+    ).toEqual(new Set(["chat", "embedding"]));
+  });
+
   it("is empty when nothing failed or nothing is known", () => {
     expect(getUnavailableModels([ready])).toEqual(new Set());
     expect(getUnavailableModels([null, null])).toEqual(new Set());
