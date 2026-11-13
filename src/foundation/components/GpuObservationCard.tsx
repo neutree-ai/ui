@@ -47,6 +47,7 @@ import {
   reading,
   sampleAge,
   splitGpuEndpointAllocations,
+  visibleHardwareFields,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
 import {
@@ -1034,10 +1035,12 @@ export function GpuDetailsSheet({
     "pcie_width",
     "numa_node",
   ];
-  const hardwareFields = [
-    ...baseHardwareFields,
-    ...extraHardwareFields.map((field) => field.key),
-  ];
+  const hardwareFields = visibleHardwareFields(
+    baseHardwareFields,
+    extraHardwareFields,
+    device.product,
+    hardware,
+  );
   const hardwareLabel = (key: string) =>
     t(
       extraHardwareFields.find((field) => field.key === key)?.label ??
@@ -1280,10 +1283,16 @@ export function GpuDetailsSheet({
                 </p>
               )}
               {sorted.length > 0 && (
-                <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                   <span>
                     {t("observations.endpointCount", {
                       count: sorted.length,
+                    })}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>
+                    {t("observations.replicaAllocations", {
+                      count: replicaCount,
                     })}
                   </span>
                   <span>
@@ -1726,14 +1735,6 @@ export function GpuDetailsSheet({
               ))}
             </dl>
           </section>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-            <span>
-              {t("observations.endpointCount", { count: sorted.length })} ·{" "}
-              {t("observations.replicaAllocations", { count: replicaCount })}
-            </span>
-            <span className="font-mono">{device.uuid}</span>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

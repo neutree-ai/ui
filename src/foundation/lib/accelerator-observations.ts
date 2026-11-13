@@ -1,4 +1,5 @@
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
+import type { AcceleratorExtraField } from "./accelerator-extra-info";
 import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
@@ -516,6 +517,43 @@ export function hardwareValue(
   if (key === "pcie_generation") return value ? `Gen ${value}` : null;
   if (key === "pcie_width") return value ? `x${value}` : null;
   return !value || value === "unknown" || value === "-1" ? null : value;
+}
+
+const NVIDIA_ONLY_HARDWARE_FIELDS = new Set(["nvlink", "nvswitch"]);
+
+/** Report whether the card is an NVIDIA GPU based on product model or CUDA/NVLink labels. */
+export function isNvidiaAccelerator(
+  product: string,
+  hardware: Record<string, string> = {},
+): boolean {
+  return (
+    /nvidia|tesla|quadro|geforce|\b(t4|l4|l20|l40s?|a10|a100|a800|h100|h800|h20|rtx|gtx|4090)\b/i.test(
+      product,
+    ) ||
+    Boolean(
+      hardware.cuda_capability ||
+        hardware.cuda_driver_version ||
+        hardware.nvlink != null ||
+        hardware.nvswitch != null,
+    )
+  );
+}
+
+/** Filter hardware fields to those applicable to the current accelerator. */
+export function visibleHardwareFields(
+  baseFields: readonly string[],
+  extraFields: readonly AcceleratorExtraField[],
+  product: string,
+  hardware: Record<string, string> = {},
+): string[] {
+  const isNvidia = isNvidiaAccelerator(product, hardware);
+  const base = baseFields.filter(
+    (key) => !NVIDIA_ONLY_HARDWARE_FIELDS.has(key) || isNvidia,
+  );
+  const extra = extraFields
+    .filter((field) => !field.when || field.when({ product, hardware }))
+    .map((field) => field.key);
+  return [...base, ...extra];
 }
 
 /** What the replica count of one Endpoint on a card says, if anything. */

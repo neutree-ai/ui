@@ -9,6 +9,7 @@ import {
   gpuAllocations,
   groupGpuAllocationsByEndpoint,
   hardwareValue,
+  isNvidiaAccelerator,
   nodeL1CacheByNode,
   nodeReading,
   reading,
@@ -16,6 +17,7 @@ import {
   replicaUsage,
   sampleAge,
   splitGpuEndpointAllocations,
+  visibleHardwareFields,
 } from "./accelerator-observations";
 
 const metric = "neutree_endpoint_replica_accelerator_memory_used_bytes";
@@ -291,6 +293,51 @@ it.each([
   { key: "architecture", value: "unknown", shown: null },
 ])("hardwareValue $key=$value -> $shown", ({ key, value, shown }) => {
   expect(hardwareValue({ [key]: value }, key)).toBe(shown);
+});
+
+it.each<{
+  product: string;
+  hardware: Record<string, string>;
+  expected: boolean;
+}>([
+  { product: "NVIDIA_L40S", hardware: {}, expected: true },
+  { product: "T4", hardware: {}, expected: true },
+  { product: "Unknown", hardware: { cuda_capability: "8.9" }, expected: true },
+  { product: "AMD_MI300X", hardware: {}, expected: false },
+])(
+  "isNvidiaAccelerator $product -> $expected",
+  ({ product, hardware, expected }) => {
+    expect(isNvidiaAccelerator(product, hardware)).toBe(expected);
+  },
+);
+
+it.each([
+  {
+    product: "NVIDIA_L40S",
+    expected: ["architecture", "nvlink", "nvswitch", "numa_node"],
+  },
+  {
+    product: "Custom_NPU",
+    expected: ["architecture", "numa_node", "custom_link"],
+  },
+  {
+    product: "AMD_MI300X",
+    expected: ["architecture", "numa_node"],
+  },
+])("visibleHardwareFields for $product", ({ product, expected }) => {
+  expect(
+    visibleHardwareFields(
+      ["architecture", "nvlink", "nvswitch", "numa_node"],
+      [
+        {
+          key: "custom_link",
+          label: "Custom link",
+          when: ({ product: p }) => p.startsWith("Custom_"),
+        },
+      ],
+      product,
+    ),
+  ).toEqual(expected);
 });
 
 it.each([
