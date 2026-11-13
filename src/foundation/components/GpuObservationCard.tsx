@@ -55,6 +55,7 @@ import {
   chartCategoryMark,
   chartOutlineStyle,
 } from "@/foundation/lib/chart-palette";
+import { buildPoolUsage } from "@/foundation/lib/gpu-device-resources";
 import {
   l0Pattern,
   OWNER_SECONDARY_TONE,
@@ -62,7 +63,11 @@ import {
   ownerTone,
 } from "@/foundation/lib/gpu-ownership";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
+import {
+  formatMiBAsGiB,
+  formatMiBAsGiBValue,
+  formatToDecimal,
+} from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 
 type GpuObservationVariant = "inventory" | "allocation";
@@ -84,7 +89,7 @@ type Props = {
 };
 
 const INVENTORY_GRID =
-  "grid min-w-[784px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(190px,1.3fr)] items-center gap-3 px-4";
+  "grid min-w-[1000px] grid-cols-[minmax(96px,max-content)_80px_minmax(260px,1.7fr)_minmax(128px,max-content)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
 const ALLOCATION_GRID =
   "grid min-w-[644px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px] items-center gap-3 px-4";
 const GPU_BAR_TRACK_CLASS =
@@ -107,6 +112,8 @@ export function GpuObservationTableHeader({
           t("clusters.fields.gpuNumber"),
           t("clusters.fields.health"),
           t("observations.vramAllocation"),
+          t("observations.actualVramUsage"),
+          t("observations.computeShare"),
           t("observations.utilization"),
         ]
       : [
@@ -125,9 +132,11 @@ export function GpuObservationTableHeader({
     >
       {labels.map((label, index) => (
         <span
-          // The final column is an unlabeled action column.
           key={`${label}:${index}`}
-          className="min-w-0 truncate"
+          className={cn(
+            "min-w-0 truncate",
+            variant === "inventory" && index === 3 && "text-right",
+          )}
         >
           {label}
         </span>
@@ -342,35 +351,33 @@ function EndpointAllocationTooltip({
         )}
       </div>
       <div className="mt-2.5 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-1.5 pt-0.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-1.5">
             <span
               data-testid="actual-marker-legend"
               aria-hidden="true"
               className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
             />
-            <span className="text-[10px] leading-4 text-muted-foreground">
+            <span className="whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
               {t("observations.actualVramUsage")}
             </span>
           </div>
-          <div className="flex shrink-0 flex-col items-end text-right">
-            <strong className="whitespace-nowrap text-sm leading-5 tabular-nums">
-              {gib(actualUsedMiB)}
-            </strong>
-            <span className="mt-0.5 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
-              {actualPercent == null
-                ? t("observations.noMeasurement")
-                : actualPercent > 100
-                  ? t("observations.usedAndExceedsReserved", {
-                      percent: Math.round(actualPercent),
-                      memory: gib((actualUsedMiB ?? 0) - allocation.memoryMiB),
-                    })
-                  : t("observations.actualOfReserved", {
-                      percent: Math.round(actualPercent),
-                    })}
-            </span>
-          </div>
+          <strong className="shrink-0 whitespace-nowrap text-sm leading-5 tabular-nums">
+            {gib(actualUsedMiB)}
+          </strong>
         </div>
+        <p className="mt-1 text-right text-[10px] leading-4 text-muted-foreground">
+          {actualPercent == null
+            ? t("observations.noMeasurement")
+            : actualPercent > 100
+              ? t("observations.usedAndExceedsReserved", {
+                  percent: Math.round(actualPercent),
+                  memory: gib((actualUsedMiB ?? 0) - allocation.memoryMiB),
+                })
+              : t("observations.actualOfReserved", {
+                  percent: Math.round(actualPercent),
+                })}
+        </p>
       </div>
     </HoverCardContent>
   );
@@ -480,6 +487,68 @@ function EndpointSegmentPattern({
   );
 }
 
+function GpuActualUsageMarker({
+  usedMiB,
+  allocatedMiB,
+  totalMiB,
+}: {
+  usedMiB: number;
+  allocatedMiB: number | null;
+  totalMiB: number;
+}) {
+  const percent = percentOf(usedMiB, totalMiB);
+  const exceedsAllocation =
+    allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
+
+  return (
+    <span
+      aria-hidden="true"
+      data-testid="gpu-card-actual-marker"
+      className="pointer-events-none absolute inset-y-px z-20 w-0.5 -translate-x-1/2 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+      style={{
+        left: `${percent}%`,
+        backgroundColor: exceedsAllocation
+          ? "var(--nt-fill-serious-base)"
+          : "var(--nt-text-neutral-super)",
+      }}
+    />
+  );
+}
+
+function ActualVramUsageLegend({
+  usedMiB,
+  showLabel = true,
+  className,
+}: {
+  usedMiB: number | null;
+  showLabel?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  if (usedMiB == null) return <EmptyValue />;
+
+  return (
+    <span
+      data-testid="gpu-actual-usage-legend"
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 text-[11px] leading-4 text-muted-foreground",
+        className,
+      )}
+    >
+      <span
+        aria-hidden
+        className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+      />
+      {showLabel && (
+        <span className="truncate">{t("observations.actualVramUsage")}</span>
+      )}
+      <span className="shrink-0 font-semibold tabular-nums text-foreground">
+        {gib(usedMiB)}
+      </span>
+    </span>
+  );
+}
+
 function InventoryAllocationBar({
   device,
   allocations,
@@ -490,6 +559,7 @@ function InventoryAllocationBar({
   selectedKey = null,
   onSelect,
   showLegend = false,
+  showActualLegend = false,
 }: {
   device: ObservedGpu;
   allocations: GpuAllocation[];
@@ -501,6 +571,7 @@ function InventoryAllocationBar({
   selectedKey?: string | null;
   onSelect?: (key: string) => void;
   showLegend?: boolean;
+  showActualLegend?: boolean;
 }) {
   const { t } = useTranslation();
   const [activeAllocation, setActiveAllocation] = useState<string | null>(null);
@@ -510,17 +581,32 @@ function InventoryAllocationBar({
     device.allocatedMiB ??
     visible.reduce((sum, allocation) => sum + allocation.memoryMiB, 0) +
       hiddenMemoryMiB;
+  const actualMarker =
+    cardUsedMiB != null && total != null && total > 0 ? (
+      <GpuActualUsageMarker
+        allocatedMiB={reserved}
+        totalMiB={total}
+        usedMiB={cardUsedMiB}
+      />
+    ) : null;
+  const actualLegend =
+    cardUsedMiB != null ? (
+      <ActualVramUsageLegend usedMiB={cardUsedMiB} />
+    ) : null;
   if (device.allocatedMiB == null) {
     return (
       <div className="space-y-1">
         <div
           role="img"
           aria-label={t("observations.allocationUnknown")}
-          className="h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent"
-        />
+          className="relative h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent"
+        >
+          {actualMarker}
+        </div>
         <span className="text-[11px] text-muted-foreground">
           {t("observations.allocationUnknown")}
         </span>
+        {(showLegend || showActualLegend) && actualLegend}
       </div>
     );
   }
@@ -543,21 +629,29 @@ function InventoryAllocationBar({
 
   if (reserved === 0) {
     return (
-      <div
-        role="img"
-        aria-label={t("observations.noEndpointAllocation")}
-        className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}
-      />
+      <div className="space-y-1">
+        <div
+          role="img"
+          aria-label={t("observations.noEndpointAllocation")}
+          className={cn("relative", "h-2.5", GPU_BAR_TRACK_CLASS)}
+        >
+          {actualMarker}
+        </div>
+        {(showLegend || showActualLegend) && actualLegend}
+      </div>
     );
   }
 
   if (visible.length === 0) {
     return (
       <div className="space-y-1">
-        <div className="h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent" />
+        <div className="relative h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent">
+          {actualMarker}
+        </div>
         <span className="text-[11px] text-muted-foreground">
           {t("observations.endpointAllocationUnavailable")}
         </span>
+        {(showLegend || showActualLegend) && actualLegend}
       </div>
     );
   }
@@ -567,18 +661,6 @@ function InventoryAllocationBar({
       ? Math.min(100, Math.max(0, (allocation.memoryMiB / total) * 100))
       : 100 / (visible.length + Number(hidden.length > 0));
 
-  const active = visible.find(
-    (allocation) =>
-      `${allocation.workspace}:${allocation.endpoint}` === activeAllocation,
-  );
-  const activeActualUsedMiB = active
-    ? endpointAllocationUsedMiB(
-        samples,
-        active,
-        allocations.length,
-        cardUsedMiB,
-      )
-    : null;
   const bar = (
     <div
       role="group"
@@ -726,11 +808,12 @@ function InventoryAllocationBar({
             </HoverCardContent>
           </HoverCard>
         )}
+        {activeAllocation == null && actualMarker}
       </div>
     </div>
   );
 
-  if (!showLegend) return bar;
+  if (!showLegend && !showActualLegend) return bar;
 
   return (
     <div className="space-y-1.5">
@@ -741,22 +824,23 @@ function InventoryAllocationBar({
         data-testid="vram-allocation-legend"
         className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
       >
-        {visible.map((allocation, index) => (
-          <span
-            key={`${allocation.workspace}:${allocation.endpoint}`}
-            role="listitem"
-            className="flex min-w-0 items-center gap-1.5"
-            title={`${allocation.workspace} / ${allocation.endpoint}`}
-          >
+        {showLegend &&
+          visible.map((allocation, index) => (
             <span
-              aria-hidden
-              className="size-2 shrink-0 rounded-sm"
-              style={{ backgroundColor: chartCategoryMark(index).color }}
-            />
-            <span className="truncate">{allocation.endpoint}</span>
-          </span>
-        ))}
-        {hidden.length > 0 && (
+              key={`${allocation.workspace}:${allocation.endpoint}`}
+              role="listitem"
+              className="flex min-w-0 items-center gap-1.5"
+              title={`${allocation.workspace} / ${allocation.endpoint}`}
+            >
+              <span
+                aria-hidden
+                className="size-2 shrink-0 rounded-sm"
+                style={{ backgroundColor: chartCategoryMark(index).color }}
+              />
+              <span className="truncate">{allocation.endpoint}</span>
+            </span>
+          ))}
+        {showLegend && hidden.length > 0 && (
           <span role="listitem" className="flex items-center gap-1.5">
             <span
               aria-hidden
@@ -765,15 +849,7 @@ function InventoryAllocationBar({
             {t("observations.moreAllocations", { count: hidden.length })}
           </span>
         )}
-        {activeActualUsedMiB != null && (
-          <span role="listitem" className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
-            />
-            {t("observations.actualVramUsage")}
-          </span>
-        )}
+        {actualLegend && <span role="listitem">{actualLegend}</span>}
       </div>
     </div>
   );
@@ -962,6 +1038,128 @@ function Utilization({
   );
 }
 
+function VramAllocationReading({
+  allocated,
+  total,
+  showLabel = true,
+  className,
+}: {
+  allocated: number | null;
+  total: number | null;
+  showLabel?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-testid="vram-allocation-reading"
+      className={cn(
+        "flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4",
+        className,
+      )}
+    >
+      {showLabel && (
+        <span className="min-w-0 text-muted-foreground">
+          {t("observations.vramAllocation")}
+        </span>
+      )}
+      <span
+        className={cn(
+          "shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground",
+          !showLabel && "ml-auto",
+        )}
+      >
+        {t("observations.allocated")} {gibValue(allocated)}
+        {" / "}
+        {gibValue(total)}
+        <span className="font-normal text-muted-foreground"> GiB</span>
+      </span>
+    </div>
+  );
+}
+
+function CompactComputeAllocation({
+  device,
+  showLabel = true,
+  className,
+}: {
+  device: ObservedGpu;
+  showLabel?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  const allocation = buildPoolUsage(
+    device.coreUnits,
+    device.availableCoreUnits,
+  );
+  if (allocation.used == null || allocation.total == null) return null;
+  const coreUnits = (value: number) =>
+    formatToDecimal(value, Number.isInteger(value) ? 0 : 1);
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2 text-[11px] leading-4",
+        className,
+      )}
+    >
+      {showLabel && (
+        <span className="shrink-0 text-muted-foreground">
+          {t("observations.computeShare")}
+        </span>
+      )}
+      <MetricBar
+        aria-label={t("observations.computeAllocation")}
+        className="min-w-10 flex-1"
+        series="cyan"
+        size="sm"
+        track="outlined"
+        value={allocation.percent}
+      />
+      <strong className="min-w-12 text-right whitespace-nowrap font-semibold tabular-nums">
+        {coreUnits(allocation.used)} / {coreUnits(allocation.total)}
+      </strong>
+    </div>
+  );
+}
+
+function CompactUtilization({
+  reading,
+  showLabel = true,
+  className,
+}: {
+  reading?: AcceleratorSample;
+  showLabel?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2 text-[11px] leading-4",
+        className,
+      )}
+    >
+      {showLabel && (
+        <span className="shrink-0 text-muted-foreground">
+          {t("observations.utilization")}
+        </span>
+      )}
+      <MetricBar
+        aria-label={t("observations.utilization")}
+        className="min-w-10 flex-1"
+        series="teal"
+        size="sm"
+        track={reading ? "outlined" : "unavailable"}
+        value={reading ? reading.value * 100 : null}
+      />
+      <strong className="min-w-8 text-right font-semibold tabular-nums">
+        {reading ? `${(reading.value * 100).toFixed(0)}%` : <EmptyValue />}
+      </strong>
+    </div>
+  );
+}
+
 type GpuDetailsSheetProps = Pick<
   Props,
   | "device"
@@ -1050,6 +1248,10 @@ export function GpuDetailsSheet({
   const physical = readings.total;
   const reserved = device.allocatedMiB;
   const actual = readings.actual;
+  const actualExceedsPhysical =
+    actual != null && physical != null && actual > physical;
+  const hasComputeAllocation =
+    buildPoolUsage(device.coreUnits, device.availableCoreUnits).used != null;
   const hasRuntimeMetric = Boolean(
     readings.utilization || readings.temperature || readings.power,
   );
@@ -1140,64 +1342,42 @@ export function GpuDetailsSheet({
               ) : hasRuntimeMetric ? (
                 <>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-muted-foreground">
-                        {t("observations.utilization")}
-                      </span>
-                      <span className="text-sm font-semibold tabular-nums">
-                        {readings.utilization ? (
-                          `${(readings.utilization.value * 100).toFixed(0)}%`
-                        ) : (
-                          <EmptyValue />
-                        )}
-                      </span>
-                    </div>
+                    <VramAllocationReading
+                      allocated={reserved}
+                      total={physical}
+                    />
                     <MetricBar
                       size="sm"
-                      series="teal"
-                      value={
-                        readings.utilization
-                          ? readings.utilization.value * 100
-                          : null
+                      series={actualExceedsPhysical ? "red" : "violet"}
+                      value={percentOf(actual, physical)}
+                      track={
+                        actual != null && physical != null
+                          ? "outlined"
+                          : "unavailable"
                       }
-                      track={readings.utilization ? "outlined" : "unavailable"}
-                      aria-label={t("observations.utilization")}
+                      aria-label={t("observations.actualMemory")}
                     />
                   </div>
-                  <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                    <div>
-                      <dt className="text-[11px] text-muted-foreground">
-                        {t("observations.vramActualOfTotal")}
-                      </dt>
-                      <dd className="tabular-nums">
-                        {gibValue(actual)}{" "}
-                        <span className="text-muted-foreground">
-                          / {gibValue(physical)} GiB
-                        </span>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[11px] text-muted-foreground">
-                        {t("observations.acceleratorCore")}
-                      </dt>
-                      <dd className="tabular-nums">
-                        {device.coreUnits != null
-                          ? device.coreUnits === 0
-                            ? t("observations.sharedNoLimit")
-                            : t("observations.coreAllocation", {
-                                count: device.coreUnits,
-                              })
-                          : "—"}
-                      </dd>
-                    </div>
+                  <div
+                    className={cn(
+                      "grid grid-cols-1 gap-x-4 gap-y-2",
+                      hasComputeAllocation && "sm:grid-cols-2",
+                    )}
+                  >
+                    <CompactComputeAllocation device={device} />
+                    <CompactUtilization reading={readings.utilization} />
+                  </div>
+                  <dl className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <dt className="text-[11px] text-muted-foreground">
                         {t("observations.deviceTemperature")}
                       </dt>
                       <dd className="tabular-nums">
-                        {readings.temperature
-                          ? `${readings.temperature.value.toFixed(0)} °C`
-                          : "—"}
+                        {readings.temperature ? (
+                          `${readings.temperature.value.toFixed(0)} °C`
+                        ) : (
+                          <EmptyValue />
+                        )}
                       </dd>
                     </div>
                     <div>
@@ -1205,9 +1385,11 @@ export function GpuDetailsSheet({
                         {t("observations.devicePower")}
                       </dt>
                       <dd className="tabular-nums">
-                        {readings.power
-                          ? `${readings.power.value.toFixed(0)} W`
-                          : "—"}
+                        {readings.power ? (
+                          `${readings.power.value.toFixed(0)} W`
+                        ) : (
+                          <EmptyValue />
+                        )}
                       </dd>
                     </div>
                   </dl>
@@ -1811,12 +1993,8 @@ export function GpuObservationCard({
       allocation.node === device.node && allocation.uuid === device.uuid,
   );
   const readings = deviceReadings(device, samples, replica, assigned);
-  const hasEndpointAllocation =
-    device.allocatedMiB == null || device.allocatedMiB > 0;
-  const actualExceedsPhysical =
-    readings.actual != null &&
-    readings.total != null &&
-    readings.actual > readings.total;
+  const hasComputeAllocation =
+    buildPoolUsage(device.coreUnits, device.availableCoreUnits).used != null;
   const sheet = sheetMounted && (
     <GpuDetailsSheet
       open={open}
@@ -1866,76 +2044,29 @@ export function GpuObservationCard({
           </div>
           <div className="mt-3 space-y-2.5">
             <div>
-              <div className="mb-1 flex items-center justify-between gap-3 text-[11px] leading-4">
-                <span className="text-muted-foreground">
-                  {t("observations.vramAllocation")}
-                </span>
-                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
-                  {t("observations.allocated")} {gibValue(device.allocatedMiB)}
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    / {gibValue(readings.total)} GiB
-                  </span>
-                </span>
-              </div>
+              <VramAllocationReading
+                allocated={device.allocatedMiB}
+                total={readings.total}
+                className="mb-1"
+              />
               <InventoryAllocationBar
                 device={device}
                 allocations={assigned}
                 samples={samples}
                 cardUsedMiB={readings.actual}
                 total={readings.total}
+                showActualLegend
               />
             </div>
-            {hasEndpointAllocation && (
-              <div className="grid grid-cols-1 gap-x-4 gap-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2 text-[11px] leading-4 sm:grid-cols-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 text-muted-foreground">
-                    {t("observations.actualMemory")}
-                  </span>
-                  <MetricBar
-                    aria-label={t("observations.actualMemory")}
-                    className="min-w-10 flex-1"
-                    series={actualExceedsPhysical ? "red" : "violet"}
-                    size="sm"
-                    track={
-                      readings.actual != null && readings.total != null
-                        ? "outlined"
-                        : "unavailable"
-                    }
-                    value={percentOf(readings.actual, readings.total)}
-                  />
-                  <strong className="min-w-12 text-right whitespace-nowrap font-semibold tabular-nums">
-                    {readings.actual != null
-                      ? gib(readings.actual)
-                      : t("observations.unavailable")}
-                  </strong>
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 text-muted-foreground">
-                    {t("observations.utilization")}
-                  </span>
-                  <MetricBar
-                    aria-label={t("observations.utilization")}
-                    className="min-w-10 flex-1"
-                    series="teal"
-                    size="sm"
-                    track={readings.utilization ? "outlined" : "unavailable"}
-                    value={
-                      readings.utilization
-                        ? readings.utilization.value * 100
-                        : null
-                    }
-                  />
-                  <strong className="min-w-8 text-right font-semibold tabular-nums">
-                    {readings.utilization ? (
-                      `${(readings.utilization.value * 100).toFixed(0)}%`
-                    ) : (
-                      <EmptyValue />
-                    )}
-                  </strong>
-                </div>
-              </div>
-            )}
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-x-4 gap-y-2 border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2",
+                hasComputeAllocation && "sm:grid-cols-2",
+              )}
+            >
+              <CompactComputeAllocation device={device} />
+              <CompactUtilization reading={readings.utilization} />
+            </div>
           </div>
         </article>
         {sheet}
@@ -1984,17 +2115,23 @@ export function GpuObservationCard({
                   total={readings.total}
                 />
               </div>
-              <span className="shrink-0 whitespace-nowrap text-xs tabular-nums">
-                <strong className="font-semibold text-foreground">
-                  {t("observations.allocated")} {gibValue(device.allocatedMiB)}
-                </strong>
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {gibValue(readings.total)} GiB
-                </span>
-              </span>
+              <VramAllocationReading
+                allocated={device.allocatedMiB}
+                total={readings.total}
+                showLabel={false}
+                className="shrink-0"
+              />
             </div>
-            <Utilization reading={readings.utilization} inline />
+            <ActualVramUsageLegend
+              usedMiB={readings.actual}
+              showLabel={false}
+              className="justify-end"
+            />
+            <CompactComputeAllocation device={device} showLabel={false} />
+            <CompactUtilization
+              reading={readings.utilization}
+              showLabel={false}
+            />
           </>
         ) : (
           <>

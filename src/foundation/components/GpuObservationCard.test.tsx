@@ -57,7 +57,42 @@ describe("GPU observation row", () => {
     screen.getByText("clusters.fields.gpuNumber");
     screen.getByText("clusters.fields.health");
     screen.getByText("observations.vramAllocation");
+    screen.getByText("observations.actualVramUsage");
+    screen.getByText("observations.computeShare");
     screen.getByText("observations.utilization");
+  });
+
+  it("keeps inventory table readings aligned with the cards", () => {
+    render(
+      card({
+        variant: "inventory",
+        device: {
+          ...device,
+          coreUnits: 100,
+          availableCoreUnits: 40,
+        },
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
+          sample("neutree_accelerator_utilization_ratio", 0.5),
+        ],
+      }),
+    );
+
+    const row = screen.getByTestId("gpu-inventory-row");
+    expect(row.textContent).toContain("15.0 / 16.0 GiB");
+    expect(row.textContent).toContain("60 / 100");
+    within(row).getByText("50%");
+    expect(
+      within(row).getByTestId("gpu-actual-usage-legend").textContent,
+    ).toContain("8.0 GiB");
+    expect(within(row).queryByText("observations.actualVramUsage")).toBeNull();
+    within(row).getByRole("progressbar", {
+      name: "observations.computeAllocation",
+    });
+    within(row).getByRole("progressbar", {
+      name: "observations.utilization",
+    });
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -208,6 +243,33 @@ describe("GPU observation row", () => {
     expect(tooltip.textContent).toMatch(/observations\.actualOfReserved:80/);
   });
 
+  it("shows when actual usage exceeds the Endpoint reservation", async () => {
+    render(
+      card({
+        variant: "inventory",
+        samples: [
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            16 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: /^instance, 15\.0 GiB/,
+      }),
+    );
+
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    expect(tooltip.textContent).toContain("16.0 GiB");
+    expect(tooltip.textContent).toMatch(
+      /observations\.usedAndExceedsReserved:107,1\.0 GiB/,
+    );
+  });
+
   it("omits composition rows that have no data from the tooltip", async () => {
     render(
       card({
@@ -329,9 +391,7 @@ describe("GPU observation row", () => {
     expect(
       within(cardElement).queryByText("observations.actualMemory"),
     ).toBeNull();
-    expect(
-      within(cardElement).queryByText("observations.utilization"),
-    ).toBeNull();
+    within(cardElement).getByText("observations.utilization");
     expect(
       within(cardElement).queryByText("observations.endpoints"),
     ).toBeNull();
@@ -357,11 +417,12 @@ describe("GPU observation row", () => {
     );
   });
 
-  it("aligns actual VRAM and GPU utilization in the cluster card", () => {
+  it("shows VRAM allocation, usage, compute and GPU utilization", () => {
     render(
       card({
         variant: "inventory",
         display: "cards",
+        device: { ...device, coreUnits: 100, availableCoreUnits: 40 },
         samples: [
           sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
           sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
@@ -371,18 +432,19 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.actualMemory");
-    within(cardElement).getByText("8.0 GiB");
+    within(cardElement).getByText("observations.vramAllocation");
+    expect(cardElement.textContent).toContain("15.0 / 16.0 GiB");
     within(cardElement).getByText("50%");
+    expect(
+      within(cardElement).getByTestId("gpu-actual-usage-legend").textContent,
+    ).toContain("8.0 GiB");
+    expect(cardElement.textContent).toContain("60 / 100");
     within(cardElement).getByRole("progressbar", {
-      name: "observations.actualMemory",
+      name: "observations.computeAllocation",
     });
     within(cardElement).getByRole("progressbar", {
       name: "observations.utilization",
     });
-    expect(cardElement.textContent).toContain(
-      "observations.allocated 15.0 / 16.0 GiB",
-    );
   });
 
   it("keeps allocation visible when the GPU is unhealthy", () => {
@@ -403,7 +465,7 @@ describe("GPU observation row", () => {
     within(cardElement).getByText("observations.vramAllocation");
   });
 
-  it("shows Actual VRAM as unavailable without hiding allocation", () => {
+  it("keeps usage unknown without hiding allocation", () => {
     render(
       card({
         variant: "inventory",
@@ -413,8 +475,11 @@ describe("GPU observation row", () => {
     );
 
     const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.actualMemory");
-    within(cardElement).getByText("observations.unavailable");
+    within(cardElement).getByText("observations.vramAllocation");
+    expect(cardElement.textContent).toContain("15.0 / 15.0 GiB");
+    expect(
+      within(cardElement).queryByTestId("gpu-card-actual-marker"),
+    ).toBeNull();
     within(cardElement).getByRole("button", { name: /^instance,/ });
   });
 
@@ -455,9 +520,13 @@ describe("GPU observation row", () => {
     render(
       card({
         allocations: [usageOnly],
-        device: { ...device, totalMiB: 48 * 1024 },
+        device: {
+          ...device,
+          totalMiB: 48 * 1024,
+          allocatedMiB: 24 * 1024,
+        },
         samples: [
-          sample("neutree_accelerator_memory_total_bytes", 48 * 1024 ** 2),
+          sample("neutree_accelerator_memory_total_bytes", 48 * 1024 ** 3),
           sample("neutree_accelerator_memory_used_bytes", 0),
           sample("neutree_accelerator_utilization_ratio", 0),
           sample(
@@ -478,9 +547,11 @@ describe("GPU observation row", () => {
     );
     expect(dialog.textContent).not.toContain("observations.usedShare:129");
     expect(
-      within(dialog).getByText("observations.vramActualOfTotal").parentElement
-        ?.textContent,
-    ).toContain("31.0");
+      within(dialog).getByTestId("vram-allocation-reading").textContent,
+    ).toContain("24.0 / 48.0 GiB");
+    expect(
+      within(dialog).getByTestId("gpu-actual-usage-legend").textContent,
+    ).toContain("31.0 GiB");
     expect(dialog.textContent).not.toContain("observations.modelWeights");
     expect(dialog.textContent).not.toContain("observations.l0KvCache");
     expect(dialog.textContent).not.toContain("observations.otherReservation");
@@ -511,7 +582,7 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
     within(dialog).getByText("observations.staleSample");
-    within(dialog).getByText("observations.vramAllocation");
+    within(dialog).getByTestId("vram-allocation-reading");
   });
 
   it("keeps allocation when runtime observations are unavailable", () => {
@@ -525,7 +596,7 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
     within(dialog).getByText("observations.status.unavailable");
-    within(dialog).getByText("observations.vramAllocation");
+    within(dialog).getAllByText("observations.vramAllocation");
   });
 
   it("shows an idle card as real zeros, not as a missing measurement", () => {
@@ -544,11 +615,39 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
 
-    within(dialog).getByText("observations.vramActualOfTotal");
+    expect(
+      within(dialog).getByTestId("vram-allocation-reading").textContent,
+    ).toContain("0.0 / 15.0 GiB");
+    expect(
+      within(dialog).getByTestId("gpu-actual-usage-legend").textContent,
+    ).toContain("0.0 GiB");
     expect(dialog.textContent).toContain("0.0");
     expect(dialog.textContent).toContain("15.0 GiB");
     expect(dialog.textContent).toContain("0%");
     expect(dialog.textContent).not.toContain("observations.status.no_data");
+  });
+
+  it("shows compute, utilization, temperature and power in GPU details", () => {
+    render(
+      card({
+        device: { ...device, coreUnits: 100, availableCoreUnits: 40 },
+        samples: [
+          sample("neutree_accelerator_utilization_ratio", 0.75),
+          sample("neutree_accelerator_temperature_celsius", 54),
+          sample("neutree_accelerator_power_usage_watts", 63),
+        ],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("60 / 100");
+    within(dialog).getByText("75%");
+    within(dialog).getByText("54 °C");
+    within(dialog).getByText("63 W");
+    within(dialog).getByRole("progressbar", {
+      name: "observations.computeAllocation",
+    });
   });
 
   it("keeps the nine hardware fields stable and leaves missing ones empty", () => {

@@ -47,6 +47,8 @@ export type ObservedGpu = {
   totalMiB: number | null;
   allocatedMiB: number | null;
   coreUnits?: number | null;
+  /** Core units still available on the device's resource pool. */
+  availableCoreUnits?: number | null;
   healthy?: boolean;
   peakFP16TFLOPS?: number | null;
 };
@@ -491,7 +493,11 @@ export function allocationComposition(
 // marker rather than being dropped or passed off as live.
 const STALE_AFTER_SECONDS = 2 * 60 * 60;
 
-/** Age of the newest of `samples`, or null when none was observed. */
+/**
+ * Age of the newest of `samples`, or null when none was observed.
+ * `observed_at` can carry fractional seconds; floor the elapsed time so display
+ * formatting never receives the backend's precision.
+ */
 export function sampleAge(
   nowMs: number,
   samples: Array<AcceleratorSample | undefined>,
@@ -501,7 +507,7 @@ export function sampleAge(
     0,
   );
   if (latest <= 0) return null;
-  const seconds = Math.max(0, Math.floor(nowMs / 1000) - latest);
+  const seconds = Math.max(0, Math.floor(nowMs / 1000 - latest));
   return { seconds, stale: seconds > STALE_AFTER_SECONDS };
 }
 

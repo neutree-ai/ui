@@ -18,6 +18,7 @@ describe("observedGpuFromDevice", () => {
       totalMiB: 15360,
       allocatedMiB: 7680,
       coreUnits: 100,
+      availableCoreUnits: 50,
       healthy: true,
     });
   });

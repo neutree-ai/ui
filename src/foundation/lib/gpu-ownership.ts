@@ -10,7 +10,7 @@ export const OWNER_WEIGHTS_TONE = 72;
 export const OWNER_SECONDARY_TONE = 24;
 
 export const ownerTone = (color: string, amount: number) =>
-  `color-mix(in srgb, ${color} ${amount}%, var(--nt-fill-neutral-white))`;
+  `color-mix(in srgb, ${color} ${amount}%, var(--nt-text-neutral-ontint))`;
 
 export const l0Pattern = (color: string) =>
   `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`;

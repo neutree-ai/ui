@@ -148,7 +148,7 @@ const DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION = 1;
 type AcceleratorGroups = NonNullable<ResourceInfo["accelerator_groups"]>;
 type AcceleratorGroupResource = AcceleratorGroups[string];
 
-const buildPoolUsage = (
+export const buildPoolUsage = (
   total: number | null | undefined,
   available: number | null | undefined,
 ): DevicePoolUsage => {

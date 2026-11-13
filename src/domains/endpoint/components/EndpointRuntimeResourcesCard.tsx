@@ -16,6 +16,7 @@ import {
   getEndpointReplicaResourceGroups,
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
+import { otherGpuReservation } from "@/domains/endpoint/lib/shared-gpu";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
@@ -29,11 +30,8 @@ import {
   type AcceleratorSample,
   allocationComposition,
   allocationFallbackReadings,
-  formatL1CacheUsage,
   type GpuAllocation,
-  type NodeL1CacheUsage,
   reading,
-  sampleAge,
 } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import {
@@ -66,7 +64,6 @@ type Props = {
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
-  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   samples?: AcceleratorSample[];
   deviceSamples?: AcceleratorSample[];
   observationStatus?: string;
@@ -91,8 +88,6 @@ type NodeGroup = {
 
 const OTHER_ENDPOINT_BACKGROUND =
   "color-mix(in srgb, var(--nt-chart-more) 36%, var(--nt-fill-neutral-white))";
-const ownerSoftTone = (color: string) =>
-  `color-mix(in srgb, ${color} ${OWNER_SECONDARY_TONE}%, var(--nt-text-neutral-ontint))`;
 const gibValue = (mib: number | null | undefined): ReactNode =>
   formatMiBAsGiBValue(mib) ?? <EmptyValue />;
 
@@ -140,14 +135,6 @@ const nodeGroups = (devices: EndpointGpuResourceGroup[]): NodeGroup[] => {
     }
   }
   return Array.from(groups.values());
-};
-
-const latestSampleAge = (samples: AcceleratorSample[]): string | null => {
-  const seconds = sampleAge(Date.now(), samples)?.seconds;
-  if (seconds == null) return null;
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  return `${Math.floor(seconds / 3600)}h`;
 };
 
 function formatObservedUtilization(
@@ -283,7 +270,7 @@ function ReplicaSegmentComposition({
         className="h-full"
         data-testid="replica-composition-other"
         style={{
-          backgroundColor: ownerSoftTone(mark.color),
+          backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
           width: `${(other / allocation.memoryMiB) * 100}%`,
         }}
       />
@@ -365,7 +352,7 @@ function AllocationTooltip({
           <TooltipLegendItem
             label={t("observations.otherReservation")}
             style={{
-              backgroundColor: ownerSoftTone(mark.color),
+              backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
             }}
             value={formatMemoryGiB(other)}
           />
@@ -525,7 +512,7 @@ function EndpointOwnershipMark({
               className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-other"
               style={{
-                backgroundColor: ownerSoftTone(mark.color),
+                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
               }}
             />
           )}
@@ -547,7 +534,7 @@ function EndpointOwnershipMark({
               className="h-full min-w-0 flex-1"
               data-testid="ownership-endpoint-unused"
               style={{
-                backgroundColor: ownerSoftTone(mark.color),
+                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
               }}
             />
           )}
@@ -714,7 +701,7 @@ function AllocationBar({
               aria-hidden="true"
               className="absolute inset-0"
               style={{
-                backgroundColor: ownerSoftTone(mark.color),
+                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
               }}
             />
             {actualMiB != null && (
@@ -809,6 +796,21 @@ function AllocationBar({
     );
   }
 
+  const forceReplicaDetails = visible.length === 1 && hidden.length === 0;
+  const soleReplica = forceReplicaDetails ? visible[0] : null;
+  const soleReplicaActual = soleReplica
+    ? reading(
+        samples,
+        "neutree_endpoint_replica_accelerator_memory_used_bytes",
+        soleReplica.nodeId,
+        soleReplica.uuid,
+        toAllocation(soleReplica, identity),
+      )
+    : undefined;
+  const soleReplicaActualMiB = soleReplicaActual
+    ? soleReplicaActual.value / 1024 ** 2
+    : null;
+
   return (
     <div className="relative">
       <div
@@ -881,7 +883,12 @@ function AllocationBar({
                   }}
                 >
                   <span
-                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover/slice:opacity-100 group-focus-visible/slice:opacity-100 group-data-[state=delayed-open]/slice:opacity-100 group-data-[state=instant-open]/slice:opacity-100"
+                    className={cn(
+                      "pointer-events-none absolute inset-0 transition-opacity",
+                      forceReplicaDetails
+                        ? "opacity-100"
+                        : "opacity-0 group-hover/slice:opacity-100 group-focus-visible/slice:opacity-100 group-data-[state=delayed-open]/slice:opacity-100 group-data-[state=instant-open]/slice:opacity-100",
+                    )}
                     data-testid="replica-detail-layer"
                   >
                     {hasComposition ? (
@@ -895,7 +902,10 @@ function AllocationBar({
                           aria-hidden="true"
                           className="absolute inset-0"
                           style={{
-                            backgroundColor: ownerSoftTone(mark.color),
+                            backgroundColor: ownerTone(
+                              mark.color,
+                              OWNER_SECONDARY_TONE,
+                            ),
                           }}
                         />
                         {actualMiB != null && (
@@ -925,9 +935,11 @@ function AllocationBar({
                       />
                     )}
                   </span>
-                  <span className="relative z-10 truncate px-1">
-                    {replicaCode(allocation.replicaIndex)}
-                  </span>
+                  {!forceReplicaDetails && (
+                    <span className="relative z-10 truncate px-1">
+                      {replicaCode(allocation.replicaIndex)}
+                    </span>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent
@@ -1004,14 +1016,21 @@ function AllocationBar({
         )}
       </div>
       <AllocationOwnershipLegend
-        actualMiB={null}
+        actualMiB={soleReplicaActualMiB}
         allocations={device.allocations}
         endpointMiB={endpointReservedMiB}
         mark={chartCategoryMark(0)}
         otherMiB={otherReservedMiB}
-        showEndpointComposition={false}
+        showEndpointComposition={forceReplicaDetails}
         unallocatedMiB={unallocatedMiB}
       />
+      {soleReplica && (
+        <AllocationCompositionLegend
+          allocation={soleReplica}
+          actualMiB={soleReplicaActualMiB}
+          mark={chartCategoryMark(soleReplica.replicaIndex)}
+        />
+      )}
     </div>
   );
 }
@@ -1061,7 +1080,7 @@ function AllocationCompositionLegend({
               aria-hidden="true"
               className="size-2 shrink-0 rounded-sm"
               style={{
-                backgroundColor: ownerSoftTone(mark.color),
+                backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
               }}
             />
             <span>{t("observations.allocatedUnused")}</span>
@@ -1128,7 +1147,7 @@ function AllocationCompositionLegend({
             aria-hidden="true"
             className="size-2 shrink-0 rounded-sm"
             style={{
-              backgroundColor: ownerSoftTone(mark.color),
+              backgroundColor: ownerTone(mark.color, OWNER_SECONDARY_TONE),
             }}
           />
           <span>{t("observations.otherReservation")}</span>
@@ -1241,8 +1260,15 @@ function GpuResourceCard({
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
   );
+  const otherReservation = otherGpuReservation(
+    physicalMiB,
+    reservedMiB,
+    otherReservedMiB,
+  );
   const cardAllocations =
-    allocations.length > 0 ? allocations : endpointAllocations;
+    otherReservation.inconsistent || allocations.length === 0
+      ? endpointAllocations
+      : allocations;
   const allocatedMiB = cardAllocations.reduce(
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
@@ -1332,6 +1358,15 @@ function GpuResourceCard({
         </div>
       </div>
 
+      {otherReservation.inconsistent && (
+        <p
+          role="status"
+          className="mt-2 text-[11px] text-[var(--nt-text-colorful-serious)]"
+        >
+          {t("observations.allocationInconsistent")}
+        </p>
+      )}
+
       <div className="mt-3">
         <div className="flex items-baseline justify-between gap-3 text-[11px] leading-4">
           <span className="text-muted-foreground">
@@ -1351,7 +1386,7 @@ function GpuResourceCard({
             identity={identity}
             onHoverReplica={onHoverReplica}
             onSelectReplica={onSelectReplica}
-            otherReservedMiB={otherReservedMiB}
+            otherReservedMiB={otherReservation.reservedMiB}
             samples={samples}
             selectedReplicaKey={selectedReplicaKey}
           />
@@ -1501,7 +1536,6 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
-  l1CacheByNode,
   samples = [],
   deviceSamples = [],
   observationStatus = "",
@@ -1549,7 +1583,6 @@ export default function EndpointRuntimeResourcesCard({
   const showReplicaIndex = replicaGroups.some(
     (group) => group.deviceCount > 1 || group.nodeCount > 1,
   );
-  const observedAge = latestSampleAge(samples);
 
   if (summaryRows.length === 0 && replicaGroups.length === 0) return null;
 
@@ -1560,16 +1593,7 @@ export default function EndpointRuntimeResourcesCard({
         contentClassName="p-0"
         data-testid="runtime-resources-card"
         title={t("endpoints.sections.runtimeAllocation")}
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            {observationStatus === "ok" && observedAge && (
-              <span className="text-[11px] text-muted-foreground">
-                {t("observations.updatedAgo", { age: observedAge })}
-              </span>
-            )}
-            <EndpointRuntimeResourcesSummary resources={resources} />
-          </div>
-        }
+        actions={<EndpointRuntimeResourcesSummary resources={resources} />}
       >
         <ObservationStatus status={observationStatus} />
         {replicaGroups.length === 0 ? (
@@ -1654,12 +1678,6 @@ export default function EndpointRuntimeResourcesCard({
                       {t("common.fields.cpu")} {requestedCpu} ·{" "}
                       {t("common.fields.memory")} {requestedMemory} GiB
                     </span>
-                    {l1CacheByNode?.[node.nodeId] && (
-                      <span>
-                        {t("observations.l1KvCache")}{" "}
-                        {formatL1CacheUsage(l1CacheByNode[node.nodeId])}
-                      </span>
-                    )}
                   </div>
                   <div
                     className="grid gap-2"

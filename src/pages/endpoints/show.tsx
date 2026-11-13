@@ -49,10 +49,7 @@ import { ShowPage } from "@/foundation/components/ShowPage";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import {
-  gpuAllocations as collectGpuAllocations,
-  nodeL1CacheByNode,
-} from "@/foundation/lib/accelerator-observations";
+import { gpuAllocations as collectGpuAllocations } from "@/foundation/lib/accelerator-observations";
 import {
   parseTflops,
   TFLOPS_ANNOTATION,
@@ -412,12 +409,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {cacheConfigured && (
-              <EndpointKVCacheSummary
-                endpoint={record}
-                cluster={clusterData?.data?.[0]}
-              />
-            )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
@@ -442,16 +433,17 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                     TFLOPS_ANNOTATION
                   ],
                 )}
-                l1CacheByNode={
-                  record.spec.kv_cache?.provider === "zcache"
-                    ? nodeL1CacheByNode(cacheStatus?.nodes, gpuSamples)
-                    : undefined
-                }
                 resources={record.status?.resources}
                 requestedResources={record.spec.resources}
                 clusterResourceInfo={
                   clusterData?.data?.[0]?.status?.resource_info
                 }
+              />
+            )}
+            {cacheConfigured && (
+              <EndpointKVCacheSummary
+                endpoint={record}
+                cluster={clusterData?.data?.[0]}
               />
             )}
             <EndpointAdvancedParameters

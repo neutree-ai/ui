@@ -270,6 +270,7 @@ it.each([
 it.each([
   { ages: [], expected: null },
   { ages: [30, 90], expected: { seconds: 30, stale: false } },
+  { ages: [32.265], expected: { seconds: 32, stale: false } },
   { ages: [2 * 3600 + 1], expected: { seconds: 2 * 3600 + 1, stale: true } },
 ])("sampleAge of samples aged $ages -> $expected", ({ ages, expected }) => {
   const now = 10_000_000;
