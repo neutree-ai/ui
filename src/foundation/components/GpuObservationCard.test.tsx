@@ -245,6 +245,33 @@ describe("GPU observation row", () => {
     expect(tooltip.textContent).toMatch(/observations\.actualOfReserved:80/);
   });
 
+  it("shows when actual usage exceeds the Endpoint reservation", async () => {
+    render(
+      card({
+        variant: "inventory",
+        samples: [
+          sample(
+            "neutree_endpoint_replica_accelerator_memory_used_bytes",
+            16 * 1024 ** 3,
+            { endpoint: "instance", replica: "pod" },
+          ),
+        ],
+      }),
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", {
+        name: /^instance, 15\.0 GiB/,
+      }),
+    );
+
+    const tooltip = await screen.findByTestId("endpoint-allocation-preview");
+    expect(tooltip.textContent).toContain("16.0 GiB");
+    expect(tooltip.textContent).toMatch(
+      /observations\.usedAndExceedsReserved:107,1\.0 GiB/,
+    );
+  });
+
   it("omits composition rows that have no data from the tooltip", async () => {
     render(
       card({
@@ -619,7 +646,7 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).not.toContain("observations.status.no_data");
   });
 
-  it("keeps compute and utilization together in GPU details", () => {
+  it("keeps compute, utilization, temperature, and power in GPU details", () => {
     render(
       card({
         device: {
@@ -631,6 +658,8 @@ describe("GPU observation row", () => {
           sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
           sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
           sample("neutree_accelerator_utilization_ratio", 0.75),
+          sample("neutree_accelerator_temperature_celsius", 54),
+          sample("neutree_accelerator_power_usage_watts", 63),
         ],
       }),
     );
@@ -641,6 +670,8 @@ describe("GPU observation row", () => {
     within(dialog).getByText("observations.utilization");
     expect(dialog.textContent).toContain("60 / 100");
     within(dialog).getByText("75%");
+    within(dialog).getByText("54 °C");
+    within(dialog).getByText("63 W");
     within(dialog).getByTestId("gpu-card-actual-marker");
     within(dialog).getByText("observations.actualVramUsage");
     within(dialog).getByRole("progressbar", {
