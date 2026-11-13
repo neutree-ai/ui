@@ -35,6 +35,7 @@ import {
   type AcceleratorSample,
   allocationComposition,
   allocationKey,
+  coreAllocation,
   deviceHardwareInfo,
   deviceReadings,
   type EndpointGpuAllocation,
@@ -62,7 +63,11 @@ import {
   ownerTone,
 } from "@/foundation/lib/gpu-ownership";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatMiBAsGiB, formatMiBAsGiBValue } from "@/foundation/lib/unit";
+import {
+  formatMiBAsGiB,
+  formatMiBAsGiBValue,
+  formatToDecimal,
+} from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
 
 type GpuObservationVariant = "inventory" | "allocation";
@@ -84,7 +89,7 @@ type Props = {
 };
 
 const INVENTORY_GRID =
-  "grid min-w-[784px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(190px,1.3fr)] items-center gap-3 px-4";
+  "grid min-w-[940px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
 const ALLOCATION_GRID =
   "grid min-w-[644px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px] items-center gap-3 px-4";
 const GPU_BAR_TRACK_CLASS =
@@ -108,6 +113,7 @@ export function GpuObservationTableHeader({
           t("clusters.fields.health"),
           t("observations.vramAllocation"),
           t("observations.utilization"),
+          t("observations.computeShare"),
         ]
       : [
           t("observations.deviceAndHealth"),
@@ -958,6 +964,58 @@ function Utilization({
         aria-label={t("observations.utilization")}
         className={inline ? "min-w-16 flex-1" : undefined}
       />
+    </div>
+  );
+}
+
+function ComputeAllocation({
+  device,
+  inline = false,
+}: {
+  device: ObservedGpu;
+  inline?: boolean;
+}) {
+  const { t } = useTranslation();
+  const allocation = coreAllocation(
+    device.coreUnits,
+    device.availableCoreUnits,
+  );
+  if (!allocation) return null;
+  const coreUnits = (value: number) =>
+    formatToDecimal(value, Number.isInteger(value) ? 0 : 1);
+
+  return (
+    <div
+      className={cn(
+        "min-w-0",
+        inline
+          ? "space-y-1"
+          : "border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2",
+      )}
+    >
+      <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4">
+        <span className="shrink-0 text-muted-foreground">
+          {t("observations.computeShare")}
+        </span>
+        <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
+          {coreUnits(allocation.allocated)} / {coreUnits(allocation.total)}
+          <span className="ml-1 font-normal text-muted-foreground">
+            {Math.round(allocation.percent)}%
+          </span>
+        </span>
+      </div>
+      <MetricBar
+        aria-label={t("observations.computeAllocation")}
+        className="mt-1"
+        series="cyan"
+        size="sm"
+        track="outlined"
+        value={allocation.percent}
+      />
+      <div className="mt-1 text-right text-[11px] text-muted-foreground">
+        {t("clusters.fields.remaining")}{" "}
+        <span className="tabular-nums">{coreUnits(allocation.available)}</span>
+      </div>
     </div>
   );
 }
@@ -1936,6 +1994,7 @@ export function GpuObservationCard({
                 </div>
               </div>
             )}
+            <ComputeAllocation device={device} />
           </div>
         </article>
         {sheet}
@@ -1995,6 +2054,7 @@ export function GpuObservationCard({
               </span>
             </div>
             <Utilization reading={readings.utilization} inline />
+            <ComputeAllocation device={device} inline />
           </>
         ) : (
           <>

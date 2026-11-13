@@ -47,6 +47,8 @@ export type ObservedGpu = {
   totalMiB: number | null;
   allocatedMiB: number | null;
   coreUnits?: number | null;
+  /** Core units still available on the device's resource pool. */
+  availableCoreUnits?: number | null;
   healthy?: boolean;
   peakFP16TFLOPS?: number | null;
 };
@@ -441,6 +443,32 @@ export const percentOf = (
   value == null || !total
     ? 0
     : Math.max(0, Math.min(100, (value / total) * 100));
+
+/** Allocated, total and remaining accelerator-core capacity for one device. */
+export function coreAllocation(
+  total: number | null | undefined,
+  available: number | null | undefined,
+) {
+  if (
+    typeof total !== "number" ||
+    !Number.isFinite(total) ||
+    typeof available !== "number" ||
+    !Number.isFinite(available)
+  ) {
+    return null;
+  }
+
+  const normalizedTotal = Math.max(0, total);
+  const normalizedAvailable = Math.min(normalizedTotal, Math.max(0, available));
+  const allocated = normalizedTotal - normalizedAvailable;
+
+  return {
+    allocated,
+    total: normalizedTotal,
+    available: normalizedAvailable,
+    percent: normalizedTotal > 0 ? (allocated / normalizedTotal) * 100 : 0,
+  };
+}
 
 type Reservation = {
   memoryMiB: number;

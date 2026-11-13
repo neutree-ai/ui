@@ -24,6 +24,7 @@ export function observedGpuFromDevice(
         ? Math.max(0, total - available)
         : null,
     coreUnits: device.allocatable?.core_units,
+    availableCoreUnits: device.available?.core_units,
     healthy: device.health,
   };
 }

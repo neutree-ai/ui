@@ -3,6 +3,7 @@ import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
   allocationComposition,
   allocationFallbackReadings,
+  coreAllocation,
   deviceReadings,
   endpointAllocationUsedMiB,
   type GpuAllocation,
@@ -45,6 +46,36 @@ const sample = (value = 0, labels: Record<string, string> = {}, age = 0) =>
     Date.now() / 1000 - age,
   );
 describe("accelerator readings", () => {
+  it.each([
+    {
+      name: "partially allocated",
+      total: 100,
+      available: 40,
+      expected: { allocated: 60, total: 100, available: 40, percent: 60 },
+    },
+    {
+      name: "fully allocated",
+      total: 100,
+      available: 0,
+      expected: { allocated: 100, total: 100, available: 0, percent: 100 },
+    },
+    {
+      name: "clamps inconsistent availability",
+      total: 100,
+      available: 120,
+      expected: { allocated: 0, total: 100, available: 100, percent: 0 },
+    },
+  ])("$name core allocation", ({ total, available, expected }) => {
+    expect(coreAllocation(total, available)).toEqual(expected);
+  });
+
+  it.each([
+    { total: null, available: 50 },
+    { total: 100, available: undefined },
+  ])("keeps an incomplete core allocation unknown", ({ total, available }) => {
+    expect(coreAllocation(total, available)).toBeNull();
+  });
+
   it("does not conflate nodes, replicas, endpoints or vGPU slices", () => {
     for (const labels of [
       { node: "other" },

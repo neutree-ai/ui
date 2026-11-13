@@ -58,6 +58,7 @@ describe("GPU observation row", () => {
     screen.getByText("clusters.fields.health");
     screen.getByText("observations.vramAllocation");
     screen.getByText("observations.utilization");
+    screen.getByText("observations.computeShare");
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -383,6 +384,29 @@ describe("GPU observation row", () => {
     expect(cardElement.textContent).toContain(
       "observations.allocated 15.0 / 16.0 GiB",
     );
+  });
+
+  it("shows allocated and remaining GPU compute in the cluster card", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        device: {
+          ...device,
+          coreUnits: 100,
+          availableCoreUnits: 0,
+        },
+      }),
+    );
+
+    const cardElement = screen.getByTestId("gpu-inventory-card");
+    within(cardElement).getByText("observations.computeShare");
+    expect(cardElement.textContent).toContain("100 / 100");
+    expect(cardElement.textContent).toContain("100%");
+    expect(cardElement.textContent).toContain("clusters.fields.remaining 0");
+    within(cardElement).getByRole("progressbar", {
+      name: "observations.computeAllocation",
+    });
   });
 
   it("keeps allocation visible when the GPU is unhealthy", () => {
