@@ -409,12 +409,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             value="basic"
             className="mt-0 flex-1 space-y-3 overflow-auto pt-4"
           >
-            {cacheConfigured && (
-              <EndpointKVCacheSummary
-                endpoint={record}
-                cluster={clusterData?.data?.[0]}
-              />
-            )}
             <EndpointPerformanceCard
               workspace={record.metadata.workspace}
               name={record.metadata.name}
@@ -444,6 +438,12 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
                 clusterResourceInfo={
                   clusterData?.data?.[0]?.status?.resource_info
                 }
+              />
+            )}
+            {cacheConfigured && (
+              <EndpointKVCacheSummary
+                endpoint={record}
+                cluster={clusterData?.data?.[0]}
               />
             )}
             <EndpointAdvancedParameters
