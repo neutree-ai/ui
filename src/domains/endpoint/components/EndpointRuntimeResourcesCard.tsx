@@ -29,11 +29,8 @@ import {
   type AcceleratorSample,
   allocationComposition,
   allocationFallbackReadings,
-  formatL1CacheUsage,
   type GpuAllocation,
-  type NodeL1CacheUsage,
   reading,
-  sampleAge,
 } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import {
@@ -66,7 +63,6 @@ type Props = {
   requestedResources?: ResourceSpec | null;
   clusterResourceInfo?: ClusterResourceInfo | null;
   className?: string;
-  l1CacheByNode?: Record<string, NodeL1CacheUsage>;
   samples?: AcceleratorSample[];
   deviceSamples?: AcceleratorSample[];
   observationStatus?: string;
@@ -140,14 +136,6 @@ const nodeGroups = (devices: EndpointGpuResourceGroup[]): NodeGroup[] => {
     }
   }
   return Array.from(groups.values());
-};
-
-const latestSampleAge = (samples: AcceleratorSample[]): string | null => {
-  const seconds = sampleAge(Date.now(), samples)?.seconds;
-  if (seconds == null) return null;
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  return `${Math.floor(seconds / 3600)}h`;
 };
 
 function formatObservedUtilization(
@@ -1241,8 +1229,18 @@ function GpuResourceCard({
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
   );
+  const allocationDataInconsistent =
+    physicalMiB != null &&
+    physicalMiB > 0 &&
+    reservedMiB + otherReservedMiB > physicalMiB;
+  const trustedOtherReservedMiB = allocationDataInconsistent
+    ? 0
+    : otherReservedMiB;
+  const trustedAllocations = allocationDataInconsistent
+    ? endpointAllocations
+    : allocations;
   const cardAllocations =
-    allocations.length > 0 ? allocations : endpointAllocations;
+    trustedAllocations.length > 0 ? trustedAllocations : endpointAllocations;
   const allocatedMiB = cardAllocations.reduce(
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
@@ -1332,6 +1330,15 @@ function GpuResourceCard({
         </div>
       </div>
 
+      {allocationDataInconsistent && (
+        <p
+          role="status"
+          className="mt-2 text-[11px] text-[var(--nt-text-colorful-serious)]"
+        >
+          {t("observations.allocationInconsistent")}
+        </p>
+      )}
+
       <div className="mt-3">
         <div className="flex items-baseline justify-between gap-3 text-[11px] leading-4">
           <span className="text-muted-foreground">
@@ -1351,7 +1358,7 @@ function GpuResourceCard({
             identity={identity}
             onHoverReplica={onHoverReplica}
             onSelectReplica={onSelectReplica}
-            otherReservedMiB={otherReservedMiB}
+            otherReservedMiB={trustedOtherReservedMiB}
             samples={samples}
             selectedReplicaKey={selectedReplicaKey}
           />
@@ -1501,7 +1508,6 @@ export default function EndpointRuntimeResourcesCard({
   requestedResources,
   clusterResourceInfo,
   className,
-  l1CacheByNode,
   samples = [],
   deviceSamples = [],
   observationStatus = "",
@@ -1549,7 +1555,6 @@ export default function EndpointRuntimeResourcesCard({
   const showReplicaIndex = replicaGroups.some(
     (group) => group.deviceCount > 1 || group.nodeCount > 1,
   );
-  const observedAge = latestSampleAge(samples);
 
   if (summaryRows.length === 0 && replicaGroups.length === 0) return null;
 
@@ -1560,16 +1565,7 @@ export default function EndpointRuntimeResourcesCard({
         contentClassName="p-0"
         data-testid="runtime-resources-card"
         title={t("endpoints.sections.runtimeAllocation")}
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            {observationStatus === "ok" && observedAge && (
-              <span className="text-[11px] text-muted-foreground">
-                {t("observations.updatedAgo", { age: observedAge })}
-              </span>
-            )}
-            <EndpointRuntimeResourcesSummary resources={resources} />
-          </div>
-        }
+        actions={<EndpointRuntimeResourcesSummary resources={resources} />}
       >
         <ObservationStatus status={observationStatus} />
         {replicaGroups.length === 0 ? (
@@ -1654,12 +1650,6 @@ export default function EndpointRuntimeResourcesCard({
                       {t("common.fields.cpu")} {requestedCpu} ·{" "}
                       {t("common.fields.memory")} {requestedMemory} GiB
                     </span>
-                    {l1CacheByNode?.[node.nodeId] && (
-                      <span>
-                        {t("observations.l1KvCache")}{" "}
-                        {formatL1CacheUsage(l1CacheByNode[node.nodeId])}
-                      </span>
-                    )}
                   </div>
                   <div
                     className="grid gap-2"

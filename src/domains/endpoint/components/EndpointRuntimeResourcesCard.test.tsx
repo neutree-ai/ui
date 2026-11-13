@@ -330,6 +330,43 @@ describe("EndpointRuntimeResourcesCard", () => {
     within(dialog).getByText("observations.allocated 64.0 / 80.0 GiB");
   });
 
+  it("hides other Endpoint reservations that exceed physical GPU capacity", () => {
+    const currentDevice = makeDevice({
+      memory_mib: 45 * 1024,
+      allocatable: { memory_mib: 45 * 1024, core_units: 100 },
+    });
+    const otherAllocation = {
+      endpoint: "endpoint-beta",
+      workspace: "design-lab",
+      model: "endpoint-beta-model",
+      node: "gpu-node-01",
+      uuid: "GPU-t4-01",
+      replica: "endpoint-beta-0",
+      instance: "endpoint-beta",
+      memoryMiB: 22 * 1024,
+    };
+
+    render(
+      <EndpointRuntimeResourcesCard
+        endpointName="endpoint-abc"
+        workspace="design-lab"
+        gpuAllocations={[otherAllocation]}
+        resources={withReplicas(makeReplica({ devices: [currentDevice] }))}
+      />,
+    );
+
+    screen.getByText("observations.allocationInconsistent");
+    expect(screen.queryByTestId("other-endpoints-segment")).toBeNull();
+    expect(screen.queryByText("observations.otherEndpoints")).toBeNull();
+    screen.getByTestId("single-replica-composition");
+
+    fireEvent.pointerDown(screen.getByTestId("runtime-gpu-card"), {
+      button: 0,
+    });
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText("endpoint-beta")).toBeNull();
+  });
+
   it("keeps UUID and allocation actions from opening the card details", () => {
     render(
       <EndpointRuntimeResourcesCard

@@ -3644,6 +3644,7 @@
 		"noEndpointAllocation": "No Endpoint allocation",
 		"allocationByEndpoint": "GPU allocation by Endpoint",
 		"allocationUnknown": "Allocation unknown",
+		"allocationInconsistent": "Other Endpoint allocations exceed this GPU's capacity and are hidden until the data refreshes.",
 		"endpointAllocationUnavailable": "Endpoint allocation unavailable",
 		"reservedLower": "reserved",
 		"moreAllocations_one": "{{count}} more Endpoint",
