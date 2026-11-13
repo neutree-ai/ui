@@ -624,7 +624,7 @@
   "src/domains/cluster/lib/cache-endpoints.ts": "4db54310a18e2f8ecae88155f26b2586",
   "src/domains/endpoint/components/EndpointPerformanceTimeRange.tsx": "ea14e6fdc85b2fac0b5d5d88fecd190a",
   "src/domains/endpoint/components/EndpointPerformanceTrendChart.tsx": "f24a9b06d81f6b3d4209dcb6b18b7520",
-  "src/domains/endpoint/hooks/use-endpoint-performance-trends.ts": "6f90e1f82bbf6aa01e018f99daca0eac",
+  "src/domains/endpoint/hooks/use-endpoint-performance-trends.ts": "7b9f7a1f62ce2445d1e057e73896698c",
   "src/domains/endpoint/lib/performance-trends.ts": "c8161109deabccdf461f328271754266",
   "src/foundation/lib/gpu-ownership.ts": "e118bb4aaa8eb606c2729abe466c7a16",
   "src/pages/users/lib/user-department.ts": "cb15cead66e6d0e9d1d12e499afa6211",

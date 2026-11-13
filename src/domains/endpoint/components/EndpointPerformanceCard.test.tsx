@@ -170,13 +170,22 @@ describe("EndpointPerformanceCard", () => {
     );
   });
 
-  it("hides the last observed metrics while the endpoint is paused", () => {
+  it("shows historical trends without auto-refreshing while the endpoint is paused", () => {
     render(
       <EndpointPerformanceCard workspace="default" name="chat-ep" paused />,
     );
 
-    expect(screen.queryByText("505.8 tok/s")).toBeNull();
-    expect(screen.queryByText("46.0%")).toBeNull();
+    screen.getByText("505.8 tok/s");
+    screen.getByText("46.0%");
+    expect(useCustomMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/endpoints/default/chat-ep/performance-trends?window=5m",
+        queryOptions: expect.objectContaining({
+          enabled: true,
+          refetchInterval: false,
+        }),
+      }),
+    );
   });
 
   it("omits KV cache metrics when the endpoint cannot use the cache", () => {
