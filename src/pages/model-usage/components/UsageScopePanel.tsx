@@ -1,5 +1,7 @@
-import { Eye, Globe, Users } from "lucide-react";
+import { Eye, Globe, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { OrgUnitTree } from "@/domains/organization/components/OrgUnitTree";
 import {
@@ -11,6 +13,7 @@ import { isProjectTeam } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
 import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { InfoHint } from "@/foundation/components/InfoHint";
+import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -106,6 +109,9 @@ export const UsageScopePanel = ({
   teams,
   scope,
   canReadPlatform,
+  loading,
+  collapsed,
+  onToggleCollapsed,
   onScopeChange,
 }: {
   roots: OrgTreeNode[];
@@ -114,6 +120,9 @@ export const UsageScopePanel = ({
   teams: Team[];
   scope: UsageScope | null;
   canReadPlatform: boolean;
+  loading: boolean;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
   onScopeChange: (scope: UsageScope | null) => void;
 }) => {
   const { t } = useTranslation();
@@ -130,6 +139,38 @@ export const UsageScopePanel = ({
   const selectedTeam = group?.type === "team" ? group.name : undefined;
   // Inactive Teams stay listed: their past usage still counts.
   const teamList = filterTeams(teams, { showInactive: true });
+  const isEmpty = !loading && roots.length === 0 && teams.length === 0;
+  const canCreateTeam = useHasGlobalPermission("team:create").allowed === true;
+
+  const toggleLabel = collapsed
+    ? t("model_usage.scope.expand")
+    : t("model_usage.scope.collapse");
+  const toggle = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-7 shrink-0"
+      aria-label={toggleLabel}
+      aria-expanded={!collapsed}
+      title={toggleLabel}
+      onClick={onToggleCollapsed}
+    >
+      {collapsed ? (
+        <PanelLeftOpen className="size-4" />
+      ) : (
+        <PanelLeftClose className="size-4" />
+      )}
+    </Button>
+  );
+
+  if (collapsed) {
+    return (
+      <aside>
+        <Card className="flex justify-center p-1.5">{toggle}</Card>
+      </aside>
+    );
+  }
 
   return (
     <aside>
@@ -137,6 +178,7 @@ export const UsageScopePanel = ({
         <div className="mb-2 flex items-center gap-1 px-1 text-sm font-medium">
           {t("model_usage.scope.title")}
           <InfoHint label={t("model_usage.scope.hint")} />
+          <span className="ml-auto">{toggle}</span>
         </div>
         <div className="mb-0.5">
           {canReadPlatform ? (
@@ -158,6 +200,21 @@ export const UsageScopePanel = ({
             />
           )}
         </div>
+        {isEmpty && (
+          <div
+            className="mt-3 space-y-2 px-1 text-sm text-muted-foreground"
+            data-testid="usage-scope-empty"
+          >
+            <p>{t("model_usage.scope.empty")}</p>
+            {canCreateTeam && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/organization">
+                  {t("model_usage.scope.goToOrganization")}
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
         <OrgUnitTree
           roots={roots}
           expanded={openIds}

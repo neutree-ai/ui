@@ -3579,7 +3579,11 @@
 			"teams": "Teams",
 			"visible": "All usage you can see",
 			"applications": "Applications",
-			"scenarios": "Scenarios"
+			"scenarios": "Scenarios",
+			"empty": "No departments or teams yet. Create them to view usage by department or team.",
+			"goToOrganization": "Go to Organization",
+			"collapse": "Collapse scope",
+			"expand": "Expand scope"
 		},
 		"summary": {
 			"total": "Total tokens",
