@@ -16,6 +16,7 @@ import {
   getEndpointReplicaResourceGroups,
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
+import { otherGpuReservation } from "@/domains/endpoint/lib/shared-gpu";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
@@ -1259,18 +1260,15 @@ function GpuResourceCard({
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
   );
-  const allocationDataInconsistent =
-    physicalMiB != null &&
-    physicalMiB > 0 &&
-    reservedMiB + otherReservedMiB > physicalMiB;
-  const trustedOtherReservedMiB = allocationDataInconsistent
-    ? 0
-    : otherReservedMiB;
-  const trustedAllocations = allocationDataInconsistent
-    ? endpointAllocations
-    : allocations;
+  const otherReservation = otherGpuReservation(
+    physicalMiB,
+    reservedMiB,
+    otherReservedMiB,
+  );
   const cardAllocations =
-    trustedAllocations.length > 0 ? trustedAllocations : endpointAllocations;
+    otherReservation.inconsistent || allocations.length === 0
+      ? endpointAllocations
+      : allocations;
   const allocatedMiB = cardAllocations.reduce(
     (sum, allocation) => sum + allocation.memoryMiB,
     0,
@@ -1360,7 +1358,7 @@ function GpuResourceCard({
         </div>
       </div>
 
-      {allocationDataInconsistent && (
+      {otherReservation.inconsistent && (
         <p
           role="status"
           className="mt-2 text-[11px] text-[var(--nt-text-colorful-serious)]"
@@ -1388,7 +1386,7 @@ function GpuResourceCard({
             identity={identity}
             onHoverReplica={onHoverReplica}
             onSelectReplica={onSelectReplica}
-            otherReservedMiB={trustedOtherReservedMiB}
+            otherReservedMiB={otherReservation.reservedMiB}
             samples={samples}
             selectedReplicaKey={selectedReplicaKey}
           />

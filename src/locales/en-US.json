@@ -3695,8 +3695,6 @@
 		"ageSeconds": "{{count}}s",
 		"ageMinutes": "{{count}}m",
 		"ageHours": "{{count}}h",
-		"vramActualOfTotal": "VRAM actual / total",
-		"acceleratorCore": "Accelerator core",
 		"fp16Estimate": "FP16 estimate",
 		"tflopsPeak": "TFLOPS peak",
 		"endpointCount_one": "{{count}} Endpoint",

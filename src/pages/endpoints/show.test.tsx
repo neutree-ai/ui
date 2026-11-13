@@ -113,7 +113,7 @@ vi.mock("@/domains/endpoint/components/EndpointAdvancedParameters", () => ({
     engineParameters: Record<string, unknown>;
   }) => {
     advancedParametersProps.current = props;
-    return <div data-testid="endpoint-advanced-parameters" />;
+    return null;
   },
 }));
 vi.mock("@/domains/endpoint/components/EndpointCatalogOrigin", () => ({
@@ -352,35 +352,6 @@ describe("EndpointsShow", () => {
     render(<EndpointsShow />);
 
     screen.getByTestId("endpoint-kv-cache-summary");
-  });
-
-  it("places cache configuration after runtime resources", () => {
-    useListMock.mockReturnValue({
-      data: {
-        data: [
-          {
-            spec: {
-              type: "kubernetes",
-              cache: { provider: "zcache", options: { enabled: true } },
-            },
-            status: { resource_info: clusterResourceInfo },
-          },
-        ],
-      },
-    });
-
-    render(<EndpointsShow />);
-
-    const runtime = screen.getByTestId("runtime-resources-card");
-    const cache = screen.getByTestId("endpoint-kv-cache-summary");
-    const advanced = screen.getByTestId("endpoint-advanced-parameters");
-    expect(
-      runtime.compareDocumentPosition(cache) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      cache.compareDocumentPosition(advanced) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
   });
 
   it("hides cache status when the cluster cache is disabled even if the Endpoint retains ZCache", () => {

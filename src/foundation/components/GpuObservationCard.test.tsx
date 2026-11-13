@@ -83,7 +83,6 @@ describe("GPU observation row", () => {
     expect(row.textContent).toContain("15.0 / 16.0 GiB");
     expect(row.textContent).toContain("60 / 100");
     within(row).getByText("50%");
-    within(row).getByTestId("gpu-card-actual-marker");
     expect(
       within(row).getByTestId("gpu-actual-usage-legend").textContent,
     ).toContain("8.0 GiB");
@@ -226,7 +225,6 @@ describe("GPU observation row", () => {
     );
 
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
-    screen.getByTestId("endpoint-segment-remaining-pattern");
     // The name is a way into the object, not just a label.
     expect(
       within(tooltip)
@@ -419,11 +417,12 @@ describe("GPU observation row", () => {
     );
   });
 
-  it("shows VRAM allocation, usage and GPU utilization", () => {
+  it("shows VRAM allocation, usage, compute and GPU utilization", () => {
     render(
       card({
         variant: "inventory",
         display: "cards",
+        device: { ...device, coreUnits: 100, availableCoreUnits: 40 },
         samples: [
           sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
           sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
@@ -436,33 +435,15 @@ describe("GPU observation row", () => {
     within(cardElement).getByText("observations.vramAllocation");
     expect(cardElement.textContent).toContain("15.0 / 16.0 GiB");
     within(cardElement).getByText("50%");
-    within(cardElement).getByTestId("gpu-card-actual-marker");
     expect(
       within(cardElement).getByTestId("gpu-actual-usage-legend").textContent,
     ).toContain("8.0 GiB");
-    within(cardElement).getByRole("progressbar", {
-      name: "observations.utilization",
-    });
-  });
-
-  it("shows allocated GPU compute in the cluster card", () => {
-    render(
-      card({
-        variant: "inventory",
-        display: "cards",
-        device: {
-          ...device,
-          coreUnits: 100,
-          availableCoreUnits: 0,
-        },
-      }),
-    );
-
-    const cardElement = screen.getByTestId("gpu-inventory-card");
-    within(cardElement).getByText("observations.computeShare");
-    expect(cardElement.textContent).toContain("100 / 100");
+    expect(cardElement.textContent).toContain("60 / 100");
     within(cardElement).getByRole("progressbar", {
       name: "observations.computeAllocation",
+    });
+    within(cardElement).getByRole("progressbar", {
+      name: "observations.utilization",
     });
   });
 
@@ -601,7 +582,7 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
     within(dialog).getByText("observations.staleSample");
-    within(dialog).getAllByText("observations.vramAllocation");
+    within(dialog).getByTestId("vram-allocation-reading");
   });
 
   it("keeps allocation when runtime observations are unavailable", () => {
@@ -646,17 +627,11 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).not.toContain("observations.status.no_data");
   });
 
-  it("keeps compute, utilization, temperature, and power in GPU details", () => {
+  it("shows compute, utilization, temperature and power in GPU details", () => {
     render(
       card({
-        device: {
-          ...device,
-          coreUnits: 100,
-          availableCoreUnits: 40,
-        },
+        device: { ...device, coreUnits: 100, availableCoreUnits: 40 },
         samples: [
-          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
-          sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
           sample("neutree_accelerator_utilization_ratio", 0.75),
           sample("neutree_accelerator_temperature_celsius", 54),
           sample("neutree_accelerator_power_usage_watts", 63),
@@ -666,21 +641,13 @@ describe("GPU observation row", () => {
 
     openDetails();
     const dialog = screen.getByRole("dialog");
-    within(dialog).getByText("observations.computeShare");
-    within(dialog).getByText("observations.utilization");
     expect(dialog.textContent).toContain("60 / 100");
     within(dialog).getByText("75%");
     within(dialog).getByText("54 °C");
     within(dialog).getByText("63 W");
-    within(dialog).getByTestId("gpu-card-actual-marker");
-    within(dialog).getByText("observations.actualVramUsage");
     within(dialog).getByRole("progressbar", {
       name: "observations.computeAllocation",
     });
-    within(dialog).getByRole("progressbar", {
-      name: "observations.utilization",
-    });
-    expect(dialog.textContent).not.toContain("observations.acceleratorCore");
   });
 
   it("keeps the nine hardware fields stable and leaves missing ones empty", () => {

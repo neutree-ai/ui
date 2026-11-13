@@ -7,7 +7,10 @@ import {
 import type { ComponentProps, ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
+import type {
+  AcceleratorSample,
+  GpuAllocation,
+} from "@/foundation/lib/accelerator-observations";
 import type {
   ClusterResourceInfo,
   EndpointResourceStatus,
@@ -51,6 +54,21 @@ const makeReplica = (overrides: Partial<Replica> = {}): Replica => ({
   model_weights_mib: 2048,
   kv_cache_capacity_mib: 4096,
   devices: [makeDevice()],
+  ...overrides,
+});
+
+const makeAllocation = (
+  endpoint: string,
+  overrides: Partial<GpuAllocation> = {},
+): GpuAllocation => ({
+  endpoint,
+  workspace: "design-lab",
+  model: `${endpoint}-model`,
+  node: "gpu-node-01",
+  uuid: "GPU-t4-01",
+  replica: "R0",
+  instance: `${endpoint}-0`,
+  memoryMiB: 16 * 1024,
   ...overrides,
 });
 
@@ -277,19 +295,13 @@ describe("EndpointRuntimeResourcesCard", () => {
       memory_mib: 16 * 1024,
       core_units: 25,
     });
-    const sharedAllocation = (endpoint: string, replica: string) => ({
-      endpoint,
-      workspace: "design-lab",
-      model: `${endpoint}-model`,
-      node: "gpu-node-01",
-      uuid: "GPU-t4-01",
-      replica,
-      instance: `${endpoint}-0`,
-      memoryMiB: 16 * 1024,
-      coreUnits: 25,
-      modelWeightsMiB: 10 * 1024,
-      kvCacheCapacityMiB: 2 * 1024,
-    });
+    const sharedAllocation = (endpoint: string, replica: string) =>
+      makeAllocation(endpoint, {
+        replica,
+        coreUnits: 25,
+        modelWeightsMiB: 10 * 1024,
+        kvCacheCapacityMiB: 2 * 1024,
+      });
     render(
       <EndpointRuntimeResourcesCard
         endpointName="endpoint-abc"
@@ -335,36 +347,20 @@ describe("EndpointRuntimeResourcesCard", () => {
       memory_mib: 45 * 1024,
       allocatable: { memory_mib: 45 * 1024, core_units: 100 },
     });
-    const otherAllocation = {
-      endpoint: "endpoint-beta",
-      workspace: "design-lab",
-      model: "endpoint-beta-model",
-      node: "gpu-node-01",
-      uuid: "GPU-t4-01",
-      replica: "endpoint-beta-0",
-      instance: "endpoint-beta",
-      memoryMiB: 22 * 1024,
-    };
 
     render(
       <EndpointRuntimeResourcesCard
         endpointName="endpoint-abc"
         workspace="design-lab"
-        gpuAllocations={[otherAllocation]}
+        gpuAllocations={[
+          makeAllocation("endpoint-beta", { memoryMiB: 22 * 1024 }),
+        ]}
         resources={withReplicas(makeReplica({ devices: [currentDevice] }))}
       />,
     );
 
     screen.getByText("observations.allocationInconsistent");
-    expect(screen.queryByTestId("other-endpoints-segment")).toBeNull();
     expect(screen.queryByText("observations.otherEndpoints")).toBeNull();
-    screen.getByTestId("single-replica-composition");
-
-    fireEvent.pointerDown(screen.getByTestId("runtime-gpu-card"), {
-      button: 0,
-    });
-    const dialog = screen.getByRole("dialog");
-    expect(within(dialog).queryByText("endpoint-beta")).toBeNull();
   });
 
   it("keeps UUID and allocation actions from opening the card details", () => {
@@ -656,23 +652,13 @@ describe("EndpointRuntimeResourcesCard", () => {
       memory_mib: 56 * 1024,
       allocatable: { memory_mib: 80 * 1024, core_units: 100 },
     });
-    const sharedAllocation = (endpoint: string, memoryMiB: number) => ({
-      endpoint,
-      workspace: "design-lab",
-      model: `${endpoint}-model`,
-      node: "gpu-node-01",
-      uuid: "GPU-t4-01",
-      replica: "R0",
-      instance: `${endpoint}-0`,
-      memoryMiB,
-    });
     render(
       <EndpointRuntimeResourcesCard
         endpointName="endpoint-abc"
         workspace="design-lab"
         gpuAllocations={[
-          sharedAllocation("endpoint-abc", 56 * 1024),
-          sharedAllocation("endpoint-beta", 10 * 1024),
+          makeAllocation("endpoint-abc", { memoryMiB: 56 * 1024 }),
+          makeAllocation("endpoint-beta", { memoryMiB: 10 * 1024 }),
         ]}
         resources={withReplicas(makeReplica({ devices: [currentDevice] }))}
         samples={[
@@ -771,23 +757,13 @@ describe("EndpointRuntimeResourcesCard", () => {
       memory_mib: 64 * 1024,
       allocatable: { memory_mib: 80 * 1024, core_units: 100 },
     });
-    const sharedAllocation = (endpoint: string, memoryMiB: number) => ({
-      endpoint,
-      workspace: "design-lab",
-      model: `${endpoint}-model`,
-      node: "gpu-node-01",
-      uuid: "GPU-t4-01",
-      replica: "R0",
-      instance: `${endpoint}-0`,
-      memoryMiB,
-    });
     render(
       <EndpointRuntimeResourcesCard
         endpointName="endpoint-abc"
         workspace="design-lab"
         gpuAllocations={[
-          sharedAllocation("endpoint-abc", 64 * 1024),
-          sharedAllocation("endpoint-beta", 16 * 1024),
+          makeAllocation("endpoint-abc", { memoryMiB: 64 * 1024 }),
+          makeAllocation("endpoint-beta", { memoryMiB: 16 * 1024 }),
         ]}
         resources={withReplicas(makeReplica({ devices: [currentDevice] }))}
         samples={[

@@ -35,7 +35,6 @@ import {
   type AcceleratorSample,
   allocationComposition,
   allocationKey,
-  coreAllocation,
   deviceHardwareInfo,
   deviceReadings,
   type EndpointGpuAllocation,
@@ -56,6 +55,7 @@ import {
   chartCategoryMark,
   chartOutlineStyle,
 } from "@/foundation/lib/chart-palette";
+import { buildPoolUsage } from "@/foundation/lib/gpu-device-resources";
 import {
   l0Pattern,
   OWNER_SECONDARY_TONE,
@@ -496,8 +496,7 @@ function GpuActualUsageMarker({
   allocatedMiB: number | null;
   totalMiB: number;
 }) {
-  const percent =
-    totalMiB > 0 ? Math.min(100, Math.max(0, (usedMiB / totalMiB) * 100)) : 0;
+  const percent = percentOf(usedMiB, totalMiB);
   const exceedsAllocation =
     allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
 
@@ -1089,11 +1088,11 @@ function CompactComputeAllocation({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const allocation = coreAllocation(
+  const allocation = buildPoolUsage(
     device.coreUnits,
     device.availableCoreUnits,
   );
-  if (!allocation) return null;
+  if (allocation.used == null || allocation.total == null) return null;
   const coreUnits = (value: number) =>
     formatToDecimal(value, Number.isInteger(value) ? 0 : 1);
 
@@ -1118,7 +1117,7 @@ function CompactComputeAllocation({
         value={allocation.percent}
       />
       <strong className="min-w-12 text-right whitespace-nowrap font-semibold tabular-nums">
-        {coreUnits(allocation.allocated)} / {coreUnits(allocation.total)}
+        {coreUnits(allocation.used)} / {coreUnits(allocation.total)}
       </strong>
     </div>
   );
@@ -1252,7 +1251,7 @@ export function GpuDetailsSheet({
   const actualExceedsPhysical =
     actual != null && physical != null && actual > physical;
   const hasComputeAllocation =
-    coreAllocation(device.coreUnits, device.availableCoreUnits) != null;
+    buildPoolUsage(device.coreUnits, device.availableCoreUnits).used != null;
   const hasRuntimeMetric = Boolean(
     readings.utilization || readings.temperature || readings.power,
   );
@@ -1995,7 +1994,7 @@ export function GpuObservationCard({
   );
   const readings = deviceReadings(device, samples, replica, assigned);
   const hasComputeAllocation =
-    coreAllocation(device.coreUnits, device.availableCoreUnits) != null;
+    buildPoolUsage(device.coreUnits, device.availableCoreUnits).used != null;
   const sheet = sheetMounted && (
     <GpuDetailsSheet
       open={open}

@@ -444,32 +444,6 @@ export const percentOf = (
     ? 0
     : Math.max(0, Math.min(100, (value / total) * 100));
 
-/** Allocated, total and remaining accelerator-core capacity for one device. */
-export function coreAllocation(
-  total: number | null | undefined,
-  available: number | null | undefined,
-) {
-  if (
-    typeof total !== "number" ||
-    !Number.isFinite(total) ||
-    typeof available !== "number" ||
-    !Number.isFinite(available)
-  ) {
-    return null;
-  }
-
-  const normalizedTotal = Math.max(0, total);
-  const normalizedAvailable = Math.min(normalizedTotal, Math.max(0, available));
-  const allocated = normalizedTotal - normalizedAvailable;
-
-  return {
-    allocated,
-    total: normalizedTotal,
-    available: normalizedAvailable,
-    percent: normalizedTotal > 0 ? (allocated / normalizedTotal) * 100 : 0,
-  };
-}
-
 type Reservation = {
   memoryMiB: number;
   modelWeightsMiB?: number | null;
