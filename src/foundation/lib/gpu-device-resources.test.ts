@@ -594,7 +594,7 @@ describe("gpu device resource helpers", () => {
     expect(result.matchingDeviceCount).toBe(1);
   });
 
-  it("reports unknown when the node topology is incomplete", () => {
+  it("fails when a present node has no usable resource data", () => {
     const result = calculateGpuPlacementCapacity(
       {
         "node-a": {
@@ -613,11 +613,287 @@ describe("gpu device resource helpers", () => {
       },
     );
 
-    expect(result.gpu).toBe("unknown");
-    expect(result.cpu).toBe("unknown");
-    expect(result.memory).toBe("unknown");
-    expect(result.overall).toBe("unknown");
-    expect(result.maxPlaceableReplicas).toBeNull();
+    expect(result.gpu).toBe("fail");
+    expect(result.cpu).toBe("pass");
+    expect(result.memory).toBe("pass");
+    expect(result.overall).toBe("fail");
+    expect(result.maxPlaceableReplicas).toBe(0);
+  });
+
+  it.each([undefined, null, {}])(
+    "reports unknown for an absent or empty node snapshot (%j)",
+    (nodes) => {
+      const result = calculateGpuPlacementCapacity(nodes, {
+        allocationMode: "vgpu",
+        gpuPerReplica: 1,
+        replicaCount: 1,
+        memoryMiBPerCard: 40,
+        coreUnitsPerCard: 40,
+        selectedAccelerator: placementAccelerator,
+      });
+
+      expect(result.overall).toBe("unknown");
+    },
+  );
+
+  it("places CPU-only replicas independently on nodes", () => {
+    const result = calculateGpuPlacementCapacity(
+      {
+        "node-a": {
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(10, 32),
+          devices: [],
+        },
+        "node-b": {
+          allocatable: makeResourceInfo(16, 64),
+          available: makeResourceInfo(10, 32),
+          devices: [],
+        },
+      },
+      {
+        allocationMode: "full",
+        gpuPerReplica: 0,
+        cpuPerReplica: 6,
+        memoryPerReplica: 8,
+        replicaCount: 2,
+      },
+    );
+
+    expect(result.overall).toBe("pass");
+    expect(result.maxPlaceableReplicas).toBe(2);
+  });
+
+  it.each([
+    { cpu: 0, memory: 0, replicas: 1, pass: true },
+    { cpu: 0, memory: 0, replicas: 2, pass: false },
+    { cpu: 1, memory: 0, replicas: 1, pass: false },
+    { cpu: 0, memory: 1, replicas: 1, pass: false },
+  ])(
+    "checks GPU with missing node pools and CPU $cpu / memory $memory",
+    ({ cpu, memory, replicas, pass }) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "node-a": makeNodeResources({
+            devices: placementNode("GPU-a").devices,
+          }),
+        },
+        {
+          allocationMode: "full",
+          gpuPerReplica: 1,
+          cpuPerReplica: cpu,
+          memoryPerReplica: memory,
+          replicaCount: replicas,
+          selectedAccelerator: placementAccelerator,
+        },
+      );
+      expect(result.overall).toBe(pass ? "pass" : "fail");
+    },
+  );
+
+  it.each([
+    { available: 0.3, cpu: 0.1, replicas: 3, pass: true },
+    { available: 0.3, cpu: 0.1, replicas: 4, pass: false },
+    { available: 1024, cpu: 1, replicas: 300, pass: true },
+    { available: 0, cpu: 0, replicas: 300, pass: true },
+  ])(
+    "places $replicas CPU-only replicas at CPU $cpu with $available available",
+    ({ available, cpu, replicas, pass }) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "node-a": makeNodeResources({
+            available: makeResourceInfo(available, 0),
+          }),
+        },
+        {
+          allocationMode: "full",
+          gpuPerReplica: 0,
+          cpuPerReplica: cpu,
+          memoryPerReplica: 0,
+          replicaCount: replicas,
+        },
+      );
+      expect(result.overall).toBe(pass ? "pass" : "fail");
+    },
+  );
+
+  it("does not combine CPU and memory from different nodes for one CPU-only replica", () => {
+    const result = calculateGpuPlacementCapacity(
+      {
+        "node-a": makeNodeResources({ available: makeResourceInfo(8, 1) }),
+        "node-b": makeNodeResources({ available: makeResourceInfo(1, 8) }),
+      },
+      {
+        allocationMode: "full",
+        gpuPerReplica: 0,
+        cpuPerReplica: 4,
+        memoryPerReplica: 4,
+      },
+    );
+    expect(result.overall).toBe("fail");
+  });
+
+  it.each([1, 2])(
+    "ignores missing CPU-node device fields for $gpu GPU(s) per replica",
+    (gpu) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "gpu-a": placementNode("GPU-a"),
+          "gpu-b": placementNode("GPU-b"),
+          "cpu-node": makeNodeResources({
+            available: makeResourceInfo(100, 100),
+          }),
+        },
+        {
+          allocationMode: "full",
+          gpuPerReplica: gpu,
+          selectedAccelerator: placementAccelerator,
+        },
+      );
+      expect(result.overall).toBe(gpu === 1 ? "pass" : "fail");
+    },
+  );
+
+  it.each([
+    { core: 30, replicas: 3, pass: true },
+    { core: 29, replicas: 3, pass: false },
+  ])(
+    "packs fractional replicas with $core core units without losing capacity",
+    ({ core, replicas, pass }) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "node-a": placementNodeWithDevices([
+            placementDevice("GPU-a", 100, core, 100),
+          ]),
+        },
+        {
+          allocationMode: "fractional",
+          gpuPerReplica: 0.1,
+          replicaCount: replicas,
+          selectedAccelerator: placementAccelerator,
+        },
+      );
+      expect(result.overall).toBe(pass ? "pass" : "fail");
+    },
+  );
+
+  it.each([
+    { available: 8192, replicas: 1, pass: true },
+    { available: 8191, replicas: 1, pass: false },
+    { available: 16383, replicas: 2, pass: false },
+  ])(
+    "keeps exact MiB placement separate from displayed GiB capacity ($available MiB)",
+    ({ available, replicas, pass }) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "node-a": placementNodeWithDevices([
+            placementDevice("GPU-a", available, 100, 16384),
+          ]),
+        },
+        {
+          allocationMode: "vgpu",
+          gpuPerReplica: 1,
+          memoryMiBPerCard: 8192,
+          coreUnitsPerCard: 0,
+          replicaCount: replicas,
+          selectedAccelerator: placementAccelerator,
+        },
+      );
+      expect(result.overall).toBe(pass ? "pass" : "fail");
+    },
+  );
+
+  it.each([
+    { available: 1.5, replicas: 3, pass: true },
+    { available: 1.499, replicas: 3, pass: false },
+  ])(
+    "checks memory boundaries independently of CPU ($available GiB)",
+    ({ available, replicas, pass }) => {
+      const result = calculateGpuPlacementCapacity(
+        {
+          "node-a": makeNodeResources({
+            available: makeResourceInfo(0, available),
+          }),
+        },
+        {
+          allocationMode: "full",
+          gpuPerReplica: 0,
+          cpuPerReplica: 0,
+          memoryPerReplica: 0.5,
+          replicaCount: replicas,
+        },
+      );
+      expect(result.overall).toBe(pass ? "pass" : "fail");
+    },
+  );
+
+  it("keeps proven GPU capacity usable when the node search reaches its replica limit", () => {
+    const result = calculateGpuPlacementCapacity(
+      {
+        "node-a": placementNodeWithDevices([
+          placementDevice("GPU-a", 4096, 100, 4096),
+        ]),
+      },
+      {
+        allocationMode: "vgpu",
+        gpuPerReplica: 1,
+        memoryMiBPerCard: 1,
+        coreUnitsPerCard: 0,
+        replicaCount: 1,
+        selectedAccelerator: placementAccelerator,
+      },
+    );
+    expect(result.overall).toBe("pass");
+    expect(result.maxGpuPlaceableReplicas).toBeGreaterThanOrEqual(1);
+  });
+
+  it("derives capped add-back snapshots without mutating or accumulating source allocations", () => {
+    const nodes = {
+      "node-a": makeNodeResources({
+        allocatable: makeResourceInfo(8, 16),
+        available: makeResourceInfo(7, 15),
+        devices: [
+          makeGpuDevice("GPU-a", { memory_mib: 15000, core_units: 90 }),
+        ],
+      }),
+    };
+    const allocation = {
+      instance_id: "replica-a",
+      node_id: "node-a",
+      devices: [
+        {
+          node_id: "node-a",
+          uuid: "GPU-a",
+          product: "Tesla-T4",
+          memory_mib: 1024,
+          core_units: 20,
+        },
+      ],
+    };
+    const status = {
+      replicas: [
+        allocation,
+        {
+          ...allocation,
+          instance_id: "outside",
+          node_id: "node-outside",
+          devices: [],
+        },
+      ],
+    };
+    const before = structuredClone({ nodes, status });
+    const derive = () =>
+      addBackEndpointDeviceAllocationsToNodeResources(
+        nodes,
+        status,
+        undefined,
+        { cpuPerReplica: 4, memoryPerReplica: 8 },
+      );
+    const restored = derive();
+    expect(derive()).toEqual(restored);
+    expect({ nodes, status }).toEqual(before);
+    expect(Object.keys(restored ?? {})).toEqual(["node-a"]);
+    expect(restored?.["node-a"].available).toEqual(makeResourceInfo(8, 16));
+    expect(restored?.["node-a"].devices?.[0].available).toEqual(FULL_T4);
   });
 
   it("adds back endpoint CPU and memory only for a complete replica layout", () => {
@@ -672,7 +948,7 @@ describe("gpu device resource helpers", () => {
     expect(result?.["node-a"]?.available?.memory).toBe(32);
   });
 
-  it("does not add back node resources from partial replica placement data", () => {
+  it("adds back node resources for replicas with known node data", () => {
     const result = addBackEndpointDeviceAllocationsToNodeResources(
       {
         "node-a": {
@@ -691,8 +967,8 @@ describe("gpu device resource helpers", () => {
       { cpuPerReplica: 4, memoryPerReplica: 16 },
     );
 
-    expect(result?.["node-a"]?.available?.cpu).toBe(4);
-    expect(result?.["node-a"]?.available?.memory).toBe(16);
+    expect(result?.["node-a"]?.available?.cpu).toBe(8);
+    expect(result?.["node-a"]?.available?.memory).toBe(32);
   });
 
   it("uses device node ids when replica node ids are omitted", () => {
@@ -1718,6 +1994,28 @@ describe("gpu device resource helpers", () => {
       }),
     ).toBe(1012);
   });
+
+  it.each([
+    { available: 16333, cards: 1 },
+    { available: 16332, cards: 0 },
+  ])(
+    "keeps the existing 0.05 GiB display tolerance at $available MiB",
+    ({ available, cards }) => {
+      const result = calculateVgpuCardCapacity(
+        {
+          "node-a": placementNodeWithDevices([
+            placementDevice("GPU-a", available, 100, 16384),
+          ]),
+        },
+        {
+          selectedAccelerator: placementAccelerator,
+          memoryMiBPerCard: 16384,
+          coreUnitsPerCard: 0,
+        },
+      );
+      expect(result.totalCards).toBe(cards);
+    },
+  );
 
   it("counts vGPU card capacity with displayed GiB memory alignment", () => {
     const fragmentedL20Resources = {

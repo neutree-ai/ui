@@ -420,9 +420,6 @@ export function addBackEndpointDeviceAllocationsToNodeResources(
   const cpuPerReplica = Math.max(0, Number(options?.cpuPerReplica || 0));
   const memoryPerReplica = Math.max(0, Number(options?.memoryPerReplica || 0));
   const replicaNodeIds = replicas.map(getReplicaNodeId);
-  // GPU-only replicas can request zero CPU and memory; node topology alone
-  // determines whether restoring their node-level allocation is safe.
-  const canRestoreNodeResources = replicaNodeIds.every(Boolean);
 
   const allocationsByDevice = new Map<
     string,
@@ -506,7 +503,7 @@ export function addBackEndpointDeviceAllocationsToNodeResources(
             });
 
       let nextAvailable = nodeStatus.available;
-      if (canRestoreNodeResources && nodeStatus.available) {
+      if (nodeStatus.available) {
         const replicaCountOnNode = replicaNodeIds.filter(
           (replicaNodeId) => replicaNodeId === nodeName,
         ).length;
@@ -566,7 +563,10 @@ const getDeviceFractionalGpuSlotCapacity = (
     return 0;
   }
 
-  return Math.max(0, Math.floor(availableCoreUnits / requiredCoreUnits));
+  return Math.max(
+    0,
+    floorCapacityWithTolerance(availableCoreUnits, requiredCoreUnits),
+  );
 };
 
 const canDeviceSatisfyVgpuRequest = (
@@ -581,11 +581,14 @@ const canDeviceSatisfyVgpuRequest = (
     return false;
   }
 
-  if (availableMemoryMiB < memoryMiBPerCard) {
+  if (!isAtLeastWithTolerance(availableMemoryMiB, memoryMiBPerCard)) {
     return false;
   }
 
-  if (coreUnitsPerCard > 0 && availableCoreUnits < coreUnitsPerCard) {
+  if (
+    coreUnitsPerCard > 0 &&
+    !isAtLeastWithTolerance(availableCoreUnits, coreUnitsPerCard)
+  ) {
     return false;
   }
 
@@ -674,6 +677,8 @@ type GpuPlacementCapacity = {
   overall: GpuPlacementStatus;
   matchingDeviceCount: number;
   maxCardsPerReplica: number;
+  maxCpuPerReplica: number;
+  maxMemoryPerReplica: number;
   maxFullGpuCardsPerNode: number;
   maxGpuPlaceableReplicas: number | null;
   maxPlaceableReplicas: number | null;
@@ -710,15 +715,10 @@ type PlacementNodeState = {
   availableCpu: number | null;
   availableMemory: number | null;
   devices: PlacementDeviceState[];
-  hasUnknownDeviceSignals: boolean;
   nodeName: string;
-  topologyKnown: boolean;
 };
 
 type PlacementSnapshot = {
-  hasUnknownCpuSignals: boolean;
-  hasUnknownMemorySignals: boolean;
-  hasUnknownTopology: boolean;
   matchingDeviceCount: number;
   nodes: PlacementNodeState[];
   satisfyingDeviceCount: number;
@@ -751,6 +751,22 @@ type PlacementSearchContext = {
 
 const PLACEMENT_SEARCH_STATE_LIMIT = 20_000;
 const PLACEMENT_REPLICA_LIMIT = 256;
+const PLACEMENT_NUMBER_EPSILON = 1e-6;
+
+const isAtLeastWithTolerance = (available: number, requested: number) =>
+  available + PLACEMENT_NUMBER_EPSILON >= requested;
+
+const floorCapacityWithTolerance = (available: number, requested: number) =>
+  requested > 0
+    ? Math.floor(
+        (Math.max(0, available) + PLACEMENT_NUMBER_EPSILON) / requested,
+      )
+    : Number.POSITIVE_INFINITY;
+
+const subtractWithTolerance = (available: number, requested: number) => {
+  const remaining = available - requested;
+  return Math.abs(remaining) <= PLACEMENT_NUMBER_EPSILON ? 0 : remaining;
+};
 
 const placementStatusToBoolean = (
   status: GpuPlacementStatus,
@@ -811,11 +827,17 @@ const canPlacementDeviceSatisfy = (
   const requiresMemory = requirement.memoryMiB > 0;
   const requiresCore = requirement.coreUnits > 0;
   if (!requiresMemory && !requiresCore) return false;
-  if (requiresMemory && device.availableMemoryMiB < requirement.memoryMiB) {
+  if (
+    requiresMemory &&
+    !isAtLeastWithTolerance(device.availableMemoryMiB, requirement.memoryMiB)
+  ) {
     return false;
   }
 
-  return !requiresCore || device.availableCoreUnits >= requirement.coreUnits;
+  return (
+    !requiresCore ||
+    isAtLeastWithTolerance(device.availableCoreUnits, requirement.coreUnits)
+  );
 };
 
 const consumePlacementDevice = (
@@ -823,10 +845,13 @@ const consumePlacementDevice = (
   requirement: PlacementRequirement,
 ): PlacementDeviceState => ({
   ...device,
-  availableMemoryMiB: device.availableMemoryMiB - requirement.memoryMiB,
+  availableMemoryMiB: subtractWithTolerance(
+    device.availableMemoryMiB,
+    requirement.memoryMiB,
+  ),
   availableCoreUnits:
     requirement.coreUnits > 0
-      ? device.availableCoreUnits - requirement.coreUnits
+      ? subtractWithTolerance(device.availableCoreUnits, requirement.coreUnits)
       : device.availableCoreUnits,
 });
 
@@ -929,9 +954,11 @@ const canPlaceReplicasOnNode = (
 
     if (
       (cpuPerReplica > 0 &&
-        (availableCpu == null || availableCpu < cpuPerReplica)) ||
+        (availableCpu == null ||
+          !isAtLeastWithTolerance(availableCpu, cpuPerReplica))) ||
       (memoryPerReplica > 0 &&
-        (availableMemory == null || availableMemory < memoryPerReplica))
+        (availableMemory == null ||
+          !isAtLeastWithTolerance(availableMemory, memoryPerReplica)))
     ) {
       context.memo.set(stateKey, false);
       return false;
@@ -952,9 +979,14 @@ const canPlaceReplicasOnNode = (
       return false;
     }
 
-    const nextCpu = availableCpu == null ? null : availableCpu - cpuPerReplica;
+    const nextCpu =
+      availableCpu == null
+        ? null
+        : subtractWithTolerance(availableCpu, cpuPerReplica);
     const nextMemory =
-      availableMemory == null ? null : availableMemory - memoryPerReplica;
+      availableMemory == null
+        ? null
+        : subtractWithTolerance(availableMemory, memoryPerReplica);
     const found = enumeratePlacementCombinations(
       candidates,
       cardsPerReplica,
@@ -1038,9 +1070,11 @@ const getNodeMinimumPhysicalCardUsage = (
 
     if (
       (cpuPerReplica > 0 &&
-        (availableCpu == null || availableCpu < cpuPerReplica)) ||
+        (availableCpu == null ||
+          !isAtLeastWithTolerance(availableCpu, cpuPerReplica))) ||
       (memoryPerReplica > 0 &&
-        (availableMemory == null || availableMemory < memoryPerReplica))
+        (availableMemory == null ||
+          !isAtLeastWithTolerance(availableMemory, memoryPerReplica)))
     ) {
       return;
     }
@@ -1059,9 +1093,14 @@ const getNodeMinimumPhysicalCardUsage = (
       );
     if (candidates.length < cardsPerReplica) return;
 
-    const nextCpu = availableCpu == null ? null : availableCpu - cpuPerReplica;
+    const nextCpu =
+      availableCpu == null
+        ? null
+        : subtractWithTolerance(availableCpu, cpuPerReplica);
     const nextMemory =
-      availableMemory == null ? null : availableMemory - memoryPerReplica;
+      availableMemory == null
+        ? null
+        : subtractWithTolerance(availableMemory, memoryPerReplica);
     enumeratePlacementCombinations(
       candidates,
       cardsPerReplica,
@@ -1111,8 +1150,6 @@ const getNodeReplicaUpperBound = (
   options: GpuPlacementOptions,
   cardsPerReplica: number,
 ) => {
-  if (cardsPerReplica <= 0) return 0;
-
   let deviceReplicaBound = 0;
   for (const device of node.devices) {
     const requirement = getPlacementRequirement(device, options);
@@ -1122,36 +1159,41 @@ const getNodeReplicaUpperBound = (
 
     const memoryBound =
       requirement.memoryMiB > 0
-        ? Math.floor(
-            Math.max(0, device.availableMemoryMiB) / requirement.memoryMiB,
+        ? floorCapacityWithTolerance(
+            device.availableMemoryMiB,
+            requirement.memoryMiB,
           )
         : Number.POSITIVE_INFINITY;
     const coreBound =
       requirement.coreUnits > 0
-        ? Math.floor(
-            Math.max(0, device.availableCoreUnits) / requirement.coreUnits,
+        ? floorCapacityWithTolerance(
+            device.availableCoreUnits,
+            requirement.coreUnits,
           )
         : Number.POSITIVE_INFINITY;
     deviceReplicaBound += Math.min(memoryBound, coreBound);
   }
 
-  let upperBound = Math.floor(deviceReplicaBound / cardsPerReplica);
+  let upperBound =
+    cardsPerReplica > 0
+      ? floorCapacityWithTolerance(deviceReplicaBound, cardsPerReplica)
+      : Number.POSITIVE_INFINITY;
   const cpuPerReplica = Math.max(0, Number(options.cpuPerReplica || 0));
-  if (cpuPerReplica > 0 && node.availableCpu != null) {
+  if (cpuPerReplica > 0) {
     upperBound = Math.min(
       upperBound,
-      Math.floor(Math.max(0, node.availableCpu) / cpuPerReplica),
+      floorCapacityWithTolerance(node.availableCpu ?? 0, cpuPerReplica),
     );
   }
   const memoryPerReplica = Math.max(0, Number(options.memoryPerReplica || 0));
-  if (memoryPerReplica > 0 && node.availableMemory != null) {
+  if (memoryPerReplica > 0) {
     upperBound = Math.min(
       upperBound,
-      Math.floor(Math.max(0, node.availableMemory) / memoryPerReplica),
+      floorCapacityWithTolerance(node.availableMemory ?? 0, memoryPerReplica),
     );
   }
 
-  return Math.max(0, Math.min(upperBound, PLACEMENT_REPLICA_LIMIT));
+  return Math.max(0, upperBound);
 };
 
 const getNodeMaxReplicaCapacity = (
@@ -1159,7 +1201,20 @@ const getNodeMaxReplicaCapacity = (
   options: GpuPlacementOptions,
   cardsPerReplica: number,
 ): PlacementSearchResult => {
-  const upperBound = getNodeReplicaUpperBound(node, options, cardsPerReplica);
+  const resourceUpperBound = getNodeReplicaUpperBound(
+    node,
+    options,
+    cardsPerReplica,
+  );
+  if (cardsPerReplica === 0) {
+    return {
+      capacity: Number.isFinite(resourceUpperBound)
+        ? resourceUpperBound
+        : normalizePlacementReplicaCount(options.replicaCount),
+      indeterminate: false,
+    };
+  }
+  const upperBound = Math.min(resourceUpperBound, PLACEMENT_REPLICA_LIMIT);
   if (upperBound <= 0) return { capacity: 0, indeterminate: false };
 
   for (let replicaCount = 1; replicaCount <= upperBound; replicaCount += 1) {
@@ -1179,7 +1234,7 @@ const getNodeMaxReplicaCapacity = (
 
   return {
     capacity: upperBound,
-    indeterminate: upperBound === PLACEMENT_REPLICA_LIMIT,
+    indeterminate: resourceUpperBound > upperBound,
   };
 };
 
@@ -1190,9 +1245,6 @@ const buildPlacementSnapshot = (
   const nodes: PlacementNodeState[] = [];
   let matchingDeviceCount = 0;
   let satisfyingDeviceCount = 0;
-  let hasUnknownTopology = false;
-  let hasUnknownCpuSignals = false;
-  let hasUnknownMemorySignals = false;
   let totalAvailableCpu = 0;
   let totalAvailableMemory = 0;
   let totalAvailableMemoryMiB = 0;
@@ -1201,17 +1253,15 @@ const buildPlacementSnapshot = (
   for (const [nodeName, nodeStatus] of Object.entries(nodeResources)) {
     const availableCpu = toFiniteNumber(nodeStatus.available?.cpu);
     const availableMemory = toFiniteNumber(nodeStatus.available?.memory);
-    if (availableCpu == null) hasUnknownCpuSignals = true;
-    if (availableMemory == null) hasUnknownMemorySignals = true;
     if (availableCpu != null) totalAvailableCpu += Math.max(0, availableCpu);
     if (availableMemory != null)
       totalAvailableMemory += Math.max(0, availableMemory);
 
-    const topologyKnown = Array.isArray(nodeStatus.devices);
-    if (!topologyKnown) hasUnknownTopology = true;
+    // A partial node snapshot is still a usable snapshot. Missing device or
+    // resource fields exclude that node from the affected placement dimension;
+    // only an entirely absent node_resources map is an unknown snapshot.
 
     const devices: PlacementDeviceState[] = [];
-    let hasUnknownDeviceSignals = !topologyKnown;
     for (const [deviceIndex, device] of (nodeStatus.devices ?? []).entries()) {
       if (!device.health) continue;
 
@@ -1242,7 +1292,6 @@ const buildPlacementSnapshot = (
           (totalMemoryMiB == null || availableMemoryMiB == null)) ||
         (coreRequired && (totalCoreUnits == null || availableCoreUnits == null))
       ) {
-        hasUnknownDeviceSignals = true;
         continue;
       }
 
@@ -1272,16 +1321,11 @@ const buildPlacementSnapshot = (
       availableCpu,
       availableMemory,
       devices,
-      hasUnknownDeviceSignals,
       nodeName,
-      topologyKnown,
     });
   }
 
   return {
-    hasUnknownCpuSignals,
-    hasUnknownMemorySignals,
-    hasUnknownTopology,
     matchingDeviceCount,
     nodes,
     satisfyingDeviceCount,
@@ -1314,19 +1358,6 @@ export function calculateVgpuPhysicalCardUsage(
   }
 
   const snapshot = buildPlacementSnapshot(nodeResources, options);
-  const requiresCpu = Number(options.cpuPerReplica || 0) > 0;
-  const requiresMemory = Number(options.memoryPerReplica || 0) > 0;
-  if (
-    snapshot.hasUnknownTopology ||
-    snapshot.nodes.some(
-      (node) =>
-        node.hasUnknownDeviceSignals ||
-        (requiresCpu && node.availableCpu == null) ||
-        (requiresMemory && node.availableMemory == null),
-    )
-  ) {
-    return null;
-  }
 
   let bestByReplicaCount = Array.from(
     { length: replicaCount + 1 },
@@ -1371,12 +1402,12 @@ export function calculateVgpuPhysicalCardUsage(
 const getAggregateDimensionStatus = (
   requested: number,
   available: number,
-  hasUnknownSignals: boolean,
   hasAnySignal: boolean,
 ): GpuPlacementStatus => {
-  if (!hasAnySignal) return "unknown";
-  if (available >= requested) return "pass";
-  return hasUnknownSignals ? "unknown" : "fail";
+  if (requested === 0) return "pass";
+  if (!hasAnySignal) return "fail";
+  if (isAtLeastWithTolerance(available, requested)) return "pass";
+  return "fail";
 };
 
 const solvePlacementForCards = (
@@ -1384,19 +1415,13 @@ const solvePlacementForCards = (
   options: GpuPlacementOptions,
   cardsPerReplica: number,
 ): PlacementSearchResult => {
-  const requiresCpu = Number(options.cpuPerReplica || 0) > 0;
-  const requiresMemory = Number(options.memoryPerReplica || 0) > 0;
   let capacity = 0;
   let indeterminate = false;
 
   for (const node of snapshot.nodes) {
     const result = getNodeMaxReplicaCapacity(node, options, cardsPerReplica);
     capacity += result.capacity;
-    indeterminate ||=
-      result.indeterminate ||
-      node.hasUnknownDeviceSignals ||
-      (requiresCpu && node.availableCpu == null) ||
-      (requiresMemory && node.availableMemory == null);
+    indeterminate ||= result.indeterminate;
   }
 
   return { capacity, indeterminate };
@@ -1404,18 +1429,10 @@ const solvePlacementForCards = (
 
 const getPlacementStatus = (
   placement: PlacementSearchResult,
-  snapshot: PlacementSnapshot,
   replicaCount: number,
 ): GpuPlacementStatus => {
-  if (placement.capacity >= replicaCount && !placement.indeterminate) {
+  if (placement.capacity >= replicaCount) {
     return "pass";
-  }
-  if (
-    snapshot.hasUnknownTopology ||
-    snapshot.nodes.some((node) => node.hasUnknownDeviceSignals) ||
-    placement.indeterminate
-  ) {
-    return "unknown";
   }
   return "fail";
 };
@@ -1432,10 +1449,10 @@ export function calculateGpuPlacementCapacity(
 ): GpuPlacementCapacity {
   const gpuPerReplica = Number(options.gpuPerReplica || 0);
   const replicaCount = normalizePlacementReplicaCount(options.replicaCount);
-  const requestedCardsPerReplica = getRequestedCardsPerReplica(
-    options.allocationMode,
-    gpuPerReplica,
-  );
+  const requestedCardsPerReplica =
+    gpuPerReplica === 0
+      ? 0
+      : getRequestedCardsPerReplica(options.allocationMode, gpuPerReplica);
   const unknownResult = (
     matchingDeviceCount = 0,
     satisfyingDeviceCount = 0,
@@ -1454,6 +1471,8 @@ export function calculateGpuPlacementCapacity(
       overall,
       matchingDeviceCount,
       maxCardsPerReplica: 0,
+      maxCpuPerReplica: 0,
+      maxMemoryPerReplica: 0,
       maxFullGpuCardsPerNode: 0,
       maxGpuPlaceableReplicas: null,
       maxPlaceableReplicas: null,
@@ -1466,9 +1485,10 @@ export function calculateGpuPlacementCapacity(
     };
   };
 
-  if (!nodeResources || !options.selectedAccelerator?.product) {
+  if (!nodeResources || Object.keys(nodeResources).length === 0) {
     return unknownResult();
   }
+  const hasAccelerator = gpuPerReplica > 0;
 
   const snapshot = buildPlacementSnapshot(nodeResources, options);
   const maxFullGpuCardsPerNode =
@@ -1487,7 +1507,11 @@ export function calculateGpuPlacementCapacity(
           0,
         )
       : 0;
-  if (requestedCardsPerReplica <= 0) {
+  if (
+    gpuPerReplica < 0 ||
+    (hasAccelerator &&
+      (!options.selectedAccelerator?.product || requestedCardsPerReplica <= 0))
+  ) {
     const invalid: GpuPlacementCapacity = {
       canAllocate: false,
       canAllocateCpu: false,
@@ -1500,6 +1524,8 @@ export function calculateGpuPlacementCapacity(
       overall: "fail",
       matchingDeviceCount: snapshot.matchingDeviceCount,
       maxCardsPerReplica: 0,
+      maxCpuPerReplica: 0,
+      maxMemoryPerReplica: 0,
       maxFullGpuCardsPerNode: 0,
       maxGpuPlaceableReplicas: 0,
       maxPlaceableReplicas: 0,
@@ -1520,13 +1546,11 @@ export function calculateGpuPlacementCapacity(
   const cpuStatus = getAggregateDimensionStatus(
     requestedCpu,
     snapshot.totalAvailableCpu,
-    snapshot.hasUnknownCpuSignals,
     snapshot.nodes.some((node) => node.availableCpu != null),
   );
   const memoryStatus = getAggregateDimensionStatus(
     requestedMemory,
     snapshot.totalAvailableMemory,
-    snapshot.hasUnknownMemorySignals,
     snapshot.nodes.some((node) => node.availableMemory != null),
   );
 
@@ -1563,25 +1587,31 @@ export function calculateGpuPlacementCapacity(
     options,
     requestedCardsPerReplica,
   );
-  const gpuStatus = getPlacementStatus(
-    gpuOnlyPlacement,
-    snapshot,
-    replicaCount,
-  );
-  const cpuPlacementStatus = getPlacementStatus(
-    cpuPlacement,
-    snapshot,
-    replicaCount,
-  );
+  const gpuStatus = hasAccelerator
+    ? getPlacementStatus(gpuOnlyPlacement, replicaCount)
+    : "pass";
+  const cpuPlacementStatus = getPlacementStatus(cpuPlacement, replicaCount);
   const memoryPlacementStatus = getPlacementStatus(
     memoryPlacement,
-    snapshot,
     replicaCount,
   );
   const combinedPlacementStatus = getPlacementStatus(
     requestedPlacement,
-    snapshot,
     replicaCount,
+  );
+
+  const candidateNodes = snapshot.nodes.filter(
+    (node) =>
+      getNodeReplicaUpperBound(node, gpuOnlyOptions, requestedCardsPerReplica) >
+      0,
+  );
+  const maxCpuPerReplica = candidateNodes.reduce(
+    (max, node) => Math.max(max, node.availableCpu ?? 0),
+    0,
+  );
+  const maxMemoryPerReplica = candidateNodes.reduce(
+    (max, node) => Math.max(max, node.availableMemory ?? 0),
+    0,
   );
 
   const maxPlaceableReplicas =
@@ -1590,8 +1620,9 @@ export function calculateGpuPlacementCapacity(
     gpuStatus === "unknown" ? null : gpuOnlyPlacement.capacity;
 
   let maxCardsPerReplica = 0;
-  const candidateCardCounts =
-    options.allocationMode === "fractional"
+  const candidateCardCounts = !hasAccelerator
+    ? []
+    : options.allocationMode === "fractional"
       ? [1]
       : Array.from(
           { length: snapshot.matchingDeviceCount },
@@ -1599,12 +1630,7 @@ export function calculateGpuPlacementCapacity(
         );
   for (const candidate of candidateCardCounts) {
     const result = solvePlacementForCards(snapshot, gpuOnlyOptions, candidate);
-    if (
-      result.capacity >= replicaCount &&
-      !result.indeterminate &&
-      !snapshot.hasUnknownTopology &&
-      !snapshot.nodes.some((node) => node.hasUnknownDeviceSignals)
-    ) {
+    if (result.capacity >= replicaCount) {
       maxCardsPerReplica = candidate;
       break;
     }
@@ -1628,6 +1654,8 @@ export function calculateGpuPlacementCapacity(
     overall,
     matchingDeviceCount: snapshot.matchingDeviceCount,
     maxCardsPerReplica,
+    maxCpuPerReplica,
+    maxMemoryPerReplica,
     maxFullGpuCardsPerNode,
     maxGpuPlaceableReplicas,
     maxPlaceableReplicas,
