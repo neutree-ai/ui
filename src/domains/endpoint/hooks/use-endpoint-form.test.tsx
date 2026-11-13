@@ -248,6 +248,8 @@ const oneUsableCardCluster = makeCluster("one-usable-card", {
     available: makeResourceInfo(12, 48, { [T4]: { quantity: 1 } }),
     nodes: {
       "node-a": makeNodeResources({
+        allocatable: makeResourceInfo(16, 64),
+        available: makeResourceInfo(12, 48),
         devices: [
           makeGpuDevice("GPU-a", { memory_mib: 7680, core_units: 100 }),
           ...["GPU-b", "GPU-c"].map((uuid) =>
@@ -303,6 +305,8 @@ const fractionalSlotsCluster = makeCluster("fractional-slots", {
     available: makeResourceInfo(12, 48, { [T4]: { quantity: 2 } }),
     nodes: {
       "node-a": makeNodeResources({
+        allocatable: makeResourceInfo(16, 64),
+        available: makeResourceInfo(12, 48),
         devices: ["GPU-a", "GPU-b"].map((uuid) =>
           makeGpuDevice(uuid, { memory_mib: 9216, core_units: 60 }),
         ),
@@ -1041,6 +1045,12 @@ describe("capacity checks", () => {
       shown: ["noNodeCanScheduleMemoryRequest"],
     },
     {
+      case: "CPU-only requirements that only fit on different nodes",
+      cluster: plainGpuCluster({ cpu: [5, 4, 1], memory: [5, 1, 4] }),
+      resources: { cpu: 4, memory: 4, gpu: 0, accelerator: null },
+      shown: ["noNodeCanScheduleCombinedResourceRequest"],
+    },
+    {
       case: "CPU and memory that only fit on different nodes",
       cluster: plainGpuCluster({
         allFree: true,
@@ -1066,8 +1076,67 @@ describe("capacity checks", () => {
     },
   );
 
+  it.each([
+    { cpuOnly: true, replicas: 2, cpu: [20, 10, 10], memory: [96, 48, 48] },
+    { cpuOnly: false, replicas: 1, cpu: [12, 2, 10], memory: [176, 128, 48] },
+  ])(
+    "accepts a placeable request without native range overflow (CPU-only: $cpuOnly)",
+    ({ cpuOnly, replicas, cpu, memory }) => {
+      const cluster = plainGpuCluster({ allFree: true, cpu, memory });
+      const { result } = renderEndpointForm("create", { clusters: [cluster] });
+      setValues(result, {
+        "spec.cluster": "plain-gpu",
+        "spec.replicas.num": replicas,
+        "spec.resources": cpuOnly
+          ? { cpu: 6, memory: 8, gpu: 0, accelerator: null }
+          : formResources({ cpu: 6, memory: 8 }),
+      });
+      expect(result.current.submitBlocked).toBe(false);
+      for (const name of ["common.fields.cpu", "endpoints.fields.memoryGb"]) {
+        expect(
+          (screen.getByRole("spinbutton", { name }) as HTMLInputElement)
+            .validity.rangeOverflow,
+        ).toBe(false);
+      }
+    },
+  );
+
+  it("recomputes the verdict when a new cluster snapshot replaces the previous one", () => {
+    const free = plainGpuCluster({ allFree: true });
+    const busy = structuredClone(free);
+    for (const node of Object.values(
+      busy.status!.resource_info!.node_resources!,
+    )) {
+      node.devices![0].available = { memory_mib: 0, core_units: 0 };
+    }
+    const { result } = renderEndpointForm("create", { clusters: [free] });
+    const request = formResources();
+    setValues(result, {
+      "spec.cluster": free.metadata.name,
+      "spec.resources": request,
+    });
+    expect(result.current.submitBlocked).toBe(false);
+    mockLists({ clusters: [busy] });
+    setValues(result, { "spec.resources": { ...request } });
+    expect(result.current.submitBlocked).toBe(true);
+    mockLists({ clusters: [free] });
+    setValues(result, { "spec.resources": { ...request } });
+    expect(result.current.submitBlocked).toBe(false);
+  });
+
+  it("rejects an empty cache candidate set without falling back to cluster totals", () => {
+    const cluster = plainGpuCluster({ cacheNodes: [], allFree: true });
+    const { result } = renderEndpointForm("create", { clusters: [cluster] });
+    setValues(result, {
+      "spec.cluster": "plain-gpu",
+      "spec.resources": formResources(),
+      "spec.kv_cache": { provider: "zcache", options: { timeout_seconds: 2 } },
+    });
+    expect(result.current.submitBlocked).toBe(true);
+  });
+
   describe("while editing, counts what the endpoint already holds", () => {
-    it("checks only the full cards added beyond the current ones", async () => {
+    it("does not credit an edit when status resources are absent", async () => {
       refineForm.queryData = {
         metadata: metadata("full-card"),
         spec: {
@@ -1085,10 +1154,8 @@ describe("capacity checks", () => {
         "spec.resources": formResources(),
       });
 
-      await waitFor(() => expect(currentRequest()).toContain("1.0 / 1.0"));
-      expect(
-        screen.queryByText("endpoints.messages.fullGpuResourcesInsufficient"),
-      ).toBeNull();
+      await waitFor(() => expect(currentRequest()).toContain("1.0 / 0.0"));
+      expect(result.current.submitBlocked).toBe(true);
 
       setValues(result, { "spec.resources.gpu": 2 });
       await screen.findByText(
@@ -1096,10 +1163,49 @@ describe("capacity checks", () => {
       );
     });
 
-    it("keeps an unchanged shared-card vGPU endpoint saveable but checks a scale-out", async () => {
-      // Two replicas recorded on the same card, which the current residual
-      // capacity could not place again from scratch.
-      const card = { memory_mib: 4096, core_percent: 100 };
+    it.each([
+      { state: "absent", status: null, cpu: 4, blocked: true },
+      { state: "empty", status: { resources: {} }, cpu: 4, blocked: true },
+      {
+        state: "allocated",
+        status: { resources: { replicas: [allocation("node-a")] } },
+        cpu: 4,
+        blocked: false,
+      },
+      {
+        state: "allocated with larger new request",
+        status: { resources: { replicas: [allocation("node-a")] } },
+        cpu: 5,
+        blocked: true,
+      },
+    ])(
+      "prechecks a CPU-only edit with $state status data",
+      ({ status, cpu, blocked }) => {
+        const cluster = plainGpuCluster({ cpu: [0, 0, 0], memory: [0, 0, 0] });
+        refineForm.queryData = {
+          metadata: metadata("cpu-only-edit"),
+          spec: {
+            cluster: "plain-gpu",
+            replicas: { num: 1 },
+            resources: { cpu: "4", memory: "8", gpu: "0", accelerator: null },
+          },
+          status,
+        };
+        const { result } = renderEndpointForm("edit", { clusters: [cluster] });
+        setValues(result, {
+          "spec.cluster": "plain-gpu",
+          "spec.replicas.num": 1,
+          "spec.resources": { cpu, memory: 8, gpu: 0, accelerator: null },
+        });
+        expect(result.current.submitBlocked).toBe(blocked);
+      },
+    );
+
+    it("prechecks an unchanged vGPU allocation and a scale-out on the restored device", async () => {
+      const card = { memory_mib: 4096, core_percent: 40 };
+      const cluster = structuredClone(oneUsableCardCluster);
+      cluster.status!.resource_info!.node_resources!["node-a"]
+        .devices![0].available = { memory_mib: 7168, core_units: 20 };
       refineForm.queryData = {
         metadata: metadata("shared-card"),
         spec: {
@@ -1110,35 +1216,26 @@ describe("capacity checks", () => {
         status: {
           resources: {
             replicas: [
-              allocation("node-a", "GPU-a", 4096, 100),
-              { ...allocation("node-a", "GPU-a", 4096, 100), instance_id: "b" },
+              allocation("node-a", "GPU-a", 4096, 40),
+              { ...allocation("node-a", "GPU-a", 4096, 40), instance_id: "b" },
             ],
-            summary: {
-              products: { [T4]: { memory_mib: 8192, core_units: 200 } },
-            },
           },
         },
       };
-      const { result } = renderEndpointForm("edit", {
-        clusters: [oneUsableCardCluster],
-      });
+      const { result } = renderEndpointForm("edit", { clusters: [cluster] });
       setValues(result, {
         "spec.cluster": "one-usable-card",
         "spec.replicas.num": 2,
         "spec.resources": formResources({ virtualization: card }),
       });
-
-      await waitFor(() => expect(currentRequest()).toContain("2.0 / 2.0"));
       expect(result.current.submitBlocked).toBe(false);
-
+      expect(currentRequest()).toContain("1.0 / 1.0");
       setValues(result, { "spec.replicas.num": 3 });
-
-      await waitFor(() => expect(currentRequest()).toContain("3.0 / 2.0"));
       expect(result.current.submitBlocked).toBe(true);
       screen.getByText("endpoints.messages.vgpuResourcesInsufficient");
     });
 
-    it("reuses the recorded vGPU usage when the cluster reports no devices", async () => {
+    it("does not reuse a product summary without device allocations", async () => {
       const card = { memory_mib: 8192, core_percent: 50 };
       refineForm.queryData = {
         metadata: metadata("summary-only"),
@@ -1163,15 +1260,47 @@ describe("capacity checks", () => {
         "spec.resources.gpu": 2,
       });
 
-      await waitFor(() => expect(currentRequest()).toContain("2.0 / 2.0"));
-      expect(
-        screen.queryByText("endpoints.messages.vgpuResourcesInsufficient"),
-      ).toBeNull();
+      await waitFor(() => expect(currentRequest()).toContain("2.0 / 1.0"));
+      expect(result.current.submitBlocked).toBe(true);
 
       setValues(result, { "spec.resources.gpu": 3 });
 
-      await waitFor(() => expect(currentRequest()).toContain("3.0 / 2.0"));
+      await waitFor(() => expect(currentRequest()).toContain("3.0 / 1.0"));
       screen.getByText("endpoints.messages.vgpuResourcesInsufficient");
+    });
+
+    it("restores saved CPU and memory for unchanged replicas before prechecking an edit", () => {
+      const cluster = plainGpuCluster({ cpu: [0, 0, 0], memory: [0, 0, 0] });
+      for (const node of Object.values(
+        cluster.status!.resource_info!.node_resources!,
+      )) {
+        node.devices![0].available = { memory_mib: 0, core_units: 0 };
+      }
+      refineForm.queryData = {
+        metadata: metadata("allocated"),
+        spec: {
+          cluster: "plain-gpu",
+          replicas: { num: 2 },
+          resources: backendResources({ cpu: 4, memory: 8 }),
+        },
+        status: {
+          resources: {
+            replicas: [
+              allocation("node-a", "GPU-free", 15360, 100),
+              allocation("node-b", "GPU-used", 15360, 100),
+            ],
+          },
+        },
+      };
+      const { result } = renderEndpointForm("edit", { clusters: [cluster] });
+      setValues(result, {
+        "spec.cluster": "plain-gpu",
+        "spec.replicas.num": 2,
+        "spec.resources": formResources({ cpu: 4, memory: 8 }),
+      });
+      expect(result.current.submitBlocked).toBe(false);
+      setValues(result, { "spec.resources.cpu": 5 });
+      expect(result.current.submitBlocked).toBe(true);
     });
 
     // 12 CPUs fit only with the endpoint's own 4 back on node-a.

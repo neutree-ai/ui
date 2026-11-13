@@ -28,7 +28,6 @@ import { WorkloadImageFeatureAddon } from "@/domains/endpoint/components/Workloa
 import { WorkloadImageInput } from "@/domains/endpoint/components/WorkloadImageInput";
 import { useEndpointClusterResources } from "@/domains/endpoint/hooks/use-endpoint-cluster-resources";
 import { useEndpointEngineOptions } from "@/domains/endpoint/hooks/use-endpoint-engine-options";
-import useEndpointResources from "@/domains/endpoint/hooks/use-endpoint-resources";
 import { useKvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import {
   buildCatalogOriginAnnotations,
@@ -68,10 +67,7 @@ import {
   VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
   VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
 } from "@/domains/endpoint/lib/vgpu";
-import {
-  endpointZCacheOptions,
-  isValidKvCacheTimeout,
-} from "@/domains/endpoint/lib/zcache";
+import { isValidKvCacheTimeout } from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
   EndpointClusterRef,
@@ -111,7 +107,6 @@ import {
   calculateVgpuCardCapacity,
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
-  countFullCardAvailableDevicesByProduct,
   sumMatchingDeviceAvailableResources,
 } from "@/foundation/lib/gpu-device-resources";
 import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
@@ -474,63 +469,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
 
   const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
-  const cacheNodeNames = new Set(
-    endpointZCacheOptions(
-      clusters.query.data?.data.find(
-        (cluster) => cluster.metadata.name === currentCluster,
-      ),
-    )?.target_nodes ?? [],
-  );
   const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
-  // Releasing an allocation outside the cache pool does not free capacity
-  // inside that pool. Only credit allocations whose nodes are still eligible.
-  const currentAllocationInCachePool = Boolean(
-    currentEndpointRuntimeResources?.replicas?.length &&
-      currentEndpointRuntimeResources.replicas.every(
-        (replica) => replica.node_id && cacheNodeNames.has(replica.node_id),
-      ),
-  );
-
-  const currentEndpointAccelerator = normalizedQueryResources?.accelerator;
-  const currentEndpointReplicaCount =
-    action === "edit"
-      ? Math.max(1, Number(queryEndpoint?.spec?.replicas?.num || 1))
-      : 0;
-  const isEditingCurrentCluster = Boolean(
+  const canReuseCurrentEndpointResources = Boolean(
     action === "edit" &&
-      queryEndpoint?.spec?.cluster &&
-      queryEndpoint.spec.cluster === currentCluster,
+      queryEndpoint?.spec?.cluster === currentCluster &&
+      currentEndpointRuntimeResources != null,
   );
-  const canReuseCurrentEndpointResources =
-    isEditingCurrentCluster && (!cacheEnabled || currentAllocationInCachePool);
-  const canReuseCurrentEndpointAccelerator = Boolean(
-    canReuseCurrentEndpointResources &&
-      selectedAccelerator?.type &&
-      selectedAccelerator?.product &&
-      currentEndpointAccelerator?.type === selectedAccelerator.type &&
-      currentEndpointAccelerator?.product === selectedAccelerator.product,
-  );
-  const canReuseCurrentEndpointDeviceAllocations = Boolean(
-    canReuseCurrentEndpointAccelerator &&
-      currentEndpointRuntimeResources?.replicas?.some(
-        (replica) => (replica.devices?.length ?? 0) > 0,
-      ),
-  );
-  const isCurrentEndpointVgpuAllocation = hasVgpuVirtualizationValues(
-    currentEndpointAccelerator?.virtualization,
-  );
-  const originalEndpointUsage = useEndpointResources(
-    action === "edit" ? (normalizedQueryResources ?? undefined) : undefined,
-    action === "edit" ? queryEndpoint?.metadata : undefined,
-  );
-  const currentUsage = {
-    cpu: canReuseCurrentEndpointResources ? originalEndpointUsage.cpu : 0,
-    memory: canReuseCurrentEndpointResources ? originalEndpointUsage.memory : 0,
-    gpu:
-      canReuseCurrentEndpointAccelerator && !isCurrentEndpointVgpuAllocation
-        ? originalEndpointUsage.gpu
-        : 0,
-  };
+  // Capacity reuse is performed only on the node/device snapshot below. Do
+  // not add the old Spec globally as a second credit path.
+  const currentUsage = { cpu: 0, memory: 0, gpu: 0 };
 
   const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
@@ -718,28 +665,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const vgpuCoreUnitsPerCard = Number(
     selectedVirtualization?.core_percent || 0,
   );
-  const isCurrentEndpointRequestUnchanged = Boolean(
-    isEdit &&
-      canReuseCurrentEndpointAccelerator &&
-      normalizedQueryResources &&
-      currentEndpointReplicaCount === replicaCount &&
-      Number(normalizedQueryResources.cpu || 0) ===
-        Number(normalizedResources?.cpu || 0) &&
-      Number(normalizedQueryResources.memory || 0) ===
-        Number(normalizedResources?.memory || 0) &&
-      Number(normalizedQueryResources.gpu || 0) ===
-        Number(normalizedResources?.gpu || 0) &&
-      JSON.stringify(
-        normalizedQueryResources.accelerator?.virtualization ?? null,
-      ) === JSON.stringify(selectedAccelerator?.virtualization ?? null),
-  );
   const reusableNodeResources = useMemo(
     () =>
       addBackEndpointDeviceAllocationsToNodeResources(
         schedulingResourceInfo?.node_resources,
-        isEditingCurrentCluster ? currentEndpointRuntimeResources : undefined,
-        selectedAccelerator,
-        isEditingCurrentCluster
+        canReuseCurrentEndpointResources
+          ? currentEndpointRuntimeResources
+          : undefined,
+        undefined,
+        canReuseCurrentEndpointResources
           ? {
               cpuPerReplica: normalizedQueryResources?.cpu,
               memoryPerReplica: normalizedQueryResources?.memory,
@@ -748,10 +682,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       ),
     [
       currentEndpointRuntimeResources,
-      isEditingCurrentCluster,
+      canReuseCurrentEndpointResources,
       normalizedQueryResources?.cpu,
       normalizedQueryResources?.memory,
-      selectedAccelerator,
       schedulingResourceInfo?.node_resources,
     ],
   );
@@ -779,7 +712,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
   const hasSelectedDeviceResources =
     matchingDeviceAvailableResources.memoryMiB > 0 ||
-    matchingDeviceAvailableResources.coreUnits > 0;
+    matchingDeviceAvailableResources.coreUnits > 0 ||
+    vgpuCardCapacity.matchingDeviceCount > 0;
+  const hasNodeResourceSnapshot = Boolean(
+    selectedCluster?.status?.resource_info?.node_resources &&
+      Object.keys(selectedCluster.status.resource_info.node_resources).length >
+        0,
+  );
   const requestedVirtualCards = gpuUsage * replicaCount;
   const requestedFullGpuCards = gpuUsage * replicaCount;
   const requestedVgpuMemoryMiB = effectiveVgpuMemoryMiB
@@ -809,15 +748,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const placementCapacity = useMemo(() => {
     if (
       !currentCluster ||
-      !selectedAccelerator?.product ||
-      gpuUsage <= 0 ||
-      isVgpuCapacityPending ||
-      isCurrentEndpointRequestUnchanged
+      !hasNodeResourceSnapshot ||
+      (gpuUsage > 0 && (!selectedAccelerator?.product || isVgpuCapacityPending))
     ) {
       return null;
     }
 
-    return calculateGpuPlacementCapacity(reusableNodeResources, {
+    return calculateGpuPlacementCapacity(reusableNodeResources ?? {}, {
       allocationMode: isVgpuAllocationMode
         ? "vgpu"
         : isFractionalGpuAllocationMode
@@ -833,10 +770,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     });
   }, [
     currentCluster,
+    hasNodeResourceSnapshot,
     effectiveVgpuMemoryMiB,
     gpuUsage,
     isFractionalGpuAllocationMode,
-    isCurrentEndpointRequestUnchanged,
     isVgpuAllocationMode,
     isVgpuCapacityPending,
     normalizedResources?.cpu,
@@ -872,126 +809,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       vgpuCoreUnitsPerCard,
     ],
   );
-  const availableFullGpuCards = useMemo(() => {
-    if (!selectedAccelerator?.product) {
-      return 0;
-    }
-
-    if (isFractionalGpuAllocationMode) {
-      return nonVgpuPhysicalCardUsage.available;
-    }
-
-    const availableDeviceCount = countFullCardAvailableDevicesByProduct(
-      reusableNodeResources,
-    ).get(selectedAccelerator.product);
-
-    return (
-      availableDeviceCount ??
-      selectedAcceleratorOption?.available ??
-      maxAvailable.gpu.available
-    );
-  }, [
-    maxAvailable.gpu.available,
-    isFractionalGpuAllocationMode,
-    nonVgpuPhysicalCardUsage.available,
-    selectedAccelerator?.product,
-    selectedAcceleratorOption?.available,
-    reusableNodeResources,
-  ]);
-  const reusableFullGpuCards =
-    canReuseCurrentEndpointAccelerator &&
-    !canReuseCurrentEndpointDeviceAllocations &&
-    !isCurrentEndpointVgpuAllocation
-      ? Number(normalizedQueryResources?.gpu || 0) * currentEndpointReplicaCount
-      : 0;
+  const availableFullGpuCards = hasNodeResourceSnapshot
+    ? nonVgpuPhysicalCardUsage.available
+    : (selectedAcceleratorOption?.available ?? 0);
+  const fullGpuCardCapacity = availableFullGpuCards;
   const maxFullGpuCards =
-    selectedAcceleratorOption?.total || maxAvailable.gpu.total || 0;
-  const fullGpuCardCapacity =
-    maxFullGpuCards > 0
-      ? Math.min(availableFullGpuCards + reusableFullGpuCards, maxFullGpuCards)
-      : availableFullGpuCards + reusableFullGpuCards;
-  const additionalFullGpuCards = Math.max(
-    0,
-    requestedFullGpuCards - reusableFullGpuCards,
-  );
-  const reusableFractionalReplicaSlots =
-    isFractionalGpuAllocationMode && gpuUsage > 0
-      ? Math.floor(reusableFullGpuCards / gpuUsage)
-      : 0;
-  const fractionalGpuPlacementCapacity =
-    nonVgpuPhysicalCardUsage.placementCapacity + reusableFractionalReplicaSlots;
-  const currentEndpointProductUsage =
-    canReuseCurrentEndpointAccelerator &&
-    isCurrentEndpointVgpuAllocation &&
-    selectedAccelerator?.product
-      ? form.refineCore.query?.data?.data?.status?.resources?.summary
-          ?.products?.[selectedAccelerator.product]
-      : undefined;
-  // Device-level addBack is authoritative when matching device resources are
-  // available. Without that topology, retain the endpoint summary so legacy
-  // aggregate validation compares only the additional vGPU memory/core.
-  const shouldReuseVgpuSummary =
-    !canReuseCurrentEndpointDeviceAllocations || !hasSelectedDeviceResources;
-  const reusableVgpuMemoryMiB = Number(
-    shouldReuseVgpuSummary ? currentEndpointProductUsage?.memory_mib || 0 : 0,
-  );
-  const reusableVgpuCoreUnits = Number(
-    shouldReuseVgpuSummary ? currentEndpointProductUsage?.core_units || 0 : 0,
-  );
-  const reusableVirtualCards = effectiveVgpuMemoryMiB
-    ? vgpuCoreUnitsPerCard > 0
-      ? Math.min(
-          Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB),
-          Math.floor(reusableVgpuCoreUnits / vgpuCoreUnitsPerCard),
-        )
-      : Math.floor(reusableVgpuMemoryMiB / effectiveVgpuMemoryMiB)
-    : 0;
-  // Keep physical-card and virtual-allocation counts separate: the first
-  // drives card presentation, while the second is the legacy request delta
-  // when topology cannot be simulated.
-  const reusableVgpuAllocationCounts = useMemo(() => {
-    if (!canReuseCurrentEndpointDeviceAllocations) {
-      return { physicalCards: 0, virtualCards: 0 };
-    }
-
-    const deviceIds = new Set<string>();
-    let virtualCards = 0;
-    for (const replica of queryEndpoint?.status?.resources?.replicas ?? []) {
-      for (const device of replica.devices ?? []) {
-        if (
-          selectedAccelerator?.product &&
-          device.product !== selectedAccelerator.product
-        ) {
-          continue;
-        }
-
-        // addBackEndpointDeviceAllocationsToNodeResources also keys on uuid,
-        // so uuid-less devices are never added back; counting them here
-        // would diverge from the availability model (and deduplicating them
-        // across replicas without a stable key is impossible).
-        if (!device.uuid) {
-          continue;
-        }
-
-        deviceIds.add(device.uuid);
-        virtualCards += 1;
-      }
-    }
-
-    return { physicalCards: deviceIds.size, virtualCards };
-  }, [
-    canReuseCurrentEndpointDeviceAllocations,
-    queryEndpoint?.status?.resources?.replicas,
-    selectedAccelerator?.product,
-  ]);
-  const reusableVgpuPhysicalCards =
-    reusableVgpuAllocationCounts.physicalCards > 0
-      ? reusableVgpuAllocationCounts.physicalCards
-      : reusableVirtualCards;
-  const reusableVgpuVirtualCards =
-    reusableVgpuAllocationCounts.virtualCards > 0
-      ? reusableVgpuAllocationCounts.virtualCards
-      : reusableVirtualCards;
+    selectedAcceleratorOption?.total ?? maxAvailable.gpu.total;
   const hasRawAvailableVgpuMemoryMiB =
     hasSelectedDeviceResources ||
     Number.isFinite(selectedAcceleratorOption?.virtualizationMemoryMiB);
@@ -1001,10 +824,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const rawAvailableVgpuCoreUnits = hasSelectedDeviceResources
     ? matchingDeviceAvailableResources.coreUnits
     : Number(selectedAcceleratorOption?.virtualizationCoreUnits || 0);
-  const availableVgpuMemoryMiB =
-    rawAvailableVgpuMemoryMiB + reusableVgpuMemoryMiB;
-  const availableVgpuCoreUnits =
-    rawAvailableVgpuCoreUnits + reusableVgpuCoreUnits;
+  const availableVgpuMemoryMiB = rawAvailableVgpuMemoryMiB;
+  const availableVgpuCoreUnits = rawAvailableVgpuCoreUnits;
   const fallbackVgpuAvailablePhysicalCards =
     selectedAcceleratorOption?.available ?? maxAvailable.gpu.available;
   const fallbackVgpuMaxPhysicalCards =
@@ -1014,12 +835,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const availableVirtualPhysicalCards = hasSelectedDeviceResources
     ? vgpuCardCapacity.totalCards
     : fallbackVgpuAvailablePhysicalCards;
-  const uncappedVirtualCardCapacity =
-    availableVirtualPhysicalCards + reusableVgpuPhysicalCards;
   const totalVirtualCardCapacity =
     fallbackVgpuMaxPhysicalCards > 0
-      ? Math.min(uncappedVirtualCardCapacity, fallbackVgpuMaxPhysicalCards)
-      : uncappedVirtualCardCapacity;
+      ? Math.min(availableVirtualPhysicalCards, fallbackVgpuMaxPhysicalCards)
+      : availableVirtualPhysicalCards;
   // Cards are requested across replicas (gpu per replica × replica count),
   // so the displayed request and the capacity check must compare totals:
   // a per-replica value alone stays under capacity while the summed request
@@ -1049,7 +868,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           : Math.min(rawMaxMiB, deviceBoundaryMiB);
       }
     }
-    if (!hasRawAvailableVgpuMemoryMiB && reusableVgpuMemoryMiB <= 0) {
+    if (!hasRawAvailableVgpuMemoryMiB) {
       return rawMaxMiB;
     }
     const requestedCardCount = Math.max(1, boundaryRequestedCardCount);
@@ -1105,56 +924,45 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       );
     }
   };
-  // Cards are requested across replicas (gpu per replica × replica count);
-  // only the additional cards beyond what the edited endpoint already holds
-  // must fit the cluster's available capacity, mirroring the full-GPU check
-  // (a per-replica-only comparison lets multi-replica requests
-  // through that the scheduler cannot place).
-  const additionalVirtualCards = Math.max(
-    0,
-    requestedVirtualCards - reusableVgpuVirtualCards,
-  );
-  const isVgpuCardCapacityExceeded = Boolean(
-    isVgpuAllocationMode &&
-      selectedAccelerator?.product &&
-      additionalVirtualCards > availableVirtualPhysicalCards,
-  );
-  const additionalVgpuMemoryMiB = Math.max(
-    0,
-    requestedVgpuMemoryMiB - reusableVgpuMemoryMiB,
-  );
-  const additionalVgpuCoreUnits = Math.max(
-    0,
-    requestedVgpuCoreUnits - reusableVgpuCoreUnits,
-  );
   const isLegacyVgpuCapacityExceeded = Boolean(
-    isVgpuAllocationMode &&
+    !hasNodeResourceSnapshot &&
+      isVgpuAllocationMode &&
       !isVgpuCapacityPending &&
       selectedAccelerator?.product &&
-      (isVgpuCardCapacityExceeded ||
-        ((rawAvailableVgpuMemoryMiB > 0 || reusableVgpuMemoryMiB > 0) &&
-          additionalVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
-        ((rawAvailableVgpuCoreUnits > 0 || reusableVgpuCoreUnits > 0) &&
-          additionalVgpuCoreUnits > rawAvailableVgpuCoreUnits)),
+      (requestedVirtualCards > availableVirtualPhysicalCards ||
+        (hasRawAvailableVgpuMemoryMiB &&
+          requestedVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
+        (vgpuCoreUnitsPerCard > 0 &&
+          Number.isFinite(selectedAcceleratorOption?.virtualizationCoreUnits) &&
+          requestedVgpuCoreUnits > rawAvailableVgpuCoreUnits)),
   );
   const isLegacyFullGpuCapacityExceeded = Boolean(
-    !isVgpuAllocationMode &&
-      selectedAccelerator?.type &&
+    !hasNodeResourceSnapshot &&
+      !isVgpuAllocationMode &&
       selectedAccelerator?.product &&
-      (additionalFullGpuCards > availableFullGpuCards ||
-        (isFractionalGpuAllocationMode &&
-          replicaCount > fractionalGpuPlacementCapacity)),
+      requestedFullGpuCards > availableFullGpuCards,
   );
-  const isPlacementCapacityExceeded = placementCapacity?.overall === "fail";
-  const isPlacementCpuCapacityExceeded = placementCapacity?.cpu === "fail";
+  const hasNoEligibleNodes =
+    hasNodeResourceSnapshot &&
+    Object.keys(reusableNodeResources ?? {}).length === 0;
+  const isPlacementCapacityExceeded =
+    hasNoEligibleNodes || placementCapacity?.overall === "fail";
+  const isPlacementCpuCapacityExceeded =
+    placementCapacity?.cpu === "fail" ||
+    (hasNoEligibleNodes && Number(normalizedResources?.cpu) > 0);
   const isPlacementMemoryCapacityExceeded =
-    placementCapacity?.memory === "fail";
-  const isPlacementGpuCapacityExceeded = placementCapacity?.gpu === "fail";
+    placementCapacity?.memory === "fail" ||
+    (hasNoEligibleNodes && Number(normalizedResources?.memory) > 0);
+  const isPlacementGpuCapacityExceeded =
+    placementCapacity?.gpu === "fail" || (hasNoEligibleNodes && gpuUsage > 0);
   const hasKnownGpuPlacement = Boolean(
-    placementCapacity && placementCapacity.gpu !== "unknown",
+    hasNoEligibleNodes ||
+      (placementCapacity && placementCapacity.gpu !== "unknown"),
   );
   const isVgpuPlacementCapacityExceeded = Boolean(
-    isVgpuAllocationMode && isPlacementGpuCapacityExceeded,
+    isVgpuAllocationMode &&
+      !isVgpuCapacityPending &&
+      isPlacementGpuCapacityExceeded,
   );
   const isFullGpuPlacementCapacityExceeded = Boolean(
     !isVgpuAllocationMode && isPlacementGpuCapacityExceeded,
@@ -1251,10 +1059,8 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // intentionally a single-node input limit, so using it for all replicas
   // would incorrectly report CPU/memory exhaustion when only GPU capacity is
   // exhausted. Retain that legacy check only while placement is unavailable.
-  const shouldUseLegacyCpuCapacityCheck =
-    !placementCapacity || placementCapacity.cpu === "unknown";
-  const shouldUseLegacyMemoryCapacityCheck =
-    !placementCapacity || placementCapacity.memory === "unknown";
+  const shouldUseLegacyCpuCapacityCheck = !hasNodeResourceSnapshot;
+  const shouldUseLegacyMemoryCapacityCheck = !hasNodeResourceSnapshot;
   const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
   const requestedMemoryTotal =
     (normalizedResources?.memory || 0) * replicaCount;
@@ -2547,14 +2353,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           {
             key: "cpu",
             requested: (normalizedResources?.cpu || 0) * replicaCount,
-            available: maxAvailable.cpu.available,
-            total: maxAvailable.cpu.total,
+            available:
+              placementCapacity?.totalAvailableCpu ??
+              maxAvailable.cpu.available,
+            total: clusterResources?.cpu.total ?? maxAvailable.cpu.total,
           },
           {
             key: "memory",
             requested: (normalizedResources?.memory || 0) * replicaCount,
-            available: maxAvailable.memory.available,
-            total: maxAvailable.memory.total,
+            available:
+              placementCapacity?.totalAvailableMemory ??
+              maxAvailable.memory.available,
+            total: clusterResources?.memory.total ?? maxAvailable.memory.total,
           },
           ...(selectedAccelerator?.type && selectedAccelerator.product
             ? [
@@ -3290,7 +3100,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             )
                           }
                           min={0}
-                          max={maxAvailable.cpu.available}
+                          max={Math.max(
+                            normalizedResources?.cpu ?? 0,
+                            placementCapacity?.maxCpuPerReplica ??
+                              maxAvailable.cpu.available,
+                          )}
                           step={0.1}
                           disabled={!currentCluster}
                           className="h-9"
@@ -3325,7 +3139,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             )
                           }
                           min={0}
-                          max={maxAvailable.memory.available}
+                          max={Math.max(
+                            normalizedResources?.memory ?? 0,
+                            placementCapacity?.maxMemoryPerReplica ??
+                              maxAvailable.memory.available,
+                          )}
                           step={0.5}
                           disabled={!currentCluster}
                           className="h-9"

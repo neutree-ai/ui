@@ -169,6 +169,18 @@ describe("endpoint vgpu helpers", () => {
     expect(normalizeVgpuMemoryGiBInput(0.51, 46068, 500)).toBe(523);
   });
 
+  it.each([
+    { gib: 1, boundary: undefined, mib: 1024 },
+    { gib: 1.1, boundary: undefined, mib: 1127 },
+    { gib: 16, boundary: 16383, mib: 16383 },
+    { gib: 16.1, boundary: 16383, mib: 16487 },
+  ])(
+    "preserves GiB conversion and raw MiB boundary ($gib GiB)",
+    ({ gib, boundary, mib }) => {
+      expect(normalizeVgpuMemoryGiBInput(gib, boundary)).toBe(mib);
+    },
+  );
+
   it("rejects non-finite vGPU memory inputs", () => {
     expect(normalizeVgpuMemoryGiBInput(Number.POSITIVE_INFINITY, 46068)).toBe(
       undefined,
