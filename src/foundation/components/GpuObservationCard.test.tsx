@@ -82,6 +82,7 @@ describe("GPU observation row", () => {
     expect(row.textContent).toContain("8.0 / 15.0 / 16.0 GiB");
     expect(row.textContent).toContain("60 / 100");
     within(row).getByText("50%");
+    within(row).getByTestId("gpu-card-actual-marker");
     within(row).getByRole("progressbar", {
       name: "observations.computeAllocation",
     });
@@ -402,6 +403,8 @@ describe("GPU observation row", () => {
     within(cardElement).getByText("observations.vramUsageAllocationTotal");
     expect(cardElement.textContent).toContain("8.0 / 15.0 / 16.0 GiB");
     within(cardElement).getByText("50%");
+    within(cardElement).getByTestId("gpu-card-actual-marker");
+    within(cardElement).getByText("observations.actualVramUsage");
     within(cardElement).getByRole("progressbar", {
       name: "observations.utilization",
     });
@@ -460,6 +463,9 @@ describe("GPU observation row", () => {
     expect(cardElement.textContent).toContain(
       `${EMPTY_VALUE} / 15.0 / 15.0 GiB`,
     );
+    expect(
+      within(cardElement).queryByTestId("gpu-card-actual-marker"),
+    ).toBeNull();
     within(cardElement).getByRole("button", { name: /^instance,/ });
   });
 
@@ -608,7 +614,11 @@ describe("GPU observation row", () => {
           coreUnits: 100,
           availableCoreUnits: 40,
         },
-        samples: [sample("neutree_accelerator_utilization_ratio", 0.75)],
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
+          sample("neutree_accelerator_utilization_ratio", 0.75),
+        ],
       }),
     );
 
@@ -618,6 +628,8 @@ describe("GPU observation row", () => {
     within(dialog).getByText("observations.utilization");
     expect(dialog.textContent).toContain("60 / 100");
     within(dialog).getByText("75%");
+    within(dialog).getByTestId("gpu-card-actual-marker");
+    within(dialog).getByText("observations.actualVramUsage");
     within(dialog).getByRole("progressbar", {
       name: "observations.computeAllocation",
     });

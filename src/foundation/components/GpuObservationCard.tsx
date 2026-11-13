@@ -486,6 +486,35 @@ function EndpointSegmentPattern({
   );
 }
 
+function GpuActualUsageMarker({
+  usedMiB,
+  allocatedMiB,
+  totalMiB,
+}: {
+  usedMiB: number;
+  allocatedMiB: number | null;
+  totalMiB: number;
+}) {
+  const percent =
+    totalMiB > 0 ? Math.min(100, Math.max(0, (usedMiB / totalMiB) * 100)) : 0;
+  const exceedsAllocation =
+    allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
+
+  return (
+    <span
+      aria-hidden="true"
+      data-testid="gpu-card-actual-marker"
+      className="pointer-events-none absolute inset-y-px z-20 w-0.5 -translate-x-1/2 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+      style={{
+        left: `${percent}%`,
+        backgroundColor: exceedsAllocation
+          ? "var(--nt-fill-serious-base)"
+          : "var(--nt-text-neutral-super)",
+      }}
+    />
+  );
+}
+
 function InventoryAllocationBar({
   device,
   allocations,
@@ -496,6 +525,7 @@ function InventoryAllocationBar({
   selectedKey = null,
   onSelect,
   showLegend = false,
+  showActualLegend = false,
 }: {
   device: ObservedGpu;
   allocations: GpuAllocation[];
@@ -507,6 +537,7 @@ function InventoryAllocationBar({
   selectedKey?: string | null;
   onSelect?: (key: string) => void;
   showLegend?: boolean;
+  showActualLegend?: boolean;
 }) {
   const { t } = useTranslation();
   const [activeAllocation, setActiveAllocation] = useState<string | null>(null);
@@ -516,17 +547,38 @@ function InventoryAllocationBar({
     device.allocatedMiB ??
     visible.reduce((sum, allocation) => sum + allocation.memoryMiB, 0) +
       hiddenMemoryMiB;
+  const actualMarker =
+    cardUsedMiB != null && total != null && total > 0 ? (
+      <GpuActualUsageMarker
+        allocatedMiB={reserved}
+        totalMiB={total}
+        usedMiB={cardUsedMiB}
+      />
+    ) : null;
+  const actualLegend =
+    cardUsedMiB != null && total != null && total > 0 ? (
+      <span className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+        />
+        {t("observations.actualVramUsage")}
+      </span>
+    ) : null;
   if (device.allocatedMiB == null) {
     return (
       <div className="space-y-1">
         <div
           role="img"
           aria-label={t("observations.allocationUnknown")}
-          className="h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent"
-        />
+          className="relative h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent"
+        >
+          {actualMarker}
+        </div>
         <span className="text-[11px] text-muted-foreground">
           {t("observations.allocationUnknown")}
         </span>
+        {(showLegend || showActualLegend) && actualLegend}
       </div>
     );
   }
@@ -549,21 +601,29 @@ function InventoryAllocationBar({
 
   if (reserved === 0) {
     return (
-      <div
-        role="img"
-        aria-label={t("observations.noEndpointAllocation")}
-        className={cn("h-2.5", GPU_BAR_TRACK_CLASS)}
-      />
+      <div className="space-y-1">
+        <div
+          role="img"
+          aria-label={t("observations.noEndpointAllocation")}
+          className={cn("relative", "h-2.5", GPU_BAR_TRACK_CLASS)}
+        >
+          {actualMarker}
+        </div>
+        {(showLegend || showActualLegend) && actualLegend}
+      </div>
     );
   }
 
   if (visible.length === 0) {
     return (
       <div className="space-y-1">
-        <div className="h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent" />
+        <div className="relative h-2 rounded-full border border-dashed border-[var(--nt-stroke-neutral-trans-3)] bg-transparent">
+          {actualMarker}
+        </div>
         <span className="text-[11px] text-muted-foreground">
           {t("observations.endpointAllocationUnavailable")}
         </span>
+        {(showLegend || showActualLegend) && actualLegend}
       </div>
     );
   }
@@ -573,18 +633,6 @@ function InventoryAllocationBar({
       ? Math.min(100, Math.max(0, (allocation.memoryMiB / total) * 100))
       : 100 / (visible.length + Number(hidden.length > 0));
 
-  const active = visible.find(
-    (allocation) =>
-      `${allocation.workspace}:${allocation.endpoint}` === activeAllocation,
-  );
-  const activeActualUsedMiB = active
-    ? endpointAllocationUsedMiB(
-        samples,
-        active,
-        allocations.length,
-        cardUsedMiB,
-      )
-    : null;
   const bar = (
     <div
       role="group"
@@ -732,11 +780,12 @@ function InventoryAllocationBar({
             </HoverCardContent>
           </HoverCard>
         )}
+        {activeAllocation == null && actualMarker}
       </div>
     </div>
   );
 
-  if (!showLegend) return bar;
+  if (!showLegend && !showActualLegend) return bar;
 
   return (
     <div className="space-y-1.5">
@@ -747,22 +796,23 @@ function InventoryAllocationBar({
         data-testid="vram-allocation-legend"
         className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground"
       >
-        {visible.map((allocation, index) => (
-          <span
-            key={`${allocation.workspace}:${allocation.endpoint}`}
-            role="listitem"
-            className="flex min-w-0 items-center gap-1.5"
-            title={`${allocation.workspace} / ${allocation.endpoint}`}
-          >
+        {showLegend &&
+          visible.map((allocation, index) => (
             <span
-              aria-hidden
-              className="size-2 shrink-0 rounded-sm"
-              style={{ backgroundColor: chartCategoryMark(index).color }}
-            />
-            <span className="truncate">{allocation.endpoint}</span>
-          </span>
-        ))}
-        {hidden.length > 0 && (
+              key={`${allocation.workspace}:${allocation.endpoint}`}
+              role="listitem"
+              className="flex min-w-0 items-center gap-1.5"
+              title={`${allocation.workspace} / ${allocation.endpoint}`}
+            >
+              <span
+                aria-hidden
+                className="size-2 shrink-0 rounded-sm"
+                style={{ backgroundColor: chartCategoryMark(index).color }}
+              />
+              <span className="truncate">{allocation.endpoint}</span>
+            </span>
+          ))}
+        {showLegend && hidden.length > 0 && (
           <span role="listitem" className="flex items-center gap-1.5">
             <span
               aria-hidden
@@ -771,15 +821,7 @@ function InventoryAllocationBar({
             {t("observations.moreAllocations", { count: hidden.length })}
           </span>
         )}
-        {activeActualUsedMiB != null && (
-          <span role="listitem" className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
-            />
-            {t("observations.actualVramUsage")}
-          </span>
-        )}
+        {actualLegend && <span role="listitem">{actualLegend}</span>}
       </div>
     </div>
   );
@@ -1990,6 +2032,7 @@ export function GpuObservationCard({
                 samples={samples}
                 cardUsedMiB={readings.actual}
                 total={readings.total}
+                showActualLegend
               />
             </div>
             <div
