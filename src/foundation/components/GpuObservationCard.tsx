@@ -111,9 +111,9 @@ export function GpuObservationTableHeader({
       ? [
           t("clusters.fields.gpuNumber"),
           t("clusters.fields.health"),
-          t("observations.vramAllocation"),
-          t("observations.utilization"),
+          t("observations.vramUsageAllocationTotal"),
           t("observations.computeShare"),
+          t("observations.utilization"),
         ]
       : [
           t("observations.deviceAndHealth"),
@@ -968,12 +968,57 @@ function Utilization({
   );
 }
 
-function ComputeAllocation({
+function VramUsageAllocationTotal({
+  actual,
+  allocated,
+  total,
+  showLabel = true,
+  className,
+}: {
+  actual: number | null;
+  allocated: number | null;
+  total: number | null;
+  showLabel?: boolean;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4",
+        className,
+      )}
+    >
+      {showLabel && (
+        <span className="min-w-0 text-muted-foreground">
+          {t("observations.vramUsageAllocationTotal")}
+        </span>
+      )}
+      <span
+        className={cn(
+          "shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground",
+          !showLabel && "ml-auto",
+        )}
+      >
+        {actual != null ? gibValue(actual) : EMPTY_VALUE}
+        {" / "}
+        {gibValue(allocated)}
+        {" / "}
+        {gibValue(total)}
+        <span className="font-normal text-muted-foreground"> GiB</span>
+      </span>
+    </div>
+  );
+}
+
+function CompactComputeAllocation({
   device,
-  inline = false,
+  showLabel = true,
+  className,
 }: {
   device: ObservedGpu;
-  inline?: boolean;
+  showLabel?: boolean;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const allocation = coreAllocation(
@@ -987,54 +1032,15 @@ function ComputeAllocation({
   return (
     <div
       className={cn(
-        "min-w-0",
-        inline
-          ? "space-y-1"
-          : "border-t border-[var(--nt-stroke-neutral-trans-2)] pt-2",
+        "flex min-w-0 items-center gap-2 text-[11px] leading-4",
+        className,
       )}
     >
-      <div className="flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4">
+      {showLabel && (
         <span className="shrink-0 text-muted-foreground">
           {t("observations.computeShare")}
         </span>
-        <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
-          {coreUnits(allocation.allocated)} / {coreUnits(allocation.total)}
-          <span className="ml-1 font-normal text-muted-foreground">
-            {Math.round(allocation.percent)}%
-          </span>
-        </span>
-      </div>
-      <MetricBar
-        aria-label={t("observations.computeAllocation")}
-        className="mt-1"
-        series="cyan"
-        size="sm"
-        track="outlined"
-        value={allocation.percent}
-      />
-      <div className="mt-1 text-right text-[11px] text-muted-foreground">
-        {t("clusters.fields.remaining")}{" "}
-        <span className="tabular-nums">{coreUnits(allocation.available)}</span>
-      </div>
-    </div>
-  );
-}
-
-function CompactComputeAllocation({ device }: { device: ObservedGpu }) {
-  const { t } = useTranslation();
-  const allocation = coreAllocation(
-    device.coreUnits,
-    device.availableCoreUnits,
-  );
-  if (!allocation) return null;
-  const coreUnits = (value: number) =>
-    formatToDecimal(value, Number.isInteger(value) ? 0 : 1);
-
-  return (
-    <div className="flex min-w-0 items-center gap-2 text-[11px] leading-4">
-      <span className="shrink-0 text-muted-foreground">
-        {t("observations.computeShare")}
-      </span>
+      )}
       <MetricBar
         aria-label={t("observations.computeAllocation")}
         className="min-w-10 flex-1"
@@ -1050,13 +1056,28 @@ function CompactComputeAllocation({ device }: { device: ObservedGpu }) {
   );
 }
 
-function CompactUtilization({ reading }: { reading?: AcceleratorSample }) {
+function CompactUtilization({
+  reading,
+  showLabel = true,
+  className,
+}: {
+  reading?: AcceleratorSample;
+  showLabel?: boolean;
+  className?: string;
+}) {
   const { t } = useTranslation();
   return (
-    <div className="flex min-w-0 items-center gap-2 text-[11px] leading-4">
-      <span className="shrink-0 text-muted-foreground">
-        {t("observations.utilization")}
-      </span>
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2 text-[11px] leading-4",
+        className,
+      )}
+    >
+      {showLabel && (
+        <span className="shrink-0 text-muted-foreground">
+          {t("observations.utilization")}
+        </span>
+      )}
       <MetricBar
         aria-label={t("observations.utilization")}
         className="min-w-10 flex-1"
@@ -1160,6 +1181,10 @@ export function GpuDetailsSheet({
   const physical = readings.total;
   const reserved = device.allocatedMiB;
   const actual = readings.actual;
+  const actualExceedsPhysical =
+    actual != null && physical != null && actual > physical;
+  const hasComputeAllocation =
+    coreAllocation(device.coreUnits, device.availableCoreUnits) != null;
   const hasRuntimeMetric = Boolean(
     readings.utilization || readings.temperature || readings.power,
   );
@@ -1250,64 +1275,43 @@ export function GpuDetailsSheet({
               ) : hasRuntimeMetric ? (
                 <>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-muted-foreground">
-                        {t("observations.utilization")}
-                      </span>
-                      <span className="text-sm font-semibold tabular-nums">
-                        {readings.utilization ? (
-                          `${(readings.utilization.value * 100).toFixed(0)}%`
-                        ) : (
-                          <EmptyValue />
-                        )}
-                      </span>
-                    </div>
+                    <VramUsageAllocationTotal
+                      actual={actual}
+                      allocated={reserved}
+                      total={physical}
+                    />
                     <MetricBar
                       size="sm"
-                      series="teal"
-                      value={
-                        readings.utilization
-                          ? readings.utilization.value * 100
-                          : null
+                      series={actualExceedsPhysical ? "red" : "violet"}
+                      value={percentOf(actual, physical)}
+                      track={
+                        actual != null && physical != null
+                          ? "outlined"
+                          : "unavailable"
                       }
-                      track={readings.utilization ? "outlined" : "unavailable"}
-                      aria-label={t("observations.utilization")}
+                      aria-label={t("observations.actualMemory")}
                     />
                   </div>
-                  <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                    <div>
-                      <dt className="text-[11px] text-muted-foreground">
-                        {t("observations.vramActualOfTotal")}
-                      </dt>
-                      <dd className="tabular-nums">
-                        {gibValue(actual)}{" "}
-                        <span className="text-muted-foreground">
-                          / {gibValue(physical)} GiB
-                        </span>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[11px] text-muted-foreground">
-                        {t("observations.acceleratorCore")}
-                      </dt>
-                      <dd className="tabular-nums">
-                        {device.coreUnits != null
-                          ? device.coreUnits === 0
-                            ? t("observations.sharedNoLimit")
-                            : t("observations.coreAllocation", {
-                                count: device.coreUnits,
-                              })
-                          : "—"}
-                      </dd>
-                    </div>
+                  <div
+                    className={cn(
+                      "grid grid-cols-1 gap-x-4 gap-y-2",
+                      hasComputeAllocation && "sm:grid-cols-2",
+                    )}
+                  >
+                    <CompactComputeAllocation device={device} />
+                    <CompactUtilization reading={readings.utilization} />
+                  </div>
+                  <dl className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <dt className="text-[11px] text-muted-foreground">
                         {t("observations.deviceTemperature")}
                       </dt>
                       <dd className="tabular-nums">
-                        {readings.temperature
-                          ? `${readings.temperature.value.toFixed(0)} °C`
-                          : "—"}
+                        {readings.temperature ? (
+                          `${readings.temperature.value.toFixed(0)} °C`
+                        ) : (
+                          <EmptyValue />
+                        )}
                       </dd>
                     </div>
                     <div>
@@ -1315,9 +1319,11 @@ export function GpuDetailsSheet({
                         {t("observations.devicePower")}
                       </dt>
                       <dd className="tabular-nums">
-                        {readings.power
-                          ? `${readings.power.value.toFixed(0)} W`
-                          : "—"}
+                        {readings.power ? (
+                          `${readings.power.value.toFixed(0)} W`
+                        ) : (
+                          <EmptyValue />
+                        )}
                       </dd>
                     </div>
                   </dl>
@@ -1972,24 +1978,12 @@ export function GpuObservationCard({
           </div>
           <div className="mt-3 space-y-2.5">
             <div>
-              <div className="mb-1 flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4">
-                <span className="min-w-0 text-muted-foreground">
-                  {t("observations.vramUsageAllocationTotal")}
-                </span>
-                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
-                  {readings.actual != null
-                    ? gibValue(readings.actual)
-                    : EMPTY_VALUE}
-                  {" / "}
-                  {gibValue(device.allocatedMiB)}
-                  {" / "}
-                  {gibValue(readings.total)}
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    GiB
-                  </span>
-                </span>
-              </div>
+              <VramUsageAllocationTotal
+                actual={readings.actual}
+                allocated={device.allocatedMiB}
+                total={readings.total}
+                className="mb-1"
+              />
               <InventoryAllocationBar
                 device={device}
                 allocations={assigned}
@@ -2055,18 +2049,19 @@ export function GpuObservationCard({
                   total={readings.total}
                 />
               </div>
-              <span className="shrink-0 whitespace-nowrap text-xs tabular-nums">
-                <strong className="font-semibold text-foreground">
-                  {t("observations.allocated")} {gibValue(device.allocatedMiB)}
-                </strong>
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {gibValue(readings.total)} GiB
-                </span>
-              </span>
+              <VramUsageAllocationTotal
+                actual={readings.actual}
+                allocated={device.allocatedMiB}
+                total={readings.total}
+                showLabel={false}
+                className="shrink-0"
+              />
             </div>
-            <Utilization reading={readings.utilization} inline />
-            <ComputeAllocation device={device} inline />
+            <CompactComputeAllocation device={device} showLabel={false} />
+            <CompactUtilization
+              reading={readings.utilization}
+              showLabel={false}
+            />
           </>
         ) : (
           <>

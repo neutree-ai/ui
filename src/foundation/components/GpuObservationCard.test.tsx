@@ -56,9 +56,38 @@ describe("GPU observation row", () => {
 
     screen.getByText("clusters.fields.gpuNumber");
     screen.getByText("clusters.fields.health");
-    screen.getByText("observations.vramAllocation");
-    screen.getByText("observations.utilization");
+    screen.getByText("observations.vramUsageAllocationTotal");
     screen.getByText("observations.computeShare");
+    screen.getByText("observations.utilization");
+  });
+
+  it("keeps inventory table readings aligned with the cards", () => {
+    render(
+      card({
+        variant: "inventory",
+        device: {
+          ...device,
+          coreUnits: 100,
+          availableCoreUnits: 40,
+        },
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 8 * 1024 ** 3),
+          sample("neutree_accelerator_utilization_ratio", 0.5),
+        ],
+      }),
+    );
+
+    const row = screen.getByTestId("gpu-inventory-row");
+    expect(row.textContent).toContain("8.0 / 15.0 / 16.0 GiB");
+    expect(row.textContent).toContain("60 / 100");
+    within(row).getByText("50%");
+    within(row).getByRole("progressbar", {
+      name: "observations.computeAllocation",
+    });
+    within(row).getByRole("progressbar", {
+      name: "observations.utilization",
+    });
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -471,9 +500,13 @@ describe("GPU observation row", () => {
     render(
       card({
         allocations: [usageOnly],
-        device: { ...device, totalMiB: 48 * 1024 },
+        device: {
+          ...device,
+          totalMiB: 48 * 1024,
+          allocatedMiB: 24 * 1024,
+        },
         samples: [
-          sample("neutree_accelerator_memory_total_bytes", 48 * 1024 ** 2),
+          sample("neutree_accelerator_memory_total_bytes", 48 * 1024 ** 3),
           sample("neutree_accelerator_memory_used_bytes", 0),
           sample("neutree_accelerator_utilization_ratio", 0),
           sample(
@@ -494,9 +527,9 @@ describe("GPU observation row", () => {
     );
     expect(dialog.textContent).not.toContain("observations.usedShare:129");
     expect(
-      within(dialog).getByText("observations.vramActualOfTotal").parentElement
-        ?.textContent,
-    ).toContain("31.0");
+      within(dialog).getByText("observations.vramUsageAllocationTotal")
+        .parentElement?.textContent,
+    ).toContain("31.0 / 24.0 / 48.0 GiB");
     expect(dialog.textContent).not.toContain("observations.modelWeights");
     expect(dialog.textContent).not.toContain("observations.l0KvCache");
     expect(dialog.textContent).not.toContain("observations.otherReservation");
@@ -560,11 +593,38 @@ describe("GPU observation row", () => {
     openDetails();
     const dialog = screen.getByRole("dialog");
 
-    within(dialog).getByText("observations.vramActualOfTotal");
+    within(dialog).getByText("observations.vramUsageAllocationTotal");
     expect(dialog.textContent).toContain("0.0");
     expect(dialog.textContent).toContain("15.0 GiB");
     expect(dialog.textContent).toContain("0%");
     expect(dialog.textContent).not.toContain("observations.status.no_data");
+  });
+
+  it("keeps compute and utilization together in GPU details", () => {
+    render(
+      card({
+        device: {
+          ...device,
+          coreUnits: 100,
+          availableCoreUnits: 40,
+        },
+        samples: [sample("neutree_accelerator_utilization_ratio", 0.75)],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    within(dialog).getByText("observations.computeShare");
+    within(dialog).getByText("observations.utilization");
+    expect(dialog.textContent).toContain("60 / 100");
+    within(dialog).getByText("75%");
+    within(dialog).getByRole("progressbar", {
+      name: "observations.computeAllocation",
+    });
+    within(dialog).getByRole("progressbar", {
+      name: "observations.utilization",
+    });
+    expect(dialog.textContent).not.toContain("observations.acceleratorCore");
   });
 
   it("keeps the nine hardware fields stable and leaves missing ones empty", () => {
