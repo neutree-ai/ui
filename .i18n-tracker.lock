@@ -491,7 +491,7 @@
   "src/pages/ai-traces/components/LogForwardingButton.tsx": "ebf39f7fa67dad5359243be2e167079c",
   "src/domains/log-sink/testing/builders.ts": "14953d93a5c8e4bc2420d8856684d61e",
   "src/foundation/lib/accelerator-extra-info.ts": "f83b356c887845ab7a490bb31eee758e",
-  "src/foundation/lib/accelerator-observations.ts": "140573bcfb89ebd65fd149d0d49bab9b",
+  "src/foundation/lib/accelerator-observations.ts": "a2d173ffe48064428e6e6ca88b0ec5d7",
   "src/foundation/lib/accelerator-tflops.ts": "87083d4682910f93cb2e4ca09fc7d161",
   "src/foundation/hooks/use-accelerator-observations.ts": "9bc9687a9a0bb63dd6576b8cafed8fe0",
   "src/foundation/components/GpuObservationCard.tsx": "ee59c746021ee1e18c0d37581f24a5c0",
