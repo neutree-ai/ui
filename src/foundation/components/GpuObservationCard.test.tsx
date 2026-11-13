@@ -57,6 +57,7 @@ describe("GPU observation row", () => {
     screen.getByText("clusters.fields.gpuNumber");
     screen.getByText("clusters.fields.health");
     screen.getByText("observations.vramAllocation");
+    screen.getByText("observations.actualVramUsage");
     screen.getByText("observations.computeShare");
     screen.getByText("observations.utilization");
   });

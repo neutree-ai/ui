@@ -89,7 +89,7 @@ type Props = {
 };
 
 const INVENTORY_GRID =
-  "grid min-w-[940px] grid-cols-[minmax(180px,1.15fr)_86px_minmax(280px,1.8fr)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
+  "grid min-w-[1080px] grid-cols-[minmax(170px,1.1fr)_80px_minmax(260px,1.7fr)_minmax(170px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
 const ALLOCATION_GRID =
   "grid min-w-[644px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px] items-center gap-3 px-4";
 const GPU_BAR_TRACK_CLASS =
@@ -112,6 +112,7 @@ export function GpuObservationTableHeader({
           t("clusters.fields.gpuNumber"),
           t("clusters.fields.health"),
           t("observations.vramAllocation"),
+          t("observations.actualVramUsage"),
           t("observations.computeShare"),
           t("observations.utilization"),
         ]
@@ -515,6 +516,27 @@ function GpuActualUsageMarker({
   );
 }
 
+function ActualVramUsageLegend({ usedMiB }: { usedMiB: number | null }) {
+  const { t } = useTranslation();
+  if (usedMiB == null) return <EmptyValue />;
+
+  return (
+    <span
+      data-testid="gpu-actual-usage-legend"
+      className="flex min-w-0 items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"
+    >
+      <span
+        aria-hidden
+        className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+      />
+      <span className="truncate">{t("observations.actualVramUsage")}</span>
+      <span className="shrink-0 font-semibold tabular-nums text-foreground">
+        {gib(usedMiB)}
+      </span>
+    </span>
+  );
+}
+
 function InventoryAllocationBar({
   device,
   allocations,
@@ -556,20 +578,8 @@ function InventoryAllocationBar({
       />
     ) : null;
   const actualLegend =
-    cardUsedMiB != null && total != null && total > 0 ? (
-      <span
-        data-testid="gpu-actual-usage-legend"
-        className="flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"
-      >
-        <span
-          aria-hidden
-          className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
-        />
-        {t("observations.actualVramUsage")}
-        <span className="font-semibold tabular-nums text-foreground">
-          {gib(cardUsedMiB)}
-        </span>
-      </span>
+    cardUsedMiB != null ? (
+      <ActualVramUsageLegend usedMiB={cardUsedMiB} />
     ) : null;
   if (device.allocatedMiB == null) {
     return (
@@ -2091,7 +2101,6 @@ export function GpuObservationCard({
                   samples={samples}
                   cardUsedMiB={readings.actual}
                   total={readings.total}
-                  showActualLegend
                 />
               </div>
               <VramAllocationReading
@@ -2101,6 +2110,7 @@ export function GpuObservationCard({
                 className="shrink-0"
               />
             </div>
+            <ActualVramUsageLegend usedMiB={readings.actual} />
             <CompactComputeAllocation device={device} showLabel={false} />
             <CompactUtilization
               reading={readings.utilization}
