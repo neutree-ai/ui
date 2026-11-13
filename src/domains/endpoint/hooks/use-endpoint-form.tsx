@@ -2405,7 +2405,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {
                   key: "cards" as const,
                   requested: isVgpuAllocationMode
-                    ? requestedVirtualCards
+                    ? displayedVgpuPhysicalCards
                     : requestedFullGpuCards,
                   available: isVgpuAllocationMode
                     ? totalVirtualCardCapacity
