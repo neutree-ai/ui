@@ -573,6 +573,37 @@ describe("GPU observation row", () => {
     // No reported counter: the fixed grid shows the gaps itself.
     expect(dialog.textContent).not.toContain("observations.hardwareReported");
     expect(within(dialog).getAllByText(EMPTY_VALUE).length).toBeGreaterThan(0);
+    // Endpoint and replica counts appear once in the VRAM summary, not duplicated in a footer.
+    expect(
+      within(dialog).getAllByText(/observations\.endpointCount/),
+    ).toHaveLength(1);
+    expect(
+      within(dialog).getAllByText(/observations\.replicaAllocations/),
+    ).toHaveLength(1);
+  });
+
+  it("hides NVIDIA-only interconnect fields on non-NVIDIA accelerators", () => {
+    render(
+      card({
+        device: { ...device, product: "AMD_MI300X" },
+        samples: [
+          sample("neutree_node_accelerator_hardware_info", 1, {
+            pcie_generation: "5",
+          }),
+        ],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+
+    within(dialog).getByText("Gen 5");
+    expect(
+      within(dialog).queryByText("observations.hardwareFields.nvlink"),
+    ).toBeNull();
+    expect(
+      within(dialog).queryByText("observations.hardwareFields.nvswitch"),
+    ).toBeNull();
   });
 
   it("derives the FP16 estimate from utilisation and labels it as an estimate", () => {
