@@ -934,6 +934,24 @@ describe("capacity checks", () => {
     );
   const quarterCard = { memory_mib: 4096, core_percent: 50 };
 
+  it("keeps full-card capacity consistent with a passing placement at a floating-point boundary", () => {
+    const cluster = plainGpuCluster();
+    cluster.status!.resource_info!.node_resources!["node-a"].devices![0]
+      .available!.core_units = 100 - 5e-7;
+    const { result } = renderEndpointForm("create", { clusters: [cluster] });
+    setValues(result, {
+      "spec.cluster": "plain-gpu",
+      "spec.resources": formResources(),
+    });
+    expect(result.current.submitBlocked).toBe(false);
+    expect(currentRequest()).toContain("1.0 / 1.0");
+    expect(
+      result.current.reviewContext.clusterCapacity?.find(
+        (metric) => metric.key === "cards",
+      ),
+    ).toMatchObject({ requested: 1, available: 1 });
+  });
+
   it("keeps card count per replica uncapped by aggregate availability", async () => {
     const { result } = renderEndpointForm("create", {
       clusters: [plainGpuCluster({ allFree: true })],

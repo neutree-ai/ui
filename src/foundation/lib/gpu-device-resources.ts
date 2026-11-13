@@ -12,6 +12,11 @@ import type {
   ResourceInfo,
 } from "@/foundation/types/resource-types";
 
+const PLACEMENT_NUMBER_EPSILON = 1e-6;
+
+const isAtLeastWithTolerance = (available: number, requested: number) =>
+  available + PLACEMENT_NUMBER_EPSILON >= requested;
+
 type SelectedAccelerator = {
   type?: string | null;
   product?: string | null;
@@ -226,19 +231,25 @@ const sumDevicePoolsByProduct = (
 };
 
 const hasFullCardAvailabilitySignals = (device: DeviceResource) =>
-  typeof device.allocatable?.memory_mib === "number" &&
-  typeof device.available?.memory_mib === "number" &&
-  typeof device.allocatable?.core_units === "number" &&
-  typeof device.available?.core_units === "number";
+  Number.isFinite(device.allocatable?.memory_mib) &&
+  Number.isFinite(device.available?.memory_mib) &&
+  Number.isFinite(device.allocatable?.core_units) &&
+  Number.isFinite(device.available?.core_units);
 
-const isDeviceAvailableForFullCardAllocation = (device: DeviceResource) =>
+export const isDeviceAvailableForFullCardAllocation = (
+  device: DeviceResource,
+) =>
   Boolean(
     device.health &&
       hasFullCardAvailabilitySignals(device) &&
-      Number(device.available?.memory_mib) >=
-        Number(device.allocatable?.memory_mib) &&
-      Number(device.available?.core_units) >=
+      isAtLeastWithTolerance(
+        Number(device.available?.memory_mib),
+        Number(device.allocatable?.memory_mib),
+      ) &&
+      isAtLeastWithTolerance(
+        Number(device.available?.core_units),
         Number(device.allocatable?.core_units),
+      ),
   );
 
 export function countFullCardAvailableDevicesByProduct(
@@ -751,10 +762,6 @@ type PlacementSearchContext = {
 
 const PLACEMENT_SEARCH_STATE_LIMIT = 20_000;
 const PLACEMENT_REPLICA_LIMIT = 256;
-const PLACEMENT_NUMBER_EPSILON = 1e-6;
-
-const isAtLeastWithTolerance = (available: number, requested: number) =>
-  available + PLACEMENT_NUMBER_EPSILON >= requested;
 
 const floorCapacityWithTolerance = (available: number, requested: number) =>
   requested > 0

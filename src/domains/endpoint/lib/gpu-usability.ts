@@ -1,6 +1,7 @@
 import {
   type GpuDeviceResourceRow,
   getFractionalGpuCoreRequirement,
+  isDeviceAvailableForFullCardAllocation,
 } from "@/foundation/lib/gpu-device-resources";
 import type {
   DeviceResource,
@@ -48,32 +49,6 @@ const getDeviceAllocatableResourceValue = (
 ) =>
   getFiniteResourceValue(device?.allocatable?.[field]) ??
   getFiniteResourceValue(fallback);
-
-const isDeviceFullyAvailable = (
-  device: DeviceResource | undefined,
-  fallback: boolean,
-) => {
-  if (!device) return fallback;
-
-  const availableMemory = getFiniteResourceValue(device.available?.memory_mib);
-  const availableCore = getFiniteResourceValue(device.available?.core_units);
-  const allocatableMemory = getFiniteResourceValue(
-    device.allocatable?.memory_mib,
-  );
-  const allocatableCore = getFiniteResourceValue(
-    device.allocatable?.core_units,
-  );
-
-  return Boolean(
-    device.health &&
-      availableMemory != null &&
-      availableCore != null &&
-      allocatableMemory != null &&
-      allocatableCore != null &&
-      availableMemory >= allocatableMemory &&
-      availableCore >= allocatableCore,
-  );
-};
 
 /**
  * Whether one replica of `request` could be placed on the device behind `row`.
@@ -129,7 +104,9 @@ export const isDeviceUsableForRequest = (
   );
 
   if (request.allocationMode === "full") {
-    return isDeviceFullyAvailable(schedulingDevice, row.fullFree);
+    return schedulingDevice
+      ? isDeviceAvailableForFullCardAllocation(schedulingDevice)
+      : row.fullFree;
   }
 
   if (request.allocationMode === "fractional") {

@@ -17,6 +17,7 @@ import {
   calculateVgpuCardCapacity,
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
+  countFullCardAvailableDevicesByProduct,
   countPhysicalDevicesByProduct,
   filterGpuDeviceResourceRows,
   sumMatchingDeviceAvailableResources,
@@ -1043,6 +1044,56 @@ describe("gpu device resource helpers", () => {
       core_units: 100,
     });
   });
+
+  it.each([
+    { memory: 100, core: 100 - 5e-7, health: true, count: 1 },
+    { memory: 100 - 5e-7, core: 100, health: true, count: 1 },
+    { memory: 100, core: 99.999, health: true, count: 0 },
+    { memory: 99, core: 100, health: true, count: 0 },
+    { memory: 100, core: 100, health: false, count: 0 },
+    { memory: 100, core: null, health: true, count: 0 },
+  ])(
+    "aligns full-card counts with placement at $memory MiB / $core core (healthy: $health)",
+    ({ memory, core, health, count }) => {
+      const nodes = {
+        "node-a": makeNodeResources({
+          devices: [
+            makeGpuDevice(
+              "GPU-a",
+              core === null ? null : { memory_mib: memory, core_units: core },
+              {
+                health,
+                allocatable: { memory_mib: 100, core_units: 100 },
+              },
+            ),
+          ],
+        }),
+      };
+      expect(
+        calculateGpuPlacementCapacity(nodes, {
+          allocationMode: "full",
+          gpuPerReplica: 1,
+          selectedAccelerator: placementAccelerator,
+        }).gpu,
+      ).toBe(count ? "pass" : "fail");
+      expect(
+        calculatePhysicalCardUsageForRequest(nodes, {
+          allocationMode: "full",
+          requestedPerReplica: 1,
+          replicaCount: 1,
+          selectedAccelerator: placementAccelerator,
+        }).available,
+      ).toBe(count);
+      expect(
+        countFullCardAvailableDevicesByProduct(nodes).get(
+          placementAccelerator.product,
+        ),
+      ).toBe(count);
+      expect(buildGpuDeviceResourceRows(nodes)[0].fullFree).toBe(
+        Boolean(count),
+      );
+    },
+  );
 
   it("calculates fractional GPU card usage from per-card core units", () => {
     expect(
