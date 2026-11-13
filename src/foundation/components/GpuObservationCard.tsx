@@ -89,7 +89,7 @@ type Props = {
 };
 
 const INVENTORY_GRID =
-  "grid min-w-[1080px] grid-cols-[minmax(170px,1.1fr)_80px_minmax(260px,1.7fr)_minmax(170px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
+  "grid min-w-[1000px] grid-cols-[minmax(96px,max-content)_80px_minmax(260px,1.7fr)_minmax(170px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)] items-center gap-3 px-4";
 const ALLOCATION_GRID =
   "grid min-w-[644px] grid-cols-[minmax(150px,1.1fr)_minmax(230px,1.9fr)_120px_90px] items-center gap-3 px-4";
 const GPU_BAR_TRACK_CLASS =
