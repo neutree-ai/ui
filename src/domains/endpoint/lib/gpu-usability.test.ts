@@ -88,6 +88,12 @@ describe("isDeviceUsableForRequest", () => {
 
   it.each([
     { mode: "full", req: FULL, available: FULL_T4, expected: true },
+    {
+      mode: "full with a floating-point remainder",
+      req: FULL,
+      available: { ...FULL_T4, core_units: 100 - 5e-7 },
+      expected: true,
+    },
     { mode: "full", req: FULL, available: HALF_T4, expected: false },
     {
       mode: "fractional 0.75",
