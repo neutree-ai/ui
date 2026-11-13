@@ -50,7 +50,7 @@ export function useEndpointPerformanceTrends(
   workspace?: string | null,
   name?: string | null,
   range: PerformanceTimeRange = { kind: "preset", window: "5m" },
-  enabled = true,
+  autoRefresh = true,
 ) {
   const query = useCustom<EndpointPerformanceTrends>({
     url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-trends?${new URLSearchParams(
@@ -60,14 +60,12 @@ export function useEndpointPerformanceTrends(
     ).toString()}`,
     method: "get",
     queryOptions: {
-      enabled: Boolean(workspace && name && enabled),
-      // A custom range has fixed bounds, so its data does not change.
-      refetchInterval: range.kind === "preset" ? 15000 : false,
+      enabled: Boolean(workspace && name),
+      // Custom ranges and paused endpoints have no live updates to poll for.
+      refetchInterval: autoRefresh && range.kind === "preset" ? 15000 : false,
       retry: false,
     },
   });
-
-  if (!enabled) return { series: [], status: "no_data" as const };
 
   const data = query.error ? undefined : query.data?.data;
   const series = data?.series ?? [];
