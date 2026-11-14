@@ -59,12 +59,11 @@ See Model Registry deviation 2.
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
 `RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus`,
 `UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral), and
-`domains/engine/components/EngineStatus` (Created positive, Failed serious, Pending notice, Deleted neutral). Registries share `RegistryStatus`
+`domains/engine/components/EngineStatus`. Registries share `RegistryStatus`
 (phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
 and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
-(outstanding tone). Engine cards and show headers hide Created and absent phases (`isExceptionalEnginePhase`), unlike the other done kinds.
-Backend `EngineController.sync` settles a missing / Pending phase to Created (`controllers/engine_controller.go`).
+(outstanding tone).
 Not yet switched (own copies of the same strings):
 identity source, model catalog, endpoint (`foundation/components/EndpointStatus`). An
 absent phase renders `EmptyValue`.
