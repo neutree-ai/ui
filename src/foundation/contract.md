@@ -131,3 +131,22 @@ Organization, Service Account and Group Policy use `foundation/hooks/use-row-wri
 PostgREST writes with `Prefer: return=representation` and automatic notifications disabled. An optional `onNoRow`
 turns empty PATCH/DELETE representations into an error; it does not distinguish RLS refusal from concurrent removal.
 Resource list invalidation and extra invalidation are caller options. Tests: `hooks/use-row-write.test.ts`.
+
+## Workspace selection
+
+`foundation/hooks/use-workspace.ts` serves workspaced resource lists and forms. `useWorkspaceOptions` reads
+`workspaces`, name ascending, 100 rows per request; search uses `metadata->>name` contains on the server.
+`useWorkspaceSearch` debounces searches and labels options with technical names. `WorkspaceField` retains a selected
+option absent from the search results. Tests: `use-workspace.test.ts`, `WorkspaceField.test.tsx`.
+
+`useWorkspace` prefers the URL workspace, including a name absent from the returned rows. Without a URL it accepts
+the `__workspace__` local-storage preference only if present in the first options page, otherwise `_all_`.
+Only list routes copy URL selection into storage. Loading is returned separately; selection does not await it.
+`WorkspaceSelect` navigates workspaced list routes and displays their show-route selection.
+
+`isValidWorkspace` checks only nonempty and not `_all_`; it does not validate syntax, existence or permission.
+`dataProvider.getList` adds a workspace filter only for a concrete selection on a workspaced resource;
+`getOne` and update use the supplied workspace for workspaced name lookups. Global resources receive no such filter.
+These are query/form decisions, not API authorization: `api.validate_metadata_workspace` (`004_required_fields`)
+checks required text, DNS-style format and length on attached resource triggers, and resource policies call
+`api.has_permission` (`001_rbac`, later policy migrations). The selection neither creates a Workspace nor grants access.
