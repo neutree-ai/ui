@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { transformResourceForImport } from "@/foundation/lib/yaml-transform";
 import type { RecipeVariant } from "@/foundation/recipe/types";
+import type { Metadata } from "@/foundation/types/basic-types";
 import {
   buildCatalogUpdateValues,
   type CatalogImportCandidate,
@@ -237,4 +239,76 @@ describe("runCatalogImport", () => {
     });
     expect(h.written).toHaveLength(0);
   });
+});
+
+describe("catalog import payload", () => {
+  it.each([false, true])(
+    "writes the full spec with existing=%s",
+    async (existing) => {
+      const values = transformResourceForImport(
+        {
+          apiVersion: "v1",
+          kind: "ModelCatalog",
+          metadata: {
+            name: "catalog-a",
+            workspace: "",
+            display_name: "Catalog A",
+          } as Metadata,
+          spec: {
+            model: { name: "model-a" },
+            resources: null,
+            env: { TOKEN: "" },
+          },
+        },
+        "team-a",
+      );
+      const write = vi.fn();
+      await runCatalogImport(
+        [
+          {
+            index: 0,
+            name: "catalog-a",
+            workspace: "team-a",
+            values,
+          },
+        ],
+        {
+          readExisting: async () =>
+            existing
+              ? {
+                  metadata: {
+                    name: "catalog-a",
+                    annotations: { source: "library" },
+                    labels: { old: "label" },
+                  },
+                  spec: plainSpec,
+                }
+              : null,
+          write,
+          confirmTypeChange: async () => true,
+        },
+      );
+      expect(write).toHaveBeenCalledWith({
+        action: existing ? "update" : "create",
+        name: "catalog-a",
+        workspace: "team-a",
+        values: {
+          api_version: "v1",
+          kind: "ModelCatalog",
+          metadata: {
+            ...(existing ? { annotations: { source: "library" } } : {}),
+            name: "catalog-a",
+            workspace: "team-a",
+            display_name: "Catalog A",
+            labels: {},
+          },
+          spec: {
+            model: { name: "model-a" },
+            resources: null,
+            env: { TOKEN: "" },
+          },
+        },
+      });
+    },
+  );
 });

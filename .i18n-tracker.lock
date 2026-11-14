@@ -161,7 +161,7 @@
   "src/domains/model-registry/types.ts": "13960b57e711c94fdd05cbac5d58f06d",
   "src/domains/model-registry/components/ModelRegistryType.tsx": "ee9ee2665d843e33f5db1cee3cfabb51",
   "src/domains/model-catalog/types.ts": "4162ec96078d3906bf624c2caabcc288",
-  "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "9b2608c79988cc2795602c4449eb8596",
+  "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "1fd69d032777d1df8bec7306a8c27f21",
   "src/domains/image-registry/types.ts": "d63ecb27f4dd788187d49224d2ac2e0d",
   "src/domains/engine/types.ts": "0732151782c629496da2f96e8065a9db",
   "src/domains/engine/components/EngineStatus.tsx": "7c72ddc475674145509391a57d44badf",

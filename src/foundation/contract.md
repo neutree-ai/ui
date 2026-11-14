@@ -80,6 +80,10 @@ fetched through `/credentials/<type>` (needs `<kind>:read-credentials`) so their
 endpoints are exportable but carry no credential (the credentials route does not serve them); log sinks are not in
 the exportable set. Tests: `use-yaml-import.test.ts`, `use-yaml-export.test.ts`.
 
+`serializeToYaml` drops null/undefined values recursively for every exported kind; explicit null entries in JSON maps
+therefore disappear. Model Catalog also seeds its editor through this serializer (see its contract).
+Tests: `foundation/lib/yaml-transform.test.ts`.
+
 ## Table batch delete
 
 `foundation/components/Table.tsx` sets `enableRowSelection: enableBatchDelete`, a table-wide flag.
@@ -94,14 +98,15 @@ See Model Registry deviation 2.
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
 `RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus`,
 `UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral),
-`domains/engine/components/EngineStatus`, `domains/identity-source/components/IdentitySourceStatus`, and
+`domains/engine/components/EngineStatus`, `domains/model-catalog/components/ModelCatalogStatus`,
+`domains/identity-source/components/IdentitySourceStatus`, and
 `IdentitySourceSyncResult` (ok positive, failed serious, pending notice). Registries share `RegistryStatus`
 (phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
 and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
 (outstanding tone).
 Not yet switched (own copies of the same strings):
-model catalog, endpoint (`foundation/components/EndpointStatus`). An
+endpoint (`foundation/components/EndpointStatus`). An
 absent phase renders `EmptyValue` for `BaseStatus` callers.
 
 ## Domain code in foundation
