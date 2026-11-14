@@ -155,7 +155,7 @@
   "src/domains/role-assignment/types.ts": "0e8a644fc4cd715fd5498bae88bd0f56",
   "src/domains/role-assignment/components/UserCell.tsx": "77ab90140c3745b2ac41db527090a3f8",
   "src/domains/role/types.ts": "b5971818048fd68eabdff2d30c5b8ddd",
-  "src/domains/role/hooks/use-permission-dependencies.ts": "52aef239cd3f5e870b79f1b7d368ef8e",
+  "src/domains/role/hooks/use-permission-dependencies.ts": "023edfa8bc1bf818f7d889e2a68bee6e",
   "src/domains/role/components/PermissionsTree.tsx": "fdddfb8ee322d306d63a654afc03ef9b",
   "src/domains/role/components/PermissionsTreeField.tsx": "f57e0495c6f2a76895810f28b177d252",
   "src/domains/model-registry/types.ts": "13960b57e711c94fdd05cbac5d58f06d",
