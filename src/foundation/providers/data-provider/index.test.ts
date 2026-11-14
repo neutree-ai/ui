@@ -58,3 +58,47 @@ describe("dataProvider custom responses", () => {
     expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
   });
 });
+
+describe("user creation", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each(["eng", ""])(
+    "sends only auth fields when department is %j",
+    async (orgUnit) => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: "u-1",
+            username: "alice",
+            email: "alice@example.org",
+          }),
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const result = await dataProvider(client as never).create({
+        resource: "user_profiles",
+        variables: {
+          name: "alice",
+          email: "alice@example.org",
+          password: "password123",
+          confirmPassword: "password123",
+          orgUnit,
+        },
+      });
+      expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/admin/users", {
+        method: "POST",
+        headers: {},
+        body: JSON.stringify({
+          email: "alice@example.org",
+          password: "password123",
+          username: "alice",
+        }),
+      });
+      expect(result.data).toEqual({
+        id: "u-1",
+        username: "alice",
+        email: "alice@example.org",
+      });
+    },
+  );
+});
