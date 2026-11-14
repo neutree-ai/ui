@@ -73,7 +73,7 @@
   "src/components/ui/textarea.tsx": "49de87cc890a281c5ba1946dce9091dd",
   "src/components/ui/tooltip.tsx": "2b88acea3e6c62b11a82708e6f450de3",
   "src/pages/oem-config/show.tsx": "c967d3bbb5497df2ad25377ad3af9b38",
-  "src/pages/oem-config/use-oem-config-form.tsx": "1f3f03f3d7cfa47a50fd17ef35e2004b",
+  "src/pages/oem-config/use-oem-config-form.tsx": "76a31189f5b4bfe991ca5d71389220e0",
   "src/pages/license/show.tsx": "964df08c9236560a96145d43f1aa068d",
   "vitest.config.ts": "a53ec874eb30faef8d6d3adf68e6f191",
   "playwright.config.ts": "1e624a5e7453327ec44105e414fc39d7",
