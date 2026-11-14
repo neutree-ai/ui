@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
+import { parseStructuredArgument } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import { Disclosure } from "@/foundation/components/Disclosure";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
@@ -43,28 +44,13 @@ const formatParameterValue = (value: unknown) =>
  * A string carrying JSON counts as JSON — that is how these values are pasted
  * in, and indenting them is the whole point of the card. */
 const formatParameterValueExpanded = (value: unknown) => {
-  const structured = toStructuredValue(value);
+  const structured = parseStructuredArgument(value);
   if (structured === undefined) return formatParameterValue(value);
 
   try {
     return JSON.stringify(structured, null, 2);
   } catch {
     return formatParameterValue(value);
-  }
-};
-
-/** Objects and arrays, or a string holding one. Primitives are left alone:
- * "8192" and "true" gain nothing from being reparsed and reprinted. */
-const toStructuredValue = (value: unknown): unknown => {
-  if (typeof value !== "string") return value;
-
-  const trimmed = value.trim();
-  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return undefined;
-
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return undefined;
   }
 };
 

@@ -5,12 +5,11 @@ Backend: `v1.Endpoint`, `EndpointSpec`, `EndpointStatus` (`api/v1/endpoint_types
 (`internal/routes/proxies/endpoint_proxy.go`): GET/POST/PATCH, with `validateEndpoint` before writes.
 Permissions: `endpoint:read|create|update|delete`, `endpoint:trace-read`, `model:invoke` (`003`, `022`, `060`, `134`).
 Refine: `endpoints`, workspaced, key `metadata->name`. Backend: `origin/main@062192f6`.
-UI paths are relative to this domain.
-Validators: `internal/routes/proxies/endpoint_validation.go`.
+UI paths are relative to this domain; validators are in `internal/routes/proxies/endpoint_validation.go`.
 
 ## Type
 
-UI: `types.ts`, shared serving types. Defaults are form defaults. Unmasked; user-owned/editable unless noted.
+UI: `types.ts`, shared serving types. Defaults are form defaults; unmasked and user-owned/editable unless noted.
 
 | path | type | required/default | owner/edit exception | backend rule |
 |---|---|---|---|---|
@@ -54,11 +53,12 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 
 - Shared columns/time/empty: `useMetadataColumns`, `Timestamp`, `MetadataTimestampMeta`, `EmptyValue`.
 - Workspace mechanics: `src/foundation/contract.md`, “Workspace selection”.
-- Status: `src/foundation/components/EndpointStatus.tsx:EndpointStatus` uses `BaseStatus` and local tone strings.
-  Running is positive, Failed serious, Pending/Paused/Deleting notice, Deleted neutral;
-  Deploying/ModelDownloading outstanding; unknown has no tone.
-- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`; colocated tests.
-- Resource units: `normalizeEndpointResourcesForForm`, `lib/vgpu.ts`; their tests.
+- Status mechanics: `src/foundation/contract.md`, “Status tone”. `EndpointStatus` retains its phase mapping;
+  Deploying/ModelDownloading use a local outstanding tone; unknown has no tone.
+- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`.
+- Resource units: `normalizeEndpointResourcesForForm` and submit share `getVgpuVirtualization` decoding.
+  Tests: `lib/endpoint-form-helpers.test.ts`, `lib/vgpu.test.ts`.
+- Structured arguments: `parseStructuredArgument` serves submit and `EndpointAdvancedParameters`; colocated tests.
 - Runtime allocations: `lib/resource-status.ts`, `EndpointRuntimeResourcesCard`; their tests.
 - Performance trends: `lib/performance-trends.ts`, `lib/performance-format.ts`; colocated tests.
 - Playground: `usePlaygroundModels`, `lib/chat-helpers.ts`, `lib/rerank-helpers.ts`; colocated tests.
@@ -69,10 +69,10 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
   created, actions. Server name search, task filter, sortable/hideable columns, batch delete.
 - Default ordering: status_sort_priority ascending, created descending. Migration `100` ranks active/unknown 0,
   Paused 1, Deleting/Deleted 2. Rows offer edit/delete, pause/resume and save as catalog.
-- Show (`src/pages/endpoints/show.tsx:EndpointsShow`): model/task/engine/cluster, served models, configuration,
-  allocations/performance/access/provenance; Basic polls 15s, cluster 30s. Other tabs stop polling.
-- Create/Edit: `EndpointDeploymentForm` / `useEndpointForm`; model, resources, runtime, advanced, confirm steps.
-  On-touch validation; next validates owned fields, submit validates all. No catalog reapplication on edit.
+- Show (`src/pages/endpoints/show.tsx:EndpointsShow`): model, engine, cluster, configuration, runtime and provenance.
+  Basic polls 15s, cluster 30s.
+- Create/Edit: `EndpointDeploymentForm` / `useEndpointForm`; on-touch validation and final global validation.
+  No catalog reapplication on edit.
 - Create: manual unless model_catalog hash query; registry-model links prefill identity. Ordinary catalogs merge
   defaults; recipes compose variant/features. Cluster stays independent.
 - Edit: `normalizeEndpointRecordForForm` prefills; name/workspace/cluster locked; other loaded fields retained.
@@ -92,20 +92,19 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 ## Submit and reopen
 
 `useEndpointForm.refineCore.onFinish` clones values, runs `transformEndpointValues` and forwards the record.
-Resource numbers become strings; replicas becomes Number. GPU zero removes accelerator. vGPU memory/core flatten;
+Resource numbers become strings; replicas becomes a number. GPU zero removes accelerator. vGPU memory/core flatten;
 memory_percent, core-only virtualization, empty values and custom accelerator keys disappear.
 JSON object/array strings in engine_args become structured JSON; invalid JSON and scalar strings stay unchanged.
-Null resources/replicas/variables survive the transform.
+Null resources, replicas and variables survive the transform.
 
 `engineNeedsModelSpec` hides model-free engine inputs; submit replaces an existing model with empty defaults/null info
 and retained task. Null model is not rebuilt by this adapter.
-`buildCatalogOriginAnnotations` writes neutree.ai/model-catalog, neutree.ai/model-catalog-variant and
-neutree.ai/model-catalog-features; recipes record resolved variant/ordered features. Failed composition blocks save.
+`buildCatalogOriginAnnotations` records catalog, resolved variant and ordered features under the three
+neutree.ai/model-catalog annotation keys. Failed composition blocks save.
 
 Tests: `hooks/use-endpoint-form.test.tsx` (create/reopen/edit/scale/engine/nulls/custom-key loss),
 `lib/endpoint-form-helpers.test.ts` (transform boundaries/vGPU).
-Actions: `components/EndpointPauseAction.test.tsx`;
-deletion: `src/foundation/providers/data-provider/index.test.ts`.
+Actions: `components/EndpointPauseAction.test.tsx`; deletion: shared data-provider tests.
 
 `RegisterEndpointRoutes` declares no masked fields. Env/arguments resend verbatim.
 Cleared env sends `{}` or a value `""`; null variables sends null. There is no excluded-field backfill.
@@ -113,19 +112,20 @@ Shared masking mechanics: `src/foundation/contract.md`, “Masked fields”; reg
 
 ## Descriptions
 
-`useEndpointForm` marks metadata required without resolver rules. Spec requires cluster, engine/version,
-model registry/name/task unless hidden, replicas at least one, scheduler and accelerator type/product.
+`useEndpointForm` requires cluster, engine/version, visible model fields, positive replicas, scheduler and accelerator.
+Metadata has required markers without rules.
 Create checks resolved registry/model existence; unresolved lists skip checks. Model aliases label physical names.
 Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks.
-Create prefers vLLM once; known engine image types constrain accelerators.
+Create prefers vLLM; engine image types constrain accelerators.
 Capacity budgets include replicas and owned allocations. ZCache timeout: 0.1..60, switch default 5 seconds;
 `useKvCacheAvailability` / `kvCacheUnavailableReason` tests own availability. Labels use `endpoints.*` / `common.*`.
 
 ## Overrides
 
-- Status duplicates `STATUS_TONE`; outstanding differs. Shared placement serves external endpoint (kept comment).
+- Status uses `STATUS_TONE` where identical; outstanding retains its thin fill locally. `ModelTask` keeps local
+  classes because each omits the standalone border token. Reasons for these presentation differences are unknown.
 - GPU zero means unselect to satisfy positive-count admission (helper comment).
-- Client capacity blocks exceed server admission; backend deliberately leaves stale capacity snapshots to scheduling.
+- Client capacity checks exceed server admission, which leaves placement to scheduling.
 - Hidden model data is cleared because users cannot correct fields absent from model-free engine forms (hook comment).
 - Recipe verified hardware ranks choices without excluding others (hook comment).
 - Allowlist and replicas/accelerator form restrictions: reason unknown.
@@ -147,8 +147,7 @@ Tests: `lib/endpoint-wizard.test.ts`.
 | other ENDPOINT_CACHE codes | runtime step; translated by endpointCacheErrorMessage |
 | 10001..10006/10010/10105/10106/10108/10109/10214/10221/10225 | confirm fallback without explicit path |
 
-Proxy constructors own 102xx codes; SQL whitespace check (`029`) owns 10109.
-Cache translations: `lib/endpoint-cache-errors.ts:ENDPOINT_CACHE_ERROR_KEYS`.
+SQL whitespace check (`029`) owns 10109. Cache translations: `lib/endpoint-cache-errors.ts:ENDPOINT_CACHE_ERROR_KEYS`.
 Pause uses cache translations or `getErrorMessage` toast.
 
 ## Known deviations
@@ -170,7 +169,6 @@ Pause uses cache translations or `getErrorMessage` toast.
    UI: `hooks/use-endpoint-form.tsx:useEndpointForm` resolver validates spec alone and registers metadata without rules.
    API: `api.validate_metadata_name` / `api.validate_metadata_workspace` (`004`) require valid identities.
    Users can submit missing or invalid names/workspaces and receive a server issue instead of a field error. Ticket: TBD
-
 5. Human names are hidden.
    UI: `src/pages/endpoints/show.tsx:EndpointsShow` and `useMetadataColumns` display technical names.
    API: `v1.Metadata.DisplayName` (`api/v1/basic_types.go`) retains human names.

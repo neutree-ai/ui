@@ -7,7 +7,6 @@ interface ModelTaskProps {
   variant?: "default" | "outline" | "secondary" | "destructive";
 }
 
-// Format task name for better display
 export const formatTaskName = (taskName: string) => {
   return taskName
     .split("-")
@@ -21,11 +20,9 @@ const ModelTask = ({ task, variant = "outline" }: ModelTaskProps) => {
     return <EmptyValue />;
   }
 
-  // Define color variants for different task types
   const getTaskColor = (taskName: string) => {
     const lowerTask = taskName.toLowerCase();
 
-    // Match specific task types
     if (lowerTask === "text-generation") {
       return "border-[var(--nt-stroke-outstanding-light)] bg-[var(--nt-fill-outstanding-thin)] text-[var(--nt-text-colorful-outstanding)]";
     }

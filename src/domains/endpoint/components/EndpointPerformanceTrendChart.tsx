@@ -103,50 +103,7 @@ export function EndpointPerformanceTrendChart({
   return (
     <div aria-label={ariaLabel} role="img">
       <div className="h-[104px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            accessibilityLayer
-            data={rows}
-            margin={{ top: 6, right: 0, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid
-              vertical={false}
-              stroke="hsl(var(--border))"
-              strokeDasharray="2 4"
-            />
-            <XAxis
-              dataKey="timestamp"
-              domain={["dataMin", "dataMax"]}
-              hide
-              type="number"
-            />
-            <Tooltip
-              content={
-                <PerformanceTrendTooltip
-                  formatTimestamp={(value) =>
-                    formatPerformanceTrendTimestamp(value, window)
-                  }
-                  lines={lines}
-                />
-              }
-              cursor={{ stroke: "var(--nt-stroke-neutral-trans-3)" }}
-            />
-            {lines.map((line, index) => (
-              <Line
-                activeDot={{ r: 4 }}
-                connectNulls={false}
-                dataKey={line.metric}
-                dot={false}
-                key={line.metric}
-                name={line.label}
-                stroke={chartCategoryColor(line.colorIndex ?? index)}
-                strokeDasharray={line.dashed ? "4 3" : undefined}
-                strokeWidth={2}
-                type="monotone"
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+        <TrendPlot lines={lines} rows={rows} window={window} />
       </div>
       <TrendTimeline
         leftPadding={0}
@@ -221,66 +178,85 @@ function SplitLatencyRow({
         {first.groupLabel}
       </span>
       <div className="h-[58px] min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            accessibilityLayer
-            data={rows}
-            margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid
-              vertical={false}
-              stroke="hsl(var(--border))"
-              strokeDasharray="2 4"
-            />
-            <YAxis
-              axisLine={false}
-              domain={["auto", "auto"]}
-              orientation="left"
-              tick={{
-                fill: chartCategoryColor(first.colorIndex ?? 0),
-                fontSize: 10,
-              }}
-              tickFormatter={(value) =>
-                (first.formatAxisValue ?? first.formatValue)(Number(value))
-              }
-              tickLine={false}
-              width={30}
-            />
-            <XAxis
-              dataKey="timestamp"
-              domain={["dataMin", "dataMax"]}
-              hide
-              type="number"
-            />
-            <Tooltip
-              content={
-                <PerformanceTrendTooltip
-                  formatTimestamp={(value) =>
-                    formatPerformanceTrendTimestamp(value, window)
-                  }
-                  lines={lines}
-                />
-              }
-              cursor={{ stroke: "var(--nt-stroke-neutral-trans-3)" }}
-            />
-            {lines.map((line) => (
-              <Line
-                activeDot={{ r: 4 }}
-                connectNulls={false}
-                dataKey={line.metric}
-                dot={false}
-                key={line.metric}
-                name={line.label}
-                stroke={chartCategoryColor(line.colorIndex ?? 0)}
-                strokeDasharray={line.dashed ? "4 3" : undefined}
-                strokeWidth={2}
-                type="monotone"
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+        <TrendPlot lines={lines} rows={rows} window={window} split />
       </div>
     </div>
+  );
+}
+
+function TrendPlot({
+  lines,
+  rows,
+  window,
+  split = false,
+}: {
+  lines: PerformanceTrendLine[];
+  rows: ReturnType<typeof performanceTrendRows>;
+  window: PerformanceWindow;
+  split?: boolean;
+}) {
+  const first = lines[0];
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        accessibilityLayer
+        data={rows}
+        margin={{ top: split ? 4 : 6, right: 0, bottom: 0, left: 0 }}
+      >
+        <CartesianGrid
+          vertical={false}
+          stroke="hsl(var(--border))"
+          strokeDasharray="2 4"
+        />
+        {split && first && (
+          <YAxis
+            axisLine={false}
+            domain={["auto", "auto"]}
+            orientation="left"
+            tick={{
+              fill: chartCategoryColor(first.colorIndex ?? 0),
+              fontSize: 10,
+            }}
+            tickFormatter={(value) =>
+              (first.formatAxisValue ?? first.formatValue)(Number(value))
+            }
+            tickLine={false}
+            width={30}
+          />
+        )}
+        <XAxis
+          dataKey="timestamp"
+          domain={["dataMin", "dataMax"]}
+          hide
+          type="number"
+        />
+        <Tooltip
+          content={
+            <PerformanceTrendTooltip
+              formatTimestamp={(value) =>
+                formatPerformanceTrendTimestamp(value, window)
+              }
+              lines={lines}
+            />
+          }
+          cursor={{ stroke: "var(--nt-stroke-neutral-trans-3)" }}
+        />
+        {lines.map((line, index) => (
+          <Line
+            activeDot={{ r: 4 }}
+            connectNulls={false}
+            dataKey={line.metric}
+            dot={false}
+            key={line.metric}
+            name={line.label}
+            stroke={chartCategoryColor(line.colorIndex ?? (split ? 0 : index))}
+            strokeDasharray={line.dashed ? "4 3" : undefined}
+            strokeWidth={2}
+            type="monotone"
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }
 

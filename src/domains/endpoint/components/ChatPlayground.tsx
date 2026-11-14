@@ -79,13 +79,11 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
-  // Helper function to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === "string") {
-          // Extract base64 part from data URL
           const base64 = reader.result.split(",")[1];
           resolve(base64);
         } else {
@@ -97,7 +95,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     });
   };
 
-  // Handle image file selection
   const handleImageSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -130,7 +127,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     event.target.value = "";
   };
 
-  // Remove selected image
   const removeImage = (index: number) => {
     setSelectedImages((prev) => {
       const updated = [...prev];
@@ -157,7 +153,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     useStickToBottom();
   const selectedModel = form.watch("model");
 
-  // Cleanup image URLs on unmount
   useEffect(() => {
     return () => {
       for (const image of selectedImages) {
@@ -172,7 +167,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   ) => {
     setStatus("submitted");
 
-    // Create a new abort controller for this request
     const newAbortController = new AbortController();
     setAbortController(newAbortController);
 
@@ -191,7 +185,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     // conversation's end even if the reader had scrolled up.
     scrollToBottom();
 
-    // Build messages array with system message if present
     const messagesToSend: ModelMessage[] = [];
 
     if (systemMessage.trim()) {
@@ -201,6 +194,16 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
     messagesToSend.push(...filterMessagesForApi(messages), userMsg);
 
     const assistantIndex = messages.length + 1;
+    const updateAssistant = (update: (content: ChatContentPart[]) => void) => {
+      setMessages((prev) => {
+        const next = [...prev];
+        if (!next[assistantIndex]) {
+          next[assistantIndex] = { role: "assistant", content: [] };
+        }
+        update(next[assistantIndex].content as ChatContentPart[]);
+        return next;
+      });
+    };
     setStatus("streaming");
 
     try {
@@ -223,18 +226,10 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
       });
 
       for await (const delta of stream.fullStream) {
-        // Check if the request was aborted
         if (newAbortController.signal.aborted) {
           break;
         }
-        setMessages((prev) => {
-          const next = [...prev];
-          if (!next[assistantIndex]) {
-            next[assistantIndex] = { role: "assistant", content: [] };
-          }
-
-          const contentArray = next[assistantIndex]
-            .content as Array<ChatContentPart>;
+        updateAssistant((contentArray) => {
           const lastPart = contentArray[contentArray.length - 1];
 
           switch (delta.type) {
@@ -265,7 +260,6 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
               break;
             }
             case "error": {
-              // Handle error delta
               contentArray.push({
                 type: "error",
                 error: String(delta.error || "Unknown error occurred"),
@@ -283,32 +277,18 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
             default:
               console.log("Unhandled delta type:", delta);
           }
-
-          return next;
         });
       }
     } catch (error) {
-      // Handle streaming errors - don't show error if it was aborted intentionally
       if (!newAbortController.signal.aborted) {
-        setMessages((prev) => {
-          const next = [...prev];
-          if (!next[assistantIndex]) {
-            next[assistantIndex] = { role: "assistant", content: [] };
-          }
-
-          const contentArray = next[assistantIndex]
-            .content as Array<ChatContentPart>;
-
+        updateAssistant((contentArray) => {
           contentArray.push({
             type: "error",
             error: getErrorMessage(error, t("common.errors.unknown")),
           });
-
-          return next;
         });
       }
     } finally {
-      // Clean up abort controller and reset status
       setAbortController(null);
       setStatus("idle");
     }
@@ -322,7 +302,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
   };
 
   const clearMessages = () => {
-    stop(); // Stop any ongoing streaming
+    stop();
     setMessages([]);
   };
 

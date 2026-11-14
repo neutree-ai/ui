@@ -8,7 +8,8 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
 - Go fields tagged `api:"-"` are removed from every proxy response (`filterObject` in the resource
   proxy), so the UI never holds the stored value: `ImageRegistry.spec.authconfig` (object),
   `ModelRegistry.spec.credentials` (string). Cluster and external endpoint carry the same kind of
-  field and keep their own copies (see below). External endpoint masks `spec.upstreams[].auth.credential` inside an array.
+  field and keep their own copies (see below). External endpoint masks `spec.upstreams[].auth.credential` inside an
+  array.
 - On PATCH the proxy handler (`handlePatchWithBackfill`, triggered by `writesMaskedColumn` when the
   body contains the masked column's parent) fetches the stored row and calls `mergeExcludedFields`.
   For each excluded path it overwrites the body value with the stored one when the body value is
@@ -19,10 +20,10 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
   by `transformImageRegistryValues`, `transformModelRegistryValues` and `transformClusterValues`
   (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`) and
   `cleanUpstreamsForSubmit` (external endpoint, `spec.upstreams.<i>.auth.credential`, path indexed per upstream).
-- Log sink masks `spec.victorialogs.auth.password|token` and `spec.s3.auth.access_key_id|secret_access_key`. Its builders
-  (`toVictoriaLogsSinkSpec`, `toS3SinkSpec`) drop a blank secret regardless of touched state, so it does not use
-  `omitEmptyUntouched`; an omitted parent object (`auth`) is recreated by `mergeExcludedFieldsRecursive` from the stored
-  secrets when `subtreeHasExcludedField`. See `domains/log-sink/contract.md`.
+- Log sink masks `spec.victorialogs.auth.password|token` and `spec.s3.auth.access_key_id|secret_access_key`.
+  Its builders (`toVictoriaLogsSinkSpec`, `toS3SinkSpec`) drop a blank secret regardless of touched state;
+  it does not use `omitEmptyUntouched`. An omitted parent object (`auth`) is recreated from stored secrets by
+  `mergeExcludedFieldsRecursive` when `subtreeHasExcludedField`. See `domains/log-sink/contract.md`.
 - Identity Source also omits blank secrets regardless of touched state; it does not use `omitEmptyUntouched`.
   Its storage semantics differ from ordinary proxy backfill; see `domains/identity-source/contract.md`.
 - Known deviations of this rule (details and evidence in the kind contracts):
@@ -33,12 +34,14 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
 
 ## Masked fields inside arrays
 
-`ExternalEndpointSpec.Upstreams` declares `mergekey:"upstream.url,endpoint_ref"`. `mergeExcludedFieldsRecursive` merges such
-arrays through `mergeArrayByIdentity` (`elementIdentity`: first non-empty of the key paths, taken from the request body
+`ExternalEndpointSpec.Upstreams` declares `mergekey:"upstream.url,endpoint_ref"`.
+`mergeExcludedFieldsRecursive` merges such arrays through `mergeArrayByIdentity`
+(`elementIdentity`: first non-empty of the key paths, taken from the request body
 element) instead of by index, and an array with a masked field and no `mergekey` panics at startup
 (`extractStructTagConfig`). Consequence for the UI: a secret is kept only when the element's identity is unchanged, so
 editing an upstream URL with an empty credential loses it (External Endpoint deviation 1). The connectivity test route
-backfills separately (`backfillAuthCredential`, by `stored_upstream_url`) and needs `external_endpoint:read-credentials`.
+backfills separately (`backfillAuthCredential`, by `stored_upstream_url`) and needs
+`external_endpoint:read-credentials`.
 
 ## Edit PATCH
 
@@ -96,18 +99,20 @@ See Model Registry deviation 2.
 `foundation/components/BaseStatus` renders the chip; callers pass `className` (tone) and
 `translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
-`RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus`,
+`RegistryStatus`, `domains/cluster/components/ClusterStatus`,
+`domains/external-endpoint/components/ExternalEndpointStatus`,
 `UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral),
 `domains/engine/components/EngineStatus`, `domains/model-catalog/components/ModelCatalogStatus`,
-`domains/identity-source/components/IdentitySourceStatus`, and
-`IdentitySourceSyncResult` (ok positive, failed serious, pending notice). Registries share `RegistryStatus`
-(phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
-and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
+`domains/identity-source/components/IdentitySourceStatus`,
+`IdentitySourceSyncResult` (ok positive, failed serious, pending notice), and `EndpointStatus`.
+Image Registry and Model Registry share `RegistryStatus`: phases Connected, Failed, Pending and Deleted use
+`status.phases.registry.<phase>`. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
 (outstanding tone).
-Not yet switched (own copies of the same strings):
-endpoint (`foundation/components/EndpointStatus`). An
-absent phase renders `EmptyValue` for `BaseStatus` callers.
+`EndpointStatus` serves Endpoint, Cluster and External Endpoint surfaces and API Key / Group Policy model pickers.
+Running is positive, Failed serious, Pending / Degraded / Deleting / Paused notice, Deleted neutral; Deploying and
+ModelDownloading retain their local outstanding string with a thin fill. An absent phase renders `EmptyValue`
+for `BaseStatus` callers.
 
 ## Domain code in foundation
 
