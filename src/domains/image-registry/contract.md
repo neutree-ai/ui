@@ -33,8 +33,7 @@ backend (`041_remove_image_registry_ca`).
 
 ## Roles
 
-- Status tone: `ImageRegistryStatus` maps the four phases to local class strings (positive,
-  serious, notice, neutral tokens) and renders `foundation/components/BaseStatus`; label key
+- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `Timestamp` (relative) in the list, `MetadataTimestampMeta` in the show header.
 - Name / workspace / created / actions columns: `useMetadataColumns`.
@@ -87,13 +86,11 @@ backend (`041_remove_image_registry_ca`).
 
 ## Overrides
 
-- Credentials omitted on edit when empty and untouched (`transformImageRegistryValues`): the API
+- Credentials omitted on edit when empty and untouched (`transformImageRegistryValues`, shared `omitEmptyUntouched`): the API
   never returns them, so an empty field means "unchanged"; the server fills the masked column back
   (see Known deviations for the partial case). Reason: commit "preserve dirty empty sensitive
   fields" (#276) added the touched check so a field the user typed into and emptied is sent as
   `""`.
-- Status chip colors are defined in `ImageRegistryStatus` rather than a shared status role
-  (reason unknown).
 - Show page joins URL and repository, trimming a trailing `/` on the URL and a leading `/` on the
   repository, and ignores a blank repository (reason unknown; other pages in the repo display
   `spec.url` unchanged).

@@ -40,9 +40,8 @@ the stored token. Unlike `ImageRegistry.spec.authconfig` it is a single flat str
 
 ## Roles
 
-- Status tone: `ModelRegistryStatus` maps the four phases to local class strings (positive, serious,
-  notice, neutral tokens) and renders `foundation/components/BaseStatus`; label key
-  `status.phases.registry.<phase>`. Duplicates the mapping in `ImageRegistryStatus`.
+- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`); label key
+  `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `metadataColumns.creation_timestamp` (relative `Timestamp`) in the list;
   `MetadataTimestampMeta` in the show header; `formatTimestamp` for `stats_updated_at` and
   `last_checked_at`.
@@ -117,7 +116,7 @@ the stored token. Unlike `ImageRegistry.spec.authconfig` it is a single flat str
 
 ## Overrides
 
-- Credentials omitted on edit when empty and untouched (`transformModelRegistryValues`): the API
+- Credentials omitted on edit when empty and untouched (`transformModelRegistryValues`, shared `omitEmptyUntouched`): the API
   never returns them, so an empty field means "unchanged". Commit "preserve dirty empty sensitive
   fields" (#276) added the touched check so a field the user typed into and emptied is sent as `""`.
   Server side, an absent `spec.credentials` is backfilled; see Known deviations 1 for the `""` case.
@@ -132,7 +131,6 @@ the stored token. Unlike `ImageRegistry.spec.authconfig` it is a single flat str
   (`ModelRegistryWriteActions` comment).
 - Hugging Face icon is fetched from huggingface.co; the other icons are local because installs can
   be air-gapped (`ModelRegistryType.tsx` comment; "Hugging Face predates that reasoning").
-- Status chip colors are defined in `ModelRegistryStatus` rather than a shared role (reason unknown).
 - Show page reads the workspace from the route, not the record (nullable field; comment in
   `show.tsx`).
 

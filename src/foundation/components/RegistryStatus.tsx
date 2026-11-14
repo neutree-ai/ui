@@ -1,7 +1,7 @@
 import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-export default function ImageRegistryStatus(status: BaseStatusType) {
+export default function RegistryStatus(status: BaseStatusType) {
   const { t } = useTranslation();
 
   const classMapping = {
