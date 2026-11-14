@@ -16,9 +16,9 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
   body and stored row.
 - UI rule: an empty untouched secret input is omitted from the edit payload; a touched-then-emptied
   one is sent as `""`. Shared helper `omitEmptyUntouched` (`foundation/lib/touched-fields.ts`), used
-  by `transformImageRegistryValues` and `transformModelRegistryValues`. Not yet switched (own copies):
-  `domains/cluster/lib/transform-cluster-values.ts`,
-  `domains/external-endpoint/lib/clean-upstreams-for-submit.ts`.
+  by `transformImageRegistryValues`, `transformModelRegistryValues` and `transformClusterValues`
+  (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`).
+  Not yet switched (own copy): `domains/external-endpoint/lib/clean-upstreams-for-submit.ts`.
 - Known deviations of this rule (details and evidence in the kind contracts):
   1. A partially filled object overwrites the stored one: a one-key `spec.authconfig` is not empty,
      so the other credential is lost (Image Registry deviation 1).
@@ -42,12 +42,15 @@ See Model Registry deviation 2.
 ## Status tone
 
 `foundation/components/BaseStatus` renders the chip; callers pass `className` (tone) and
-`translatedPhase`. Tone classes use the `--nt-stroke|fill|text-*` tokens of `variables.css`
-(positive, serious, notice, neutral). Registries share `RegistryStatus` (phases Connected, Failed,
-Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry and Model Registry.
-Other kinds (cluster, external endpoint, engine, log sink, identity source, model catalog) keep a
-local phase-to-class table with their own phase set; several repeat the same positive / serious /
-notice / neutral strings. An absent phase renders `EmptyValue`.
+`translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
+tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
+`RegistryStatus` and `domains/cluster/components/ClusterStatus`. Registries share `RegistryStatus`
+(phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
+and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
+Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
+(outstanding tone). Not yet switched (own copies of the same strings): external endpoint, engine, log sink,
+identity source, model catalog, endpoint (`foundation/components/EndpointStatus`). An
+absent phase renders `EmptyValue`.
 
 ## Domain code in foundation
 

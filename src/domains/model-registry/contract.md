@@ -40,7 +40,7 @@ the stored token. Unlike `ImageRegistry.spec.authconfig` it is a single flat str
 
 ## Roles
 
-- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`); label key
+- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/lib/status-tone.ts`); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `metadataColumns.creation_timestamp` (relative `Timestamp`) in the list;
   `MetadataTimestampMeta` in the show header; `formatTimestamp` for `stats_updated_at` and

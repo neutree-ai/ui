@@ -33,7 +33,7 @@ backend (`041_remove_image_registry_ca`).
 
 ## Roles
 
-- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`); label key
+- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/lib/status-tone.ts`); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `Timestamp` (relative) in the list, `MetadataTimestampMeta` in the show header.
 - Name / workspace / created / actions columns: `useMetadataColumns`.
