@@ -1,9 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/lib/i18n", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@/domains/group-policy/components/ModelEntryPicker", () => ({
   ModelEntryPicker: () => null,
 }));
@@ -42,20 +39,46 @@ describe("GroupPolicyDialog token pool", () => {
     );
   });
 
-  it("saves an untouched pool unchanged", () => {
+  it("reopens and saves both lists and the pool unchanged", () => {
     const onSave = vi.fn();
+    const stored = policy(1_500_000);
+    stored.spec.allowed_models = [{ model: "a", workspace: "ws" }];
+    stored.spec.denied_models = [{ model: "b" }];
     render(
       <GroupPolicyDialog
-        policy={policy(1_500_000)}
+        policy={stored}
         groupLabel="SRE"
         onOpenChange={vi.fn()}
         onSave={onSave}
       />,
     );
     fireEvent.click(screen.getByTestId("group-policy-save"));
-    expect(onSave).toHaveBeenCalledWith([], [], {
-      limit: 1_500_000,
-      period: "monthly",
-    });
+    expect(onSave).toHaveBeenCalledWith(
+      stored.spec.allowed_models,
+      stored.spec.denied_models,
+      {
+        limit: 1_500_000,
+        period: "monthly",
+      },
+    );
+  });
+
+  it("blocks saving a reopened API quota above the safe integer range", () => {
+    render(
+      <GroupPolicyDialog
+        policy={policy(9_007_199_254_740_992)}
+        groupLabel="SRE"
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    screen.getByText("group_policies.pool.invalid");
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "buttons.save",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
   });
 });

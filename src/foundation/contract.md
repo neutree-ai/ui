@@ -116,3 +116,18 @@ Image repository listing (`foundation/lib/api/image-registry-content.ts`,
 (`ImageRegistryExplorerDialog`), not by `domains/image-registry`. It stays in foundation because
 `.dependency-cruiser.cjs` (`no-L2-cross-domain`) forbids the endpoint domain importing it from
 another domain. The same holds for `model-registry-visibility` / `model-registry-availability`.
+
+## Token quotas
+
+API Key and Group Policy use `foundation/lib/token-quota.ts` for amount/unit conversion, periods and display.
+`splitTokenQuota`, `toTokenCount` and `formatTokenQuota` are tested in `token-quota.test.ts`; forms permit blank
+as unset and require a positive safe integer after unit conversion. Backend validators accept positive int64 limits
+(`api.validate_api_key_limits` in `099_apikey_per_model_quota`,
+`api.group_policy_normalize_token_quota` in `133_group_policies`).
+
+## Row writes
+
+Organization, Service Account and Group Policy use `foundation/hooks/use-row-write.ts:useRowWrite` for custom
+PostgREST writes with `Prefer: return=representation` and automatic notifications disabled. An optional `onNoRow`
+turns empty PATCH/DELETE representations into an error; it does not distinguish RLS refusal from concurrent removal.
+Resource list invalidation and extra invalidation are caller options. Tests: `hooks/use-row-write.test.ts`.
