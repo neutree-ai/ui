@@ -36,12 +36,20 @@ import { CreateApiKeyForm } from "./CreateApiKeyForm";
 describe("CreateApiKeyForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mutateAsync.mockResolvedValue({ data: { id: "key-1" } });
+    mutateAsync.mockResolvedValue({
+      data: { id: "key-1", status: { sk_value: "created-secret" } },
+    });
     invalidate.mockResolvedValue(undefined);
   });
 
   it("submits from the button, never on Enter inside a field", async () => {
-    render(<CreateApiKeyForm onClose={vi.fn()} />);
+    render(
+      <CreateApiKeyForm
+        onClose={vi.fn()}
+        initialWorkspace="default"
+        initialProjectId="project-1"
+      />,
+    );
 
     const name = screen
       .getByTestId("field-name")
@@ -57,10 +65,24 @@ describe("CreateApiKeyForm", () => {
     );
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ url: "/rpc/create_api_key" }),
-      );
+      expect(mutateAsync).toHaveBeenCalledWith({
+        url: "/rpc/create_api_key",
+        method: "post",
+        values: {
+          p_workspace: "default",
+          p_name: null,
+          p_display_name: "my-key",
+          p_project_id: "project-1",
+          p_description: "",
+          p_quota: 0,
+          p_limits: {},
+        },
+        successNotification: false,
+        errorNotification: false,
+      });
     });
+    await screen.findByText("created-secret");
+    expect(screen.queryByTestId("field-name")).toBeNull();
   });
 
   it("creates an application key without a project", async () => {
@@ -85,11 +107,13 @@ describe("CreateApiKeyForm", () => {
       expect(mutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           url: "/rpc/create_service_account_api_key",
-          values: expect.objectContaining({
+          values: {
             p_service_account_id: "sa-7",
             p_workspace: "default",
             p_display_name: "app-key",
-          }),
+            p_description: "",
+            p_limits: {},
+          },
         }),
       );
     });
