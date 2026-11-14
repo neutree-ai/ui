@@ -19,6 +19,10 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
   by `transformImageRegistryValues`, `transformModelRegistryValues` and `transformClusterValues`
   (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`) and
   `cleanUpstreamsForSubmit` (external endpoint, `spec.upstreams.<i>.auth.credential`, path indexed per upstream).
+- Log sink masks `spec.victorialogs.auth.password|token` and `spec.s3.auth.access_key_id|secret_access_key`. Its builders
+  (`toVictoriaLogsSinkSpec`, `toS3SinkSpec`) drop a blank secret regardless of touched state, so it does not use
+  `omitEmptyUntouched`; an omitted parent object (`auth`) is recreated by `mergeExcludedFieldsRecursive` from the stored
+  secrets when `subtreeHasExcludedField`. See `domains/log-sink/contract.md`.
 - Known deviations of this rule (details and evidence in the kind contracts):
   1. A partially filled object overwrites the stored one: a one-key `spec.authconfig` is not empty,
      so the other credential is lost (Image Registry deviation 1).
@@ -39,7 +43,7 @@ backfills separately (`backfillAuthCredential`, by `stored_upstream_url`) and ne
 Refine edit forms send the whole loaded record as the PATCH body, including `id` and `status`
 (proxy keeps those top-level fields). The status snapshot is therefore written back on every edit.
 Whether a stale `status` (e.g. `ModelRegistryStatus.stats`) is harmful was not traced. Applies to all
-kinds on the shared edit flow.
+kinds on the shared edit flow, except Log Sink, whose `onFinish` override sends only `{spec}`.
 
 ## Table batch delete
 
@@ -53,12 +57,12 @@ See Model Registry deviation 2.
 `foundation/components/BaseStatus` renders the chip; callers pass `className` (tone) and
 `translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
-`RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus` and
-`UpstreamStatusBadge`. Registries share `RegistryStatus`
+`RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus`,
+`UpstreamStatusBadge` and `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral). Registries share `RegistryStatus`
 (phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
 and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
-(outstanding tone). Not yet switched (own copies of the same strings): engine, log sink,
+(outstanding tone). Not yet switched (own copies of the same strings): engine,
 identity source, model catalog, endpoint (`foundation/components/EndpointStatus`). An
 absent phase renders `EmptyValue`.
 

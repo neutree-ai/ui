@@ -251,10 +251,6 @@ export function toLogSinkPayload(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Validation. Each returns an error kind, or undefined when valid.
-// ---------------------------------------------------------------------------
-
 type UrlError = "required" | "invalid" | "scheme" | "host" | "queryOrFragment";
 
 /** An http(s) URL with a host, or why the value is not one. */
@@ -347,7 +343,7 @@ export function validateExtraFieldValue(value: string): "comma" | undefined {
   return value.includes(",") ? "comma" : undefined;
 }
 
-/** Server error codes (migration 104) → form field. */
+/** Server error codes of `validate_log_sink_spec` (migrations 115, 117) → form field. */
 export const LOG_SINK_ERROR_FIELDS: Record<string, string> = {
   "10243": "spec.type",
   "10244": "spec.victorialogs.url",
