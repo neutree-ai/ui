@@ -28,7 +28,6 @@ export const useLicense = () => {
 
   const license = licenseData?.data;
 
-  // Check if license supports multiple workspaces
   const supportMultiWorkspace = useMemo(() => {
     const workspaceLimit = license?.status?.usage?.Workspace?.limit;
 
@@ -36,7 +35,6 @@ export const useLicense = () => {
       return false;
     }
 
-    // Support multi-workspace if limit > 1 or unlimited
     return workspaceLimit > 1 || workspaceLimit === MAX_UNLIMITED;
   }, [license?.status?.usage?.Workspace?.limit]);
 
