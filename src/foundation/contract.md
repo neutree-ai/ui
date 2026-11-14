@@ -8,7 +8,7 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
 - Go fields tagged `api:"-"` are removed from every proxy response (`filterObject` in the resource
   proxy), so the UI never holds the stored value: `ImageRegistry.spec.authconfig` (object),
   `ModelRegistry.spec.credentials` (string). Cluster and external endpoint carry the same kind of
-  field and keep their own copies (see below).
+  field and keep their own copies (see below). External endpoint masks `spec.upstreams[].auth.credential` inside an array.
 - On PATCH the proxy handler (`handlePatchWithBackfill`, triggered by `writesMaskedColumn` when the
   body contains the masked column's parent) fetches the stored row and calls `mergeExcludedFields`.
   For each excluded path it overwrites the body value with the stored one when the body value is
@@ -17,13 +17,22 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
 - UI rule: an empty untouched secret input is omitted from the edit payload; a touched-then-emptied
   one is sent as `""`. Shared helper `omitEmptyUntouched` (`foundation/lib/touched-fields.ts`), used
   by `transformImageRegistryValues`, `transformModelRegistryValues` and `transformClusterValues`
-  (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`).
-  Not yet switched (own copy): `domains/external-endpoint/lib/clean-upstreams-for-submit.ts`.
+  (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`) and
+  `cleanUpstreamsForSubmit` (external endpoint, `spec.upstreams.<i>.auth.credential`, path indexed per upstream).
 - Known deviations of this rule (details and evidence in the kind contracts):
   1. A partially filled object overwrites the stored one: a one-key `spec.authconfig` is not empty,
      so the other credential is lost (Image Registry deviation 1).
   2. A touched-then-emptied secret is sent as `""`, which `mergeExcludedFields` treats as empty and
      backfills, so a stored secret cannot be cleared from the UI (Model Registry deviation 1).
+
+## Masked fields inside arrays
+
+`ExternalEndpointSpec.Upstreams` declares `mergekey:"upstream.url,endpoint_ref"`. `mergeExcludedFieldsRecursive` merges such
+arrays through `mergeArrayByIdentity` (`elementIdentity`: first non-empty of the key paths, taken from the request body
+element) instead of by index, and an array with a masked field and no `mergekey` panics at startup
+(`extractStructTagConfig`). Consequence for the UI: a secret is kept only when the element's identity is unchanged, so
+editing an upstream URL with an empty credential loses it (External Endpoint deviation 1). The connectivity test route
+backfills separately (`backfillAuthCredential`, by `stored_upstream_url`) and needs `external_endpoint:read-credentials`.
 
 ## Edit PATCH
 
@@ -44,11 +53,12 @@ See Model Registry deviation 2.
 `foundation/components/BaseStatus` renders the chip; callers pass `className` (tone) and
 `translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
-`RegistryStatus` and `domains/cluster/components/ClusterStatus`. Registries share `RegistryStatus`
+`RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus` and
+`UpstreamStatusBadge`. Registries share `RegistryStatus`
 (phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
 and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
-(outstanding tone). Not yet switched (own copies of the same strings): external endpoint, engine, log sink,
+(outstanding tone). Not yet switched (own copies of the same strings): engine, log sink,
 identity source, model catalog, endpoint (`foundation/components/EndpointStatus`). An
 absent phase renders `EmptyValue`.
 
