@@ -83,8 +83,6 @@ export const useRoleAssignmentForm = ({
       },
     },
     refineCoreProps: {
-      // A known error code gets its own message; anything else keeps
-      // refine's default notification.
       errorNotification: (error) => {
         const description = roleAssignmentErrorMessage(t, error);
         return description

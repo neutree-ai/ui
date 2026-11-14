@@ -217,7 +217,7 @@
   "src/domains/api-key/components/CreateApiKeyForm.tsx": "f2e5bfe54bbdcf4fcf79a80e6c2582cc",
   "src/domains/workspace/hooks/use-workspace-form.tsx": "49dfbca908ba681048b3cc34badc8920",
   "src/domains/user/hooks/use-user-form.tsx": "5aa477bed78f6a37d4db8c59bfb3321c",
-  "src/domains/role-assignment/hooks/use-role-assignment-form.tsx": "cf410b72b4252f71d55180e95d337c91",
+  "src/domains/role-assignment/hooks/use-role-assignment-form.tsx": "ab2436e6d208bb142ff011bca1f871be",
   "src/domains/role/hooks/use-role-form.tsx": "583d8a28b1f4845e80f13bd82e73fee6",
   "src/domains/model-registry/lib/transform-model-registry-values.ts": "2f4076eef5df674749f6e783055941d9",
   "src/domains/model-registry/hooks/use-model-registry-form.tsx": "dd72ad73d10a1435ea1b63ea658fac9b",
