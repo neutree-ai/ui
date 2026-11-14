@@ -45,6 +45,38 @@ Refine edit forms send the whole loaded record as the PATCH body, including `id`
 Whether a stale `status` (e.g. `ModelRegistryStatus.stats`) is harmful was not traced. Applies to all
 kinds on the shared edit flow, except Log Sink, whose `onFinish` override sends only `{spec}`.
 
+## Backfill preconditions
+
+`handlePatchWithBackfill` fetches the stored row from the query-string filters and requires exactly one match; a PATCH
+that writes a masked column's parent and matches zero or several rows fails with 10331 (`ambiguousBackfillCode`).
+A soft-delete PATCH skips the backfill (`IsSoftDeleteRequest`). The backfill runs before the kind's validator and
+check functions, so those see the stored secret (cluster: `buildPostgrestClusterPatchValidationNew`; log sink:
+`validate_log_sink_spec`).
+
+## Soft delete and force
+
+Delete is a PATCH of `metadata.deletion_timestamp` (`validate_soft_delete`, `022_soft_delete_permission`) issued by the
+shared delete provider and `DeleteConfirmDialog`; the force checkbox adds annotation `neutree.ai/force-delete`. The
+per-kind deletion pre-checks (cluster 10126, image registry 10127, model registry 10128, built-in guard 10132) do not
+read the annotation, so force never bypasses them, and the UI has no code-specific handling of them (generic toast).
+Log sink opts out of the checkbox (`allowForceDelete: false`).
+
+## Error toast path
+
+Data-provider calls reject through `handleError` (`foundation/providers/data-provider/utils/handle-error.ts`):
+message is `error.message` plus `: <hint>` when present, `statusCode` is the numeric `code`. The Refine notification
+provider shows it as an error toast. Kinds without a field mapping use this path unchanged; only mappings a kind adds
+are listed in its contract.
+
+## YAML import and export
+
+Import (`foundation/hooks/use-yaml-import.ts`) creates a record only when `getOne` finds none; an existing name is
+skipped, never updated. Export (`foundation/hooks/use-yaml-export.ts`) offers `EXPORTABLE_RESOURCES`; options default
+to removing status, ids and timestamps. Only `CREDENTIAL_RESOURCES` (clusters, image registries, model registries) are
+fetched through `/credentials/<type>` (needs `<kind>:read-credentials`) so their secrets are included. External
+endpoints are exportable but carry no credential (the credentials route does not serve them); log sinks are not in
+the exportable set. Tests: `use-yaml-import.test.ts`, `use-yaml-export.test.ts`.
+
 ## Table batch delete
 
 `foundation/components/Table.tsx` sets `enableRowSelection: enableBatchDelete`, a table-wide flag.
