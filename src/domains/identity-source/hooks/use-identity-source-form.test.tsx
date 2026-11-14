@@ -89,7 +89,6 @@ describe("useIdentitySourceForm", () => {
     expect(input("spec.oidc.redirect_url").value).toMatch(
       /\/api\/v1\/auth\/oidc\/callback$/,
     );
-    // The UI root, not the form's own path.
     expect(input("spec.oidc.allowed_redirects").value).toBe(
       `${window.location.origin}/`,
     );
@@ -144,6 +143,40 @@ describe("useIdentitySourceForm", () => {
   });
 
   describe("edit", () => {
+    it.each(["ldap", "oidc"] as const)(
+      "omits a %s secret typed and then emptied",
+      async (type) => {
+        const record =
+          type === "ldap"
+            ? ldapRecord
+            : {
+                ...ldapRecord,
+                spec: {
+                  type: "oidc" as const,
+                  enabled: true,
+                  ldap: null,
+                  oidc: {
+                    issuer: "https://idp.example.org",
+                    client_id: "app",
+                    redirect_url: "https://ui.example.org/callback",
+                    allowed_redirects: ["https://ui.example.org/"],
+                  },
+                },
+              };
+        const { submit } = renderIdentitySourceForm("edit", record);
+        const field = type === "ldap" ? "bind_password" : "client_secret";
+        fillField(`spec.${type}.${field}`, "replacement");
+        fillField(`spec.${type}.${field}`, "");
+
+        await submit();
+
+        await waitFor(() =>
+          expect(refineForm.onFinish).toHaveBeenCalledTimes(1),
+        );
+        expect(submittedSpec()[type]).not.toHaveProperty(field);
+      },
+    );
+
     it("keeps the name and type fixed and explains blank secrets", () => {
       renderIdentitySourceForm("edit");
       expect(input("metadata.name").value).toBe("corp-ldap");
@@ -206,7 +239,6 @@ describe("useIdentitySourceForm", () => {
       fireEvent.click(syncSwitch());
       await waitFor(() => screen.getByTestId("field-spec.sync.interval"));
       screen.getByTestId("field-spec.ldap.sync.org_unit_base_dn");
-      // Advanced settings stay folded until asked for.
       expect(
         screen.queryByTestId("field-spec.ldap.sync.group_filter"),
       ).toBeNull();

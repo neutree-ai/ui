@@ -36,6 +36,139 @@ const ldapValues = (
   return values;
 };
 
+const sourceRecord = (type: "ldap" | "oidc"): IdentitySource => ({
+  id: 7,
+  api_version: "v1",
+  kind: "IdentitySource",
+  metadata: {
+    name: "source",
+    display_name: "Source",
+    workspace: null,
+    deletion_timestamp: null,
+    creation_timestamp: "2026-10-01T00:00:00Z",
+    update_timestamp: "2026-10-02T00:00:00Z",
+    labels: { keep: "yes" },
+    annotations: {},
+  },
+  spec: {
+    type,
+    enabled: true,
+    ldap:
+      type === "ldap"
+        ? {
+            url: "ldap://directory.example.org",
+            bind_dn: "cn=svc",
+            user_base_dn: "ou=people",
+            user_filter: "(uid={username})",
+            attributes: { id: "uuid" },
+          }
+        : null,
+    oidc:
+      type === "oidc"
+        ? {
+            issuer: "https://idp.example.org",
+            client_id: "app",
+            redirect_url: `${REST}/auth/oidc/callback`,
+            allowed_redirects: [UI],
+            claims: { username: "sub" },
+          }
+        : null,
+  },
+  status: { phase: "Connected" },
+});
+
+describe.each(["ldap", "oidc"] as const)("%s exact payloads", (type) => {
+  const settings = () =>
+    type === "ldap"
+      ? {
+          url: "ldap://directory.example.org",
+          start_tls: false,
+          ca_cert: "",
+          insecure_skip_verify: false,
+          timeout: 10,
+          bind_dn: "cn=svc",
+          user_base_dn: "ou=people",
+          user_filter: "(uid={username})",
+          attributes: {
+            id: "uuid",
+            username: "uid",
+            email: "mail",
+            display_name: "cn",
+            member_of: "",
+          },
+          sync: {
+            page_size: null,
+            org_unit_base_dn: "",
+            org_unit_filter: "",
+            org_unit_name_attribute: "",
+            group_base_dn: "",
+            group_filter: "",
+            group_name_attribute: "",
+            group_member_attribute: "",
+            user_list_filter: "",
+            disabled_user_filter: "",
+          },
+        }
+      : {
+          issuer: "https://idp.example.org",
+          client_id: "app",
+          scopes: ["openid", "profile", "email"],
+          ca_cert: "",
+          redirect_url: `${REST}/auth/oidc/callback`,
+          allowed_redirects: [UI],
+          claims: { username: "sub", display_name: "name", email: "email" },
+        };
+
+  it.each([
+    { action: "create", secret: "new", expectedSecret: "new" },
+    { action: "edit", secret: undefined, expectedSecret: undefined },
+    { action: "edit", secret: "new", expectedSecret: "new" },
+    { action: "edit", secret: "", expectedSecret: undefined },
+    { action: "edit", secret: null, expectedSecret: undefined },
+  ] as const)(
+    "$action secret=$secret, including partial nested reads",
+    ({ action, secret, expectedSecret }) => {
+      const record = sourceRecord(type);
+      const values = toFormValues(record, REST, UI);
+      if (secret !== undefined) {
+        if (type === "ldap") values.spec.ldap.bind_password = secret;
+        else values.spec.oidc.client_secret = secret;
+      }
+      const chosen = {
+        ...settings(),
+        ...(expectedSecret === undefined
+          ? {}
+          : {
+              [type === "ldap" ? "bind_password" : "client_secret"]:
+                expectedSecret,
+            }),
+      };
+
+      expect(toIdentitySourcePayload(values, action)).toEqual({
+        ...(action === "create"
+          ? { api_version: "v1", kind: "IdentitySource" }
+          : {}),
+        metadata:
+          action === "create"
+            ? { name: "source", display_name: "Source" }
+            : record.metadata,
+        spec: {
+          type,
+          enabled: true,
+          ldap: null,
+          oidc: null,
+          [type]: chosen,
+          ...(type === "ldap"
+            ? {
+                sync: { enabled: false, interval: 3600, requested_at: null },
+              }
+            : {}),
+        },
+      });
+    },
+  );
+});
+
 describe("validators mirror the server rules", () => {
   it("names are DNS labels of at most 32 characters", () => {
     expect(isValidIdentitySourceName("corp-ldap")).toBe(true);
@@ -135,7 +268,6 @@ describe("toIdentitySourcePayload", () => {
     };
     const payload = toIdentitySourcePayload(values, "edit");
     expect(payload.spec.ldap).not.toHaveProperty("bind_password");
-    // the whole metadata composite goes back, not just the edited field
     expect(payload.metadata).toMatchObject({
       name: "corp-ldap",
       labels: { a: "b" },

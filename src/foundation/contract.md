@@ -23,6 +23,8 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
   (`toVictoriaLogsSinkSpec`, `toS3SinkSpec`) drop a blank secret regardless of touched state, so it does not use
   `omitEmptyUntouched`; an omitted parent object (`auth`) is recreated by `mergeExcludedFieldsRecursive` from the stored
   secrets when `subtreeHasExcludedField`. See `domains/log-sink/contract.md`.
+- Identity Source also omits blank secrets regardless of touched state; it does not use `omitEmptyUntouched`.
+  Its storage semantics differ from ordinary proxy backfill; see `domains/identity-source/contract.md`.
 - Known deviations of this rule (details and evidence in the kind contracts):
   1. A partially filled object overwrites the stored one: a one-key `spec.authconfig` is not empty,
      so the other credential is lost (Image Registry deviation 1).
@@ -43,7 +45,8 @@ backfills separately (`backfillAuthCredential`, by `stored_upstream_url`) and ne
 Refine edit forms send the whole loaded record as the PATCH body, including `id` and `status`
 (proxy keeps those top-level fields). The status snapshot is therefore written back on every edit.
 Whether a stale `status` (e.g. `ModelRegistryStatus.stats`) is harmful was not traced. Applies to all
-kinds on the shared edit flow, except Log Sink, whose `onFinish` override sends only `{spec}`.
+kinds on the shared edit flow, except Log Sink (`{spec}`) and Identity Source (`{metadata, spec}`), whose
+`onFinish` overrides construct their payloads explicitly.
 
 ## Backfill preconditions
 
@@ -90,15 +93,16 @@ See Model Registry deviation 2.
 `translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
 tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
 `RegistryStatus`, `domains/cluster/components/ClusterStatus`, `domains/external-endpoint/components/ExternalEndpointStatus`,
-`UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral), and
-`domains/engine/components/EngineStatus`. Registries share `RegistryStatus`
+`UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral),
+`domains/engine/components/EngineStatus`, `domains/identity-source/components/IdentitySourceStatus`, and
+`IdentitySourceSyncResult` (ok positive, failed serious, pending notice). Registries share `RegistryStatus`
 (phases Connected, Failed, Pending, Deleted -> `status.phases.registry.<phase>`), used by Image Registry
 and Model Registry. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
 Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
 (outstanding tone).
 Not yet switched (own copies of the same strings):
-identity source, model catalog, endpoint (`foundation/components/EndpointStatus`). An
-absent phase renders `EmptyValue`.
+model catalog, endpoint (`foundation/components/EndpointStatus`). An
+absent phase renders `EmptyValue` for `BaseStatus` callers.
 
 ## Domain code in foundation
 
