@@ -164,7 +164,7 @@
   "src/domains/model-catalog/components/ModelCatalogStatus.tsx": "9b2608c79988cc2795602c4449eb8596",
   "src/domains/image-registry/types.ts": "d63ecb27f4dd788187d49224d2ac2e0d",
   "src/domains/engine/types.ts": "0732151782c629496da2f96e8065a9db",
-  "src/domains/engine/components/EngineStatus.tsx": "209e569d71fcea9b3b18f77fa4413474",
+  "src/domains/engine/components/EngineStatus.tsx": "7c72ddc475674145509391a57d44badf",
   "src/domains/endpoint/types.ts": "6a212a5910fcde0af05ac4ff0d045464",
   "src/domains/endpoint/hooks/use-chat-state.ts": "7555e18e5668956e332598e536bdb46a",
   "src/domains/endpoint/hooks/use-endpoint-log-sources.ts": "fd0094816d1382522ea104eca33af2a9",
