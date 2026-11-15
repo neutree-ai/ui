@@ -1083,7 +1083,7 @@ describe("capacity checks", () => {
         ],
       }),
       resources: formResources({ gpu: 2, virtualization: quarterCard }),
-      shown: ["vgpuResourcesInsufficient", "noNodeCanScheduleVgpuRequest"],
+      shown: ["noNodeCanScheduleVgpuRequest"],
     },
     {
       case: "more CPU than any GPU node has",

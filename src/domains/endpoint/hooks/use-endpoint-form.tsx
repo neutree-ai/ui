@@ -2706,13 +2706,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedAccelerator.product
   ) {
     if (isVgpuAllocationMode && isVgpuCapacityExceededWithPlacement) {
-      gpuCapacityMessages.push(
-        hasNoMatchingAccelerator
-          ? t("endpoints.messages.noMatchingAccelerator", {
-              product: selectedAccelerator.product ?? EMPTY_VALUE,
-            })
-          : t("endpoints.messages.vgpuResourcesInsufficient"),
-      );
+      if (hasNoMatchingAccelerator) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.noMatchingAccelerator", {
+            product: selectedAccelerator.product ?? EMPTY_VALUE,
+          }),
+        );
+      } else if (!hasNoNodeForVgpuReplica) {
+        gpuCapacityMessages.push(
+          t("endpoints.messages.vgpuResourcesInsufficient"),
+        );
+      }
       if (hasVgpuMemoryCapacityExceeded) {
         gpuCapacityMessages.push(
           t("endpoints.messages.vgpuMemoryResourcesInsufficient"),
