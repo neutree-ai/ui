@@ -85,8 +85,9 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
 
 - Credentials omitted on edit when empty and untouched; commit "preserve dirty empty sensitive fields" (#276) added the
   touched check so a field typed into and emptied is sent as `""` (deviation 1).
-- NFS-only rule for `bentoml` URLs (code comment: only `nfs://` mounts are reachable from every node); narrower than the
-  backend (deviation 3).
+- NFS-only rule for `bentoml` URLs (`useModelRegistryForm` `spec.url` `validate`, `isNfsProtocol`), narrower than the
+  backend: `newFileBased` also accepts `file://`. Intended: `file://` is for backend testing, since only `nfs://` mounts
+  are reachable from every node; a `file://` registry made via API or YAML cannot be re-saved from the edit form.
 - Default type `bentoml`: public hubs are provisioned and a hand-made one is read-only, so the form starts on the only
   kind a user can push to (`DEFAULT_MODEL_REGISTRY_TYPE` comment).
 - Capability decisions follow server `visibility` and annotations, never `spec.type` (`ModelRegistryType.tsx`,
@@ -118,12 +119,6 @@ built-in registry). The connection check shows its own toasts in `RegistryAvaila
    - API: `builtinModelRegistryGuard` refuses a soft delete of a built-in registry with 10132.
    - Effect: batch-deleting a provisioned registry ends in an error toast (partial-failure presentation of
      `BatchDeleteBar` not traced). Ticket: TBD
-3. UI refuses `file://` addresses for a file system registry that the API accepts.
-   - UI: `useModelRegistryForm` `spec.url` `validate` requires `isNfsProtocol` when `spec.type === "bentoml"`.
-   - API: `newFileBased` (`internal/model_registry/file_based.go`) handles schemes `file` and `nfs`; the
-     `ModelRegistrySpec.Url` doc lists both.
-   - Effect: a `bentoml` registry created via API or YAML with `file://...` cannot be re-saved from the edit form unless
-     its URL becomes `nfs://`. Ticket: TBD
 
 ## Notes not classed as deviations
 

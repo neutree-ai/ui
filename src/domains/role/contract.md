@@ -67,6 +67,9 @@ Spec and permissions are nullable (`001_rbac`); UI types require both.
   workspace usage and model invocation add workspace read. Comments cite model-alias RLS and member-row reads.
 - Backfill keeps old roles consistent with newer UI rules (original field comment).
 - `PermissionsTree:hiddenResources` hides static-node groups; reason unknown.
+- `PermissionsTreeField` appends `missingDependencies` on load, so saving an untouched role also stores the
+  dependency reads (a push-only role gains model and registry read). Intended: users reason about one permission
+  and get what it needs to work.
 - Preset actions use `Boolean(spec.preset_key)`; technical-name-only presentation has no recorded reason.
 
 ## Permission coverage
@@ -124,19 +127,15 @@ permission/preset policy rejection, deletion 10129, soft-delete spec/status chan
    UI: `components/PermissionsTree.tsx:parsePermissionsToTree` filters static nodes; `RolesShow` counts all grants.
    API: `api.permission_action` (`074_static_node_read_permission`), `v1.RoleSpec.Permissions` returns both reads.
    Users cannot inspect grants included in the count. Ticket: TBD
-4. Untouched edit can enlarge permissions.
-   UI: `components/PermissionsTreeField.tsx:PermissionsTreeField` appends `missingDependencies` on load.
-   API: `api.role_spec` (`001_rbac`) stores independent enum values.
-   Saving a push-only role adds model and registry read access without a selection change. Ticket: TBD
-5. Preset write paths remain available.
+4. Preset write paths remain available.
    UI: `RolesList` enables batch delete; `useRoleForm` has no preset guard, while `RolesShow` hides writes.
    API: role update policy (`047_fix_role_soft_delete_policy`) rejects the retained non-null preset key.
    These paths let users attempt writes that fail. Ticket: TBD
-6. Invalid names lack field validation.
+5. Invalid names lack field validation.
    UI: `hooks/use-role-form.tsx:useRoleForm` has no name rules. API: `api.validate_metadata_name`
    (`004_required_fields`) enforces required, format and length. Users can submit invalid names and receive a toast
    instead of a field error. Ticket: TBD
-7. Human names are ignored.
+6. Human names are ignored.
    UI: `useRoleColumns`, `RolesList`, `RolesShow`, `useRoleForm` use only `metadata.name`.
    API: `Metadata.DisplayName` (`api/v1/basic_types.go`); timestamp function
    `update_metadata_update_timestamp_column` (`019_annotations`).
