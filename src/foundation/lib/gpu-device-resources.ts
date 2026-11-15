@@ -17,6 +17,46 @@ const PLACEMENT_NUMBER_EPSILON = 1e-6;
 const isAtLeastWithTolerance = (available: number, requested: number) =>
   available + PLACEMENT_NUMBER_EPSILON >= requested;
 
+const MIB_PER_GIB = 1024;
+const DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION = 1;
+
+const getVgpuMemoryDisplayRangeMiB = (
+  memoryMiB: number,
+  precision = DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION,
+) => {
+  const memoryGiB = memoryMiB / MIB_PER_GIB;
+  const bucketHalfStepGiB = 0.5 / 10 ** precision;
+
+  return {
+    lowerMiB: Math.ceil((memoryGiB - bucketHalfStepGiB) * MIB_PER_GIB),
+    upperMiB: Math.floor((memoryGiB + bucketHalfStepGiB) * MIB_PER_GIB),
+  };
+};
+
+const isVgpuMemoryApproximatelySufficient = (
+  availableMemoryMiB: number,
+  memoryMiBPerCard: number,
+) => {
+  if (availableMemoryMiB >= memoryMiBPerCard) return true;
+
+  const { lowerMiB, upperMiB } = getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
+  return availableMemoryMiB >= lowerMiB && availableMemoryMiB <= upperMiB;
+};
+
+const getVgpuMemoryReplicaCapacity = (
+  availableMemoryMiB: number,
+  memoryMiBPerCard: number,
+) => {
+  if (
+    !isVgpuMemoryApproximatelySufficient(availableMemoryMiB, memoryMiBPerCard)
+  ) {
+    return 0;
+  }
+
+  const { lowerMiB } = getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
+  return Math.floor((availableMemoryMiB - lowerMiB) / memoryMiBPerCard) + 1;
+};
+
 type SelectedAccelerator = {
   type?: string | null;
   product?: string | null;
@@ -146,9 +186,6 @@ export const GPU_CELL_INERT_CLASS =
 
 /** Supporting text under or beside a usage bar. */
 export const GPU_USAGE_TEXT_CLASS = "text-[11px] leading-4";
-
-const MIB_PER_GIB = 1024;
-const DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION = 1;
 
 type AcceleratorGroups = NonNullable<ResourceInfo["accelerator_groups"]>;
 type AcceleratorGroupResource = AcceleratorGroups[string];
@@ -741,6 +778,7 @@ type PlacementSnapshot = {
 
 type PlacementRequirement = {
   coreUnits: number;
+  memoryApproximately?: boolean;
   memoryMiB: number;
 };
 
@@ -822,7 +860,9 @@ const getPlacementRequirement = (
 
   const memoryMiB = toFiniteNumber(options.memoryMiBPerCard) ?? 0;
   const coreUnits = Math.max(0, toFiniteNumber(options.coreUnitsPerCard) ?? 0);
-  return memoryMiB > 0 ? { memoryMiB, coreUnits } : null;
+  return memoryMiB > 0
+    ? { memoryMiB, coreUnits, memoryApproximately: true }
+    : null;
 };
 
 const canPlacementDeviceSatisfy = (
@@ -836,7 +876,15 @@ const canPlacementDeviceSatisfy = (
   if (!requiresMemory && !requiresCore) return false;
   if (
     requiresMemory &&
-    !isAtLeastWithTolerance(device.availableMemoryMiB, requirement.memoryMiB)
+    (requirement.memoryApproximately
+      ? !isVgpuMemoryApproximatelySufficient(
+          device.availableMemoryMiB,
+          requirement.memoryMiB,
+        )
+      : !isAtLeastWithTolerance(
+          device.availableMemoryMiB,
+          requirement.memoryMiB,
+        ))
   ) {
     return false;
   }
@@ -852,10 +900,15 @@ const consumePlacementDevice = (
   requirement: PlacementRequirement,
 ): PlacementDeviceState => ({
   ...device,
-  availableMemoryMiB: subtractWithTolerance(
-    device.availableMemoryMiB,
-    requirement.memoryMiB,
-  ),
+  availableMemoryMiB:
+    requirement.memoryApproximately &&
+    device.availableMemoryMiB < requirement.memoryMiB &&
+    isVgpuMemoryApproximatelySufficient(
+      device.availableMemoryMiB,
+      requirement.memoryMiB,
+    )
+      ? 0
+      : subtractWithTolerance(device.availableMemoryMiB, requirement.memoryMiB),
   availableCoreUnits:
     requirement.coreUnits > 0
       ? subtractWithTolerance(device.availableCoreUnits, requirement.coreUnits)
@@ -1166,9 +1219,19 @@ const getNodeReplicaUpperBound = (
 
     const memoryBound =
       requirement.memoryMiB > 0
-        ? floorCapacityWithTolerance(
-            device.availableMemoryMiB,
-            requirement.memoryMiB,
+        ? Math.max(
+            requirement.memoryApproximately
+              ? getVgpuMemoryReplicaCapacity(
+                  device.availableMemoryMiB,
+                  requirement.memoryMiB,
+                )
+              : 0,
+            requirement.memoryApproximately
+              ? 0
+              : floorCapacityWithTolerance(
+                  device.availableMemoryMiB,
+                  requirement.memoryMiB,
+                ),
           )
         : Number.POSITIVE_INFINITY;
     const coreBound =
@@ -1918,29 +1981,6 @@ export function buildGpuDeviceResourceRows(
         }),
     );
 }
-
-const getVgpuMemoryDisplayRangeMiB = (
-  memoryMiB: number,
-  precision = DEFAULT_VGPU_MEMORY_DISPLAY_PRECISION,
-) => {
-  const memoryGiB = memoryMiB / MIB_PER_GIB;
-  const bucketHalfStepGiB = 0.5 / 10 ** precision;
-
-  return {
-    lowerMiB: Math.ceil((memoryGiB - bucketHalfStepGiB) * MIB_PER_GIB),
-    upperMiB: Math.floor((memoryGiB + bucketHalfStepGiB) * MIB_PER_GIB),
-  };
-};
-
-const isVgpuMemoryApproximatelySufficient = (
-  availableMemoryMiB: number,
-  memoryMiBPerCard: number,
-) => {
-  if (availableMemoryMiB >= memoryMiBPerCard) return true;
-
-  const { lowerMiB, upperMiB } = getVgpuMemoryDisplayRangeMiB(memoryMiBPerCard);
-  return availableMemoryMiB >= lowerMiB && availableMemoryMiB <= upperMiB;
-};
 
 export function calculateVgpuCardCapacity(
   nodeResources: Record<string, NodeResourceStatus> | null | undefined,

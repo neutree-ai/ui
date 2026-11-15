@@ -779,10 +779,11 @@ describe("gpu device resource helpers", () => {
 
   it.each([
     { available: 8192, replicas: 1, pass: true },
-    { available: 8191, replicas: 1, pass: false },
-    { available: 16383, replicas: 2, pass: false },
+    { available: 8191, replicas: 1, pass: true },
+    { available: 8140, replicas: 1, pass: false },
+    { available: 16383, replicas: 2, pass: true },
   ])(
-    "keeps exact MiB placement separate from displayed GiB capacity ($available MiB)",
+    "applies displayed GiB vGPU memory tolerance during placement ($available MiB)",
     ({ available, replicas, pass }) => {
       const result = calculateGpuPlacementCapacity(
         {
