@@ -65,7 +65,7 @@ credentials route (Foundation "YAML import and export").
   registry and type; the newest is selected, cleared when none.
 - Edit: locked name, workspace, type, image registry, version, head IP, ssh user, model cache fields of ssh clusters.
   Secrets start empty (API never returns them). Refetch on focus/reconnect is off (status rewritten every few seconds
-  would revert edits, NEU-500). Save `transformClusterValues(values, true, touchedFields)`; whole record PATCH with
+  would revert edits). Save `transformClusterValues(values, true, touchedFields)`; whole record PATCH with
   `spec.cache` normalized.
 - Upgrade (`ClusterUpgradeAction`): `available_versions` (with `accelerator_type` when known), only versions above
   `spec.version` (`getUpgradeVersions`); PATCH `{...cluster, spec: {...cluster.spec, version}}`; error toasts
@@ -94,7 +94,7 @@ credentials route (Foundation "YAML import and export").
 ## Overrides
 
 - Secrets omitted on edit when empty and untouched; the touched checks also gate base64 encoding (edit encodes only
-  touched values, create always). Touched tracking: NEU-500 commit.
+  touched values, create always).
 - Base64 in the UI (ssh key gets a trailing `\n`, kubeconfig as is): the controller reads them base64
   (`validateInitializedClusterConfigurationUpdate`, `util.GetKubeConfigFromCluster`).
 - Router `replicas` converted with `Number` only when truthy; empty string stays `""`.
