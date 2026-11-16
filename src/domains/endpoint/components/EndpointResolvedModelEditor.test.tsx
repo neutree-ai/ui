@@ -1,13 +1,19 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { ComponentProps } from "react";
-import { type FieldValues, FormProvider, useForm } from "react-hook-form";
+import { type ComponentProps, useState } from "react";
+import {
+  type FieldValues,
+  FormProvider,
+  useForm,
+  useFormState,
+} from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
-import { selectOption } from "@/foundation/testing/interactions";
+import { isHidden, selectOption } from "@/foundation/testing/interactions";
 import { EndpointResolvedModelEditor } from "./EndpointResolvedModelEditor";
 
 type EditorProps = ComponentProps<typeof EndpointResolvedModelEditor>;
+type HarnessProps = Partial<EditorProps> & { errorPath?: string };
 
-function Harness(overrides: Partial<EditorProps> = {}) {
+function Harness({ errorPath, ...overrides }: HarnessProps = {}) {
   const form = useForm<FieldValues>({
     defaultValues: {
       spec: {
@@ -20,6 +26,8 @@ function Harness(overrides: Partial<EditorProps> = {}) {
       },
     },
   });
+  useFormState({ control: form.control });
+  const [autoEditing, setAutoEditing] = useState(false);
 
   const props: EditorProps = {
     direct: false,
@@ -32,7 +40,7 @@ function Harness(overrides: Partial<EditorProps> = {}) {
       file: "",
     },
     sourceLabel: "Catalog",
-    editing: false,
+    editing: overrides.editing ?? autoEditing,
     customized: false,
     registryOptions: [{ label: "hf", value: "hf" }],
     registryLoading: false,
@@ -41,6 +49,7 @@ function Harness(overrides: Partial<EditorProps> = {}) {
     allowReset: false,
     resetNotice: null,
     onToggleEditing: vi.fn(),
+    onEditingRequested: () => setAutoEditing(true),
     onReset: vi.fn(),
     onUndo: vi.fn(),
     onRegistryChange: vi.fn(),
@@ -53,6 +62,19 @@ function Harness(overrides: Partial<EditorProps> = {}) {
 
   return (
     <FormProvider {...form}>
+      {errorPath && (
+        <button
+          type="button"
+          onClick={() =>
+            form.setError(errorPath as never, {
+              type: "required",
+              message: "Required",
+            })
+          }
+        >
+          invalidate model
+        </button>
+      )}
       <EndpointResolvedModelEditor {...props} />
     </FormProvider>
   );
@@ -150,5 +172,19 @@ describe("EndpointResolvedModelEditor", () => {
     expect(card.textContent).toContain("endpoints.resolvedModel.doneEditing");
     within(card).getByTestId("field-spec.model.registry");
     within(card).getByTestId("field-spec.model.name");
+  });
+
+  it("expands a collapsed model when one of its fields reports an error", async () => {
+    render(<Harness errorPath="spec.model.registry" />);
+    expect(isHidden(screen.getByTestId("field-spec.model.registry"))).toBe(
+      true,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "invalidate model" }));
+
+    expect(
+      isHidden(await screen.findByTestId("field-spec.model.registry")),
+    ).toBe(false);
+    await screen.findByText("Required");
   });
 });

@@ -2671,6 +2671,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       allowReset={modelSourceMode === "catalog" && Boolean(selectedCatalog)}
       resetNotice={variantResetNotice}
       onToggleEditing={() => setResolvedModelEditing((editing) => !editing)}
+      onEditingRequested={() => setResolvedModelEditing(true)}
       onReset={resetResolvedModel}
       onUndo={undoVariantReset}
       onRegistryChange={handleResolvedModelRegistryChange}
