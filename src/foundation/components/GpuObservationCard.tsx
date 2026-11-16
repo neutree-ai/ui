@@ -508,6 +508,7 @@ function GpuActualUsageMarker({
   return (
     <span
       aria-hidden="true"
+      data-state={exceedsAllocation ? "over-reserved" : "within-reserved"}
       data-testid="gpu-card-actual-marker"
       className="pointer-events-none absolute inset-y-px z-20 w-0.5 -translate-x-1/2 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
       style={{
@@ -522,15 +523,19 @@ function GpuActualUsageMarker({
 
 function ActualVramUsageLegend({
   usedMiB,
+  allocatedMiB,
   showLabel = true,
   className,
 }: {
   usedMiB: number | null;
+  allocatedMiB: number | null;
   showLabel?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation();
   if (usedMiB == null) return <EmptyValue />;
+  const exceedsAllocation =
+    allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
 
   return (
     <span
@@ -543,8 +548,14 @@ function ActualVramUsageLegend({
       {usedMiB > 0 && (
         <span
           aria-hidden
+          data-state={exceedsAllocation ? "over-reserved" : "within-reserved"}
           data-testid="gpu-actual-usage-marker"
-          className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+          className="h-3 w-0.5 shrink-0 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+          style={{
+            backgroundColor: exceedsAllocation
+              ? "var(--nt-fill-serious-base)"
+              : "var(--nt-text-neutral-super)",
+          }}
         />
       )}
       {showLabel && (
@@ -599,7 +610,7 @@ function InventoryAllocationBar({
     ) : null;
   const actualLegend =
     cardUsedMiB != null ? (
-      <ActualVramUsageLegend usedMiB={cardUsedMiB} />
+      <ActualVramUsageLegend allocatedMiB={reserved} usedMiB={cardUsedMiB} />
     ) : null;
   if (device.allocatedMiB == null) {
     return (
@@ -2131,6 +2142,7 @@ export function GpuObservationCard({
               />
             </div>
             <ActualVramUsageLegend
+              allocatedMiB={device.allocatedMiB}
               usedMiB={readings.actual}
               showLabel={false}
               className="justify-end"

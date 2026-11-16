@@ -97,6 +97,37 @@ describe("GPU observation row", () => {
     });
   });
 
+  it("marks the actual-usage legend when usage exceeds the reservation", () => {
+    render(
+      card({
+        variant: "inventory",
+        display: "cards",
+        device: {
+          ...device,
+          allocatedMiB: 10.5 * 1024,
+        },
+        allocations: [
+          {
+            ...allocation,
+            memoryMiB: 10.5 * 1024,
+          },
+        ],
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 15 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 11 * 1024 ** 3),
+        ],
+      }),
+    );
+
+    const gpuCard = screen.getByTestId("gpu-inventory-card");
+    expect(
+      within(gpuCard).getByTestId("gpu-card-actual-marker").dataset.state,
+    ).toBe("over-reserved");
+    expect(
+      within(gpuCard).getByTestId("gpu-actual-usage-marker").dataset.state,
+    ).toBe("over-reserved");
+  });
+
   it("shows replica composition and keeps hardware details in the row action", () => {
     render(
       card({
