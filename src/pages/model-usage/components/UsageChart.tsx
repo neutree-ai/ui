@@ -338,7 +338,10 @@ export const UsageChart = ({
     : TREND_TITLE_KEYS[metric];
   const title = titleOverride ?? t(titleKey, { kind: seriesLabel });
 
-  const isEmpty = isSingleDay ? dayBars.length === 0 : trendData.length === 0;
+  // Days of the range count as data only when some series has a line.
+  const isEmpty = isSingleDay
+    ? dayBars.length === 0
+    : trendData.length === 0 || series.length === 0;
 
   // Recharts hands the chart state to onClick; the picked day is activeLabel.
   const handleChartClick = (state: { activeLabel?: string | number }) => {
