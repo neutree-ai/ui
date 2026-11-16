@@ -79,7 +79,7 @@ type ScopeUsageInput = {
   model: string;
   /** Null for a reader of their own API keys only. */
   scope: UsageScope | null;
-  /** Whether the Teams tab and the API keys tab are open: only then fetched. */
+  /** Whether the Team usage is shown and the API keys tab is open: only then fetched. */
   teamsOpen: boolean;
   keysOpen: boolean;
   roots: OrgTreeNode[];
@@ -296,14 +296,15 @@ export function useScopeUsage({
     () => aggregateSeries(keyFacts, (r) => r.who.key, whoMeta),
     [keyFacts],
   );
+  const teamIn = useMemo(() => inModel(teamFacts), [inModel, teamFacts]);
   const teamRows = useMemo(
     () =>
       aggregateSeries(
-        inModel(teamFacts),
+        teamIn,
         (r) => r.who.key,
         (r) => ({ ...whoMeta(r), target: teamTarget(r) }),
       ),
-    [inModel, teamFacts],
+    [teamIn],
   );
 
   // Rows of different params must never be combined: the total and the
@@ -329,6 +330,7 @@ export function useScopeUsage({
     breakdownSeries,
     keyFacts,
     keyRows,
+    teamFacts: teamIn,
     teamRows,
   };
   const lastSettled = useRef<typeof view | null>(null);
@@ -345,6 +347,7 @@ export function useScopeUsage({
         breakdownSeries: [],
         keyFacts: [],
         keyRows: [],
+        teamFacts: [],
         teamRows: [],
       });
 

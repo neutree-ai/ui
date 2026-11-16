@@ -78,6 +78,7 @@ const DEFAULT_RANGE_DAYS = 30;
 // It bounds the tooltip row count: at 8 the tooltip is ~200px inside the 240px
 // chart card, and every extra series pushes it closer to spilling out.
 const TOP_K = 8;
+const TEAM_TOP_K = 5;
 // The model filter's "every model" value.
 const ALL_MODELS = "__all__";
 const PLATFORM: UsageScope = { type: "platform" };
@@ -255,6 +256,9 @@ export const ModelUsageList = () => {
     [t],
   );
 
+  // Only a global reader reads the platform's Team usage.
+  const showTeamChart = scope?.type === "platform" && canReadAllGroups;
+
   const applicationTeams = useApplicationTeams(hasScopes);
 
   const {
@@ -268,6 +272,7 @@ export const ModelUsageList = () => {
     breakdownSeries,
     keyFacts,
     keyRows,
+    teamFacts,
     teamRows,
     teamsLoading: teamRowsLoading,
     loading,
@@ -278,7 +283,7 @@ export const ModelUsageList = () => {
     range,
     model,
     scope,
-    teamsOpen: tab === "team" || tab === "overview",
+    teamsOpen: tab === "team" || tab === "overview" || showTeamChart,
     keysOpen: tab === "apiKey" || detailByKey,
     roots,
     nodesByName,
@@ -355,6 +360,29 @@ export const ModelUsageList = () => {
   }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, t]);
   const labelKeys = breakdownLabelKeys(scope);
 
+  // Teams and scenarios side by side, as lines: they overlap, so stacking
+  // them would count some usage twice.
+  const teamChart = useMemo(() => {
+    const named = teamRows
+      .filter((row) => row.total > 0)
+      .map((row) => {
+        const team = teamsByName.get(row.key);
+        const suffix =
+          team && isProjectTeam(team)
+            ? t("model_usage.teamTrend.scenarioSuffix")
+            : t("model_usage.teamTrend.teamSuffix");
+        return { ...row, name: `${row.name}${suffix}` };
+      });
+    const series = foldRemainder(named, TEAM_TOP_K, (n) =>
+      t("model_usage.daily.otherGroups", { n }),
+    );
+    return {
+      series,
+      trend: buildTrend(teamFacts, series, (r) => r.who.key, metric),
+    };
+  }, [teamRows, teamFacts, teamsByName, metric, t]);
+  const [teamHidden, setTeamHidden] = useState<Set<string>>(() => new Set());
+
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
   // Usage recorded before per-key attribution, or by keys deleted since, is in
   // the total but in no key's row.
@@ -424,6 +452,13 @@ export const ModelUsageList = () => {
     return { teams, scenarios };
   }, [teamRows, teamsByName]);
 
+  // Whether the platform has none at all, as opposed to none with usage.
+  const noTeams =
+    !teamsLoading &&
+    ![...teamsByName.values()].some((team) => !isProjectTeam(team));
+  const noScenarios =
+    !teamsLoading && ![...teamsByName.values()].some(isProjectTeam);
+
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
   // throw the reader back to page 1.
@@ -434,9 +469,9 @@ export const ModelUsageList = () => {
     scope ? JSON.stringify(scope) : "",
   ].join("|");
 
-  const onToggleSeries = (key: string) => {
+  const toggleIn = (setter: typeof setHidden) => (key: string) => {
     if (!key) return;
-    setHidden((prev) => {
+    setter((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -446,6 +481,8 @@ export const ModelUsageList = () => {
       return next;
     });
   };
+  const onToggleSeries = toggleIn(setHidden);
+  const onToggleTeamSeries = toggleIn(setTeamHidden);
 
   const tabLabel: Record<UsageTab, string> = {
     overview: t("model_usage.tabs.overview"),
@@ -491,6 +528,29 @@ export const ModelUsageList = () => {
         />
       </div>
 
+      {showTeamChart ? (
+        <UsageChart
+          series={teamChart.series}
+          trendData={teamChart.trend}
+          dayCategories={[]}
+          isSingleDay={false}
+          seriesLabel=""
+          chartType="line"
+          onChartTypeChange={setChartType}
+          lineOnly
+          title={t("model_usage.teamTrend.title")}
+          hint={t("model_usage.overview.overlapHint")}
+          emptyText={t("model_usage.teamTrend.empty")}
+          metric={metric}
+          hidden={teamHidden}
+          onToggleSeries={onToggleTeamSeries}
+          isLoading={teamRowsLoading}
+          backLabel={backLabel}
+          onPickDay={pickDay}
+          onResetRange={resetRange}
+        />
+      ) : null}
+
       {error ? (
         <div className="text-sm text-destructive">{error.message}</div>
       ) : null}
@@ -513,6 +573,8 @@ export const ModelUsageList = () => {
               scenarios={overview.scenarios}
               total={totals.total}
               teamsLoading={teamRowsLoading}
+              noTeams={noTeams}
+              noScenarios={noScenarios}
               onOpen={changeScope}
               onViewDepartments={() => setTab("breakdown")}
               onViewTeams={() => setTab("team")}

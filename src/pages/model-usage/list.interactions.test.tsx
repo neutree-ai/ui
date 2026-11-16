@@ -63,7 +63,9 @@ vi.mock("recharts", () => {
     CartesianGrid: passthrough,
     Cell: passthrough,
     Legend: () => null,
-    Line: passthrough,
+    Line: ({ name }: { name?: string }) => (
+      <span data-testid="trend-line">{name}</span>
+    ),
     LineChart: Chart,
     ResponsiveContainer: passthrough,
     Tooltip: () => null,
@@ -101,6 +103,8 @@ let canReadAll = false;
 let canReadSubtree = false;
 let canCreateTeam = false;
 let hasOrg = true;
+// Extra Teams in the platform's usage, to overflow the Team chart's top five.
+let extraTeams = 0;
 // The Teams whose usage the caller reads through a Team-scoped grant.
 let usageTeamIds: number[] = [];
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
@@ -223,14 +227,21 @@ const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
     ],
     "User::direct": [group("User", "u3", 50)],
     "User:rnd:direct": [group("User", "u2", 100, "llama")],
-    "Team:": [group("Team", "team-a", 250), group("Team", "launch", 120)],
+    "Team:": [
+      group("Team", "team-a", 250),
+      group("Team", "launch", 120),
+      ...Array.from({ length: extraTeams }, (_, i) =>
+        group("Team", `extra-${i}`, 10 + i),
+      ),
+    ],
     "Team:rnd": [group("Team", "team-a", 250)],
     // u1's usage while in Team A, part of their 300.
     "User:team-a": [group("User", "u1", 120)],
     "ServiceAccount:": [group("ServiceAccount", "sa1", 80)],
     "ServiceAccount:team-a": [group("ServiceAccount", "sa1", 30)],
   };
-  const rows = answers[key] ?? [];
+  // No Teams, so none has usage.
+  const rows = (kind === "Team" && !hasOrg ? [] : answers[key]) ?? [];
   return filter.name ? rows.filter((r) => r.name === filter.name) : rows;
 };
 
@@ -302,6 +313,7 @@ beforeEach(() => {
   canReadSubtree = false;
   canCreateTeam = false;
   hasOrg = true;
+  extraTeams = 0;
   usageTeamIds = [];
   keyFetched = false;
   keyGroups.length = 0;
@@ -371,11 +383,30 @@ describe("a platform without departments or Teams", () => {
     ).toBe("/organization");
   });
 
+  it("says there are no Teams or scenarios, and where to make them", () => {
+    renderPage();
+
+    screen.getByText("model_usage.overview.noTeams");
+    screen.getByText("model_usage.overview.noScenarios");
+    const links = screen.getAllByRole("link", {
+      name: "model_usage.overview.goToTeams",
+    });
+    expect(links.map((l) => l.getAttribute("href"))).toEqual([
+      "/organization?tab=teams",
+      "/organization?tab=teams",
+    ]);
+    screen.getByText("model_usage.teamTrend.empty");
+  });
+
   it("only says so to everyone else", () => {
     renderPage();
 
     screen.getByText("model_usage.scope.empty");
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(
+      screen.queryByRole("link", {
+        name: "model_usage.scope.goToOrganization",
+      }),
+    ).toBeNull();
   });
 });
 
@@ -446,9 +477,36 @@ describe("a reader of the whole platform", () => {
       block("scenarios").getByRole("button", { name: /launch-name/ })
         .textContent,
     ).toContain("22.6%");
+    // Two blocks and the Team trend chart carry the hint.
     expect(
       screen.getAllByText("model_usage.overview.overlapHint"),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
+  });
+
+  it("charts Teams and scenarios as lines beside the departments", () => {
+    renderPage();
+
+    screen.getByText("model_usage.teamTrend.title");
+    // Platform scope loads Team usage whatever the tab.
+    expect(groupCalls).toContain("Team:{}");
+    // Line only: the one toggle belongs to the department chart.
+    expect(
+      screen.getAllByRole("button", { name: "model_usage.chart.bar" }),
+    ).toHaveLength(1);
+  });
+
+  it("names a series by its kind and folds past the top five", () => {
+    extraTeams = 6;
+    renderPage();
+
+    const lines = screen
+      .getAllByTestId("trend-line")
+      .map((line) => line.textContent);
+    expect(lines).toContain("team-a-namemodel_usage.teamTrend.teamSuffix");
+    expect(lines).toContain("launch-namemodel_usage.teamTrend.scenarioSuffix");
+    // 8 Teams and scenarios: five get a line, three fold into one.
+    expect(lines.filter((l) => l?.includes("teamTrend"))).toHaveLength(5);
+    expect(lines).toContain("model_usage.daily.otherGroups(3)");
   });
 
   it("scopes the page to a Team or scenario picked in the overview", () => {
@@ -670,7 +728,7 @@ describe("a reader of the whole platform", () => {
   it("scopes the page to the day picked in the chart", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "pick-day" })[0]);
 
     screen.getByText(
       "model_usage.daily.titleDayByGroup(model_usage.series.department)",

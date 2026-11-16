@@ -3629,13 +3629,22 @@
 			"application": "{{title}} · {{name}} (Application)",
 			"user": "{{title}} · {{name}} (User)"
 		},
+		"teamTrend": {
+			"title": "Usage trend by Team and scenario",
+			"teamSuffix": " (Team)",
+			"scenarioSuffix": " (Scenario)",
+			"empty": "No Team or scenario usage in the selected window."
+		},
 		"overview": {
 			"departments": "Departments",
 			"teams": "Teams",
 			"scenarios": "Scenarios",
 			"overlapHint": "Teams and scenarios can overlap, so the shares may add up to more than 100%.",
 			"others": "Other {{n}}",
-			"viewAll": "View all"
+			"viewAll": "View all",
+			"noTeams": "No Teams yet.",
+			"noScenarios": "No scenarios yet.",
+			"goToTeams": "Go to Teams and scenarios"
 		},
 		"modelShare": {
 			"title": "Usage by model",

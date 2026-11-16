@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import {
   MetricBar,
@@ -15,6 +16,9 @@ import {
 /** How many entries a block lists before the rest folds into one row. */
 const TOP_N = 8;
 
+// The Organization page's Teams and scenarios tab.
+const ORGANIZATION_TEAMS = "/organization?tab=teams";
+
 export type OverviewRow = UsageSeries & { target: UsageScope | null };
 
 type BlockProps = {
@@ -25,6 +29,8 @@ type BlockProps = {
   total: number;
   series: MetricBarSeries;
   loading: boolean;
+  /** Set when none exists at all, rather than none with usage. */
+  noneYet?: string;
   onOpen: (target: UsageScope) => void;
   onViewAll: () => void;
 };
@@ -37,6 +43,7 @@ const Block = ({
   total,
   series,
   loading,
+  noneYet,
   onOpen,
   onViewAll,
 }: BlockProps) => {
@@ -56,7 +63,21 @@ const Block = ({
       <div className="mb-3 min-h-4 text-xs text-muted-foreground">{hint}</div>
       {rows.length === 0 ? (
         <div className="flex flex-1 items-center justify-center py-8 text-sm text-muted-foreground">
-          {loading ? "…" : t("model_usage.empty")}
+          {loading ? (
+            "…"
+          ) : noneYet ? (
+            <div className="space-y-2 text-center">
+              <p>{noneYet}</p>
+              <Link
+                className="text-xs text-primary hover:underline"
+                to={ORGANIZATION_TEAMS}
+              >
+                {t("model_usage.overview.goToTeams")}
+              </Link>
+            </div>
+          ) : (
+            t("model_usage.empty")
+          )}
         </div>
       ) : (
         <ul className="space-y-2">
@@ -138,6 +159,8 @@ export const UsageScopeOverview = ({
   scenarios,
   total,
   teamsLoading,
+  noTeams,
+  noScenarios,
   onOpen,
   onViewDepartments,
   onViewTeams,
@@ -147,6 +170,8 @@ export const UsageScopeOverview = ({
   scenarios: OverviewRow[];
   total: number;
   teamsLoading: boolean;
+  noTeams: boolean;
+  noScenarios: boolean;
   onOpen: (target: UsageScope) => void;
   onViewDepartments: () => void;
   onViewTeams: () => void;
@@ -175,6 +200,7 @@ export const UsageScopeOverview = ({
         total={total}
         series="teal"
         loading={teamsLoading}
+        noneYet={noTeams ? t("model_usage.overview.noTeams") : undefined}
         onOpen={onOpen}
         onViewAll={onViewTeams}
       />
@@ -186,6 +212,9 @@ export const UsageScopeOverview = ({
         total={total}
         series="violet"
         loading={teamsLoading}
+        noneYet={
+          noScenarios ? t("model_usage.overview.noScenarios") : undefined
+        }
         onOpen={onOpen}
         onViewAll={onViewTeams}
       />

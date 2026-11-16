@@ -260,8 +260,12 @@ export const UsageChart = ({
   dayCategories,
   isSingleDay,
   seriesLabel,
-  chartType,
+  chartType: pickedChartType,
   onChartTypeChange,
+  lineOnly = false,
+  title: titleOverride,
+  hint,
+  emptyText,
   metric,
   onMetricChange,
   hidden,
@@ -279,6 +283,12 @@ export const UsageChart = ({
   seriesLabel: string;
   chartType: "line" | "bar";
   onChartTypeChange: (chartType: "line" | "bar") => void;
+  /** Lines only, with no line/bar toggle: for series that overlap. */
+  lineOnly?: boolean;
+  /** Replaces the title and the click hint of a trend. */
+  title?: string;
+  hint?: string;
+  emptyText?: string;
   /** What the trend counts. */
   metric: TrendMetric;
   /** Absent when the rows carry no request count (usage by API key). */
@@ -291,6 +301,7 @@ export const UsageChart = ({
   onResetRange: () => void;
 }) => {
   const { t } = useTranslation();
+  const chartType = lineOnly ? "line" : pickedChartType;
   const meta = useMemo(() => new Map(series.map((s) => [s.key, s])), [series]);
   const dayBars: DayCategory[] = useMemo(
     () =>
@@ -325,7 +336,7 @@ export const UsageChart = ({
   const titleKey = isSingleDay
     ? "model_usage.daily.titleDayByGroup"
     : TREND_TITLE_KEYS[metric];
-  const title = t(titleKey, { kind: seriesLabel });
+  const title = titleOverride ?? t(titleKey, { kind: seriesLabel });
 
   const isEmpty = isSingleDay ? dayBars.length === 0 : trendData.length === 0;
 
@@ -414,7 +425,7 @@ export const UsageChart = ({
             </Button>
           ) : (
             <span className="text-xs font-normal text-muted-foreground">
-              {t("model_usage.daily.clickHint")}
+              {hint ?? t("model_usage.daily.clickHint")}
             </span>
           )}
         </div>
@@ -435,7 +446,7 @@ export const UsageChart = ({
               onValueChange={onMetricChange}
             />
           )}
-          {isSingleDay ? null : (
+          {isSingleDay || lineOnly ? null : (
             <div className="inline-flex rounded-md border p-0.5">
               <Button
                 type="button"
@@ -470,7 +481,7 @@ export const UsageChart = ({
           </div>
         ) : isEmpty ? (
           <EmptyState className="flex h-full items-center justify-center">
-            {t("model_usage.empty")}
+            {emptyText ?? t("model_usage.empty")}
           </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
