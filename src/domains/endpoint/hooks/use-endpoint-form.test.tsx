@@ -1876,6 +1876,36 @@ describe("model picker", () => {
         expect(formError(result, "spec.model.registry")).toBeUndefined();
       },
     );
+
+    it("ignores a pending registry lookup after another path changes the model", async () => {
+      mockExactModelLookup("unresolved");
+      const { result } = renderEndpointForm("create", lists);
+      setValues(result, {
+        "spec.model": {
+          registry: "old",
+          name: "shared-model",
+          task: "text-generation",
+        },
+      });
+
+      await act(async () => {
+        openCombobox("spec.model.registry");
+      });
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("option", { name: "new" }));
+      });
+      await waitFor(() =>
+        expect(fieldValue(result, "spec.model.registry")).toBe("new"),
+      );
+
+      setValues(result, { "spec.model.name": "manually-selected-model" });
+
+      await waitFor(() => {
+        expect(fieldValue(result, "spec.model.name")).toBe(
+          "manually-selected-model",
+        );
+      });
+    });
   });
 });
 
