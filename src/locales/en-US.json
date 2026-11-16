@@ -3629,11 +3629,14 @@
 			"application": "{{title}} · {{name}} (Application)",
 			"user": "{{title}} · {{name}} (User)"
 		},
-		"teamTrend": {
-			"title": "Usage trend by Team and scenario",
+		"trend": {
+			"departmentSuffix": " (Department)",
 			"teamSuffix": " (Team)",
 			"scenarioSuffix": " (Scenario)",
-			"empty": "No Team or scenario usage in the selected window."
+			"otherTeams": "Other {{n}} Teams and scenarios",
+			"barHint": "Bars show departments only; Teams and scenarios overlap departments, so stacking them would double count.",
+			"titleMixed": "Daily tokens by department, Team and scenario",
+			"titleRequestsMixed": "Daily requests by department, Team and scenario"
 		},
 		"overview": {
 			"departments": "Departments",

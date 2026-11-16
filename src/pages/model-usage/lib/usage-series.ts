@@ -22,6 +22,11 @@ export type UsageSeries = {
 // The synthetic series that carries every series outside the top K. It has one
 // definition because the chart, the tooltip and the tests all branch on it.
 export const OTHER_SERIES_KEY = "__other";
+// The fold of a second family of series on the same chart (Teams and
+// scenarios beside departments); it needs a key of its own.
+export const OTHER_TEAMS_SERIES_KEY = "__other_teams";
+export const isOtherSeries = (key: string) =>
+  key === OTHER_SERIES_KEY || key === OTHER_TEAMS_SERIES_KEY;
 
 type SeriesMeta = { name: string; description: string | null };
 

@@ -58,7 +58,9 @@ vi.mock("recharts", () => {
     </div>
   );
   return {
-    Bar: passthrough,
+    Bar: ({ name }: { name?: string }) => (
+      <span data-testid="trend-bar">{name}</span>
+    ),
     BarChart: Chart,
     CartesianGrid: passthrough,
     Cell: passthrough,
@@ -395,7 +397,6 @@ describe("a platform without departments or Teams", () => {
       "/organization?tab=teams",
       "/organization?tab=teams",
     ]);
-    screen.getByText("model_usage.teamTrend.empty");
   });
 
   it("only says so to everyone else", () => {
@@ -477,36 +478,54 @@ describe("a reader of the whole platform", () => {
       block("scenarios").getByRole("button", { name: /launch-name/ })
         .textContent,
     ).toContain("22.6%");
-    // Two blocks and the Team trend chart carry the hint.
     expect(
       screen.getAllByText("model_usage.overview.overlapHint"),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
   });
 
-  it("charts Teams and scenarios as lines beside the departments", () => {
-    renderPage();
-
-    screen.getByText("model_usage.teamTrend.title");
-    // Platform scope loads Team usage whatever the tab.
-    expect(groupCalls).toContain("Team:{}");
-    // Line only: the one toggle belongs to the department chart.
-    expect(
-      screen.getAllByRole("button", { name: "model_usage.chart.bar" }),
-    ).toHaveLength(1);
-  });
-
-  it("names a series by its kind and folds past the top five", () => {
+  it("draws departments, Teams and scenarios as lines on one chart", () => {
     extraTeams = 6;
     renderPage();
 
+    screen.getByText("model_usage.trend.titleMixed");
+    // Platform scope loads Team usage whatever the tab.
+    expect(groupCalls).toContain("Team:{}");
     const lines = screen
       .getAllByTestId("trend-line")
       .map((line) => line.textContent);
-    expect(lines).toContain("team-a-namemodel_usage.teamTrend.teamSuffix");
-    expect(lines).toContain("launch-namemodel_usage.teamTrend.scenarioSuffix");
+    // A department is tagged, the two synthetic entries are not.
+    expect(lines).toContain("R&Dmodel_usage.trend.departmentSuffix");
+    expect(lines).toContain("model_usage.scope.applicationsNoDepartment");
+    expect(lines).toContain("team-a-namemodel_usage.trend.teamSuffix");
+    expect(lines).toContain("launch-namemodel_usage.trend.scenarioSuffix");
     // 8 Teams and scenarios: five get a line, three fold into one.
-    expect(lines.filter((l) => l?.includes("teamTrend"))).toHaveLength(5);
-    expect(lines).toContain("model_usage.daily.otherGroups(3)");
+    expect(
+      lines.filter(
+        (l) =>
+          l?.includes("trend.teamSuffix") ||
+          l?.includes("trend.scenarioSuffix"),
+      ),
+    ).toHaveLength(5);
+    expect(lines).toContain("model_usage.trend.otherTeams(3)");
+  });
+
+  it("stacks departments only in the bar view, and says so", () => {
+    renderPage();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "model_usage.chart.bar" }),
+    );
+
+    screen.getByText("model_usage.trend.barHint");
+    screen.getByText(
+      "model_usage.daily.titleByGroup(model_usage.series.department)",
+    );
+    expect(
+      screen
+        .getAllByTestId("trend-bar")
+        .map((bar) => bar.textContent)
+        .some((name) => name?.includes("teamSuffix")),
+    ).toBe(false);
   });
 
   it("scopes the page to a Team or scenario picked in the overview", () => {

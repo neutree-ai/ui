@@ -48,19 +48,22 @@ import {
   UsageTable,
 } from "@/pages/model-usage/components/UsageTables";
 import {
+  APPLICATIONS_KEY,
   type BreakdownLabels,
   breakdownLabelKeys,
   groupOf,
   isOwnerScope,
   scopeTrail,
+  UNASSIGNED_KEY,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
 import {
   buildTrend,
   daysIn,
   foldRemainder,
+  OTHER_SERIES_KEY,
+  OTHER_TEAMS_SERIES_KEY,
   type TrendMetric,
-  type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 import {
   readUsageView,
@@ -342,48 +345,102 @@ export const ModelUsageList = () => {
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
   const days = useMemo(() => daysIn(range), [range]);
+  // At the platform, the line view adds the Teams and scenarios to the
+  // departments. They overlap, so the stacked bars keep to departments.
+  const mixedLines = showTeamChart && chartType === "line" && !isSingleDay;
   const chart = useMemo(() => {
-    const [base, otherKey, trendOf] = scope
-      ? ([
-          // Members without usage have nothing to draw.
-          breakdownSeries.filter((s) => s.total > 0),
-          "model_usage.daily.otherGroups",
-          (series: UsageSeries[]) =>
-            buildTrend(breakdown, series, (r) => r.entry, metric, days),
-        ] as const)
-      : ([
-          keyRows,
-          "model_usage.daily.otherKeys",
-          (series: UsageSeries[]) =>
-            buildTrend(keyFacts, series, (r) => r.who.key, "tokens", days),
-        ] as const);
-    const series = foldRemainder(base, TOP_K, (n) => t(otherKey, { n }));
-    return { series, trend: trendOf(series) };
-  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, days, t]);
-  const labelKeys = breakdownLabelKeys(scope);
-
-  // Teams and scenarios side by side, as lines: they overlap, so stacking
-  // them would count some usage twice.
-  const teamChart = useMemo(() => {
-    const named = teamRows
-      .filter((row) => row.total > 0)
-      .map((row) => {
-        const team = teamsByName.get(row.key);
-        const suffix =
-          team && isProjectTeam(team)
-            ? t("model_usage.teamTrend.scenarioSuffix")
-            : t("model_usage.teamTrend.teamSuffix");
-        return { ...row, name: `${row.name}${suffix}` };
-      });
-    const series = foldRemainder(named, TEAM_TOP_K, (n) =>
+    if (!scope) {
+      const series = foldRemainder(keyRows, TOP_K, (n) =>
+        t("model_usage.daily.otherKeys", { n }),
+      );
+      return {
+        series,
+        trend: buildTrend(keyFacts, series, (r) => r.who.key, "tokens", days),
+      };
+    }
+    // Members without usage have nothing to draw.
+    const base = breakdownSeries
+      .filter((s) => s.total > 0)
+      .map((s) =>
+        mixedLines && s.key !== UNASSIGNED_KEY && s.key !== APPLICATIONS_KEY
+          ? {
+              ...s,
+              name: `${s.name}${t("model_usage.trend.departmentSuffix")}`,
+            }
+          : s,
+      );
+    const series = foldRemainder(base, TOP_K, (n) =>
       t("model_usage.daily.otherGroups", { n }),
     );
+    const trend = buildTrend(breakdown, series, (r) => r.entry, metric, days);
+    if (!mixedLines) return { series, trend };
+
+    const teamSeries = foldRemainder(
+      teamRows
+        .filter((row) => row.total > 0)
+        .map((row) => {
+          const team = teamsByName.get(row.key);
+          const suffix =
+            team && isProjectTeam(team)
+              ? t("model_usage.trend.scenarioSuffix")
+              : t("model_usage.trend.teamSuffix");
+          return {
+            ...row,
+            key: `team:${row.key}`,
+            name: `${row.name}${suffix}`,
+          };
+        }),
+      TEAM_TOP_K,
+      (n) => t("model_usage.trend.otherTeams", { n }),
+    ).map((s) =>
+      s.key === OTHER_SERIES_KEY ? { ...s, key: OTHER_TEAMS_SERIES_KEY } : s,
+    );
+    const teamTrend = buildTrend(
+      teamFacts,
+      teamSeries.map((s) =>
+        s.key === OTHER_TEAMS_SERIES_KEY ? { ...s, key: OTHER_SERIES_KEY } : s,
+      ),
+      (r) => `team:${r.who.key}`,
+      metric,
+      days,
+    );
+    // Both trends cover the same days, so the points line up by index.
     return {
-      series,
-      trend: buildTrend(teamFacts, series, (r) => r.who.key, metric, days),
+      series: [...series, ...teamSeries],
+      trend: trend.map((point, i) => {
+        const {
+          date: _date,
+          [OTHER_SERIES_KEY]: other,
+          ...rest
+        } = teamTrend[i];
+        return {
+          ...point,
+          ...rest,
+          ...(other === undefined ? {} : { [OTHER_TEAMS_SERIES_KEY]: other }),
+        };
+      }),
     };
-  }, [teamRows, teamFacts, teamsByName, metric, days, t]);
-  const [teamHidden, setTeamHidden] = useState<Set<string>>(() => new Set());
+  }, [
+    scope,
+    mixedLines,
+    breakdownSeries,
+    breakdown,
+    keyRows,
+    keyFacts,
+    teamRows,
+    teamFacts,
+    teamsByName,
+    metric,
+    days,
+    t,
+  ]);
+  const labelKeys = breakdownLabelKeys(scope);
+  const mixedTitle = t(
+    metric === "requests"
+      ? "model_usage.trend.titleRequestsMixed"
+      : "model_usage.trend.titleMixed",
+  );
+  const barHint = showTeamChart && chartType === "bar" && !isSingleDay;
 
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
   // Usage recorded before per-key attribution, or by keys deleted since, is in
@@ -471,9 +528,9 @@ export const ModelUsageList = () => {
     scope ? JSON.stringify(scope) : "",
   ].join("|");
 
-  const toggleIn = (setter: typeof setHidden) => (key: string) => {
+  const onToggleSeries = (key: string) => {
     if (!key) return;
-    setter((prev) => {
+    setHidden((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -483,8 +540,6 @@ export const ModelUsageList = () => {
       return next;
     });
   };
-  const onToggleSeries = toggleIn(setHidden);
-  const onToggleTeamSeries = toggleIn(setTeamHidden);
 
   const tabLabel: Record<UsageTab, string> = {
     overview: t("model_usage.tabs.overview"),
@@ -513,6 +568,8 @@ export const ModelUsageList = () => {
           seriesLabel={t(labelKeys.series)}
           chartType={chartType}
           onChartTypeChange={setChartType}
+          title={mixedLines ? mixedTitle : undefined}
+          hint={barHint ? t("model_usage.trend.barHint") : undefined}
           metric={metric}
           onMetricChange={scope ? setMetric : undefined}
           hidden={hidden}
@@ -529,29 +586,6 @@ export const ModelUsageList = () => {
           onSelect={setModel}
         />
       </div>
-
-      {showTeamChart ? (
-        <UsageChart
-          series={teamChart.series}
-          trendData={teamChart.trend}
-          dayCategories={[]}
-          isSingleDay={false}
-          seriesLabel=""
-          chartType="line"
-          onChartTypeChange={setChartType}
-          lineOnly
-          title={t("model_usage.teamTrend.title")}
-          hint={t("model_usage.overview.overlapHint")}
-          emptyText={t("model_usage.teamTrend.empty")}
-          metric={metric}
-          hidden={teamHidden}
-          onToggleSeries={onToggleTeamSeries}
-          isLoading={teamRowsLoading}
-          backLabel={backLabel}
-          onPickDay={pickDay}
-          onResetRange={resetRange}
-        />
-      ) : null}
 
       {error ? (
         <div className="text-sm text-destructive">{error.message}</div>

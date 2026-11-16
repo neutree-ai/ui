@@ -30,6 +30,7 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import {
+  isOtherSeries,
   OTHER_SERIES_KEY,
   type TrendMetric,
   type UsageSeries,
@@ -89,7 +90,7 @@ const StripePatterns = ({ soft = false }: { soft?: boolean }) => (
 // trend is blue in the single-day bars too. "Other" is always the neutral mark.
 function seriesMark(series: UsageSeries[], key: string): ChartMark {
   const index = series.findIndex((s) => s.key === key);
-  if (key === OTHER_SERIES_KEY || index < 0) return chartMoreMark();
+  if (isOtherSeries(key) || index < 0) return chartMoreMark();
   if (index >= MAX_SVG_MARKS) return chartMoreMark();
   return chartCategoryMark(index);
 }
@@ -161,9 +162,9 @@ export const TrendTooltip = ({
   // individual keys for a rank.
   const ordered = [
     ...rows
-      .filter((p) => String(p.dataKey) !== OTHER_SERIES_KEY)
+      .filter((p) => !isOtherSeries(String(p.dataKey)))
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0)),
-    ...rows.filter((p) => String(p.dataKey) === OTHER_SERIES_KEY),
+    ...rows.filter((p) => isOtherSeries(String(p.dataKey))),
   ];
   const total = ordered.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (
@@ -260,12 +261,10 @@ export const UsageChart = ({
   dayCategories,
   isSingleDay,
   seriesLabel,
-  chartType: pickedChartType,
+  chartType,
   onChartTypeChange,
-  lineOnly = false,
   title: titleOverride,
   hint,
-  emptyText,
   metric,
   onMetricChange,
   hidden,
@@ -283,12 +282,10 @@ export const UsageChart = ({
   seriesLabel: string;
   chartType: "line" | "bar";
   onChartTypeChange: (chartType: "line" | "bar") => void;
-  /** Lines only, with no line/bar toggle: for series that overlap. */
-  lineOnly?: boolean;
-  /** Replaces the title and the click hint of a trend. */
+  /** Replaces the trend's title. */
   title?: string;
+  /** A note under the title. */
   hint?: string;
-  emptyText?: string;
   /** What the trend counts. */
   metric: TrendMetric;
   /** Absent when the rows carry no request count (usage by API key). */
@@ -301,7 +298,6 @@ export const UsageChart = ({
   onResetRange: () => void;
 }) => {
   const { t } = useTranslation();
-  const chartType = lineOnly ? "line" : pickedChartType;
   const meta = useMemo(() => new Map(series.map((s) => [s.key, s])), [series]);
   const dayBars: DayCategory[] = useMemo(
     () =>
@@ -428,7 +424,7 @@ export const UsageChart = ({
             </Button>
           ) : (
             <span className="text-xs font-normal text-muted-foreground">
-              {hint ?? t("model_usage.daily.clickHint")}
+              {t("model_usage.daily.clickHint")}
             </span>
           )}
         </div>
@@ -449,7 +445,7 @@ export const UsageChart = ({
               onValueChange={onMetricChange}
             />
           )}
-          {isSingleDay || lineOnly ? null : (
+          {isSingleDay ? null : (
             <div className="inline-flex rounded-md border p-0.5">
               <Button
                 type="button"
@@ -477,6 +473,9 @@ export const UsageChart = ({
           )}
         </div>
       </div>
+      {hint && !isSingleDay ? (
+        <p className="mb-2 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
       <div className="h-[240px]">
         {isLoading && isEmpty ? (
           <div className="flex h-full items-center justify-center">
@@ -484,7 +483,7 @@ export const UsageChart = ({
           </div>
         ) : isEmpty ? (
           <EmptyState className="flex h-full items-center justify-center">
-            {emptyText ?? t("model_usage.empty")}
+            {t("model_usage.empty")}
           </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
