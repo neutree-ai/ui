@@ -306,6 +306,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const [inferenceHardwareMode, setInferenceHardwareMode] =
     useState<InferenceHardwareMode>(action === "create" ? "gpu" : null);
   const inferenceHardwareInitializedRef = useRef(action === "create");
+  const inferenceHardwareSelectedRef = useRef(false);
   const effectiveGpuAllocationModeRef = useRef<GpuAllocationMode>("full");
   // Accelerator types the selected engine version ships images for; empty
   // while the engine is unknown, which leaves every accelerator acceptable.
@@ -355,7 +356,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           clusterType,
           hidesModelFields,
           allocationMode: effectiveGpuAllocationModeRef.current,
-          inferenceHardwareSelected: hasSelectedInferenceHardware,
+          inferenceHardwareSelected: inferenceHardwareSelectedRef.current,
         },
         t,
       );
@@ -441,6 +442,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const hasSelectedInferenceHardware =
     inferenceHardwareMode === "cpu" ||
     Boolean(currentAccelerator?.type && currentAccelerator?.product);
+  inferenceHardwareSelectedRef.current = hasSelectedInferenceHardware;
   const currentModelValues = useMemo<ModelIdentity>(
     () => ({
       registry: currentRegistry ?? "",
@@ -2255,6 +2257,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         : "";
   const handleInferenceHardwareChange = (value: string) => {
     if (value === CPU_INFERENCE_VALUE) {
+      inferenceHardwareSelectedRef.current = true;
       setInferenceHardwareMode("cpu");
       setGpuAllocationModeChoice(null);
       form.setValue("spec.resources.accelerator", null, userSetValueOptions);
@@ -2268,6 +2271,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
     if (!selectedOption) return;
 
+    inferenceHardwareSelectedRef.current = true;
     setInferenceHardwareMode("gpu");
     const currentVirtualization = form.getValues(
       "spec.resources.accelerator.virtualization",
@@ -2343,7 +2347,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         Boolean(form.getFieldState("spec.resources.accelerator").error),
       ),
     );
-    if (option) setInferenceHardwareMode("gpu");
+    if (option) {
+      inferenceHardwareSelectedRef.current = true;
+      setInferenceHardwareMode("gpu");
+    }
   }, [
     action,
     acceleratorOptions,

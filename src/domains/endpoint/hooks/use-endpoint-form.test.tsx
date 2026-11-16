@@ -1412,6 +1412,9 @@ describe("validation", () => {
     });
 
     selectInferenceHardware("endpoints.options.cpuInference");
+    await waitFor(() =>
+      expect(formError(result, "spec.resources.accelerator")).toBeUndefined(),
+    );
     await validate(result, "spec.resources.accelerator");
 
     expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
