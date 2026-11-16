@@ -9,7 +9,7 @@ import {
 } from "@/domains/api-key/components/TeamUsage";
 import { TeamTokenPool } from "@/domains/group-policy/components/TeamTokenPool";
 import { useSubjectQuotaColumn } from "@/domains/group-policy/hooks/use-subject-quota-column";
-import { teamScope } from "@/domains/organization/lib/team";
+import { isProjectTeam, teamScope } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
 import { TeamServiceAccounts } from "@/domains/service-account/components/TeamServiceAccounts";
 import type { ServiceAccount } from "@/domains/service-account/types";
@@ -128,7 +128,10 @@ export function TeamDetailTabs({
             </Link>
           </div>
           <TeamTokenPool teamName={team.metadata.name} />
-          <TeamUsage teamName={team.metadata.name} />
+          <TeamUsage
+            teamName={team.metadata.name}
+            project={isProjectTeam(team)}
+          />
         </TabsContent>
       )}
     </Tabs>

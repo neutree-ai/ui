@@ -411,6 +411,37 @@ describe("TeamsPanel", () => {
     );
   });
 
+  it("does not show a selected team that the filters hide", () => {
+    grant(...ALL);
+    render(<Panel />, "/o?team=guild");
+    screen.getByTestId("team-delete");
+    fireEvent.change(screen.getByTestId("organization-search"), {
+      target: { value: "nomatch" },
+    });
+    screen.getByTestId("teams-empty");
+    expect(screen.queryByTestId("team-delete")).toBeNull();
+    screen.getByText("organization.members.selectTeam");
+  });
+
+  it("clears a search that would hide the team just created", async () => {
+    grant("team:create");
+    writes.create.mockResolvedValue({ ...manual, id: 9 });
+    render(<Panel />);
+    fireEvent.change(screen.getByTestId("organization-search"), {
+      target: { value: "nomatch" },
+    });
+    fireEvent.click(screen.getByTestId("team-create-scenario"));
+    fireEvent.change(screen.getByTestId("team-form-name"), {
+      target: { value: "launch" },
+    });
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(
+        (screen.getByTestId("organization-search") as HTMLInputElement).value,
+      ).toBe(""),
+    );
+  });
+
   it("creates a scenario with the mark preset, which can be turned off", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });

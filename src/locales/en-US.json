@@ -2434,6 +2434,7 @@
 		"team": {
 			"usageTab": "Usage",
 			"usageHint": "Token usage of the team: its members' personal keys and its applications' keys.",
+			"usageHintProject": "Token usage of the scenario: its members' personal keys and its applications' keys.",
 			"usageFailed": "Failed to load the team usage.",
 			"usageEmpty": "No usage in this period.",
 			"totalTokens": "Total tokens",
@@ -2441,9 +2442,11 @@
 			"requests": "Requests",
 			"byMember": "By member",
 			"byMemberHint": "Usage of each member's personal keys, part of the team total.",
+			"byMemberHintProject": "Usage of each member's personal keys, part of the scenario total.",
 			"member": "Member",
 			"byApplication": "By application",
 			"byApplicationHint": "Usage of each application's keys, part of the team total.",
+			"byApplicationHintProject": "Usage of each application's keys, part of the scenario total.",
 			"application": "Application"
 		},
 		"serviceAccount": {

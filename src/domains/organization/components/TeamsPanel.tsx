@@ -148,8 +148,10 @@ export function TeamsPanel({
       ),
     [data, query, showInactive, kind],
   );
+  // A Team the filters hide is not selected: the detail panel would show a
+  // Team the list does not.
   const selected = view.team
-    ? all.find((team) => team.metadata.name === view.team)
+    ? teams.find((team) => team.metadata.name === view.team)
     : undefined;
   const selectedId = selected?.id;
   // A team admin holds it on the Team only.
@@ -522,7 +524,17 @@ export function TeamsPanel({
             attempt(
               async () => {
                 const created = await teamWrites.create(values);
-                if (created) select(created.metadata.name);
+                if (created) {
+                  // Show the new Team even when the active filters hide it.
+                  if (!matchesTeamKind(created, kind)) setKind("all");
+                  if (
+                    filterTeams([created], { query, showInactive }).length === 0
+                  ) {
+                    setQuery("");
+                    setShowInactive(false);
+                  }
+                  select(created.metadata.name);
+                }
               },
               { creating: true },
             )

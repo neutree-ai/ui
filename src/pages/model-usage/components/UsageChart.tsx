@@ -396,7 +396,7 @@ export const UsageChart = ({
 
   return (
     <Card className="p-4">
-      <div className="flex items-baseline justify-between mb-2 gap-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className="text-sm font-medium">{title}</span>
           {isSingleDay ? (
@@ -418,7 +418,7 @@ export const UsageChart = ({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {/* The single-day chart is a distribution across API keys (or
               models), not a trend, so there is nothing to switch. */}
           {/* The single-day chart splits tokens into prompt and completion;
@@ -426,6 +426,7 @@ export const UsageChart = ({
           {isSingleDay || !onMetricChange ? null : (
             <SegmentedControl
               ariaLabel={t("model_usage.chart.metric")}
+              className="flex-nowrap"
               value={metric}
               items={[
                 { value: "tokens", label: t("model_usage.chart.tokens") },
