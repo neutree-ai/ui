@@ -1,11 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type ComponentProps, useState } from "react";
-import {
-  type FieldValues,
-  FormProvider,
-  useForm,
-  useFormState,
-} from "react-hook-form";
+import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import { isHidden, selectOption } from "@/foundation/testing/interactions";
 import { EndpointResolvedModelEditor } from "./EndpointResolvedModelEditor";
@@ -26,7 +21,6 @@ function Harness({ errorPath, ...overrides }: HarnessProps = {}) {
       },
     },
   });
-  useFormState({ control: form.control });
   const [autoEditing, setAutoEditing] = useState(false);
 
   const props: EditorProps = {

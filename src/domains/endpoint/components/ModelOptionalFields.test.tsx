@@ -1,10 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  type FieldValues,
-  FormProvider,
-  useForm,
-  useFormState,
-} from "react-hook-form";
+import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 import { isHidden } from "@/foundation/testing/interactions";
 import { ModelOptionalFields } from "./ModelOptionalFields";
@@ -25,7 +20,6 @@ function Harness({
       },
     },
   });
-  useFormState({ control: form.control });
 
   return (
     <FormProvider {...form}>

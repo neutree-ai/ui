@@ -1820,11 +1820,14 @@ describe("model picker", () => {
       ],
     };
 
-    function mockExactModelLookup(answer: "found" | "missing" | "unresolved") {
+    function mockExactModelLookup(
+      answer: "found" | "missing" | "unresolved",
+      looked = "shared-model",
+    ) {
       vi.mocked(useRegistryModels).mockImplementation(((opts: {
         search?: string;
       }) => {
-        if (opts.search !== "shared-model") return registryModelsResult();
+        if (opts.search !== looked) return registryModelsResult();
         if (answer === "unresolved") return registryModelsResult();
         const models =
           answer === "found"
@@ -1878,7 +1881,7 @@ describe("model picker", () => {
     );
 
     it("ignores a pending registry lookup after another path changes the model", async () => {
-      mockExactModelLookup("unresolved");
+      mockExactModelLookup("missing", "manually-selected-model");
       const { result } = renderEndpointForm("create", lists);
       setValues(result, {
         "spec.model": {
