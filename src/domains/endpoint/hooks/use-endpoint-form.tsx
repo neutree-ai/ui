@@ -3377,6 +3377,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 null,
                                 userSetValueOptions,
                               );
+                              form.setValue(
+                                "spec.resources.gpu",
+                                "0",
+                                userSetValueOptions,
+                              );
                             }
                           }}
                           placeholder={t(
@@ -3451,46 +3456,45 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       </FormFieldGroup>
                     </div>
 
-                    <div className="col-span-1 space-y-1">
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.gpu"
-                        label={t(
-                          isVgpuAllocationMode
-                            ? "endpoints.fields.vgpuCount"
-                            : "endpoints.fields.physicalGpuCount",
-                        )}
-                      >
-                        <NumberInput
-                          value={formatInputNumber(gpuUsage)}
-                          onValueChange={(value) =>
-                            form.setValue(
-                              "spec.resources.gpu",
-                              value,
-                              userSetValueOptions,
-                            )
-                          }
-                          min={0}
-                          // Capacity is a cross-field constraint:
-                          // cardsPerReplica × replicas. Keeping it out of the
-                          // input max avoids lowering the ceiling to the
-                          // current value and lets the capacity message own
-                          // the verdict.
-                          // SSH clusters step by 0.1 below one card and by whole
-                          // cards at or above one, so the spinner never lands on
-                          // a value the precision rule rejects. Kubernetes (and
-                          // vGPU, which is Kubernetes-only) always step by 1.
-                          step={gpuInputStep}
-                          disabled={
-                            !currentCluster ||
-                            !selectedAccelerator?.type ||
-                            !selectedAccelerator?.product
-                          }
-                          className="h-9"
-                        />
-                      </FormFieldGroup>
-                      {gpuCapacityMessageList}
-                    </div>
+                    {selectedAccelerator?.type &&
+                      selectedAccelerator.product && (
+                        <div className="col-span-1 space-y-1">
+                          <FormFieldGroup
+                            {...form}
+                            name="spec.resources.gpu"
+                            label={t(
+                              isVgpuAllocationMode
+                                ? "endpoints.fields.vgpuCount"
+                                : "endpoints.fields.physicalGpuCount",
+                            )}
+                          >
+                            <NumberInput
+                              value={formatInputNumber(gpuUsage)}
+                              onValueChange={(value) =>
+                                form.setValue(
+                                  "spec.resources.gpu",
+                                  value,
+                                  userSetValueOptions,
+                                )
+                              }
+                              min={0}
+                              // Capacity is a cross-field constraint:
+                              // cardsPerReplica × replicas. Keeping it out of
+                              // the input max avoids lowering the ceiling to the
+                              // current value and lets the capacity message own
+                              // the verdict.
+                              // SSH clusters step by 0.1 below one card and by
+                              // whole cards at or above one, so the spinner never
+                              // lands on a value the precision rule rejects.
+                              // Kubernetes (and vGPU, which is Kubernetes-only)
+                              // always step by 1.
+                              step={gpuInputStep}
+                              className="h-9"
+                            />
+                          </FormFieldGroup>
+                          {gpuCapacityMessageList}
+                        </div>
+                      )}
 
                     {/* Keep the split controls tied to the explicit mode.
                         Showing them while full-card allocation is selected made

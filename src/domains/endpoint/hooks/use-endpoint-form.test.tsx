@@ -930,6 +930,47 @@ describe("capacity checks", () => {
     );
   const quarterCard = { memory_mib: 4096, core_percent: 50 };
 
+  it("only shows the card count when an accelerator is selected", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster({ extraProducts: { [L20]: 1 } })],
+    });
+    setValues(result, {
+      "spec.cluster": "plain-gpu",
+      "spec.resources.accelerator": null,
+      "spec.resources.gpu": "0",
+    });
+
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: /endpoints.fields.physicalGpuCount/i,
+      }),
+    ).toBeNull();
+
+    setValues(result, {
+      "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
+    });
+    await screen.findByRole("spinbutton", {
+      name: /endpoints.fields.physicalGpuCount/i,
+    });
+
+    setValues(result, { "spec.resources.gpu": 2 });
+    openCombobox("spec.resources.accelerator");
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: "components.ui.combobox.clearSelection",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(fieldValue(result, "spec.resources.gpu")).toBe("0"),
+    );
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: /endpoints.fields.physicalGpuCount/i,
+      }),
+    ).toBeNull();
+  });
+
   it("keeps card count per replica uncapped by aggregate availability", async () => {
     const { result } = renderEndpointForm("create", {
       clusters: [plainGpuCluster({ allFree: true })],
