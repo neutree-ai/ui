@@ -281,6 +281,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const startsInManualMode = action === "create" && !preselectCatalogId;
   const [selectedModelCatalog, setSelectedModelCatalog] = useState<string>("");
   const [modelSearch, setModelSearch] = useState("");
+  const pendingRegistryModelPreservationRef = useRef<{
+    registry: string;
+    model: string;
+  } | null>(null);
   // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
   const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [featureSelections, setFeatureSelections] = useState<
@@ -1514,6 +1518,29 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       : null;
   }, [modelExistenceQuery.page]);
 
+  // A registry change starts a new exact-name lookup. Keep the current model
+  // visible while that answer is in flight, and only clear it once the new
+  // registry has answered and does not contain it. A failed or unresolved
+  // lookup is not evidence that the model is invalid.
+  useEffect(() => {
+    const pending = pendingRegistryModelPreservationRef.current;
+    if (!pending) return;
+    if (
+      currentRegistry !== pending.registry ||
+      currentModelName !== pending.model
+    ) {
+      pendingRegistryModelPreservationRef.current = null;
+      return;
+    }
+    if (modelExistenceNames === null) return;
+
+    pendingRegistryModelPreservationRef.current = null;
+    if (!modelExistenceNames.includes(pending.model)) {
+      form.setValue("spec.model.name", "", userSetValueOptions);
+      setModelSearch("");
+    }
+  }, [currentModelName, currentRegistry, form, modelExistenceNames]);
+
   // What the checkpoint says about itself lives in the detail read, not in the
   // listing, so picking a model asks for it and the answer lands in the effect
   // below. Only a pick sets this: opening an existing endpoint, or applying a
@@ -1587,7 +1614,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ].join("\u0000");
     if (lastExistenceTriggerKeyRef.current === triggerKey) return;
     lastExistenceTriggerKeyRef.current = triggerKey;
-    void form.trigger("-model-catalog" as Path<Endpoint>);
+    void form.trigger([
+      "spec.model.registry",
+      "-model-catalog",
+    ] as Path<Endpoint>[]);
   }, [action, currentRegistry, currentModelName, modelExistenceKey, form]);
 
   const {
@@ -1826,6 +1856,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // the original `applyCatalogSpec` path; Recipe MCs go through the composer,
   // driven by the effect above once selectedVariant/featureSelections land.
   const handleModelCatalogSelect = (catalogId: string) => {
+    pendingRegistryModelPreservationRef.current = null;
     setModelSourceMode("catalog");
     setResolvedModelEditing(false);
     setResolvedModelCustomized(false);
@@ -2034,16 +2065,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   };
 
   const handleResolvedModelRegistryChange = (value: string) => {
+    const previousModel = form.getValues("spec.model.name") ?? "";
     form.setValue("spec.model.registry", value, userSetValueOptions);
-    form.setValue("spec.model.name", "", userSetValueOptions);
     form.setValue("spec.model.version", "", userSetValueOptions);
     form.setValue("spec.model.file", "", userSetValueOptions);
     form.setValue("spec.model.info", null);
-    setModelSearch("");
+    setPickedModelRef(null);
+    pendingRegistryModelPreservationRef.current = previousModel
+      ? { registry: value, model: previousModel }
+      : null;
+    setModelSearch(previousModel);
     markResolvedModelCustomized();
   };
 
   const handleResolvedModelNameChange = (value: string) => {
+    pendingRegistryModelPreservationRef.current = null;
     form.setValue("spec.model.name", value, userSetValueOptions);
     form.setValue("spec.model.version", "", userSetValueOptions);
     form.setValue("spec.model.file", "", userSetValueOptions);
@@ -2671,6 +2707,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       allowReset={modelSourceMode === "catalog" && Boolean(selectedCatalog)}
       resetNotice={variantResetNotice}
       onToggleEditing={() => setResolvedModelEditing((editing) => !editing)}
+      onEditingRequested={() => setResolvedModelEditing(true)}
       onReset={resetResolvedModel}
       onUndo={undoVariantReset}
       onRegistryChange={handleResolvedModelRegistryChange}

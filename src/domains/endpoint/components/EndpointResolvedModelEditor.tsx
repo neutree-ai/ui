@@ -1,6 +1,11 @@
 import { Pencil } from "lucide-react";
-import type { ReactNode } from "react";
-import type { Control, FieldValues } from "react-hook-form";
+import { type ReactNode, useLayoutEffect } from "react";
+import {
+  type Control,
+  type FieldValues,
+  get,
+  useFormState,
+} from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
@@ -20,6 +25,13 @@ type ComboboxOption = {
   disabled?: boolean;
   description?: string;
 };
+
+const RESOLVED_MODEL_ERROR_PATHS = [
+  "spec.model.registry",
+  "spec.model.name",
+  "spec.model.version",
+  "spec.model.file",
+] as const;
 
 export type VariantResetNotice = {
   variant: string;
@@ -42,6 +54,7 @@ type Props = {
   allowReset: boolean;
   resetNotice: VariantResetNotice | null;
   onToggleEditing: () => void;
+  onEditingRequested: () => void;
   onReset: () => void;
   onUndo: () => void;
   onRegistryChange: (value: string) => void;
@@ -75,6 +88,7 @@ export function EndpointResolvedModelEditor({
   allowReset,
   resetNotice,
   onToggleEditing,
+  onEditingRequested,
   onReset,
   onUndo,
   onRegistryChange,
@@ -84,6 +98,18 @@ export function EndpointResolvedModelEditor({
   onFileInput,
 }: Props) {
   const { t } = useTranslation();
+  const { errors } = useFormState({
+    control,
+    name: [...RESOLVED_MODEL_ERROR_PATHS],
+  });
+  const hasModelError = RESOLVED_MODEL_ERROR_PATHS.some((path) =>
+    Boolean(get(errors, path)),
+  );
+
+  useLayoutEffect(() => {
+    if (!direct && !editing && hasModelError) onEditingRequested();
+  }, [direct, editing, hasModelError, onEditingRequested]);
+
   const versionFile = [
     values.version || t("endpoints.resolvedModel.auto"),
     values.file,
@@ -175,11 +201,16 @@ export function EndpointResolvedModelEditor({
         </Button>
       </div>
 
-      {editing ? (
-        <div className="bg-[var(--nt-fill-neutral-white)]/70 px-4 py-4">
-          {editableFields}
-        </div>
-      ) : (
+      <div
+        className={cn(
+          "bg-[var(--nt-fill-neutral-white)]/70 px-4 py-4",
+          !editing && "hidden",
+        )}
+      >
+        {editableFields}
+      </div>
+
+      {!editing && (
         <dl className="grid grid-cols-1 bg-[var(--nt-fill-neutral-white)]/55 sm:grid-cols-3">
           {[
             [t("endpoints.fields.modelRegistry"), values.registry],
