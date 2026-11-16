@@ -145,14 +145,8 @@ export function EndpointConfigurationSummary({
       </ConfigSection>
 
       <ConfigSection title={t("endpoints.wizard.summary.resources")}>
-        <ConfigRow label={t("endpoints.fields.inferenceHardware")}>
-          {accelerator?.product || accelerator?.type ? (
-            accelerator?.product || accelerator?.type
-          ) : Number(resources?.gpu ?? 0) === 0 ? (
-            t("endpoints.options.cpuInference")
-          ) : (
-            <EmptyValue />
-          )}
+        <ConfigRow label={t("endpoints.fields.accelerator")}>
+          {accelerator?.product || accelerator?.type || <EmptyValue />}
         </ConfigRow>
         <ConfigRow label={t("endpoints.wizard.summary.resourceRequest")}>
           {t("endpoints.wizard.summary.resourcePerReplicaValue", {

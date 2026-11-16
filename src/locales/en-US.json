@@ -1285,7 +1285,6 @@
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator",
-			"inferenceHardware": "Inference hardware",
 			"clusterCapability": "Cluster Capability",
 			"vgpuMemoryMode": "VRAM Mode",
 			"vgpuMemory": "VRAM",
@@ -1331,7 +1330,7 @@
 			"allocatedResources": "Allocated Resources",
 			"clusterDeviceResources": "Cluster Resources",
 			"resourceSummary": "Resource Summary",
-			"replicaResources": "Replica Resources",
+			"replicaResources": "Per replica resources",
 			"gpuAllocation": "GPU Allocation & Usage",
 			"weights": "Weights & Cache",
 			"monitoringMetrics": "Monitoring Metrics",
@@ -1474,7 +1473,6 @@
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
-			"selectInferenceHardware": "Select inference hardware",
 			"selectSchedulerType": "Select Scheduler Type",
 			"workloadImage": "repository:tag",
 			"resourcePlanRequiresCluster": "Select a cluster to configure CPU, memory, accelerator, and GPU resources.",
@@ -1487,13 +1485,13 @@
 			"gib": "GiB",
 			"percent": "%",
 			"shared": "Shared",
-			"cpuInference": "CPU inference",
-			"cpuInferenceDescription": "Run without requesting accelerator cards",
 			"acceleratorCapacity": "{{free}} free · {{total}} total"
 		},
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
 			"basicResources": "Capacity shared with the selected cluster.",
+			"replicaTotal": "Total number of replicas to run.",
+			"perReplicaResources": "CPU, memory, and accelerator requests applied to each replica.",
 			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
 		},
 		"actions": {

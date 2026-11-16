@@ -94,7 +94,7 @@ const fields: ReviewField[] = [
   reviewField(resources, "endpoints.fields.physicalGpu", (endpoint) =>
     numberValue(endpoint.spec?.resources?.gpu),
   ),
-  reviewField(resources, "endpoints.fields.inferenceHardware", (endpoint) => {
+  reviewField(resources, "endpoints.fields.accelerator", (endpoint) => {
     const accelerator = endpoint.spec?.resources?.accelerator;
     if (!accelerator?.type && !accelerator?.product) return null;
     return [accelerator?.type, accelerator?.product]

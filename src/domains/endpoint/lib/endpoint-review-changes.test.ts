@@ -126,7 +126,7 @@ const reviewFieldCases: Array<{
   },
   {
     step: 1,
-    label: "endpoints.fields.inferenceHardware",
+    label: "endpoints.fields.accelerator",
     path: ["spec", "resources", "accelerator", "product"],
     value: "H200",
   },

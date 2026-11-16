@@ -101,27 +101,6 @@ describe("EndpointConfigurationSummary", () => {
     screen.getByText("custom");
   });
 
-  it("shows CPU inference when no accelerator is selected", () => {
-    render(
-      <EndpointConfigurationSummary
-        values={makeEndpoint({
-          spec: {
-            resources: {
-              cpu: 4,
-              memory: 16,
-              gpu: 0,
-              accelerator: null,
-            },
-          },
-        })}
-        reviewContext={reviewContext}
-      />,
-    );
-
-    screen.getByText("endpoints.fields.inferenceHardware");
-    screen.getByText("endpoints.options.cpuInference");
-  });
-
   it("omits the model section for an engine that brings its own workload", () => {
     render(
       <EndpointConfigurationSummary
