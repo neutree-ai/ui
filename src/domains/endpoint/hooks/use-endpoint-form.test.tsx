@@ -1811,6 +1811,72 @@ describe("model picker", () => {
       expect(fieldValue(result, "spec.model.info")).toBeNull();
     });
   });
+
+  describe("registry change", () => {
+    const lists = {
+      registries: [
+        { metadata: { name: "old" }, status: { phase: "Connected" } },
+        { metadata: { name: "new" }, status: { phase: "Connected" } },
+      ],
+    };
+
+    function mockExactModelLookup(answer: "found" | "missing" | "unresolved") {
+      vi.mocked(useRegistryModels).mockImplementation(((opts: {
+        search?: string;
+      }) => {
+        if (opts.search !== "shared-model") return registryModelsResult();
+        if (answer === "unresolved") return registryModelsResult();
+        const models =
+          answer === "found"
+            ? [{ name: "shared-model", versions: [] }]
+            : [{ name: "another-model", versions: [] }];
+        return registryModelsResult(models, {
+          models,
+          total: models.length,
+          limit: 20,
+          freshness: null,
+        });
+      }) as unknown as typeof useRegistryModels);
+    }
+
+    it.each([
+      { answer: "found" as const, expected: "shared-model" },
+      { answer: "missing" as const, expected: "" },
+      { answer: "unresolved" as const, expected: "shared-model" },
+    ])(
+      "keeps or clears the selected model after registry lookup is $answer",
+      async ({ answer, expected }) => {
+        mockExactModelLookup(answer);
+        const { result } = renderEndpointForm("create", lists);
+        setValues(result, {
+          "spec.model": {
+            registry: "old",
+            name: "shared-model",
+            version: "v1",
+            file: "*.safetensors",
+            task: "text-generation",
+            info: { parameter_count: "27B" },
+          },
+        });
+
+        await act(async () => {
+          openCombobox("spec.model.registry");
+        });
+        await act(async () => {
+          fireEvent.click(await screen.findByRole("option", { name: "new" }));
+        });
+
+        await waitFor(() => {
+          expect(fieldValue(result, "spec.model.registry")).toBe("new");
+          expect(fieldValue(result, "spec.model.name")).toBe(expected);
+        });
+        expect(fieldValue(result, "spec.model.version")).toBe("");
+        expect(fieldValue(result, "spec.model.file")).toBe("");
+        expect(fieldValue(result, "spec.model.info")).toBeNull();
+        expect(formError(result, "spec.model.registry")).toBeUndefined();
+      },
+    );
+  });
 });
 
 describe("registry choice", () => {
