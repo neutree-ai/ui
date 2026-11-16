@@ -1285,6 +1285,7 @@
 			"remaining": "Remaining",
 			"environment": "Environment Variables",
 			"accelerator": "Accelerator",
+			"inferenceHardware": "Inference hardware",
 			"clusterCapability": "Cluster Capability",
 			"vgpuMemoryMode": "VRAM Mode",
 			"vgpuMemory": "VRAM",
@@ -1473,6 +1474,7 @@
 			"selectVersion": "Select A Version",
 			"selectTaskType": "Select A Support Task Type",
 			"selectAccelerator": "Select An Accelerator",
+			"selectInferenceHardware": "Select inference hardware",
 			"selectSchedulerType": "Select Scheduler Type",
 			"workloadImage": "repository:tag",
 			"resourcePlanRequiresCluster": "Select a cluster to configure CPU, memory, accelerator, and GPU resources.",
@@ -1485,6 +1487,8 @@
 			"gib": "GiB",
 			"percent": "%",
 			"shared": "Shared",
+			"cpuInference": "CPU inference",
+			"cpuInferenceDescription": "Run without requesting accelerator cards",
 			"acceleratorCapacity": "{{free}} free · {{total}} total"
 		},
 		"descriptions": {

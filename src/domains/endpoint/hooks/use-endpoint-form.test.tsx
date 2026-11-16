@@ -574,6 +574,15 @@ function openCombobox(fieldName: string) {
   return trigger as HTMLButtonElement;
 }
 
+function selectInferenceHardware(label: string) {
+  openCombobox("spec.resources.accelerator");
+  fireEvent.click(
+    screen.getByRole("option", {
+      name: new RegExp(label),
+    }),
+  );
+}
+
 /** Creating starts from a directly chosen model; the catalog picker appears
  * once the catalog source is chosen. */
 function selectCatalog(label: string) {
@@ -731,6 +740,30 @@ describe("loading an existing endpoint", () => {
         formResources({ virtualization: storedVgpu }),
       ),
     );
+  });
+
+  it("shows CPU inference for an existing endpoint without an accelerator", async () => {
+    refineForm.queryData = {
+      spec: {
+        resources: {
+          cpu: "4",
+          memory: "16",
+          gpu: "0",
+          accelerator: null,
+        },
+      },
+    };
+    const { result } = renderEndpointForm("edit", {
+      clusters: [noResourceCluster],
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("field-spec.resources.accelerator").textContent,
+      ).toContain("endpoints.options.cpuInference"),
+    );
+    expect(fieldValue(result, "spec.resources.accelerator")).toBeNull();
+    expect(fieldValue(result, "spec.resources.gpu")).toBe(0);
   });
 
   it("does not overwrite resources the user edited with the loaded ones", async () => {
@@ -930,7 +963,7 @@ describe("capacity checks", () => {
     );
   const quarterCard = { memory_mib: 4096, core_percent: 50 };
 
-  it("only shows the card count when an accelerator is selected", async () => {
+  it("offers CPU inference and only shows card count for GPU hardware", async () => {
     const { result } = renderEndpointForm("create", {
       clusters: [plainGpuCluster({ extraProducts: { [L20]: 1 } })],
     });
@@ -946,29 +979,27 @@ describe("capacity checks", () => {
       }),
     ).toBeNull();
 
-    setValues(result, {
-      "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
-    });
-    await screen.findByRole("spinbutton", {
-      name: /endpoints.fields.physicalGpuCount/i,
-    });
+    selectInferenceHardware("endpoints.options.cpuInference");
 
-    setValues(result, { "spec.resources.gpu": 2 });
-    openCombobox("spec.resources.accelerator");
-    fireEvent.click(
-      screen.getByRole("option", {
-        name: "components.ui.combobox.clearSelection",
-      }),
-    );
-
-    await waitFor(() =>
-      expect(fieldValue(result, "spec.resources.gpu")).toBe("0"),
-    );
+    expect(
+      screen.getByTestId("field-spec.resources.accelerator").textContent,
+    ).toContain("endpoints.options.cpuInference");
+    expect(fieldValue(result, "spec.resources.accelerator")).toBeNull();
+    expect(fieldValue(result, "spec.resources.gpu")).toBe("0");
     expect(
       screen.queryByRole("spinbutton", {
         name: /endpoints.fields.physicalGpuCount/i,
       }),
     ).toBeNull();
+
+    selectInferenceHardware("Tesla-T4");
+    await screen.findByRole("spinbutton", {
+      name: /endpoints.fields.physicalGpuCount/i,
+    });
+    expect(fieldValue(result, "spec.resources.accelerator")).toMatchObject({
+      type: "nvidia_gpu",
+      product: T4,
+    });
   });
 
   it("keeps card count per replica uncapped by aggregate availability", async () => {
@@ -1355,21 +1386,33 @@ describe("catalog selection", () => {
 });
 
 describe("validation", () => {
-  it("allows a CPU-only deployment without an accelerator", async () => {
+  it("requires an explicit inference hardware choice", async () => {
     const { result } = renderEndpointForm("create", {
-      clusters: [plainGpuCluster()],
+      clusters: [noResourceCluster],
     });
+    setValues(result, { "spec.cluster": "no-resources" });
+    await waitFor(() =>
+      expect(fieldValue(result, "spec.cluster")).toBe("no-resources"),
+    );
     setValues(result, {
-      "spec.cluster": "plain-gpu",
       "spec.resources": formResources({
         cpu: 4,
         memory: 8,
         gpu: 0,
       }),
+      "spec.resources.accelerator": null,
       "spec.replicas.num": 1,
     });
 
+    expect(fieldValue(result, "spec.resources.accelerator")).toBeNull();
     await validate(result);
+
+    expect(formError(result, "spec.resources.accelerator")).toMatchObject({
+      message: "common.validation.required",
+    });
+
+    selectInferenceHardware("endpoints.options.cpuInference");
+    await validate(result, "spec.resources.accelerator");
 
     expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
     expect(formError(result, "spec.resources.gpu")).toBeUndefined();

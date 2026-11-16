@@ -564,6 +564,12 @@ export function validateEndpointValues(
      * nothing they can do would clear it.
      */
     hidesModelFields?: boolean;
+    /**
+     * Whether the unified Inference hardware field has a concrete selection:
+     * either CPU inference or a GPU accelerator. A blank default-GPU state is
+     * not deployable because it does not yet say which resources to request.
+     */
+    inferenceHardwareSelected?: boolean;
   },
   t: (key: string, options?: Record<string, unknown>) => string,
 ): Record<string, { type: string; message: string }> {
@@ -607,6 +613,12 @@ export function validateEndpointValues(
 
   const accelerator = spec.resources?.accelerator;
   const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
+  if (context.inferenceHardwareSelected === false && !hasAccelerator) {
+    errors["spec.resources.accelerator"] = {
+      type: "manual",
+      message: requiredMessage,
+    };
+  }
   if (hasAccelerator && context.clusterType) {
     const gpuRaw = spec.resources?.gpu;
     if (gpuRaw !== undefined && gpuRaw !== null && gpuRaw !== "") {

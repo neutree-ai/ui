@@ -229,6 +229,9 @@ type AcceleratorVirtualization = NonNullable<
   ResourceSpec["accelerator"]
 >["virtualization"];
 type GpuAllocationMode = "full" | "vgpu";
+type InferenceHardwareMode = "cpu" | "gpu" | null;
+
+const CPU_INFERENCE_VALUE = "__cpu__";
 
 /** How many models the picker asks for. The dropdown searches server side, so
  * this bounds one response rather than the registry. */
@@ -300,6 +303,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     useState<ModelSourceDraft | null>(null);
   const [gpuAllocationModeChoice, setGpuAllocationModeChoice] =
     useState<GpuAllocationMode | null>(null);
+  const [inferenceHardwareMode, setInferenceHardwareMode] =
+    useState<InferenceHardwareMode>(action === "create" ? "gpu" : null);
+  const inferenceHardwareInitializedRef = useRef(action === "create");
   const effectiveGpuAllocationModeRef = useRef<GpuAllocationMode>("full");
   // Accelerator types the selected engine version ships images for; empty
   // while the engine is unknown, which leaves every accelerator acceptable.
@@ -349,6 +355,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           clusterType,
           hidesModelFields,
           allocationMode: effectiveGpuAllocationModeRef.current,
+          inferenceHardwareSelected: hasSelectedInferenceHardware,
         },
         t,
       );
@@ -430,6 +437,10 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const currentModelVersion = form.watch("spec.model.version");
   const currentModelFile = form.watch("spec.model.file");
   const currentModelTask = form.watch("spec.model.task");
+  const currentAccelerator = form.watch("spec.resources.accelerator");
+  const hasSelectedInferenceHardware =
+    inferenceHardwareMode === "cpu" ||
+    Boolean(currentAccelerator?.type && currentAccelerator?.product);
   const currentModelValues = useMemo<ModelIdentity>(
     () => ({
       registry: currentRegistry ?? "",
@@ -455,6 +466,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const hidesModelFields = !engineNeedsModelSpec(engineSpec?.engine);
 
   const selectedAccelerator = normalizedResources?.accelerator;
+  const cpuInferenceSelected =
+    inferenceHardwareMode === "cpu" &&
+    !(selectedAccelerator?.type && selectedAccelerator.product);
   const gpuUsage = normalizedResources?.gpu || 0;
   const replicaCount = Math.max(1, Number(watchedReplicaCount || 1));
 
@@ -490,6 +504,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   );
 
   const currentEndpointAccelerator = normalizedQueryResources?.accelerator;
+  useEffect(() => {
+    if (
+      inferenceHardwareInitializedRef.current ||
+      action !== "edit" ||
+      !queryEndpoint
+    ) {
+      return;
+    }
+    inferenceHardwareInitializedRef.current = true;
+    setInferenceHardwareMode(
+      currentEndpointAccelerator?.type && currentEndpointAccelerator.product
+        ? "gpu"
+        : "cpu",
+    );
+  }, [action, currentEndpointAccelerator, queryEndpoint]);
   const currentEndpointReplicaCount =
     action === "edit"
       ? Math.max(1, Number(queryEndpoint?.spec?.replicas?.num || 1))
@@ -2193,6 +2222,70 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       ? [...marked].sort((a, b) => Number(b.verified) - Number(a.verified))
       : marked;
   }, [acceleratorOptions, engineAcceleratorTypes, t, verifiedProducts]);
+  const inferenceHardwareOptions = useMemo(
+    () => [
+      {
+        label: t("endpoints.options.cpuInference"),
+        value: CPU_INFERENCE_VALUE,
+        description: t("endpoints.options.cpuInferenceDescription"),
+      },
+      ...displayedAcceleratorOptions.map((option) => ({
+        label: option.label,
+        value: option.value,
+        disabled: !option.engineCompatible,
+        description: [
+          option.engineCompatible
+            ? option.verified
+              ? t("endpoints.recipe.verifiedAccelerator")
+              : null
+            : t("endpoints.messages.engineAcceleratorIncompatible"),
+          option.capacityDescription,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      })),
+    ],
+    [displayedAcceleratorOptions, t],
+  );
+  const inferenceHardwareValue =
+    selectedAccelerator?.type && selectedAccelerator.product
+      ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
+      : cpuInferenceSelected
+        ? CPU_INFERENCE_VALUE
+        : "";
+  const handleInferenceHardwareChange = (value: string) => {
+    if (value === CPU_INFERENCE_VALUE) {
+      setInferenceHardwareMode("cpu");
+      setGpuAllocationModeChoice(null);
+      form.setValue("spec.resources.accelerator", null, userSetValueOptions);
+      form.setValue("spec.resources.gpu", "0", userSetValueOptions);
+      form.clearErrors("spec.resources.accelerator");
+      return;
+    }
+
+    const selectedOption = displayedAcceleratorOptions.find(
+      (option) => option.value === value,
+    );
+    if (!selectedOption) return;
+
+    setInferenceHardwareMode("gpu");
+    const currentVirtualization = form.getValues(
+      "spec.resources.accelerator.virtualization",
+    );
+    form.setValue(
+      "spec.resources.accelerator",
+      {
+        type: selectedOption.type,
+        product: selectedOption.product,
+        ...(isSelectedClusterVgpuEnabled
+          ? {
+              virtualization: currentVirtualization || {},
+            }
+          : {}),
+      } satisfies ResourceSpec["accelerator"],
+      userSetValueOptions,
+    );
+  };
 
   // A catalog may carry reference hardware that does not exist on the cluster
   // the user then chooses. Reconcile the dependent field as soon as the
@@ -2203,6 +2296,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       !currentCluster ||
       !selectedCluster?.status?.resource_info ||
       acceleratorOptions.length === 0
+    ) {
+      return;
+    }
+    if (inferenceHardwareMode === "cpu") return;
+    if (
+      action === "edit" &&
+      queryEndpoint &&
+      inferenceHardwareMode === null &&
+      !queryEndpoint.spec?.resources?.accelerator
     ) {
       return;
     }
@@ -2241,12 +2343,16 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         Boolean(form.getFieldState("spec.resources.accelerator").error),
       ),
     );
+    if (option) setInferenceHardwareMode("gpu");
   }, [
+    action,
     acceleratorOptions,
     engineAcceleratorTypes,
     currentCluster,
     form,
+    inferenceHardwareMode,
     isSelectedClusterVgpuEnabled,
+    queryEndpoint,
     selectedCluster?.status?.resource_info,
   ]);
 
@@ -2256,6 +2362,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // loaded) is not that case and must not claim to be.
   const noVerifiedAcceleratorAvailable =
     verifiedProducts.size > 0 &&
+    !cpuInferenceSelected &&
     Boolean(currentCluster) &&
     acceleratorOptions.length > 0 &&
     !displayedAcceleratorOptions.some((option) => option.verified);
@@ -3320,80 +3427,21 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       <FormFieldGroup
                         {...form}
                         name="spec.resources.accelerator"
-                        label={t("endpoints.fields.accelerator")}
+                        label={t("endpoints.fields.inferenceHardware")}
                         className="col-span-1 min-w-0 sm:col-span-2"
+                        required
                       >
                         <FormCombobox
-                          options={displayedAcceleratorOptions.map((opt) => ({
-                            label: opt.label,
-                            value: opt.value,
-                            disabled: !opt.engineCompatible,
-                            description: [
-                              opt.engineCompatible
-                                ? opt.verified
-                                  ? t("endpoints.recipe.verifiedAccelerator")
-                                  : null
-                                : t(
-                                    "endpoints.messages.engineAcceleratorIncompatible",
-                                  ),
-                              opt.capacityDescription,
-                            ]
-                              .filter(Boolean)
-                              .join(" · "),
-                          }))}
-                          value={
-                            selectedAccelerator?.type &&
-                            selectedAccelerator?.product
-                              ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
-                              : ""
+                          options={inferenceHardwareOptions}
+                          value={inferenceHardwareValue}
+                          onChange={(value) =>
+                            handleInferenceHardwareChange(String(value))
                           }
-                          onChange={(value) => {
-                            // Parse "type:product" format
-                            const selectedOption =
-                              displayedAcceleratorOptions.find(
-                                (opt) => opt.value === value,
-                              );
-                            if (selectedOption) {
-                              const currentVirtualization = form.getValues(
-                                "spec.resources.accelerator.virtualization",
-                              );
-                              form.setValue(
-                                "spec.resources.accelerator",
-                                {
-                                  type: selectedOption.type,
-                                  product: selectedOption.product,
-                                  ...(isSelectedClusterVgpuEnabled
-                                    ? {
-                                        virtualization:
-                                          currentVirtualization || {},
-                                      }
-                                    : {}),
-                                } satisfies ResourceSpec["accelerator"],
-                                userSetValueOptions,
-                              );
-                            } else {
-                              form.setValue(
-                                "spec.resources.accelerator",
-                                null,
-                                userSetValueOptions,
-                              );
-                              form.setValue(
-                                "spec.resources.gpu",
-                                "0",
-                                userSetValueOptions,
-                              );
-                            }
-                          }}
                           placeholder={t(
-                            "endpoints.placeholders.selectAccelerator",
+                            "endpoints.placeholders.selectInferenceHardware",
                           )}
-                          disabled={
-                            !currentCluster ||
-                            displayedAcceleratorOptions.length === 0
-                          }
-                          emptyMessage={t(
-                            "endpoints.messages.noAcceleratorsAvailable",
-                          )}
+                          disabled={!currentCluster}
+                          allowUnselect={false}
                         />
                       </FormFieldGroup>
                       {noVerifiedAcceleratorAvailable && (
