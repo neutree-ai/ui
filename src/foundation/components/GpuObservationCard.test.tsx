@@ -83,6 +83,8 @@ describe("GPU observation row", () => {
     expect(row.textContent).toContain("15.0 / 16.0 GiB");
     expect(row.textContent).toContain("60 / 100");
     within(row).getByText("50%");
+    within(row).getByTestId("gpu-card-actual-marker");
+    within(row).getByTestId("gpu-actual-usage-marker");
     expect(
       within(row).getByTestId("gpu-actual-usage-legend").textContent,
     ).toContain("8.0 GiB");
@@ -397,6 +399,33 @@ describe("GPU observation row", () => {
       within(cardElement).queryByText("observations.endpoints"),
     ).toBeNull();
     expect(within(cardElement).queryByText("clusters.options.free")).toBeNull();
+  });
+
+  it("does not mark zero actual usage on an unallocated inventory row", () => {
+    render(
+      card({
+        variant: "inventory",
+        allocations: [],
+        device: {
+          ...device,
+          allocatedMiB: 0,
+        },
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 16 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 0),
+        ],
+      }),
+    );
+
+    const row = screen.getByTestId("gpu-inventory-row");
+    within(row).getByRole("img", {
+      name: "observations.noEndpointAllocation",
+    });
+    expect(within(row).queryByTestId("gpu-card-actual-marker")).toBeNull();
+    expect(within(row).queryByTestId("gpu-actual-usage-marker")).toBeNull();
+    expect(
+      within(row).getByTestId("gpu-actual-usage-legend").textContent,
+    ).toContain("0.0 GiB");
   });
 
   it("does not invent a physical scale when physical VRAM is unknown", () => {

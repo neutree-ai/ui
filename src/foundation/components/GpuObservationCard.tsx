@@ -496,6 +496,11 @@ function GpuActualUsageMarker({
   allocatedMiB: number | null;
   totalMiB: number;
 }) {
+  // Zero is a real reading, but it has no position to mark. Keeping the marker
+  // at 0% makes an idle, unallocated card look like it owns the first sliver of
+  // the allocation track.
+  if (usedMiB <= 0) return null;
+
   const percent = percentOf(usedMiB, totalMiB);
   const exceedsAllocation =
     allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
@@ -535,10 +540,13 @@ function ActualVramUsageLegend({
         className,
       )}
     >
-      <span
-        aria-hidden
-        className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
-      />
+      {usedMiB > 0 && (
+        <span
+          aria-hidden
+          data-testid="gpu-actual-usage-marker"
+          className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--nt-text-neutral-super)] [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+        />
+      )}
       {showLabel && (
         <span className="truncate">{t("observations.actualVramUsage")}</span>
       )}
