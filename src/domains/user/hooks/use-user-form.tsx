@@ -14,13 +14,23 @@ import {
 export const useUserForm = ({
   action,
   departmentField,
+  teamsField,
   onCreated,
 }: {
   action: "create" | "edit";
   /** Optional department picker for a new user, named `orgUnit`. */
   departmentField?: ReactElement;
-  /** Runs once the user exists; `orgUnit` is the picked department, if any. */
-  onCreated?: (user: { id: string; orgUnit: string }) => unknown;
+  /** Optional Teams picker for a new user, named `teams`. */
+  teamsField?: ReactElement;
+  /**
+   * Runs once the user exists; `orgUnit` is the picked department, if any,
+   * and `teams` the picked Teams' names.
+   */
+  onCreated?: (user: {
+    id: string;
+    orgUnit: string;
+    teams: string[];
+  }) => unknown;
 }) => {
   const isEdit = action === "edit";
   const { translate } = useTranslation();
@@ -44,14 +54,19 @@ export const useUserForm = ({
           password: "",
           confirmPassword: "",
           orgUnit: "",
+          teams: [],
         },
     refineCoreProps: {
       onMutationSuccess: (data, variables) => {
         if (isEdit) return;
-        const { orgUnit } = variables as unknown as { orgUnit?: string };
+        const { orgUnit, teams } = variables as unknown as {
+          orgUnit?: string;
+          teams?: string[];
+        };
         return onCreated?.({
           id: String((data as { data: { id: string } }).data.id),
           orgUnit: orgUnit ?? "",
+          teams: teams ?? [],
         });
       },
     },
@@ -120,6 +135,20 @@ export const useUserForm = ({
             >
               {departmentField}
             </FormFieldGroup>
+          ) : null}
+          {teamsField ? (
+            <FormFieldGroup
+              {...form}
+              name="teams"
+              label={translate("user_profiles.fields.teams")}
+            >
+              {teamsField}
+            </FormFieldGroup>
+          ) : null}
+          {/* Without a picker, or with one alone, the row is not left half full. */}
+          {departmentField && teamsField ? null : departmentField ||
+            teamsField ? (
+            <div />
           ) : (
             <div className="col-span-2" />
           )}

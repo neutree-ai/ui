@@ -99,6 +99,7 @@ const render = (scope: UsageScope) => {
           applications: "Applications",
           application: "Application",
         },
+        applicationTeams: new Map(),
         deletedKeyLabel: (id) => `Deleted ${id}`,
       }),
     { initialProps: { scope }, wrapper },

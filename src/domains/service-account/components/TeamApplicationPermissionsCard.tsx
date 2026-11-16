@@ -33,9 +33,12 @@ import type { Metadata } from "@/foundation/types/basic-types";
 export function TeamApplicationPermissionsCard({
   teamId,
   canEdit,
+  project = false,
 }: {
   teamId: number;
   canEdit: boolean;
+  /** A scenario: its texts say scenario instead of team. */
+  project?: boolean;
 }) {
   const { t } = useTranslation();
   const { appPermissions, isLoading, error, refetch } =
@@ -45,7 +48,11 @@ export function TeamApplicationPermissionsCard({
   return (
     <ShowPage.Section
       title={t("service_accounts.appPermissions.title")}
-      hint={t("service_accounts.appPermissions.hint")}
+      hint={t(
+        project
+          ? "service_accounts.appPermissions.hintProject"
+          : "service_accounts.appPermissions.hint",
+      )}
       data-testid="team-application-permissions"
       actions={
         canEdit && appPermissions ? (
@@ -70,12 +77,16 @@ export function TeamApplicationPermissionsCard({
           {t("service_accounts.appPermissions.unreadable")}
         </p>
       ) : (
-        <AppPermissionsSummary appPermissions={appPermissions} />
+        <AppPermissionsSummary
+          appPermissions={appPermissions}
+          project={project}
+        />
       )}
       {editing && appPermissions && (
         <AppPermissionsDialog
           teamId={teamId}
           appPermissions={appPermissions}
+          project={project}
           onClose={() => setEditing(false)}
           onSaved={() => {
             setEditing(false);
@@ -89,8 +100,10 @@ export function TeamApplicationPermissionsCard({
 
 function AppPermissionsSummary({
   appPermissions,
+  project,
 }: {
   appPermissions: TeamApplicationPermissions;
+  project: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -107,7 +120,11 @@ function AppPermissionsSummary({
           ))
         ) : (
           <span className="text-muted-foreground">
-            {t("service_accounts.appPermissions.noRoles")}
+            {t(
+              project
+                ? "service_accounts.appPermissions.noRolesProject"
+                : "service_accounts.appPermissions.noRoles",
+            )}
           </span>
         )}
       </dd>
@@ -147,11 +164,13 @@ const toggle = (list: string[], value: string, on: boolean) =>
 function AppPermissionsDialog({
   teamId,
   appPermissions,
+  project,
   onClose,
   onSaved,
 }: {
   teamId: number;
   appPermissions: TeamApplicationPermissions;
+  project: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -212,7 +231,13 @@ function AppPermissionsDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle hint={t("service_accounts.appPermissions.editHint")}>
+          <DialogTitle
+            hint={t(
+              project
+                ? "service_accounts.appPermissions.editHintProject"
+                : "service_accounts.appPermissions.editHint",
+            )}
+          >
             {t("service_accounts.appPermissions.editTitle")}
           </DialogTitle>
         </DialogHeader>
@@ -268,7 +293,11 @@ function AppPermissionsDialog({
               ))}
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            {t("service_accounts.appPermissions.effectHint")}
+            {t(
+              project
+                ? "service_accounts.appPermissions.effectHintProject"
+                : "service_accounts.appPermissions.effectHint",
+            )}
           </p>
           {error && (
             <Alert variant="destructive">

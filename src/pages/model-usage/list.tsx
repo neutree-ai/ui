@@ -24,6 +24,7 @@ import {
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
 import { ListPage } from "@/foundation/components/ListPage";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import {
   useHasGlobalPermission,
   useHasPermission,
@@ -62,6 +63,7 @@ import {
   type UsageView,
   writeUsageView,
 } from "@/pages/model-usage/lib/usage-view";
+import { useApplicationTeams } from "@/pages/model-usage/lib/use-application-teams";
 import { useScopeCollapsed } from "@/pages/model-usage/lib/use-scope-collapsed";
 import { useScopeUsage } from "@/pages/model-usage/lib/use-scope-usage";
 
@@ -227,6 +229,12 @@ export const ModelUsageList = () => {
     ];
   }, [scope, canReadAllGroups]);
   const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  // The daily detail lists the scope's users and applications, or, where the
+  // scope has an API keys tab, its keys. A key reader's detail is by key.
+  const [pickedDetailBy, setDetailBy] = useState<"subject" | "key">("subject");
+  const canDetailByKey = !!scope && tabs.includes("apiKey");
+  const detailByKey =
+    canDetailByKey && pickedDetailBy === "key" && tab === "detail";
   // Usage by API key carries no request count.
   const metric: TrendMetric = scope ? pickedMetric : "tokens";
   const deletedKeyLabel = useCallback(
@@ -241,6 +249,8 @@ export const ModelUsageList = () => {
     }),
     [t],
   );
+
+  const applicationTeams = useApplicationTeams(hasScopes);
 
   const {
     models,
@@ -263,11 +273,12 @@ export const ModelUsageList = () => {
     model,
     scope,
     teamsOpen: tab === "team",
-    keysOpen: tab === "apiKey",
+    keysOpen: tab === "apiKey" || detailByKey,
     roots,
     nodesByName,
     teamsByName,
     breakdownLabels,
+    applicationTeams,
     deletedKeyLabel,
   });
 
@@ -345,11 +356,11 @@ export const ModelUsageList = () => {
 
   const detailRows = useMemo(
     () =>
-      [...facts].sort(
+      [...(detailByKey ? keyFacts : facts)].sort(
         (a, b) =>
           b.date.localeCompare(a.date) || (b.usage ?? 0) - (a.usage ?? 0),
       ),
-    [facts],
+    [detailByKey, keyFacts, facts],
   );
 
   const trail = useMemo(
@@ -485,10 +496,30 @@ export const ModelUsageList = () => {
             />
           </TabsContent>
           <TabsContent value="detail" className="mt-0">
+            {canDetailByKey ? (
+              <div className="px-4 pt-3">
+                <SegmentedControl<"subject" | "key">
+                  ariaLabel={t("model_usage.detail.groupBy")}
+                  value={pickedDetailBy}
+                  onValueChange={setDetailBy}
+                  items={[
+                    {
+                      value: "subject",
+                      label: t("model_usage.detail.bySubject", {
+                        who: t(labelKeys.who),
+                      }),
+                    },
+                    { value: "key", label: t("model_usage.detail.byKey") },
+                  ]}
+                />
+              </div>
+            ) : null}
             <DetailTable
               rows={detailRows}
-              resetKey={scopeKey}
-              whoHeader={t(labelKeys.who)}
+              resetKey={`${scopeKey}|${detailByKey}`}
+              whoHeader={
+                detailByKey ? t("model_usage.apiKey") : t(labelKeys.who)
+              }
             />
           </TabsContent>
         </Tabs>

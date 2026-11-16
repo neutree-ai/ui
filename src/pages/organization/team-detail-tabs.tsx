@@ -86,6 +86,7 @@ export function TeamDetailTabs({
             key={team.id}
             teamId={team.id}
             teamName={displayName(team.metadata)}
+            project={isProjectTeam(team)}
             permissions={{
               canCreate,
               canUpdate,
@@ -127,7 +128,10 @@ export function TeamDetailTabs({
               <ChevronRight className="size-3.5" />
             </Link>
           </div>
-          <TeamTokenPool teamName={team.metadata.name} />
+          <TeamTokenPool
+            teamName={team.metadata.name}
+            project={isProjectTeam(team)}
+          />
           <TeamUsage
             teamName={team.metadata.name}
             project={isProjectTeam(team)}

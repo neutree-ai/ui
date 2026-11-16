@@ -86,6 +86,8 @@ type ScopeUsageInput = {
   nodesByName: ReadonlyMap<string, OrgTreeNode>;
   teamsByName: ReadonlyMap<string, Team>;
   breakdownLabels: BreakdownLabels;
+  /** The Team or scenario of each application by id; shown under its name. */
+  applicationTeams: ReadonlyMap<string, string>;
   /** Names a deleted API key by the start of its id. Keep it stable. */
   deletedKeyLabel: (shortId: string) => string;
 };
@@ -106,6 +108,7 @@ export function useScopeUsage({
   nodesByName,
   teamsByName,
   breakdownLabels,
+  applicationTeams,
   deletedKeyLabel,
 }: ScopeUsageInput) {
   const queries = scopeQueries(scope);
@@ -165,8 +168,9 @@ export function useScopeUsage({
 
   const userFacts = useFacts(userUsage.usageData, groupFact);
   const appFactOf = useCallback(
-    (r: GroupUsageRecord) => appFact(r, breakdownLabels.application),
-    [breakdownLabels.application],
+    (r: GroupUsageRecord) =>
+      appFact(r, applicationTeams.get(r.name) ?? breakdownLabels.application),
+    [breakdownLabels.application, applicationTeams],
   );
   const appFacts = useFacts(appUsage.usageData, appFactOf);
   const unitFacts = useFacts(unitUsage.usageData, groupFact);

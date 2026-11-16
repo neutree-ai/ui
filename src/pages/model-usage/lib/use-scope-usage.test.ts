@@ -103,6 +103,7 @@ const row = (
   completion_tokens: usage * 0.2,
 });
 
+let applicationTeams: ReadonlyMap<string, string> = new Map();
 const deletedKeyLabel = (id: string) => `Deleted ${id}`;
 
 const render = (scope: UsageScope) =>
@@ -124,6 +125,7 @@ const render = (scope: UsageScope) =>
           applications: "Applications",
           application: "Application",
         },
+        applicationTeams,
         deletedKeyLabel,
       });
     },
@@ -136,6 +138,7 @@ const entries = (result: { current: ReturnType<typeof useScopeUsage> }) =>
 beforeEach(() => {
   ready.clear();
   lastByCall.clear();
+  applicationTeams = new Map();
 });
 
 describe("useScopeUsage", () => {
@@ -219,5 +222,26 @@ describe("useScopeUsage", () => {
     ]);
     expect(result.current.activity).toEqual({ users: 2, applications: 1 });
     expect(result.current.previousTotal).toBe(100);
+  });
+
+  it("names the Team or scenario of an application under its name", () => {
+    applicationTeams = new Map([["sa1", "Scenario · Translate"]]);
+    ready.set("ServiceAccount:{}", [
+      row("ServiceAccount", "sa1", 50),
+      row("ServiceAccount", "sa2", 20),
+    ]);
+    const { result } = render({ type: "applications" });
+
+    // sa2's Team is unknown to the caller: the generic kind stays.
+    expect(
+      result.current.breakdownSeries.map((s) => [s.key, s.description]),
+    ).toEqual([
+      ["app:sa1", "Scenario · Translate"],
+      ["app:sa2", "Application"],
+    ]);
+    expect(result.current.facts.map((f) => f.who.description)).toEqual([
+      "Scenario · Translate",
+      "Application",
+    ]);
   });
 });

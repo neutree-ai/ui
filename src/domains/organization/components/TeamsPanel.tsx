@@ -203,6 +203,13 @@ export function TeamsPanel({
     }
   };
 
+  const project = !!selected && isProjectTeam(selected);
+  const removeMemberText = t(
+    project
+      ? "organization.teams.removeMemberProject"
+      : "organization.teams.removeMember",
+  );
+
   const membersSection = (
     <div className="space-y-3">
       <ShowPage.Section
@@ -258,17 +265,30 @@ export function TeamsPanel({
                   onOpenChange={(next) =>
                     next ? open({ kind: "delete" }) : close()
                   }
-                  title={t("organization.teams.deleteTitle", {
-                    team: displayName(selected.metadata),
-                  })}
+                  title={t(
+                    project
+                      ? "organization.teams.deleteTitleProject"
+                      : "organization.teams.deleteTitle",
+                    { team: displayName(selected.metadata) },
+                  )}
                   description={
                     deleteBlocked
-                      ? t("organization.teams.deleteBlocked", {
-                          count: deleteCheck?.roleAssignments,
-                        })
-                      : t("organization.teams.deleteHint", {
-                          count: members.members.length,
-                        })
+                      ? t(
+                          project
+                            ? "organization.teams.deleteBlockedProject"
+                            : "organization.teams.deleteBlocked",
+                          {
+                            count: deleteCheck?.roleAssignments,
+                          },
+                        )
+                      : t(
+                          project
+                            ? "organization.teams.deleteHintProject"
+                            : "organization.teams.deleteHint",
+                          {
+                            count: members.members.length,
+                          },
+                        )
                   }
                   extraContent={
                     deleteCheck?.isLoading ? (
@@ -276,7 +296,11 @@ export function TeamsPanel({
                         className="text-sm text-muted-foreground"
                         data-testid="team-delete-checking"
                       >
-                        {t("organization.teams.deleteChecking")}
+                        {t(
+                          project
+                            ? "organization.teams.deleteCheckingProject"
+                            : "organization.teams.deleteChecking",
+                        )}
                       </p>
                     ) : (
                       !deleteBlocked &&
@@ -352,7 +376,7 @@ export function TeamsPanel({
                           : row.key,
                         team: displayName(selected.metadata),
                       })}
-                      okText={t("organization.teams.removeMember")}
+                      okText={removeMemberText}
                       loading={memberWrites.isPending}
                       onConfirm={() =>
                         attempt(() => memberWrites.remove(row.key), {
@@ -364,8 +388,8 @@ export function TeamsPanel({
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7"
-                        aria-label={t("organization.teams.removeMember")}
-                        title={t("organization.teams.removeMember")}
+                        aria-label={removeMemberText}
+                        title={removeMemberText}
                         data-testid={`team-remove-member-${row.key}`}
                       >
                         <X className="h-4 w-4" />
@@ -421,11 +445,11 @@ export function TeamsPanel({
             <SelectItem value="all">
               {t("organization.filters.allTeamKinds")}
             </SelectItem>
-            <SelectItem value="project">
-              {t("organization.filters.projectsOnly")}
-            </SelectItem>
             <SelectItem value="team">
               {t("organization.filters.nonProjects")}
+            </SelectItem>
+            <SelectItem value="project">
+              {t("organization.filters.projectsOnly")}
             </SelectItem>
           </SelectContent>
         </Select>

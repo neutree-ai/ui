@@ -507,6 +507,78 @@ describe("TeamsPanel", () => {
     expect(screen.getAllByTestId("team-project-badge")).toHaveLength(2);
   });
 
+  it("filters by team or scenario under one combined title", () => {
+    const project = {
+      ...manual,
+      id: 3,
+      metadata: {
+        name: "launch",
+        display_name: "Launch",
+        labels: { "neutree.ai/team-kind": "project" },
+      },
+    } as unknown as Team;
+    vi.mocked(useTeams).mockReturnValue({
+      data: { data: [synced, manual, project], total: 3 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useTeams>);
+    render(<Panel />);
+    screen.getByText("organization.teams.title");
+    expect(
+      screen.getByTestId("organization-search").getAttribute("placeholder"),
+    ).toBe("organization.filters.searchTeams");
+
+    const options = () =>
+      screen.getAllByRole("option").map((option) => option.textContent);
+    const open = () =>
+      fireEvent.keyDown(screen.getByTestId("team-kind-filter"), {
+        key: "Enter",
+      });
+    open();
+    // All, then Teams, then Scenarios.
+    expect(options()).toEqual([
+      "organization.filters.allTeamKinds",
+      "organization.filters.nonProjects",
+      "organization.filters.projectsOnly",
+    ]);
+    fireEvent.click(
+      screen.getByRole("option", { name: "organization.filters.projectsOnly" }),
+    );
+    expect(
+      within(screen.getByTestId("team-list")).getAllByRole("button"),
+    ).toHaveLength(1);
+    open();
+    fireEvent.click(
+      screen.getByRole("option", { name: "organization.filters.nonProjects" }),
+    );
+    expect(
+      within(screen.getByTestId("team-list")).getAllByRole("button"),
+    ).toHaveLength(2);
+  });
+
+  it("words the member and delete texts of a scenario as a scenario", () => {
+    const project = {
+      ...manual,
+      id: 3,
+      metadata: {
+        name: "launch",
+        display_name: "Launch",
+        labels: { "neutree.ai/team-kind": "project" },
+      },
+    } as unknown as Team;
+    vi.mocked(useTeams).mockReturnValue({
+      data: { data: [manual, project], total: 2 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useTeams>);
+    grant(...ALL);
+    render(<Panel />, "/o?team=launch");
+    screen.getByTitle("organization.teams.removeMemberProject");
+    fireEvent.click(screen.getByTestId("team-delete"));
+    screen.getByText("organization.teams.deleteTitleProject");
+    screen.getByText("organization.teams.deleteHintProject");
+  });
+
   it("shows a taken name as a readable error", async () => {
     grant("team:create");
     writes.create.mockRejectedValue({

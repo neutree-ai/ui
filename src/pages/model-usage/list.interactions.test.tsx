@@ -130,6 +130,7 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
               usageTeamIds.includes(team.id),
             )) as unknown as Team[],
       ),
+    useTeams: () => ({ data: { data: teams } }),
     // rnd's direct members: u2, and u5 who used nothing. Team A: u1.
     useOrgUnitMembers: (id: number | undefined) => ({
       members: id === 1 ? [member("u2", "u2-name"), member("u5", "Idle")] : [],
@@ -139,6 +140,18 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
     }),
   };
 });
+
+vi.mock("@/domains/service-account/hooks/use-service-accounts", () => ({
+  // sa1 belongs to Team A, sa-launch to the scenario Launch.
+  useAllServiceAccounts: () => ({
+    data: {
+      data: [
+        { id: "sa1", team_id: 7, metadata: { name: "sa1" } },
+        { id: "sa-launch", team_id: 9, metadata: { name: "sa-launch" } },
+      ],
+    },
+  }),
+}));
 
 const teams = [
   { id: 7, metadata: { name: "team-a", display_name: "Team A" } },
@@ -307,6 +320,13 @@ const tableRows = () =>
     (row) => row.querySelector("td")?.textContent,
   );
 
+// The "who" cell of each row in the daily detail.
+const detailWho = () =>
+  Array.from(
+    screen.getByRole("tabpanel").querySelectorAll("tbody tr"),
+    (row) => row.querySelectorAll("td")[1]?.textContent,
+  );
+
 const scopeButton = (name: string) =>
   within(screen.getByRole("complementary")).getByRole("button", { name });
 
@@ -397,7 +417,7 @@ describe("a reader of the whole platform", () => {
       "model_usage.tabs.detail",
     ]);
     expect(tableRows()).toEqual([
-      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
     ]);
 
     // An application opens on its keys across the platform, with no group.
@@ -422,6 +442,32 @@ describe("a reader of the whole platform", () => {
       "model_usage.tabs.applications",
       "model_usage.tabs.detail",
     ]);
+  });
+
+  it("lists the daily detail by user or application, or by API key", () => {
+    renderPage();
+
+    openTab("model_usage.tabs.detail");
+    expect(keyFetched).toBe(false);
+    expect(detailWho()).toEqual([
+      "u1-name",
+      "u2-name",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
+      "u3-name",
+    ]);
+
+    fireEvent.click(screen.getByText("model_usage.detail.byKey"));
+
+    expect(keyFetched).toBe(true);
+    expect(detailWho()).toEqual(["key-a", "key-b"]);
+    screen.getByRole("columnheader", { name: "model_usage.apiKey" });
+
+    fireEvent.click(
+      screen.getByText(
+        "model_usage.detail.bySubject(model_usage.columns.userOrApplication)",
+      ),
+    );
+    expect(detailWho()).toContain("u1-name");
   });
 
   it("lists scenarios apart from Teams", () => {
@@ -481,7 +527,7 @@ describe("a reader of the whole platform", () => {
     ]);
     expect(tableRows()).toEqual([
       "u1-name",
-      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
     ]);
 
     // Opened from the Team, a user counts their usage in the Team only.
