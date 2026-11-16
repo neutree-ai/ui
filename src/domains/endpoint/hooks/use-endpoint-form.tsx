@@ -3224,7 +3224,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     {...form}
                     name="spec.replicas.num"
                     label={t("endpoints.fields.replicas")}
-                    description={t("endpoints.descriptions.replicaTotal")}
                     className="max-w-[160px]"
                     required
                   >
@@ -3236,9 +3235,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   <h4 className="text-sm font-semibold leading-5 text-foreground">
                     {t("endpoints.sections.replicaResources")}
                   </h4>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t("endpoints.descriptions.perReplicaResources")}
-                  </p>
                 </div>
 
                 {!currentCluster && (

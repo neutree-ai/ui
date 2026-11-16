@@ -687,9 +687,7 @@ describe("create vs edit", () => {
     within(replicaTotal).getByRole("spinbutton", {
       name: /endpoints\.fields\.replicas/i,
     });
-    screen.getByText("endpoints.descriptions.replicaTotal");
     screen.getByText("endpoints.sections.replicaResources");
-    screen.getByText("endpoints.descriptions.perReplicaResources");
   });
 });
 

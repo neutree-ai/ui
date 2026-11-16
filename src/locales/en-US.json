@@ -1265,11 +1265,11 @@
 			"nodes": "nodes",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
-			"physicalGpuCount": "Full cards per replica",
+			"physicalGpuCount": "Full cards",
 			"physicalGpu": "Card Count",
 			"perReplica": "Per Replica",
 			"perCard": "per card",
-			"vgpuCount": "Virtual cards per replica",
+			"vgpuCount": "Virtual cards",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -1490,8 +1490,6 @@
 		"descriptions": {
 			"clusterSchedulingTarget": "The current product supports cluster-level scheduling targets. Resource availability is summarized from the selected cluster.",
 			"basicResources": "Capacity shared with the selected cluster.",
-			"replicaTotal": "Total number of replicas to run.",
-			"perReplicaResources": "CPU, memory, and accelerator requests applied to each replica.",
 			"vgpuCorePercentZero": "Optional. Leave disabled or set 0 to share the remaining compute capacity on the assigned card."
 		},
 		"actions": {
