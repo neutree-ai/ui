@@ -281,7 +281,7 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "3492d93c7442ce8aa362363f129bf06d",
-  "src/pages/model-usage/list.tsx": "7459403b4773554d602370a7b02501da",
+  "src/pages/model-usage/list.tsx": "9a70ca58f77fe785390bd005f05f191a",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "8382415b07ff22c5e0fd372976849e38",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "caf2d9d9863cb3c64eaacd6a62c05be3",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
@@ -402,8 +402,8 @@
   "src/foundation/lib/stick-to-bottom.ts": "8c8e61e691baa06b921e11af6b0f1060",
   "src/foundation/hooks/use-stick-to-bottom.ts": "2254836f70966103fd9c82e8abc56f3e",
   "src/foundation/lib/registry-model-link.ts": "d269c262a50d9997722fd32dc9a647d8",
-  "src/pages/model-usage/components/UsageChart.tsx": "265a34065603e034fee20758708d6fa2",
-  "src/pages/model-usage/lib/usage-series.ts": "35daed42d59aab8749ff298a7abd4ec9",
+  "src/pages/model-usage/components/UsageChart.tsx": "fdb6901faff26274e55fd281ef6c9c55",
+  "src/pages/model-usage/lib/usage-series.ts": "24b4aa8232570e29df016e1caa7180dd",
   "src/foundation/hooks/use-form-enter-submit-guard.ts": "c4d87150c5338661795fd441f6c95c5d",
   "src/foundation/lib/enter-submit.ts": "ed2429b913469ef8e8e498714623db3d",
   "src/foundation/lib/model-source.ts": "685be5ca01d449960d0e8515faedc026",
@@ -605,7 +605,7 @@
   "src/pages/model-usage/components/UsageScopePanel.tsx": "dd06c433fbdcc96ffc61214cb205dae4",
   "src/pages/model-usage/components/UsageTables.tsx": "9608f699928849e488a6ef1457f5592d",
   "src/domains/api-key/hooks/use-usage-rpc.ts": "75ebd95ca14ce19227769121c787dcbd",
-  "src/pages/model-usage/lib/use-scope-usage.ts": "6a9089c80995231d689cab6d89d5b7ea",
+  "src/pages/model-usage/lib/use-scope-usage.ts": "d9ebf02ca8cf8715ed1f8a5b82d6885f",
   "src/pages/model-usage/components/ScopeBreadcrumb.tsx": "3e869178d0ee89e7b8905247d0f9ed0a",
   "src/foundation/lib/endpoint-availability.ts": "89a4a6fc251f6eb84aa68281b1d8cd79",
   "src/domains/group-policy/lib/subject-policy.ts": "2a410a1834c508bb9056f022a7a85041",
@@ -635,5 +635,5 @@
   "src/pages/model-usage/lib/use-scope-collapsed.ts": "7536814d56d50752716cf69d10078341",
   "src/pages/model-usage/lib/use-application-teams.ts": "0ea489b3e0f61b507875cdc00040bac7",
   "src/domains/organization/components/ManualTeamsField.tsx": "928cf9831a93f793cb59ce0cb6b020ee",
-  "src/pages/model-usage/components/UsageScopeOverview.tsx": "06fa7ce91014382c83e9e4bb6b2d9560"
+  "src/pages/model-usage/components/UsageScopeOverview.tsx": "703a4c1fe701ee03019d35bd15ea3e97"
 }
