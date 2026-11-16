@@ -284,7 +284,7 @@ describe("EndpointDeploymentForm", () => {
 
     expect(screen.getByTestId("active-step").textContent).toBe("0");
     expect(screen.getByTestId("has-changes").textContent).toBe("true");
-    expect(screen.getByTestId("modified-steps").textContent).toBe("0,1");
+    expect(screen.getByTestId("modified-steps").textContent).toBe("1");
     screen.getByRole("button", {
       name: "endpoints.wizard.review.redeployDetails:endpoints.fields.replicas, common.fields.cpu",
     });

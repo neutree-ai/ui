@@ -1314,6 +1314,26 @@ describe("catalog selection", () => {
 });
 
 describe("validation", () => {
+  it("allows a CPU-only deployment without an accelerator", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster()],
+    });
+    setValues(result, {
+      "spec.cluster": "plain-gpu",
+      "spec.resources": formResources({
+        cpu: 4,
+        memory: 8,
+        gpu: 0,
+      }),
+      "spec.replicas.num": 1,
+    });
+
+    await validate(result);
+
+    expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
+    expect(formError(result, "spec.resources.gpu")).toBeUndefined();
+  });
+
   it("defaults the scheduler type and requires one", async () => {
     const { result } = renderEndpointForm();
     expect(fieldValue(result, "spec.deployment_options.scheduler.type")).toBe(

@@ -57,7 +57,7 @@ const displayCache = (value: unknown): string => {
 const { model, resources, runtime, advanced } = EndpointStep;
 
 const fields: ReviewField[] = [
-  reviewField(model, "endpoints.fields.replicas", (endpoint) =>
+  reviewField(resources, "endpoints.fields.replicas", (endpoint) =>
     numberValue(endpoint.spec?.replicas?.num),
   ),
   reviewField(

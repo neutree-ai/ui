@@ -83,9 +83,7 @@ import type {
 } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import FormCardGrid, {
-  FORM_GRID_GAP_CLASS,
-} from "@/foundation/components/FormCardGrid";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
@@ -2806,44 +2804,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </p>
       )}
 
-      <div
-        data-testid="model-catalog-row"
-        className={cn(
-          "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-          FORM_GRID_GAP_CLASS,
-        )}
-      >
-        {!hidesModelFields && modelSourceMode === "catalog" && (
-          <FormFieldGroup
-            {...form}
-            name="-model-catalog"
-            label={t("endpoints.fields.modelCatalog")}
-            className="sm:col-span-3"
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectModelCatalog")}
-              disabled={modelCatalogs.query.isLoading}
-              options={(modelCatalogs.query.data?.data || []).map(
-                (catalog) => ({
-                  label: catalog.metadata.name,
-                  value: catalog.id.toString(),
-                }),
-              )}
-              value={selectedModelCatalog}
-              onChange={(value) => handleModelCatalogSelect(value as string)}
-            />
-          </FormFieldGroup>
-        )}
+      {!hidesModelFields && modelSourceMode === "catalog" && (
         <FormFieldGroup
           {...form}
-          name="spec.replicas.num"
-          label={t("endpoints.fields.replicas")}
-          className="sm:col-span-1"
-          required
+          name="-model-catalog"
+          label={t("endpoints.fields.modelCatalog")}
+          className="col-span-4"
         >
-          <Input type="number" min={1} />
+          <FormCombobox
+            placeholder={t("endpoints.placeholders.selectModelCatalog")}
+            disabled={modelCatalogs.query.isLoading}
+            options={(modelCatalogs.query.data?.data || []).map((catalog) => ({
+              label: catalog.metadata.name,
+              value: catalog.id.toString(),
+            }))}
+            value={selectedModelCatalog}
+            onChange={(value) => handleModelCatalogSelect(value as string)}
+          />
         </FormFieldGroup>
-      </div>
+      )}
 
       {!hidesModelFields &&
         modelSourceMode === "catalog" &&
@@ -3013,7 +2992,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ),
     wizardProfileFields,
     // The edit step's model section: what the endpoint was deployed from,
-    // replicas, and the model it serves. Creating uses wizardProfileFields.
+    // and the model it serves. Creating uses wizardProfileFields.
     templateFields: (
       <>
         <FormCardGrid
@@ -3028,22 +3007,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             <EndpointCatalogOrigin
               annotations={queryEndpoint?.metadata?.annotations}
             />
-          </div>
-          <div
-            className={cn(
-              "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-              FORM_GRID_GAP_CLASS,
-            )}
-          >
-            <FormFieldGroup
-              {...form}
-              name="spec.replicas.num"
-              label={t("endpoints.fields.replicas")}
-              className="sm:col-span-1"
-              required
-            >
-              <Input type="number" min={1} />
-            </FormFieldGroup>
           </div>
           {!hidesModelFields && (
             <>
@@ -3359,7 +3322,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         name="spec.resources.accelerator"
                         label={t("endpoints.fields.accelerator")}
                         className="col-span-1 min-w-0 sm:col-span-2"
-                        required
                       >
                         <FormCombobox
                           options={displayedAcceleratorOptions.map((opt) => ({
@@ -3477,6 +3439,17 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         />
                       </div>
                     )}
+
+                    <div className="col-span-1 space-y-1">
+                      <FormFieldGroup
+                        {...form}
+                        name="spec.replicas.num"
+                        label={t("endpoints.fields.replicas")}
+                        required
+                      >
+                        <Input type="number" min={1} className="h-9" />
+                      </FormFieldGroup>
+                    </div>
 
                     <div className="col-span-1 space-y-1">
                       <FormFieldGroup
