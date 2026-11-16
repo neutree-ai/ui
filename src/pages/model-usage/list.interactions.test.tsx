@@ -76,11 +76,14 @@ vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({
     children,
     extra,
+    title,
   }: {
     children?: ReactNode;
     extra?: ReactNode;
+    title?: ReactNode;
   }) => (
     <main>
+      <h1>{title}</h1>
       {extra}
       {children}
     </main>
@@ -220,7 +223,7 @@ const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
     ],
     "User::direct": [group("User", "u3", 50)],
     "User:rnd:direct": [group("User", "u2", 100, "llama")],
-    "Team:": [group("Team", "team-a", 250)],
+    "Team:": [group("Team", "team-a", 250), group("Team", "launch", 120)],
     "Team:rnd": [group("Team", "team-a", 250)],
     // u1's usage while in Team A, part of their 300.
     "User:team-a": [group("User", "u1", 120)],
@@ -327,6 +330,8 @@ const detailWho = () =>
     (row) => row.querySelectorAll("td")[1]?.textContent,
   );
 
+const heading = () => screen.getByRole("heading", { level: 1 }).textContent;
+
 const scopeButton = (name: string) =>
   within(screen.getByRole("complementary")).getByRole("button", { name });
 
@@ -390,28 +395,106 @@ describe("a reader of the whole platform", () => {
     expect(summary("requests")).toContain("53");
     expect(summary("requests")).toContain("model_usage.summary.activity(3,1)");
     expect(tabs()).toEqual([
+      "model_usage.tabs.overview",
       "model_usage.tabs.departments",
       "model_usage.tabs.teams",
       "model_usage.tabs.apiKeys",
       "model_usage.tabs.detail",
     ]);
+    expect(screen.getByRole("tab", { selected: true }).textContent).toBe(
+      "model_usage.tabs.overview",
+    );
+    openTab("model_usage.tabs.departments");
     expect(tableRows()).toEqual([
       "R&D",
-      "model_usage.scope.applications",
+      "model_usage.scope.applicationsNoDepartment",
       "model_usage.scope.unassigned",
     ]);
     // Key usage is fetched only for its tab.
     expect(keyFetched).toBe(false);
   });
 
-  it("opens the platform's applications from the breakdown", () => {
+  it("names the whole platform in the heading as the bare title", () => {
+    renderPage();
+
+    expect(heading()).toBe("model_usage.title");
+  });
+
+  it("ranks departments, Teams and scenarios against the platform total", () => {
+    renderPage();
+
+    const block = (id: string) =>
+      within(screen.getByTestId(`usage-overview-${id}`));
+    // The departments, the usage under none and the applications add up to
+    // the platform's 530.
+    const departments = block("departments");
+    departments.getByRole("button", { name: /R&D/ });
+    expect(
+      departments.getByRole("button", { name: /R&D/ }).textContent,
+    ).toContain("75.5%");
+    expect(
+      departments.getByRole("button", {
+        name: /model_usage.scope.applicationsNoDepartment/,
+      }).textContent,
+    ).toContain("15.1%");
+    // The scenario is in its own block, not among the Teams.
+    expect(
+      block("teams").getByRole("button", { name: /team-a-name/ }).textContent,
+    ).toContain("47.2%");
+    expect(block("teams").queryByRole("button", { name: /launch/ })).toBeNull();
+    expect(
+      block("scenarios").getByRole("button", { name: /launch-name/ })
+        .textContent,
+    ).toContain("22.6%");
+    expect(
+      screen.getAllByText("model_usage.overview.overlapHint"),
+    ).toHaveLength(2);
+  });
+
+  it("scopes the page to a Team or scenario picked in the overview", () => {
     renderPage();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "model_usage.scope.applications" }),
+      within(screen.getByTestId("usage-overview-scenarios")).getByRole(
+        "button",
+        { name: /launch-name/ },
+      ),
+    );
+
+    expect(groupCalls).toContain('User:{"team":"launch"}');
+    expect(heading()).toBe(
+      "model_usage.heading.scenario(model_usage.title,Launch)",
+    );
+  });
+
+  it("names a Team or a department in the heading", () => {
+    renderPage();
+
+    fireEvent.click(scopeButton("Team A"));
+    expect(heading()).toBe(
+      "model_usage.heading.team(model_usage.title,Team A)",
+    );
+
+    fireEvent.click(scopeButton("R&D"));
+    expect(heading()).toBe(
+      "model_usage.heading.department(model_usage.title,R&D)",
+    );
+  });
+
+  it("opens the platform's applications from the breakdown", () => {
+    renderPage();
+    openTab("model_usage.tabs.departments");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "model_usage.scope.applicationsNoDepartment",
+      }),
     );
 
     expect(summary("total")).toContain("80");
+    expect(heading()).toBe(
+      "model_usage.heading.applications(model_usage.title,model_usage.scope.applicationsNoDepartment)",
+    );
     expect(tabs()).toEqual([
       "model_usage.tabs.applications",
       "model_usage.tabs.detail",
@@ -576,6 +659,7 @@ describe("a reader of the whole platform", () => {
 
   it("narrows every panel to the model picked in the distribution", () => {
     renderPage();
+    openTab("model_usage.tabs.departments");
 
     fireEvent.click(screen.getByRole("button", { name: /^llama/ }));
 

@@ -31,7 +31,9 @@ export const ScopeBreadcrumb = ({
             {index > 0 ? <BreadcrumbSeparator /> : null}
             <BreadcrumbItem>
               {index === trail.length - 1 ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                <BreadcrumbPage className="font-medium text-foreground">
+                  {crumb.label}
+                </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
                   <button

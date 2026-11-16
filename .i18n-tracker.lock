@@ -281,7 +281,7 @@
   "src/pages/ai-traces/components/TraceStatsChart.tsx": "23924b8394b1d7f9c6b5fbc9d891fea1",
   "src/foundation/lib/api/ai-traces.ts": "36c9381b750cd6c5ca54ad09e72f7d93",
   "src/foundation/components/DateRangePicker.tsx": "3492d93c7442ce8aa362363f129bf06d",
-  "src/pages/model-usage/list.tsx": "50f079594b50658e7c642cb03191a24f",
+  "src/pages/model-usage/list.tsx": "7459403b4773554d602370a7b02501da",
   "src/domains/api-key/hooks/use-usage-by-dimension.ts": "8382415b07ff22c5e0fd372976849e38",
   "src/domains/api-key/hooks/use-workspace-usage.ts": "caf2d9d9863cb3c64eaacd6a62c05be3",
   "src/components/ui/calendar.tsx": "02dd213f55b7d4d0c541f991ca231277",
@@ -605,8 +605,8 @@
   "src/pages/model-usage/components/UsageScopePanel.tsx": "dd06c433fbdcc96ffc61214cb205dae4",
   "src/pages/model-usage/components/UsageTables.tsx": "9608f699928849e488a6ef1457f5592d",
   "src/domains/api-key/hooks/use-usage-rpc.ts": "75ebd95ca14ce19227769121c787dcbd",
-  "src/pages/model-usage/lib/use-scope-usage.ts": "e6ec5f617ca63e9e3586cfa69a84bde1",
-  "src/pages/model-usage/components/ScopeBreadcrumb.tsx": "c56e180cd1b22787abb4ed113e55dc66",
+  "src/pages/model-usage/lib/use-scope-usage.ts": "6a9089c80995231d689cab6d89d5b7ea",
+  "src/pages/model-usage/components/ScopeBreadcrumb.tsx": "3e869178d0ee89e7b8905247d0f9ed0a",
   "src/foundation/lib/endpoint-availability.ts": "89a4a6fc251f6eb84aa68281b1d8cd79",
   "src/domains/group-policy/lib/subject-policy.ts": "2a410a1834c508bb9056f022a7a85041",
   "src/domains/group-policy/hooks/use-subject-quota-column.tsx": "9ca9605e8efd5f72a9666f7ed6c66c45",
@@ -618,7 +618,7 @@
   "src/foundation/types/extra-column.ts": "30806ab467f71aac6ca9891fcce3a024",
   "src/foundation/types/group-scope.ts": "fa1d922fe2141405fa24a5a02dd2b2f8",
   "src/foundation/components/ThousandsInput.tsx": "a6d711d1abf5bad64c059f00bd4449b2",
-  "src/pages/model-usage/lib/usage-view.ts": "c1ebf5c1924a478b13cffba20c10f31e",
+  "src/pages/model-usage/lib/usage-view.ts": "aa20c2e8a699ec91163e3a39fae90c61",
   "src/domains/cluster/components/CacheEndpointLinks.tsx": "2aa702f463f05b8cf619a4faa58e9440",
   "src/domains/cluster/components/ZCacheEditor.tsx": "b4773b4f6582514a02e07c0e499bb3c2",
   "src/domains/cluster/lib/cache-endpoints.ts": "4db54310a18e2f8ecae88155f26b2586",
@@ -634,5 +634,6 @@
   "src/domains/endpoint/lib/shared-gpu.ts": "cecb6c3efb6a9b35f1053b3107b49ed3",
   "src/pages/model-usage/lib/use-scope-collapsed.ts": "7536814d56d50752716cf69d10078341",
   "src/pages/model-usage/lib/use-application-teams.ts": "0ea489b3e0f61b507875cdc00040bac7",
-  "src/domains/organization/components/ManualTeamsField.tsx": "928cf9831a93f793cb59ce0cb6b020ee"
+  "src/domains/organization/components/ManualTeamsField.tsx": "928cf9831a93f793cb59ce0cb6b020ee",
+  "src/pages/model-usage/components/UsageScopeOverview.tsx": "06fa7ce91014382c83e9e4bb6b2d9560"
 }

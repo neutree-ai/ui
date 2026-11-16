@@ -353,6 +353,7 @@ export function useScopeUsage({
     // Null until the previous period is in, or when the page is between
     // results: the change would compare different scopes.
     previousTotal: settled ? previousTotal : null,
+    teamsLoading: teamUsage.isLoading,
     loading:
       !settled ||
       (scope

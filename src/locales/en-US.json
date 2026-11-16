@@ -3600,6 +3600,7 @@
 			"title": "Scope",
 			"platform": "Entire platform",
 			"unassigned": "No department",
+			"applicationsNoDepartment": "Applications (no department)",
 			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments. Applications count toward their Team and belong to no department.",
 			"teams": "Teams",
 			"visible": "All usage you can see",
@@ -3619,6 +3620,22 @@
 			"change": "{{change}} vs. previous period",
 			"noPrevious": "No usage in the previous period",
 			"activity": "{{users}} active users · {{applications}} applications"
+		},
+		"heading": {
+			"team": "{{title}} · {{name}} (Team)",
+			"scenario": "{{title}} · {{name}} (Scenario)",
+			"department": "{{title}} · {{name}} (Department)",
+			"applications": "{{title}} · {{name}}",
+			"application": "{{title}} · {{name}} (Application)",
+			"user": "{{title}} · {{name}} (User)"
+		},
+		"overview": {
+			"departments": "Departments",
+			"teams": "Teams",
+			"scenarios": "Scenarios",
+			"overlapHint": "Teams and scenarios can overlap, so the shares may add up to more than 100%.",
+			"others": "Other {{n}}",
+			"viewAll": "View all"
 		},
 		"modelShare": {
 			"title": "Usage by model",
@@ -3643,7 +3660,8 @@
 		"tabs": {
 			"departments": "By department",
 			"subUnits": "By sub-department and user",
-			"teams": "By Team",
+			"overview": "Overview",
+			"teams": "By team & scenario",
 			"apiKeys": "By API key",
 			"detail": "Daily detail",
 			"teamHint": "A user may be in several Teams, so the Teams' totals can add up to more than the scope's total. Usage counts toward the Teams the user was in at the time; a Team's total includes its applications.",

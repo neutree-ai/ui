@@ -38,6 +38,10 @@ import {
   ModelShare,
   UsageSummary,
 } from "@/pages/model-usage/components/UsageOverview";
+import {
+  type OverviewRow,
+  UsageScopeOverview,
+} from "@/pages/model-usage/components/UsageScopeOverview";
 import { UsageScopePanel } from "@/pages/model-usage/components/UsageScopePanel";
 import {
   DetailTable,
@@ -131,7 +135,7 @@ export const ModelUsageList = () => {
   // The range to come back to after drilling into a day, so the way back is
   // whatever the reader was looking at — a preset or their own custom window.
   const [lastRange, setLastRange] = useState<DateRange | null>(null);
-  const pickedTab = view.tab ?? "breakdown";
+  const pickedTab = view.tab;
   const setTab = useCallback(
     (next: UsageTab) => updateView({ tab: next }),
     [updateView],
@@ -222,13 +226,14 @@ export const ModelUsageList = () => {
     if (scope.type === "applications") return ["breakdown", "detail"];
     if (scope.type === "team") return ["breakdown", "apiKey", "detail"];
     return [
+      ...(scope.type === "platform" ? (["overview"] as const) : []),
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
       "apiKey",
       "detail",
     ];
   }, [scope, canReadAllGroups]);
-  const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  const tab = pickedTab && tabs.includes(pickedTab) ? pickedTab : tabs[0];
   // The daily detail lists the scope's users and applications, or, where the
   // scope has an API keys tab, its keys. A key reader's detail is by key.
   const [pickedDetailBy, setDetailBy] = useState<"subject" | "key">("subject");
@@ -244,7 +249,7 @@ export const ModelUsageList = () => {
   const breakdownLabels = useMemo<BreakdownLabels>(
     () => ({
       unassigned: t("model_usage.scope.unassigned"),
-      applications: t("model_usage.scope.applications"),
+      applications: t("model_usage.scope.applicationsNoDepartment"),
       application: t("model_usage.group.kinds.ServiceAccount"),
     }),
     [t],
@@ -264,6 +269,7 @@ export const ModelUsageList = () => {
     keyFacts,
     keyRows,
     teamRows,
+    teamsLoading: teamRowsLoading,
     loading,
     error,
     refetch,
@@ -272,7 +278,7 @@ export const ModelUsageList = () => {
     range,
     model,
     scope,
-    teamsOpen: tab === "team",
+    teamsOpen: tab === "team" || tab === "overview",
     keysOpen: tab === "apiKey" || detailByKey,
     roots,
     nodesByName,
@@ -370,10 +376,53 @@ export const ModelUsageList = () => {
         nodesByName,
         nodesById,
         platformLabel: t("model_usage.scope.platform"),
-        applicationsLabel: breakdownLabels.applications,
+        applicationsLabel: t("model_usage.scope.applications"),
       }),
-    [scope, canReadAllGroups, nodesByName, nodesById, breakdownLabels, t],
+    [scope, canReadAllGroups, nodesByName, nodesById, t],
   );
+
+  // What the page is counting, named in the heading: the breadcrumb leads
+  // away from the scope, so it cannot be the only place that says which it is.
+  const heading = useMemo(() => {
+    const title = t("model_usage.title");
+    if (!scope || scope.type === "platform") return title;
+    const named = (kind: string, name: string) =>
+      t(`model_usage.heading.${kind}`, { title, name });
+    switch (scope.type) {
+      case "applications":
+        return named("applications", breakdownLabels.applications);
+      case "orgUnit":
+        return named(
+          "department",
+          nodesByName.get(scope.name)?.label ?? scope.name,
+        );
+      case "team": {
+        const team = teamsByName.get(scope.name);
+        return named(
+          team && isProjectTeam(team) ? "scenario" : "team",
+          scope.label,
+        );
+      }
+      case "user":
+        return named("user", scope.label);
+      case "application":
+        return named("application", scope.label);
+    }
+  }, [scope, nodesByName, teamsByName, breakdownLabels, t]);
+
+  // The platform's Teams and scenarios, split by the Team's scenario flag.
+  const overview = useMemo(() => {
+    const teams: OverviewRow[] = [];
+    const scenarios: OverviewRow[] = [];
+    for (const row of teamRows) {
+      const team = teamsByName.get(row.key);
+      (team && isProjectTeam(team) ? scenarios : teams).push({
+        ...row,
+        target: row.target ?? null,
+      });
+    }
+    return { teams, scenarios };
+  }, [teamRows, teamsByName]);
 
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
@@ -399,6 +448,7 @@ export const ModelUsageList = () => {
   };
 
   const tabLabel: Record<UsageTab, string> = {
+    overview: t("model_usage.tabs.overview"),
     breakdown: labelKeys.tab ? t(labelKeys.tab) : "",
     team: t("model_usage.tabs.teams"),
     apiKey: t("model_usage.tabs.apiKeys"),
@@ -456,6 +506,18 @@ export const ModelUsageList = () => {
               ))}
             </TabsList>
           </div>
+          <TabsContent value="overview" className="mt-0">
+            <UsageScopeOverview
+              departments={breakdownSeries}
+              teams={overview.teams}
+              scenarios={overview.scenarios}
+              total={totals.total}
+              teamsLoading={teamRowsLoading}
+              onOpen={changeScope}
+              onViewDepartments={() => setTab("breakdown")}
+              onViewTeams={() => setTab("team")}
+            />
+          </TabsContent>
           <TabsContent value="breakdown" className="mt-0">
             <UsageTable
               nameHeader={labelKeys.column ? t(labelKeys.column) : ""}
@@ -529,7 +591,7 @@ export const ModelUsageList = () => {
 
   return (
     <ListPage
-      title={t("model_usage.title")}
+      title={heading}
       canCreate={false}
       breadcrumb={false}
       extra={
