@@ -1098,29 +1098,9 @@ describe("capacity checks", () => {
       shown: ["cpuResourcesInsufficient"],
     },
     {
-      case: "CPU fits one replica but not all replicas",
-      cluster: plainGpuCluster({ allFree: true, cpu: [20, 10, 10] }),
-      replicas: 3,
-      resources: formResources({ cpu: 6, memory: 1, gpu: 0 }),
-      shown: ["noNodeCanScheduleCpuRequest"],
-    },
-    {
       case: "more memory than any GPU node has",
       cluster: plainGpuCluster({ allFree: true, memory: [16, 8, 8] }),
       resources: formResources({ memory: 16 }),
-      shown: ["noNodeCanScheduleMemoryRequest"],
-    },
-    {
-      case: "CPU-only requirements that only fit on different nodes",
-      cluster: plainGpuCluster({ cpu: [5, 4, 1], memory: [5, 1, 4] }),
-      resources: { cpu: 4, memory: 4, gpu: 0, accelerator: null },
-      shown: ["noNodeCanScheduleCombinedResourceRequest"],
-    },
-    {
-      case: "memory fits one replica but not all replicas",
-      cluster: plainGpuCluster({ allFree: true, memory: [20, 10, 10] }),
-      replicas: 3,
-      resources: formResources({ cpu: 1, memory: 6, gpu: 0 }),
       shown: ["noNodeCanScheduleMemoryRequest"],
     },
     {

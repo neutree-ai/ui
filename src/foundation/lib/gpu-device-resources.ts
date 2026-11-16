@@ -1219,20 +1219,15 @@ const getNodeReplicaUpperBound = (
 
     const memoryBound =
       requirement.memoryMiB > 0
-        ? Math.max(
-            requirement.memoryApproximately
-              ? getVgpuMemoryReplicaCapacity(
-                  device.availableMemoryMiB,
-                  requirement.memoryMiB,
-                )
-              : 0,
-            requirement.memoryApproximately
-              ? 0
-              : floorCapacityWithTolerance(
-                  device.availableMemoryMiB,
-                  requirement.memoryMiB,
-                ),
-          )
+        ? requirement.memoryApproximately
+          ? getVgpuMemoryReplicaCapacity(
+              device.availableMemoryMiB,
+              requirement.memoryMiB,
+            )
+          : floorCapacityWithTolerance(
+              device.availableMemoryMiB,
+              requirement.memoryMiB,
+            )
         : Number.POSITIVE_INFINITY;
     const coreBound =
       requirement.coreUnits > 0
@@ -1684,10 +1679,8 @@ export function calculateGpuPlacementCapacity(
     0,
   );
 
-  const maxPlaceableReplicas =
-    combinedPlacementStatus === "unknown" ? null : requestedPlacement.capacity;
-  const maxGpuPlaceableReplicas =
-    gpuStatus === "unknown" ? null : gpuOnlyPlacement.capacity;
+  const maxPlaceableReplicas = requestedPlacement.capacity;
+  const maxGpuPlaceableReplicas = gpuOnlyPlacement.capacity;
 
   let maxCardsPerReplica = 0;
   const candidateCardCounts = !hasAccelerator
