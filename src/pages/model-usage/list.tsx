@@ -57,6 +57,7 @@ import {
 } from "@/pages/model-usage/lib/usage-scope";
 import {
   buildTrend,
+  daysIn,
   foldRemainder,
   type TrendMetric,
   type UsageSeries,
@@ -340,6 +341,7 @@ export const ModelUsageList = () => {
 
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
+  const days = useMemo(() => daysIn(range), [range]);
   const chart = useMemo(() => {
     const [base, otherKey, trendOf] = scope
       ? ([
@@ -347,17 +349,17 @@ export const ModelUsageList = () => {
           breakdownSeries.filter((s) => s.total > 0),
           "model_usage.daily.otherGroups",
           (series: UsageSeries[]) =>
-            buildTrend(breakdown, series, (r) => r.entry, metric),
+            buildTrend(breakdown, series, (r) => r.entry, metric, days),
         ] as const)
       : ([
           keyRows,
           "model_usage.daily.otherKeys",
           (series: UsageSeries[]) =>
-            buildTrend(keyFacts, series, (r) => r.who.key),
+            buildTrend(keyFacts, series, (r) => r.who.key, "tokens", days),
         ] as const);
     const series = foldRemainder(base, TOP_K, (n) => t(otherKey, { n }));
     return { series, trend: trendOf(series) };
-  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, t]);
+  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, days, t]);
   const labelKeys = breakdownLabelKeys(scope);
 
   // Teams and scenarios side by side, as lines: they overlap, so stacking
@@ -378,9 +380,9 @@ export const ModelUsageList = () => {
     );
     return {
       series,
-      trend: buildTrend(teamFacts, series, (r) => r.who.key, metric),
+      trend: buildTrend(teamFacts, series, (r) => r.who.key, metric, days),
     };
-  }, [teamRows, teamFacts, teamsByName, metric, t]);
+  }, [teamRows, teamFacts, teamsByName, metric, days, t]);
   const [teamHidden, setTeamHidden] = useState<Set<string>>(() => new Set());
 
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);

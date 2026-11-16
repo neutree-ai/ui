@@ -4,6 +4,7 @@ import {
   aggregateSeries,
   buildTrend,
   changeOf,
+  daysIn,
   foldRemainder,
   OTHER_SERIES_KEY,
   orderSeries,
@@ -137,6 +138,25 @@ describe("buildTrend", () => {
     expect(buildTrend(rows, series, byKey)).toEqual([
       { date: "2026-09-01", a: 7, b: 7 },
       { date: "2026-09-02", a: 5, b: 0 },
+    ]);
+  });
+
+  it("gives every day of the range a point, so two charts share an axis", () => {
+    const rows = [record({ date: "2026-09-02", api_key_id: "a", usage: 5 })];
+    const series = aggregateSeries(rows, byKey, metaOfKey);
+    const days = daysIn({ start: "2026-08-31", end: "2026-09-03" });
+
+    expect(days).toEqual([
+      "2026-08-31",
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+    ]);
+    expect(buildTrend(rows, series, byKey, "tokens", days)).toEqual([
+      { date: "2026-08-31", a: 0 },
+      { date: "2026-09-01", a: 0 },
+      { date: "2026-09-02", a: 5 },
+      { date: "2026-09-03", a: 0 },
     ]);
   });
 

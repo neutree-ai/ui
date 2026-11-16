@@ -131,6 +131,19 @@ export function foldRemainder(
 /** What the trend chart counts: tokens, or requests (usage by group only). */
 export type TrendMetric = "tokens" | "requests";
 
+/** Every date of the range, so charts of one page share an x-axis. */
+export function daysIn({ start, end }: DateRange): string[] {
+  const days: string[] = [];
+  for (
+    let day = dayjs(start);
+    !day.isAfter(dayjs(end), "day");
+    day = day.add(1, "day")
+  ) {
+    days.push(day.format("YYYY-MM-DD"));
+  }
+  return days;
+}
+
 type TrendRow = Pick<ApiUsageRecord, "date" | "usage"> & { requests?: number };
 
 // Rows for the multi-day trend chart: one row per date with a numeric field per
@@ -141,8 +154,12 @@ export function buildTrend<R extends TrendRow>(
   series: UsageSeries[],
   keyOf: (r: R) => string,
   metric: TrendMetric = "tokens",
+  days: string[] = [],
 ): Array<Record<string, number | string>> {
-  const byDate = new Map<string, Record<string, number>>();
+  // Days with no usage still get a point, so the axis is the range's.
+  const byDate = new Map<string, Record<string, number>>(
+    days.map((day) => [day, {}]),
+  );
   for (const r of rows) {
     const key = keyOf(r);
     const day = byDate.get(r.date) ?? {};
