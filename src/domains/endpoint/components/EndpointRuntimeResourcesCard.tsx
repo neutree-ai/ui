@@ -576,7 +576,7 @@ function AllocationOwnershipLegend({
           mark={mark}
           showComposition={showEndpointComposition}
         />
-        {t("observations.thisEndpoint")}
+        {otherMiB > 0 && t("observations.thisEndpoint")}
         <strong className="font-semibold tabular-nums text-foreground">
           {gibValue(endpointMiB)} GiB {t("observations.reservedLower")}
         </strong>
