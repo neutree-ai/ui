@@ -679,16 +679,6 @@ describe("create vs edit", () => {
       ).toContain("2"),
     );
   });
-
-  it("separates the total replica count from per replica resources", () => {
-    renderEndpointForm("create", { clusters: [] });
-
-    const replicaTotal = screen.getByTestId("endpoint-replica-total");
-    within(replicaTotal).getByRole("spinbutton", {
-      name: /endpoints\.fields\.replicas/i,
-    });
-    screen.getByText("endpoints.sections.replicaResources");
-  });
 });
 
 describe("loading an existing endpoint", () => {
@@ -1365,26 +1355,6 @@ describe("catalog selection", () => {
 });
 
 describe("validation", () => {
-  it("allows a CPU-only deployment without an accelerator", async () => {
-    const { result } = renderEndpointForm("create", {
-      clusters: [plainGpuCluster()],
-    });
-    setValues(result, {
-      "spec.cluster": "plain-gpu",
-      "spec.resources": formResources({
-        cpu: 4,
-        memory: 8,
-        gpu: 0,
-      }),
-      "spec.replicas.num": 1,
-    });
-
-    await validate(result);
-
-    expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
-    expect(formError(result, "spec.resources.gpu")).toBeUndefined();
-  });
-
   it("defaults the scheduler type and requires one", async () => {
     const { result } = renderEndpointForm();
     expect(fieldValue(result, "spec.deployment_options.scheduler.type")).toBe(

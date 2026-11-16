@@ -3216,10 +3216,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   </div>
                 </div>
 
-                <div
-                  data-testid="endpoint-replica-total"
-                  className="space-y-2 border-b border-border pb-4"
-                >
+                <div className="border-b border-border pb-4">
                   <FormFieldGroup
                     {...form}
                     name="spec.replicas.num"
@@ -3231,11 +3228,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                   </FormFieldGroup>
                 </div>
 
-                <div>
-                  <h4 className="text-sm font-semibold leading-5 text-foreground">
-                    {t("endpoints.sections.replicaResources")}
-                  </h4>
-                </div>
+                <h4 className="text-sm font-semibold leading-5 text-foreground">
+                  {t("endpoints.sections.replicaResources")}
+                </h4>
 
                 {!currentCluster && (
                   <EmptyState
