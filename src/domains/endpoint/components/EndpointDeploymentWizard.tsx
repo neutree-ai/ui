@@ -337,7 +337,6 @@ function ReviewStep<T extends FieldValues>({
       label: t("endpoints.wizard.steps.model"),
       value: t("endpoints.wizard.review.model", {
         model: values.spec.model?.name || "—",
-        count: values.spec.replicas?.num ?? 1,
       }),
     },
     {

@@ -83,9 +83,7 @@ import type {
 } from "@/domains/endpoint/types";
 import { EmptyState } from "@/foundation/components/EmptyState";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import FormCardGrid, {
-  FORM_GRID_GAP_CLASS,
-} from "@/foundation/components/FormCardGrid";
+import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { InfoHint } from "@/foundation/components/InfoHint";
@@ -2843,44 +2841,25 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         </p>
       )}
 
-      <div
-        data-testid="model-catalog-row"
-        className={cn(
-          "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-          FORM_GRID_GAP_CLASS,
-        )}
-      >
-        {!hidesModelFields && modelSourceMode === "catalog" && (
-          <FormFieldGroup
-            {...form}
-            name="-model-catalog"
-            label={t("endpoints.fields.modelCatalog")}
-            className="sm:col-span-3"
-          >
-            <FormCombobox
-              placeholder={t("endpoints.placeholders.selectModelCatalog")}
-              disabled={modelCatalogs.query.isLoading}
-              options={(modelCatalogs.query.data?.data || []).map(
-                (catalog) => ({
-                  label: catalog.metadata.name,
-                  value: catalog.id.toString(),
-                }),
-              )}
-              value={selectedModelCatalog}
-              onChange={(value) => handleModelCatalogSelect(value as string)}
-            />
-          </FormFieldGroup>
-        )}
+      {!hidesModelFields && modelSourceMode === "catalog" && (
         <FormFieldGroup
           {...form}
-          name="spec.replicas.num"
-          label={t("endpoints.fields.replicas")}
-          className="sm:col-span-1"
-          required
+          name="-model-catalog"
+          label={t("endpoints.fields.modelCatalog")}
+          className="col-span-4"
         >
-          <Input type="number" min={1} />
+          <FormCombobox
+            placeholder={t("endpoints.placeholders.selectModelCatalog")}
+            disabled={modelCatalogs.query.isLoading}
+            options={(modelCatalogs.query.data?.data || []).map((catalog) => ({
+              label: catalog.metadata.name,
+              value: catalog.id.toString(),
+            }))}
+            value={selectedModelCatalog}
+            onChange={(value) => handleModelCatalogSelect(value as string)}
+          />
         </FormFieldGroup>
-      </div>
+      )}
 
       {!hidesModelFields &&
         modelSourceMode === "catalog" &&
@@ -3050,7 +3029,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ),
     wizardProfileFields,
     // The edit step's model section: what the endpoint was deployed from,
-    // replicas, and the model it serves. Creating uses wizardProfileFields.
+    // and the model it serves. Creating uses wizardProfileFields.
     templateFields: (
       <>
         <FormCardGrid
@@ -3065,22 +3044,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             <EndpointCatalogOrigin
               annotations={queryEndpoint?.metadata?.annotations}
             />
-          </div>
-          <div
-            className={cn(
-              "col-span-4 grid grid-cols-1 sm:grid-cols-4",
-              FORM_GRID_GAP_CLASS,
-            )}
-          >
-            <FormFieldGroup
-              {...form}
-              name="spec.replicas.num"
-              label={t("endpoints.fields.replicas")}
-              className="sm:col-span-1"
-              required
-            >
-              <Input type="number" min={1} />
-            </FormFieldGroup>
           </div>
           {!hidesModelFields && (
             <>
@@ -3289,6 +3252,23 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     </p>
                   </div>
                 </div>
+
+                <div className="border-b border-border pb-4">
+                  <FormFieldGroup
+                    {...form}
+                    name="spec.replicas.num"
+                    label={t("endpoints.fields.replicas")}
+                    className="max-w-[160px]"
+                    required
+                  >
+                    <Input type="number" min={1} className="h-9" />
+                  </FormFieldGroup>
+                </div>
+
+                <h4 className="text-sm font-semibold leading-5 text-foreground">
+                  {t("endpoints.sections.replicaResources")}
+                </h4>
+
                 {!currentCluster && (
                   <EmptyState
                     variant="inline"
@@ -3396,7 +3376,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         name="spec.resources.accelerator"
                         label={t("endpoints.fields.accelerator")}
                         className="col-span-1 min-w-0 sm:col-span-2"
-                        required
                       >
                         <FormCombobox
                           options={displayedAcceleratorOptions.map((opt) => ({
@@ -3450,6 +3429,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               form.setValue(
                                 "spec.resources.accelerator",
                                 null,
+                                userSetValueOptions,
+                              );
+                              form.setValue(
+                                "spec.resources.gpu",
+                                "0",
                                 userSetValueOptions,
                               );
                             }
@@ -3515,46 +3499,45 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       </div>
                     )}
 
-                    <div className="col-span-1 space-y-1">
-                      <FormFieldGroup
-                        {...form}
-                        name="spec.resources.gpu"
-                        label={t(
-                          isVgpuAllocationMode
-                            ? "endpoints.fields.vgpuCount"
-                            : "endpoints.fields.physicalGpuCount",
-                        )}
-                      >
-                        <NumberInput
-                          value={formatInputNumber(gpuUsage)}
-                          onValueChange={(value) =>
-                            form.setValue(
-                              "spec.resources.gpu",
-                              value,
-                              userSetValueOptions,
-                            )
-                          }
-                          min={0}
-                          // Capacity is a cross-field constraint:
-                          // cardsPerReplica × replicas. Keeping it out of the
-                          // input max avoids lowering the ceiling to the
-                          // current value and lets the capacity message own
-                          // the verdict.
-                          // SSH clusters step by 0.1 below one card and by whole
-                          // cards at or above one, so the spinner never lands on
-                          // a value the precision rule rejects. Kubernetes (and
-                          // vGPU, which is Kubernetes-only) always step by 1.
-                          step={gpuInputStep}
-                          disabled={
-                            !currentCluster ||
-                            !selectedAccelerator?.type ||
-                            !selectedAccelerator?.product
-                          }
-                          className="h-9"
-                        />
-                      </FormFieldGroup>
-                      {gpuCapacityMessageList}
-                    </div>
+                    {selectedAccelerator?.type &&
+                      selectedAccelerator.product && (
+                        <div className="col-span-1 space-y-1">
+                          <FormFieldGroup
+                            {...form}
+                            name="spec.resources.gpu"
+                            label={t(
+                              isVgpuAllocationMode
+                                ? "endpoints.fields.vgpuCount"
+                                : "endpoints.fields.physicalGpuCount",
+                            )}
+                          >
+                            <NumberInput
+                              value={formatInputNumber(gpuUsage)}
+                              onValueChange={(value) =>
+                                form.setValue(
+                                  "spec.resources.gpu",
+                                  value,
+                                  userSetValueOptions,
+                                )
+                              }
+                              min={0}
+                              // Capacity is a cross-field constraint:
+                              // cardsPerReplica × replicas. Keeping it out of
+                              // the input max avoids lowering the ceiling to the
+                              // current value and lets the capacity message own
+                              // the verdict.
+                              // SSH clusters step by 0.1 below one card and by
+                              // whole cards at or above one, so the spinner never
+                              // lands on a value the precision rule rejects.
+                              // Kubernetes (and vGPU, which is Kubernetes-only)
+                              // always step by 1.
+                              step={gpuInputStep}
+                              className="h-9"
+                            />
+                          </FormFieldGroup>
+                          {gpuCapacityMessageList}
+                        </div>
+                      )}
 
                     {/* Keep the split controls tied to the explicit mode.
                         Showing them while full-card allocation is selected made

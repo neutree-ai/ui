@@ -568,6 +568,15 @@ describe("validateEndpointValues", () => {
     },
   );
 
+  it("does not require an accelerator for a CPU-only deployment", () => {
+    const errors = validate({
+      resources: { gpu: 0, accelerator: null },
+    });
+
+    expect(errors["spec.resources.accelerator"]).toBeUndefined();
+    expect(errors["spec.resources.gpu"]).toBeUndefined();
+  });
+
   const withVirtualization = (
     virtualization: Record<string, unknown>,
   ): Spec => ({

@@ -221,14 +221,15 @@ describe("endpoint wizard error mapping", () => {
       expect.arrayContaining([
         "metadata.name",
         "metadata.workspace",
-        "spec.replicas.num",
         "spec.model.registry",
         "spec.model.name",
       ]),
     );
+    expect(endpointStepValidationPaths[0]).not.toContain("spec.replicas.num");
     expect(endpointStepValidationPaths[0]).not.toContain("spec.model.task");
     expect(endpointStepValidationPaths[1]).toEqual([
       "spec.cluster",
+      "spec.replicas.num",
       "spec.resources",
     ]);
     expect(endpointStepValidationPaths[2]).toEqual(
@@ -254,11 +255,32 @@ describe("endpoint wizard error mapping", () => {
     inProgress.metadata.name = "chat";
     expect(endpointStepCompletions(inProgress, true)[0]).toBe("in-progress");
 
+    const replicasChanged = structuredClone(base);
+    replicasChanged.spec.replicas = { num: 2 };
+    expect(endpointStepCompletions(replicasChanged, true)).toMatchObject({
+      0: "not-started",
+      1: "in-progress",
+    });
+
     expect(endpointStepCompletions(complete, true)).toMatchObject({
       0: "complete",
       1: "complete",
       2: "complete",
       3: "complete",
+    });
+  });
+
+  it("completes the resource step for a CPU-only deployment", () => {
+    const cpuOnly = structuredClone(complete);
+    cpuOnly.spec.resources = {
+      cpu: 4,
+      memory: 16,
+      gpu: 0,
+      accelerator: null,
+    };
+
+    expect(endpointStepCompletions(cpuOnly, true)).toMatchObject({
+      1: "complete",
     });
   });
 

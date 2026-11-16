@@ -167,7 +167,7 @@ describe("EndpointDeploymentWizard", () => {
     screen.getByText("endpoints.wizard.review.title");
     screen.getByText("chat");
     screen.getByText("default");
-    screen.getByText("endpoints.wizard.review.model:qwen,2");
+    screen.getByText("endpoints.wizard.review.model:qwen");
     screen.getByText(
       "endpoints.wizard.summary.catalog: qwen-catalog · endpoints.recipe.variant: fp8 · endpoints.recipe.features: context_window: 32768",
     );

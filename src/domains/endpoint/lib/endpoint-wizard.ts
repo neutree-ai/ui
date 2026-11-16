@@ -47,14 +47,17 @@ export const endpointStepValidationPaths = {
   [EndpointStep.model]: [
     "metadata.name",
     "metadata.workspace",
-    "spec.replicas.num",
     "spec.model.registry",
     "spec.model.name",
     "spec.model.version",
     "spec.model.file",
     "-model-catalog" as FieldPath<Endpoint>,
   ],
-  [EndpointStep.resources]: ["spec.cluster", "spec.resources"],
+  [EndpointStep.resources]: [
+    "spec.cluster",
+    "spec.replicas.num",
+    "spec.resources",
+  ],
   [EndpointStep.runtime]: ["spec.engine", "spec.kv_cache", "spec.model.task"],
   [EndpointStep.advanced]: [
     "spec.deployment_options",
@@ -167,25 +170,23 @@ export function endpointStepCompletions(
 
   const modelStarted =
     hasText(metadata?.name) ||
-    Boolean(model?.registry || model?.name || model?.version || model?.file) ||
-    Number(spec.replicas?.num ?? 1) !== 1;
+    Boolean(model?.registry || model?.name || model?.version || model?.file);
   const modelComplete =
     hasText(metadata?.name) &&
     hasText(metadata?.workspace) &&
-    Number(spec.replicas?.num ?? 0) >= 1 &&
     (!requiresModel || (hasText(model?.registry) && hasText(model?.name)));
 
   const resourceStarted = Boolean(
     spec.cluster ||
+      Number(spec.replicas?.num ?? 1) !== 1 ||
       resources?.accelerator?.type ||
       Number(resources?.cpu ?? 0) > 0 ||
       Number(resources?.memory ?? 0) > 0 ||
       Number(resources?.gpu ?? 0) > 0,
   );
+  // Accelerators are optional: llama.cpp can deploy a CPU-only endpoint.
   const resourceComplete = Boolean(
-    spec.cluster &&
-      resources?.accelerator?.type &&
-      resources?.accelerator?.product,
+    spec.cluster && Number(spec.replicas?.num ?? 0) >= 1,
   );
 
   const runtimeStarted = Boolean(

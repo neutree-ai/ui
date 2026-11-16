@@ -67,7 +67,7 @@ const reviewFieldCases: Array<{
   restoreAsString?: boolean;
 }> = [
   {
-    step: 0,
+    step: 1,
     label: "endpoints.fields.replicas",
     path: ["spec", "replicas", "num"],
     value: 2,
@@ -276,7 +276,7 @@ describe("endpointReviewChanges", () => {
       })),
     ).toEqual([
       {
-        step: 0,
+        step: 1,
         label: "endpoints.fields.replicas",
         before: 1,
         after: 2,
