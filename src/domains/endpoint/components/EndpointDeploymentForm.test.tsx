@@ -75,14 +75,19 @@ vi.mock("./EndpointDeploymentWizard", () => ({
     hasChanges,
     modifiedSteps,
     onStepChange,
+    validationAttempted,
   }: {
     activeStep: number;
     hasChanges: boolean;
     modifiedSteps: ReadonlySet<number>;
     onStepChange: (step: number) => void;
+    validationAttempted: boolean;
   }) => (
     <div>
       <output data-testid="active-step">{activeStep}</output>
+      <output data-testid="validation-attempted">
+        {String(validationAttempted)}
+      </output>
       <output data-testid="has-changes">{String(hasChanges)}</output>
       <output data-testid="modified-steps">
         {[...modifiedSteps].join(",")}
@@ -227,6 +232,9 @@ describe("EndpointDeploymentForm", () => {
 
     expect(screen.getByTestId("active-step").textContent).toBe("0");
     expect(mocks.trigger).toHaveBeenCalledWith(endpointStepValidationPaths[0]);
+    expect(
+      (await screen.findByTestId("validation-attempted")).textContent,
+    ).toBe("true");
   });
 
   it("keeps create available while reviewing any step", () => {

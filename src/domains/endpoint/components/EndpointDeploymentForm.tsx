@@ -164,6 +164,7 @@ export function EndpointDeploymentForm({
       ];
     const valid = paths.length === 0 || (await form.trigger([...paths]));
     if (!valid) {
+      setValidationAttempted(true);
       setPendingFocus("first-error");
       return;
     }
