@@ -141,9 +141,9 @@ export function EndpointPerformanceCard({
         >
           <div className="mt-3 space-y-3">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t("endpoints.performance.totalTokensPerSecond")}
-              </span>
+              <CurrentMetricLabel
+                label={t("endpoints.performance.totalTokensPerSecond")}
+              />
               <span
                 data-testid="perf-tps-value"
                 className="text-xl font-semibold tabular-nums text-foreground"
@@ -153,14 +153,24 @@ export function EndpointPerformanceCard({
             </div>
             <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
               <SmallStat
-                label={t("endpoints.performance.promptTokensPerSecond")}
+                label={
+                  <CurrentMetricLabel
+                    label={t("endpoints.performance.promptTokensPerSecond")}
+                    stacked
+                  />
+                }
                 value={formatTokenRate(
                   throughputCurrent?.prompt_tokens_per_second,
                 )}
                 testId="perf-prompt-tps-value"
               />
               <SmallStat
-                label={t("endpoints.performance.generationTokensPerSecond")}
+                label={
+                  <CurrentMetricLabel
+                    label={t("endpoints.performance.generationTokensPerSecond")}
+                    stacked
+                  />
+                }
                 value={formatTokenRate(
                   throughputCurrent?.generation_tokens_per_second,
                 )}
@@ -360,7 +370,7 @@ function SmallStat({
   value,
   testId,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   testId: string;
 }) {
@@ -374,6 +384,30 @@ function SmallStat({
         {value}
       </div>
     </div>
+  );
+}
+
+function CurrentMetricLabel({
+  label,
+  stacked = false,
+}: {
+  label: string;
+  stacked?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className={cn(
+        "flex items-center gap-x-1 gap-y-0.5 text-xs font-medium text-muted-foreground",
+        stacked ? "flex-col items-start" : "flex-wrap",
+      )}
+    >
+      <span>{label}</span>
+      <span className="inline-flex rounded bg-muted px-1 py-0.5 text-[9px] font-semibold leading-none">
+        {t("endpoints.performance.current")}
+      </span>
+    </span>
   );
 }
 

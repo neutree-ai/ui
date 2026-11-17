@@ -88,7 +88,6 @@ describe("EndpointPerformanceCard", () => {
     screen.getAllByText("endpoints.performance.totalTokensPerSecond");
     screen.getAllByText("endpoints.performance.l0HitRate");
     screen.getAllByText("endpoints.performance.l1HitRate");
-    expect(screen.queryByText(/^endpoints\.performance\.current/)).toBeNull();
     screen.getByText("46.0%");
     screen.getByText("63.0%");
     screen.getByRole("img", {
@@ -122,6 +121,14 @@ describe("EndpointPerformanceCard", () => {
     screen.getByRole("img", {
       name: "endpoints.performance.trendAriaLabel:endpoints.performance.readWriteMetric",
     });
+  });
+
+  it("labels only the throughput summary values as current", () => {
+    render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
+
+    expect(screen.getAllByText("endpoints.performance.current")).toHaveLength(
+      3,
+    );
   });
 
   it("fetches a manually selected absolute time range", () => {
