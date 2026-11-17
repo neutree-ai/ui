@@ -33,6 +33,7 @@ import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
 import {
   type AcceleratorSample,
+  actualUsageMarkerState,
   allocationComposition,
   allocationKey,
   deviceHardwareInfo,
@@ -487,6 +488,14 @@ function EndpointSegmentPattern({
   );
 }
 
+const ACTUAL_USAGE_MARKER_COLOR = {
+  "within-reserved": "var(--nt-text-neutral-super)",
+  "over-reserved": "var(--nt-fill-serious-base)",
+} as const;
+
+const ACTUAL_USAGE_MARKER_CLASS =
+  "w-0.5 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]";
+
 function GpuActualUsageMarker({
   usedMiB,
   allocatedMiB,
@@ -496,26 +505,20 @@ function GpuActualUsageMarker({
   allocatedMiB: number | null;
   totalMiB: number;
 }) {
-  // Zero is a real reading, but it has no position to mark. Keeping the marker
-  // at 0% makes an idle, unallocated card look like it owns the first sliver of
-  // the allocation track.
-  if (usedMiB <= 0) return null;
-
-  const percent = percentOf(usedMiB, totalMiB);
-  const exceedsAllocation =
-    allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
+  const state = actualUsageMarkerState(usedMiB, allocatedMiB);
+  if (state === "hidden") return null;
 
   return (
     <span
       aria-hidden="true"
-      data-state={exceedsAllocation ? "over-reserved" : "within-reserved"}
       data-testid="gpu-card-actual-marker"
-      className="pointer-events-none absolute inset-y-px z-20 w-0.5 -translate-x-1/2 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
+      className={cn(
+        "pointer-events-none absolute inset-y-px z-20 -translate-x-1/2",
+        ACTUAL_USAGE_MARKER_CLASS,
+      )}
       style={{
-        left: `${percent}%`,
-        backgroundColor: exceedsAllocation
-          ? "var(--nt-fill-serious-base)"
-          : "var(--nt-text-neutral-super)",
+        left: `${percentOf(usedMiB, totalMiB)}%`,
+        backgroundColor: ACTUAL_USAGE_MARKER_COLOR[state],
       }}
     />
   );
@@ -534,8 +537,7 @@ function ActualVramUsageLegend({
 }) {
   const { t } = useTranslation();
   if (usedMiB == null) return <EmptyValue />;
-  const exceedsAllocation =
-    allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB;
+  const state = actualUsageMarkerState(usedMiB, allocatedMiB);
 
   return (
     <span
@@ -545,17 +547,12 @@ function ActualVramUsageLegend({
         className,
       )}
     >
-      {usedMiB > 0 && (
+      {state !== "hidden" && (
         <span
           aria-hidden
-          data-state={exceedsAllocation ? "over-reserved" : "within-reserved"}
           data-testid="gpu-actual-usage-marker"
-          className="h-3 w-0.5 shrink-0 rounded-full [box-shadow:0_0_0_1px_var(--nt-fill-neutral-opaque-1)]"
-          style={{
-            backgroundColor: exceedsAllocation
-              ? "var(--nt-fill-serious-base)"
-              : "var(--nt-text-neutral-super)",
-          }}
+          className={cn("h-3 shrink-0", ACTUAL_USAGE_MARKER_CLASS)}
+          style={{ backgroundColor: ACTUAL_USAGE_MARKER_COLOR[state] }}
         />
       )}
       {showLabel && (

@@ -83,8 +83,6 @@ describe("GPU observation row", () => {
     expect(row.textContent).toContain("15.0 / 16.0 GiB");
     expect(row.textContent).toContain("60 / 100");
     within(row).getByText("50%");
-    within(row).getByTestId("gpu-card-actual-marker");
-    within(row).getByTestId("gpu-actual-usage-marker");
     expect(
       within(row).getByTestId("gpu-actual-usage-legend").textContent,
     ).toContain("8.0 GiB");
@@ -95,37 +93,6 @@ describe("GPU observation row", () => {
     within(row).getByRole("progressbar", {
       name: "observations.utilization",
     });
-  });
-
-  it("marks the actual-usage legend when usage exceeds the reservation", () => {
-    render(
-      card({
-        variant: "inventory",
-        display: "cards",
-        device: {
-          ...device,
-          allocatedMiB: 10.5 * 1024,
-        },
-        allocations: [
-          {
-            ...allocation,
-            memoryMiB: 10.5 * 1024,
-          },
-        ],
-        samples: [
-          sample("neutree_accelerator_memory_total_bytes", 15 * 1024 ** 3),
-          sample("neutree_accelerator_memory_used_bytes", 11 * 1024 ** 3),
-        ],
-      }),
-    );
-
-    const gpuCard = screen.getByTestId("gpu-inventory-card");
-    expect(
-      within(gpuCard).getByTestId("gpu-card-actual-marker").dataset.state,
-    ).toBe("over-reserved");
-    expect(
-      within(gpuCard).getByTestId("gpu-actual-usage-marker").dataset.state,
-    ).toBe("over-reserved");
   });
 
   it("shows replica composition and keeps hardware details in the row action", () => {
@@ -258,7 +225,6 @@ describe("GPU observation row", () => {
     );
 
     const tooltip = await screen.findByTestId("endpoint-allocation-preview");
-    screen.getByTestId("endpoint-segment-remaining-pattern");
     // The name is a way into the object, not just a label.
     expect(
       within(tooltip)

@@ -444,6 +444,20 @@ export const percentOf = (
     ? 0
     : Math.max(0, Math.min(100, (value / total) * 100));
 
+/** How the actual-VRAM tick reads against a card's reservation. Zero usage
+ * has no position to mark, so it is `hidden` rather than a tick at 0% that
+ * looks like it owns the first sliver of the track.
+ */
+export function actualUsageMarkerState(
+  usedMiB: number,
+  allocatedMiB: number | null,
+): "hidden" | "within-reserved" | "over-reserved" {
+  if (usedMiB <= 0) return "hidden";
+  return allocatedMiB != null && allocatedMiB >= 0 && usedMiB > allocatedMiB
+    ? "over-reserved"
+    : "within-reserved";
+}
+
 type Reservation = {
   memoryMiB: number;
   modelWeightsMiB?: number | null;

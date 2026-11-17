@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import {
+  actualUsageMarkerState,
   allocationComposition,
   allocationFallbackReadings,
   deviceReadings,
@@ -539,4 +540,20 @@ describe("deviceReadings", () => {
     );
     expect(deviceReadings(gpu, [], allocation, [allocation]).actual).toBeNull();
   });
+});
+
+describe("actualUsageMarkerState", () => {
+  it.each([
+    { used: 0, allocated: null, expected: "hidden" },
+    { used: 0, allocated: 0, expected: "hidden" },
+    { used: 8, allocated: null, expected: "within-reserved" },
+    { used: 8, allocated: 8, expected: "within-reserved" },
+    { used: 9, allocated: 8, expected: "over-reserved" },
+    { used: 9, allocated: -1, expected: "within-reserved" },
+  ] as const)(
+    "reads $used MiB against $allocated MiB reserved as $expected",
+    ({ used, allocated, expected }) => {
+      expect(actualUsageMarkerState(used, allocated)).toBe(expected);
+    },
+  );
 });

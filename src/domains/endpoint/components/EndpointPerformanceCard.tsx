@@ -45,13 +45,18 @@ export function EndpointPerformanceCard({
   const [cacheMetric, setCacheMetric] = useState<"hitRate" | "throughput">(
     "hitRate",
   );
-  const {
-    series,
-    start: trendStart,
-    end: trendEnd,
-    status: trendStatus,
-  } = useEndpointPerformanceTrends(workspace, name, timeRange, !paused);
-  const displayWindow = performanceRangeDisplayWindow(timeRange);
+  const trends = useEndpointPerformanceTrends(
+    workspace,
+    name,
+    timeRange,
+    !paused,
+  );
+  const { series, status: trendStatus } = trends;
+  /** Data and axis window shared by every trend chart on the card. */
+  const trendProps = {
+    ...trends,
+    window: performanceRangeDisplayWindow(timeRange),
+  };
   const latencyLines = useMemo(() => LATENCY_LINES(t), [t]);
   const throughputLines = useMemo(() => THROUGHPUT_LINES(t), [t]);
   const cacheHitLines = useMemo(() => CACHE_HIT_LINES(t), [t]);
@@ -128,11 +133,7 @@ export function EndpointPerformanceCard({
                 metric: t("endpoints.performance.latency"),
               })}
               lines={latencyLines}
-              series={series}
-              start={trendStart}
-              end={trendEnd}
-              status={trendStatus}
-              window={displayWindow}
+              {...trendProps}
             />
           </div>
         </MetricTile>
@@ -174,11 +175,7 @@ export function EndpointPerformanceCard({
                 metric: t("endpoints.performance.throughput"),
               })}
               lines={throughputLines}
-              series={series}
-              start={trendStart}
-              end={trendEnd}
-              status={trendStatus}
-              window={displayWindow}
+              {...trendProps}
             />
           </div>
         </MetricTile>
@@ -226,11 +223,7 @@ export function EndpointPerformanceCard({
                     metric: t("endpoints.performance.hitRateMetric"),
                   })}
                   lines={cacheHitLines}
-                  series={series}
-                  start={trendStart}
-                  end={trendEnd}
-                  status={trendStatus}
-                  window={displayWindow}
+                  {...trendProps}
                 />
               </div>
             ) : (
@@ -256,11 +249,7 @@ export function EndpointPerformanceCard({
                     metric: t("endpoints.performance.readWriteMetric"),
                   })}
                   lines={cacheIOLines}
-                  series={series}
-                  start={trendStart}
-                  end={trendEnd}
-                  status={trendStatus}
-                  window={displayWindow}
+                  {...trendProps}
                 />
               </div>
             )}
