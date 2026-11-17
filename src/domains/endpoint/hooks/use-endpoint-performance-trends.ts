@@ -37,12 +37,15 @@ export type PerformanceTrendSeries = {
   points: PerformanceTrendPoint[];
 };
 
+type PerformanceTrendSummary = Partial<Record<PerformanceTrendMetric, number>>;
+
 type EndpointPerformanceTrends = {
   status: "ok" | "no_data" | "not_configured";
   window: PerformanceWindow | "custom";
   start: number;
   end: number;
   step_seconds: number;
+  summary?: PerformanceTrendSummary;
   series: PerformanceTrendSeries[];
 };
 
@@ -69,16 +72,19 @@ export function useEndpointPerformanceTrends(
 
   const data = query.error ? undefined : query.data?.data;
   const series = data?.series ?? [];
+  const summary = data?.summary;
 
   return {
     series,
+    summary,
     start: data?.start ?? null,
     end: data?.end ?? null,
     status: observationStatus(
       Boolean(query.error),
       query.isLoading,
       data?.status,
-      series.some((item) => item.points.length > 0),
+      series.some((item) => item.points.length > 0) ||
+        Object.keys(summary ?? {}).length > 0,
     ),
   };
 }
