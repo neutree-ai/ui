@@ -12,6 +12,7 @@ vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
 
 const {
   advancedParametersProps,
+  performanceCardProps,
   runtimeCardProps,
   useListMock,
   useOneMock,
@@ -20,6 +21,9 @@ const {
 } = vi.hoisted(() => ({
   advancedParametersProps: {
     current: null as { engineParameters: Record<string, unknown> } | null,
+  },
+  performanceCardProps: {
+    current: null as { startedAt?: string | null } | null,
   },
   runtimeCardProps: {
     current: null as {
@@ -60,6 +64,13 @@ vi.mock("@/domains/endpoint/components/EndpointRuntimeResourcesCard", () => ({
     return <div data-testid="runtime-resources-card" />;
   },
   EndpointRuntimeResourcesSummary: () => null,
+}));
+
+vi.mock("@/domains/endpoint/components/EndpointPerformanceCard", () => ({
+  EndpointPerformanceCard: (props: { startedAt?: string | null }) => {
+    performanceCardProps.current = props;
+    return null;
+  },
 }));
 
 vi.mock("@/domains/endpoint/components/EndpointSaveAsCatalogAction", () => ({
@@ -217,6 +228,7 @@ describe("EndpointsShow", () => {
   beforeEach(() => {
     copyMock.mockClear();
     runtimeCardProps.current = null;
+    performanceCardProps.current = null;
     advancedParametersProps.current = null;
     systemApiState.clusterCacheProviders = [];
     useShowMock.mockReset();
@@ -254,6 +266,29 @@ describe("EndpointsShow", () => {
     );
     expect(runtimeCardProps.current?.clusterResourceInfo).toBe(
       clusterResourceInfo,
+    );
+  });
+
+  it("starts performance trends when the current Endpoint run began", () => {
+    useShowMock.mockReturnValue({
+      query: {
+        data: {
+          data: {
+            ...endpoint,
+            status: {
+              phase: "Running",
+              last_transition_time: "2026-08-28T00:10:00Z",
+            },
+          },
+        },
+        isLoading: false,
+      },
+    });
+
+    render(<EndpointsShow />);
+
+    expect(performanceCardProps.current?.startedAt).toBe(
+      "2026-08-28T00:10:00Z",
     );
   });
 

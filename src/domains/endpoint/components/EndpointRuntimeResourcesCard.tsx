@@ -1662,14 +1662,14 @@ export default function EndpointRuntimeResourcesCard({
                   data-testid="runtime-node"
                   key={node.nodeId}
                 >
-                  <div className="mb-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
                       <Server className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate" title={node.nodeId}>
                         {node.nodeId || <EmptyValue />}
                       </span>
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[11px] leading-5 text-muted-foreground">
                       {node.devices[0]?.product}
                     </span>
                   </div>

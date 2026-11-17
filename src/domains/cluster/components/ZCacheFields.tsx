@@ -521,7 +521,7 @@ export function ZCacheFields({
   );
 
   if (compact) {
-    return <div className="space-y-4">{fields}</div>;
+    return <div className="min-w-0 space-y-4">{fields}</div>;
   }
 
   return (

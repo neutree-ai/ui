@@ -133,7 +133,7 @@ export function ZCacheEditor({
     >
       <DialogContent
         className={cn(
-          "flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0",
+          "flex min-w-0 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0",
           confirming ? "max-w-[560px]" : "max-w-[920px]",
         )}
       >
@@ -209,7 +209,7 @@ export function ZCacheEditor({
             </DialogHeader>
             <FormProvider {...form}>
               <form
-                className="flex min-h-0 flex-1 flex-col"
+                className="flex min-h-0 min-w-0 flex-1 flex-col"
                 onSubmit={form.handleSubmit(() => {
                   confirmCapacity(
                     zcacheSpec(cluster),
@@ -220,7 +220,7 @@ export function ZCacheEditor({
               >
                 <fieldset
                   disabled={isLoading}
-                  className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5"
+                  className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto px-6 py-5"
                 >
                   {busy && (
                     <p

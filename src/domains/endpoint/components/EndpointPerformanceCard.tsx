@@ -31,11 +31,14 @@ export function EndpointPerformanceCard({
   name,
   paused = false,
   showKvCache = true,
+  startedAt,
 }: {
   workspace?: string | null;
   name?: string | null;
   paused?: boolean;
   showKvCache?: boolean;
+  /** When this run of the Endpoint started; older observations are hidden. */
+  startedAt?: string | null;
 }) {
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState<PerformanceTimeRange>({
@@ -50,6 +53,7 @@ export function EndpointPerformanceCard({
     name,
     timeRange,
     !paused,
+    startedAt,
   );
   const displayWindow = performanceRangeDisplayWindow(timeRange);
   const latencyLines = useMemo(() => LATENCY_LINES(t), [t]);
