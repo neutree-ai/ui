@@ -19,6 +19,8 @@ describe("EndpointPerformanceCard", () => {
         data: {
           status: "ok",
           window: "5m",
+          start: 90,
+          end: 110,
           series: [
             {
               metric: "ttft_p95_seconds",
@@ -106,6 +108,39 @@ describe("EndpointPerformanceCard", () => {
         url: "/endpoints/default/chat-ep/performance-trends?window=1h",
       }),
     );
+  });
+
+  it("passes the API window to the trend axis", () => {
+    const end = Date.UTC(2026, 0, 2, 12) / 1000;
+    useCustomMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        data: {
+          status: "ok",
+          window: "1h",
+          start: end - 60 * 60,
+          end,
+          series: [
+            {
+              metric: "ttft_p95_seconds",
+              unit: "seconds",
+              points: [{ timestamp: end - 60, value: 0.18 }],
+            },
+          ],
+        },
+      },
+    });
+
+    render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "endpoints.performance.window1h" }),
+    );
+    const chart = screen.getByRole("img", {
+      name: "endpoints.performance.trendAriaLabel:endpoints.performance.latency",
+    });
+    within(chart).getByText("11:00");
+    within(chart).getAllByText("11:30");
   });
 
   it("switches KV cache between hit rate and read/write trends", () => {

@@ -72,6 +72,8 @@ export function useEndpointPerformanceTrends(
 
   return {
     series,
+    start: data?.start ?? null,
+    end: data?.end ?? null,
     status: observationStatus(
       Boolean(query.error),
       query.isLoading,

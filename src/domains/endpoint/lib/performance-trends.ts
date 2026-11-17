@@ -49,13 +49,10 @@ export function performanceRangeDisplayWindow(
   return "24h";
 }
 
-export function performanceTrendTicks(rows: PerformanceTrendRow[]): number[] {
-  if (rows.length <= 1) return rows.map((row) => row.timestamp);
-  return [
-    rows[0].timestamp,
-    rows[Math.floor((rows.length - 1) / 2)].timestamp,
-    rows[rows.length - 1].timestamp,
-  ];
+/** Three labels spanning the selected window, independent of where data exists. */
+export function performanceTrendTicks(start: number, end: number): number[] {
+  if (end <= start) return [start];
+  return [start, start + Math.floor((end - start) / 2), end];
 }
 
 export function formatPerformanceTrendTimestamp(

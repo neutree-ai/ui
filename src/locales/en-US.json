@@ -1778,7 +1778,7 @@
 			"unavailable": "The registry could not be reached just now. Type the image name, or close this and try again."
 		},
 		"weights": {
-			"declared": "Declared by the catalog",
+			"declared": "Weights",
 			"estimated": "Estimated from checkpoint metadata",
 			"estimatedFromSize": "Estimated from model size",
 			"sourceCatalog": "Measured by the model catalog for the weights alone, per replica.",
