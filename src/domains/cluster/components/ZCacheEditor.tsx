@@ -209,7 +209,7 @@ export function ZCacheEditor({
             </DialogHeader>
             <FormProvider {...form}>
               <form
-                className="flex min-h-0 min-w-0 flex-1 flex-col"
+                className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
                 onSubmit={form.handleSubmit(() => {
                   confirmCapacity(
                     zcacheSpec(cluster),
@@ -218,35 +218,37 @@ export function ZCacheEditor({
                   );
                 })}
               >
-                <fieldset
-                  disabled={isLoading}
-                  className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto px-6 py-5"
-                >
-                  {busy && (
-                    <p
-                      role="status"
-                      className="rounded-md bg-primary/5 p-3 text-sm leading-6 text-primary"
-                    >
-                      {t("clusters.zcache.editWhileBusy")}
-                    </p>
-                  )}
-                  <ZCacheFields
-                    form={form}
-                    isEdit
-                    status={status}
-                    summary={cluster.status?.cache}
-                    compact
-                  />
-                  {error && (
-                    <p
-                      role="alert"
-                      className="break-words text-sm text-destructive"
-                    >
-                      {cacheMessage(error, t("clusters.zcache.serviceName"))}
-                    </p>
-                  )}
-                </fieldset>
-                <DialogFooter className="flex flex-col gap-2 border-t px-6 py-4 sm:flex-row sm:justify-end">
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-5">
+                  <fieldset
+                    disabled={isLoading}
+                    className="m-0 min-w-0 space-y-5 border-0 p-0"
+                  >
+                    {busy && (
+                      <p
+                        role="status"
+                        className="rounded-md bg-primary/5 p-3 text-sm leading-6 text-primary"
+                      >
+                        {t("clusters.zcache.editWhileBusy")}
+                      </p>
+                    )}
+                    <ZCacheFields
+                      form={form}
+                      isEdit
+                      status={status}
+                      summary={cluster.status?.cache}
+                      compact
+                    />
+                    {error && (
+                      <p
+                        role="alert"
+                        className="break-words text-sm text-destructive"
+                      >
+                        {cacheMessage(error, t("clusters.zcache.serviceName"))}
+                      </p>
+                    )}
+                  </fieldset>
+                </div>
+                <DialogFooter className="shrink-0 flex flex-col gap-2 border-t bg-popover px-6 py-4 sm:flex-row sm:justify-end">
                   <Button
                     type="button"
                     variant="outline"
