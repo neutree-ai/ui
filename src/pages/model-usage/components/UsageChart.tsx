@@ -166,7 +166,11 @@ export const TrendTooltip = ({
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0)),
     ...rows.filter((p) => isOtherSeries(String(p.dataKey))),
   ];
-  const total = ordered.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const counted = ordered.filter(
+    (p) => !meta.get(String(p.dataKey))?.excludeFromTotal,
+  );
+  const total = counted.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const partial = counted.length < ordered.length;
   return (
     <div className="rounded border bg-popover px-2 py-1 text-xs shadow">
       <div className="font-medium mb-1">{label}</div>
@@ -200,7 +204,13 @@ export const TrendTooltip = ({
         );
       })}
       <div className="mt-1 flex border-t pt-1">
-        <span>{t("model_usage.daily.tooltip.total")}</span>
+        <span>
+          {t(
+            partial
+              ? "model_usage.daily.tooltip.totalDepartments"
+              : "model_usage.daily.tooltip.total",
+          )}
+        </span>
         <span className="ml-auto font-mono">{formatMetric(metric, total)}</span>
       </div>
     </div>
