@@ -216,6 +216,27 @@ export const useCreateOrgUnitMembership = () => {
 };
 
 /**
+ * Puts a user just created by hand into Teams. One request per Team, so a
+ * refused Team does not undo the others; the result lists the refused ones.
+ */
+export const useCreateTeamMemberships = () => {
+  const { run } = useRowWrite({ invalidates: ["teams", "team_members"] });
+  return async (userId: string, teamIds: number[]) => {
+    const failed: { teamId: number; cause: unknown }[] = [];
+    for (const teamId of teamIds) {
+      try {
+        await run("/team_members", "post", [
+          { team_id: teamId, user_id: userId },
+        ]);
+      } catch (cause) {
+        failed.push({ teamId, cause });
+      }
+    }
+    return failed;
+  };
+};
+
+/**
  * A PATCH or DELETE that changed no row: the Team or membership is gone, or
  * RLS hides it from the caller.
  */

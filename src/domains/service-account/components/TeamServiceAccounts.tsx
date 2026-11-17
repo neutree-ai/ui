@@ -54,6 +54,7 @@ type ServiceAccountPermissions = {
 export function TeamServiceAccounts({
   teamId,
   teamName,
+  project = false,
   permissions,
   renderKeys,
   renderUsage,
@@ -61,6 +62,8 @@ export function TeamServiceAccounts({
 }: {
   teamId: number;
   teamName: string;
+  /** A scenario: its texts say scenario instead of team. */
+  project?: boolean;
   permissions: ServiceAccountPermissions;
   renderKeys: (account: ServiceAccount) => ReactNode;
   renderUsage: (account: ServiceAccount) => ReactNode;
@@ -214,6 +217,7 @@ export function TeamServiceAccounts({
         <TeamApplicationPermissionsCard
           teamId={selected.team_id}
           canEdit={false}
+          project={project}
         />
         {renderUsage(selected)}
       </div>
@@ -225,10 +229,16 @@ export function TeamServiceAccounts({
       <TeamApplicationPermissionsCard
         teamId={teamId}
         canEdit={permissions.canEditAppPermissions}
+        project={project}
       />
       <ShowPage.Section
         title={t("service_accounts.title")}
-        hint={t("service_accounts.hint", { team: teamName })}
+        hint={t(
+          project ? "service_accounts.hintProject" : "service_accounts.hint",
+          {
+            team: teamName,
+          },
+        )}
         actions={
           permissions.canCreate ? (
             <Button
@@ -256,7 +266,11 @@ export function TeamServiceAccounts({
           </EmptyState>
         ) : !rows.length ? (
           <EmptyState variant="inline" data-testid="service-accounts-empty">
-            {t("service_accounts.empty")}
+            {t(
+              project
+                ? "service_accounts.emptyProject"
+                : "service_accounts.empty",
+            )}
           </EmptyState>
         ) : (
           <Table data-testid="service-account-table">
@@ -308,6 +322,7 @@ export function TeamServiceAccounts({
       {creating && (
         <CreateServiceAccountDialog
           teamId={teamId}
+          project={project}
           onClose={() => setCreating(false)}
           onCreated={(account) => {
             setCreating(false);
@@ -321,10 +336,12 @@ export function TeamServiceAccounts({
 
 function CreateServiceAccountDialog({
   teamId,
+  project,
   onClose,
   onCreated,
 }: {
   teamId: number;
+  project: boolean;
   onClose: () => void;
   onCreated: (account: ServiceAccount | undefined) => void;
 }) {
@@ -368,7 +385,13 @@ function CreateServiceAccountDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle hint={t("service_accounts.createHint")}>
+          <DialogTitle
+            hint={t(
+              project
+                ? "service_accounts.createHintProject"
+                : "service_accounts.createHint",
+            )}
+          >
             {t("service_accounts.createTitle")}
           </DialogTitle>
         </DialogHeader>

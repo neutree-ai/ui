@@ -1,14 +1,18 @@
 import { useNotification } from "@refinedev/core";
+import { ManualTeamsField } from "@/domains/organization/components/ManualTeamsField";
 import { OrgUnitField } from "@/domains/organization/components/OrgUnitField";
 import {
   useCreateOrgUnitMembership,
+  useCreateTeamMemberships,
   useOrgTree,
+  useTeamsByName,
 } from "@/domains/organization/hooks/use-organization";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { useUserForm } from "@/domains/user/hooks/use-user-form";
 import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
+import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 export const UsersCreate = () => {
@@ -20,28 +24,64 @@ export const UsersCreate = () => {
   const canAssign = allowed === true;
   const { byName } = useOrgTree(canAssign);
   const createMembership = useCreateOrgUnitMembership();
+  // Likewise for Teams: the same permission as Add Members on the
+  // organization page, held globally.
+  const canAssignTeams =
+    useHasGlobalPermission("team:assign-member").allowed === true;
+  const { byName: teamsByName } = useTeamsByName(canAssignTeams);
+  const createTeamMemberships = useCreateTeamMemberships();
+
+  const notFailed = (message: string, cause: unknown) =>
+    openNotification?.({
+      type: "error",
+      message,
+      description: translateApiErrorOr(
+        t,
+        cause,
+        ORGANIZATION_ERROR_KEYS,
+        "common.errors.unknown",
+      ),
+    });
 
   const { form, registerFields } = useUserForm({
     action: "create",
     departmentField: canAssign ? <OrgUnitField /> : undefined,
+    teamsField: canAssignTeams ? <ManualTeamsField /> : undefined,
     // The user exists by now; a failed assignment is reported, not undone.
-    onCreated: async ({ id, orgUnit }) => {
-      if (!canAssign || !orgUnit) return;
-      try {
-        const unit = byName.get(orgUnit)?.unit;
-        if (!unit) throw new Error(`department ${orgUnit} not found`);
-        await createMembership(id, unit.id);
-      } catch (cause) {
-        openNotification?.({
-          type: "error",
-          message: t("user_profiles.department.errors.createdNotAssigned"),
-          description: translateApiErrorOr(
-            t,
+    onCreated: async ({ id, orgUnit, teams }) => {
+      if (canAssign && orgUnit) {
+        try {
+          const unit = byName.get(orgUnit)?.unit;
+          if (!unit) throw new Error(`department ${orgUnit} not found`);
+          await createMembership(id, unit.id);
+        } catch (cause) {
+          notFailed(
+            t("user_profiles.department.errors.createdNotAssigned"),
             cause,
-            ORGANIZATION_ERROR_KEYS,
-            "common.errors.unknown",
-          ),
+          );
+        }
+      }
+      if (canAssignTeams && teams.length) {
+        const picked = teams.flatMap((name) => {
+          const team = teamsByName.get(name);
+          return team ? [team] : [];
         });
+        const failed = await createTeamMemberships(
+          id,
+          picked.map((team) => team.id),
+        );
+        if (failed.length) {
+          const names = failed.flatMap(({ teamId }) => {
+            const team = picked.find((item) => item.id === teamId);
+            return team ? [displayName(team.metadata)] : [];
+          });
+          notFailed(
+            t("user_profiles.teams.errors.createdNotAssigned", {
+              teams: names.join(", "),
+            }),
+            failed[0].cause,
+          );
+        }
       }
     },
   });

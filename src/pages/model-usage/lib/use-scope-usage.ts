@@ -79,13 +79,15 @@ type ScopeUsageInput = {
   model: string;
   /** Null for a reader of their own API keys only. */
   scope: UsageScope | null;
-  /** Whether the Teams tab and the API keys tab are open: only then fetched. */
+  /** Whether the Team usage is shown and the API keys tab is open: only then fetched. */
   teamsOpen: boolean;
   keysOpen: boolean;
   roots: OrgTreeNode[];
   nodesByName: ReadonlyMap<string, OrgTreeNode>;
   teamsByName: ReadonlyMap<string, Team>;
   breakdownLabels: BreakdownLabels;
+  /** The Team or scenario of each application by id; shown under its name. */
+  applicationTeams: ReadonlyMap<string, string>;
   /** Names a deleted API key by the start of its id. Keep it stable. */
   deletedKeyLabel: (shortId: string) => string;
 };
@@ -106,6 +108,7 @@ export function useScopeUsage({
   nodesByName,
   teamsByName,
   breakdownLabels,
+  applicationTeams,
   deletedKeyLabel,
 }: ScopeUsageInput) {
   const queries = scopeQueries(scope);
@@ -165,8 +168,9 @@ export function useScopeUsage({
 
   const userFacts = useFacts(userUsage.usageData, groupFact);
   const appFactOf = useCallback(
-    (r: GroupUsageRecord) => appFact(r, breakdownLabels.application),
-    [breakdownLabels.application],
+    (r: GroupUsageRecord) =>
+      appFact(r, applicationTeams.get(r.name) ?? breakdownLabels.application),
+    [breakdownLabels.application, applicationTeams],
   );
   const appFacts = useFacts(appUsage.usageData, appFactOf);
   const unitFacts = useFacts(unitUsage.usageData, groupFact);
@@ -292,14 +296,15 @@ export function useScopeUsage({
     () => aggregateSeries(keyFacts, (r) => r.who.key, whoMeta),
     [keyFacts],
   );
+  const teamIn = useMemo(() => inModel(teamFacts), [inModel, teamFacts]);
   const teamRows = useMemo(
     () =>
       aggregateSeries(
-        inModel(teamFacts),
+        teamIn,
         (r) => r.who.key,
         (r) => ({ ...whoMeta(r), target: teamTarget(r) }),
       ),
-    [inModel, teamFacts],
+    [teamIn],
   );
 
   // Rows of different params must never be combined: the total and the
@@ -325,6 +330,7 @@ export function useScopeUsage({
     breakdownSeries,
     keyFacts,
     keyRows,
+    teamFacts: teamIn,
     teamRows,
   };
   const lastSettled = useRef<typeof view | null>(null);
@@ -341,6 +347,7 @@ export function useScopeUsage({
         breakdownSeries: [],
         keyFacts: [],
         keyRows: [],
+        teamFacts: [],
         teamRows: [],
       });
 
@@ -349,6 +356,7 @@ export function useScopeUsage({
     // Null until the previous period is in, or when the page is between
     // results: the change would compare different scopes.
     previousTotal: settled ? previousTotal : null,
+    teamsLoading: teamUsage.isLoading,
     loading:
       !settled ||
       (scope

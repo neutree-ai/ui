@@ -8,7 +8,14 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * returns no row when the Team has no pool, and refuses a caller who may read
  * neither group policies nor the Team's usage.
  */
-export function TeamTokenPool({ teamName }: { teamName: string }) {
+export function TeamTokenPool({
+  teamName,
+  project = false,
+}: {
+  teamName: string;
+  /** A scenario: its texts say scenario instead of team. */
+  project?: boolean;
+}) {
   const { t } = useTranslation();
   const { pool, error, isLoading } = useGroupTokenPool("Team", teamName, true);
 
@@ -27,8 +34,16 @@ export function TeamTokenPool({ teamName }: { teamName: string }) {
           {isLoading
             ? t("api_keys.messages.loading")
             : error
-              ? t("group_policies.pool.unreadable")
-              : t("group_policies.pool.none")}
+              ? t(
+                  project
+                    ? "group_policies.pool.unreadableProject"
+                    : "group_policies.pool.unreadable",
+                )
+              : t(
+                  project
+                    ? "group_policies.pool.noneProject"
+                    : "group_policies.pool.none",
+                )}
         </p>
       )}
     </ShowPage.Section>

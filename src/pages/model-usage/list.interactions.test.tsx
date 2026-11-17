@@ -58,12 +58,16 @@ vi.mock("recharts", () => {
     </div>
   );
   return {
-    Bar: passthrough,
+    Bar: ({ name }: { name?: string }) => (
+      <span data-testid="trend-bar">{name}</span>
+    ),
     BarChart: Chart,
     CartesianGrid: passthrough,
     Cell: passthrough,
     Legend: () => null,
-    Line: passthrough,
+    Line: ({ name }: { name?: string }) => (
+      <span data-testid="trend-line">{name}</span>
+    ),
     LineChart: Chart,
     ResponsiveContainer: passthrough,
     Tooltip: () => null,
@@ -76,11 +80,14 @@ vi.mock("@/foundation/components/ListPage", () => ({
   ListPage: ({
     children,
     extra,
+    title,
   }: {
     children?: ReactNode;
     extra?: ReactNode;
+    title?: ReactNode;
   }) => (
     <main>
+      <h1>{title}</h1>
       {extra}
       {children}
     </main>
@@ -98,6 +105,8 @@ let canReadAll = false;
 let canReadSubtree = false;
 let canCreateTeam = false;
 let hasOrg = true;
+// Extra Teams in the platform's usage, to overflow the Team chart's top five.
+let extraTeams = 0;
 // The Teams whose usage the caller reads through a Team-scoped grant.
 let usageTeamIds: number[] = [];
 vi.mock("@/foundation/hooks/use-has-permission", () => ({
@@ -130,6 +139,7 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
               usageTeamIds.includes(team.id),
             )) as unknown as Team[],
       ),
+    useTeams: () => ({ data: { data: teams } }),
     // rnd's direct members: u2, and u5 who used nothing. Team A: u1.
     useOrgUnitMembers: (id: number | undefined) => ({
       members: id === 1 ? [member("u2", "u2-name"), member("u5", "Idle")] : [],
@@ -139,6 +149,18 @@ vi.mock("@/domains/organization/hooks/use-organization", async () => {
     }),
   };
 });
+
+vi.mock("@/domains/service-account/hooks/use-service-accounts", () => ({
+  // sa1 belongs to Team A, sa-launch to the scenario Launch.
+  useAllServiceAccounts: () => ({
+    data: {
+      data: [
+        { id: "sa1", team_id: 7, metadata: { name: "sa1" } },
+        { id: "sa-launch", team_id: 9, metadata: { name: "sa-launch" } },
+      ],
+    },
+  }),
+}));
 
 const teams = [
   { id: 7, metadata: { name: "team-a", display_name: "Team A" } },
@@ -207,14 +229,21 @@ const answer = (kind: GroupUsageKind, filter: Filter): GroupUsageRecord[] => {
     ],
     "User::direct": [group("User", "u3", 50)],
     "User:rnd:direct": [group("User", "u2", 100, "llama")],
-    "Team:": [group("Team", "team-a", 250)],
+    "Team:": [
+      group("Team", "team-a", 250),
+      group("Team", "launch", 120),
+      ...Array.from({ length: extraTeams }, (_, i) =>
+        group("Team", `extra-${i}`, 10 + i),
+      ),
+    ],
     "Team:rnd": [group("Team", "team-a", 250)],
     // u1's usage while in Team A, part of their 300.
     "User:team-a": [group("User", "u1", 120)],
     "ServiceAccount:": [group("ServiceAccount", "sa1", 80)],
     "ServiceAccount:team-a": [group("ServiceAccount", "sa1", 30)],
   };
-  const rows = answers[key] ?? [];
+  // No Teams, so none has usage.
+  const rows = (kind === "Team" && !hasOrg ? [] : answers[key]) ?? [];
   return filter.name ? rows.filter((r) => r.name === filter.name) : rows;
 };
 
@@ -286,6 +315,7 @@ beforeEach(() => {
   canReadSubtree = false;
   canCreateTeam = false;
   hasOrg = true;
+  extraTeams = 0;
   usageTeamIds = [];
   keyFetched = false;
   keyGroups.length = 0;
@@ -306,6 +336,15 @@ const tableRows = () =>
     screen.getByRole("tabpanel").querySelectorAll("tbody tr"),
     (row) => row.querySelector("td")?.textContent,
   );
+
+// The "who" cell of each row in the daily detail.
+const detailWho = () =>
+  Array.from(
+    screen.getByRole("tabpanel").querySelectorAll("tbody tr"),
+    (row) => row.querySelectorAll("td")[1]?.textContent,
+  );
+
+const heading = () => screen.getByRole("heading", { level: 1 }).textContent;
 
 const scopeButton = (name: string) =>
   within(screen.getByRole("complementary")).getByRole("button", { name });
@@ -346,11 +385,29 @@ describe("a platform without departments or Teams", () => {
     ).toBe("/organization");
   });
 
+  it("says there are no Teams or scenarios, and where to make them", () => {
+    renderPage();
+
+    screen.getByText("model_usage.overview.noTeams");
+    screen.getByText("model_usage.overview.noScenarios");
+    const links = screen.getAllByRole("link", {
+      name: "model_usage.overview.goToTeams",
+    });
+    expect(links.map((l) => l.getAttribute("href"))).toEqual([
+      "/organization?tab=teams",
+      "/organization?tab=teams",
+    ]);
+  });
+
   it("only says so to everyone else", () => {
     renderPage();
 
     screen.getByText("model_usage.scope.empty");
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(
+      screen.queryByRole("link", {
+        name: "model_usage.scope.goToOrganization",
+      }),
+    ).toBeNull();
   });
 });
 
@@ -370,34 +427,157 @@ describe("a reader of the whole platform", () => {
     expect(summary("requests")).toContain("53");
     expect(summary("requests")).toContain("model_usage.summary.activity(3,1)");
     expect(tabs()).toEqual([
+      "model_usage.tabs.overview",
       "model_usage.tabs.departments",
       "model_usage.tabs.teams",
       "model_usage.tabs.apiKeys",
       "model_usage.tabs.detail",
     ]);
+    expect(screen.getByRole("tab", { selected: true }).textContent).toBe(
+      "model_usage.tabs.overview",
+    );
+    openTab("model_usage.tabs.departments");
     expect(tableRows()).toEqual([
       "R&D",
-      "model_usage.scope.applications",
+      "model_usage.scope.applicationsNoDepartment",
       "model_usage.scope.unassigned",
     ]);
     // Key usage is fetched only for its tab.
     expect(keyFetched).toBe(false);
   });
 
-  it("opens the platform's applications from the breakdown", () => {
+  it("names the whole platform in the heading as the bare title", () => {
+    renderPage();
+
+    expect(heading()).toBe("model_usage.title");
+  });
+
+  it("ranks departments, Teams and scenarios against the platform total", () => {
+    renderPage();
+
+    const block = (id: string) =>
+      within(screen.getByTestId(`usage-overview-${id}`));
+    // The departments, the usage under none and the applications add up to
+    // the platform's 530.
+    const departments = block("departments");
+    departments.getByRole("button", { name: /R&D/ });
+    expect(
+      departments.getByRole("button", { name: /R&D/ }).textContent,
+    ).toContain("75.5%");
+    expect(
+      departments.getByRole("button", {
+        name: /model_usage.scope.applicationsNoDepartment/,
+      }).textContent,
+    ).toContain("15.1%");
+    // The scenario is in its own block, not among the Teams.
+    expect(
+      block("teams").getByRole("button", { name: /team-a-name/ }).textContent,
+    ).toContain("47.2%");
+    expect(block("teams").queryByRole("button", { name: /launch/ })).toBeNull();
+    expect(
+      block("scenarios").getByRole("button", { name: /launch-name/ })
+        .textContent,
+    ).toContain("22.6%");
+    expect(
+      screen.getAllByText("model_usage.overview.overlapHint"),
+    ).toHaveLength(2);
+  });
+
+  it("draws departments, Teams and scenarios as lines on one chart", () => {
+    extraTeams = 6;
+    renderPage();
+
+    screen.getByText("model_usage.trend.titleMixed");
+    // Platform scope loads Team usage whatever the tab.
+    expect(groupCalls).toContain("Team:{}");
+    const lines = screen
+      .getAllByTestId("trend-line")
+      .map((line) => line.textContent);
+    // A department is tagged, the two synthetic entries are not.
+    expect(lines).toContain("R&Dmodel_usage.trend.departmentSuffix");
+    expect(lines).toContain("model_usage.scope.applicationsNoDepartment");
+    expect(lines).toContain("team-a-namemodel_usage.trend.teamSuffix");
+    expect(lines).toContain("launch-namemodel_usage.trend.scenarioSuffix");
+    // 8 Teams and scenarios: five get a line, three fold into one.
+    expect(
+      lines.filter(
+        (l) =>
+          l?.includes("trend.teamSuffix") ||
+          l?.includes("trend.scenarioSuffix"),
+      ),
+    ).toHaveLength(5);
+    expect(lines).toContain("model_usage.trend.otherTeams(3)");
+  });
+
+  it("stacks departments only in the bar view, and says so", () => {
     renderPage();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "model_usage.scope.applications" }),
+      screen.getByRole("button", { name: "model_usage.chart.bar" }),
+    );
+
+    screen.getByText("model_usage.trend.barHint");
+    screen.getByText(
+      "model_usage.daily.titleByGroup(model_usage.series.department)",
+    );
+    expect(
+      screen
+        .getAllByTestId("trend-bar")
+        .map((bar) => bar.textContent)
+        .some((name) => name?.includes("teamSuffix")),
+    ).toBe(false);
+  });
+
+  it("scopes the page to a Team or scenario picked in the overview", () => {
+    renderPage();
+
+    fireEvent.click(
+      within(screen.getByTestId("usage-overview-scenarios")).getByRole(
+        "button",
+        { name: /launch-name/ },
+      ),
+    );
+
+    expect(groupCalls).toContain('User:{"team":"launch"}');
+    expect(heading()).toBe(
+      "model_usage.heading.scenario(model_usage.title,Launch)",
+    );
+  });
+
+  it("names a Team or a department in the heading", () => {
+    renderPage();
+
+    fireEvent.click(scopeButton("Team A"));
+    expect(heading()).toBe(
+      "model_usage.heading.team(model_usage.title,Team A)",
+    );
+
+    fireEvent.click(scopeButton("R&D"));
+    expect(heading()).toBe(
+      "model_usage.heading.department(model_usage.title,R&D)",
+    );
+  });
+
+  it("opens the platform's applications from the breakdown", () => {
+    renderPage();
+    openTab("model_usage.tabs.departments");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "model_usage.scope.applicationsNoDepartment",
+      }),
     );
 
     expect(summary("total")).toContain("80");
+    expect(heading()).toBe(
+      "model_usage.heading.applications(model_usage.title,model_usage.scope.applicationsNoDepartment)",
+    );
     expect(tabs()).toEqual([
       "model_usage.tabs.applications",
       "model_usage.tabs.detail",
     ]);
     expect(tableRows()).toEqual([
-      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
     ]);
 
     // An application opens on its keys across the platform, with no group.
@@ -422,6 +602,32 @@ describe("a reader of the whole platform", () => {
       "model_usage.tabs.applications",
       "model_usage.tabs.detail",
     ]);
+  });
+
+  it("lists the daily detail by user or application, or by API key", () => {
+    renderPage();
+
+    openTab("model_usage.tabs.detail");
+    expect(keyFetched).toBe(false);
+    expect(detailWho()).toEqual([
+      "u1-name",
+      "u2-name",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
+      "u3-name",
+    ]);
+
+    fireEvent.click(screen.getByText("model_usage.detail.byKey"));
+
+    expect(keyFetched).toBe(true);
+    expect(detailWho()).toEqual(["key-a", "key-b"]);
+    screen.getByRole("columnheader", { name: "model_usage.apiKey" });
+
+    fireEvent.click(
+      screen.getByText(
+        "model_usage.detail.bySubject(model_usage.columns.userOrApplication)",
+      ),
+    );
+    expect(detailWho()).toContain("u1-name");
   });
 
   it("lists scenarios apart from Teams", () => {
@@ -481,7 +687,7 @@ describe("a reader of the whole platform", () => {
     ]);
     expect(tableRows()).toEqual([
       "u1-name",
-      "sa1-namemodel_usage.group.kinds.ServiceAccount",
+      "sa1-namemodel_usage.applicationOf.team(Team A)",
     ]);
 
     // Opened from the Team, a user counts their usage in the Team only.
@@ -530,6 +736,7 @@ describe("a reader of the whole platform", () => {
 
   it("narrows every panel to the model picked in the distribution", () => {
     renderPage();
+    openTab("model_usage.tabs.departments");
 
     fireEvent.click(screen.getByRole("button", { name: /^llama/ }));
 
@@ -540,7 +747,7 @@ describe("a reader of the whole platform", () => {
   it("scopes the page to the day picked in the chart", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "pick-day" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "pick-day" })[0]);
 
     screen.getByText(
       "model_usage.daily.titleDayByGroup(model_usage.series.department)",
