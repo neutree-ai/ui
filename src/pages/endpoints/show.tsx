@@ -414,10 +414,6 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               name={record.metadata.name}
               paused={inactive}
               showKvCache={cacheConfigured}
-              startedAt={
-                record.status?.last_transition_time ||
-                record.metadata.creation_timestamp
-              }
             />
             {!inactive && (
               <EndpointRuntimeResourcesCard

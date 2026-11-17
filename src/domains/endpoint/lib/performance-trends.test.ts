@@ -7,7 +7,6 @@ import {
   performanceTooltipItems,
   performanceTrendLatestRow,
   performanceTrendRows,
-  performanceTrendSeriesSince,
   performanceTrendTicks,
 } from "./performance-trends";
 
@@ -48,30 +47,6 @@ describe("performanceTrendRows", () => {
     expect(
       performanceTrendRows(series, ["generation_tokens_per_second"]),
     ).toEqual([{ timestamp: 20, generation_tokens_per_second: 30 }]);
-  });
-});
-
-describe("performanceTrendSeriesSince", () => {
-  it("drops observations from before the Endpoint became available", () => {
-    const filtered = performanceTrendSeriesSince(
-      series,
-      "1970-01-01T00:00:15Z",
-    );
-
-    expect(filtered.map((item) => ({ ...item }))).toEqual([
-      {
-        ...series[0],
-        points: [{ timestamp: 20, value: 120 }],
-      },
-      {
-        ...series[1],
-        points: [{ timestamp: 20, value: 30 }],
-      },
-    ]);
-  });
-
-  it("leaves the response unchanged when the start time is unknown", () => {
-    expect(performanceTrendSeriesSince(series, "not-a-timestamp")).toBe(series);
   });
 });
 

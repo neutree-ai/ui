@@ -9,25 +9,6 @@ type PerformanceTrendRow = {
   timestamp: number;
 } & Partial<Record<PerformanceTrendMetric, number>>;
 
-/**
- * Keep only observations from after the Endpoint became available. Returning
- * a wider requested window must not draw points from before the workload
- * existed, and an all-stale response must become an empty series so the chart
- * reports no data rather than fabricating a history.
- */
-export function performanceTrendSeriesSince(
-  series: PerformanceTrendSeries[],
-  startedAt: string | null | undefined,
-): PerformanceTrendSeries[] {
-  const startedAtSeconds = startedAt ? Date.parse(startedAt) / 1000 : NaN;
-  if (!Number.isFinite(startedAtSeconds)) return series;
-
-  return series.map((item) => ({
-    ...item,
-    points: item.points.filter((point) => point.timestamp >= startedAtSeconds),
-  }));
-}
-
 export function performanceTrendRows(
   series: PerformanceTrendSeries[],
   metrics: PerformanceTrendMetric[],

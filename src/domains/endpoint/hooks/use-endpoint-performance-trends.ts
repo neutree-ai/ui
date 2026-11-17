@@ -1,5 +1,4 @@
 import { useCustom } from "@refinedev/core";
-import { performanceTrendSeriesSince } from "@/domains/endpoint/lib/performance-trends";
 import { observationStatus } from "@/foundation/lib/accelerator-observations";
 
 export type PerformanceWindow = "5m" | "1h" | "24h";
@@ -52,7 +51,6 @@ export function useEndpointPerformanceTrends(
   name?: string | null,
   range: PerformanceTimeRange = { kind: "preset", window: "5m" },
   autoRefresh = true,
-  startedAt?: string | null,
 ) {
   const query = useCustom<EndpointPerformanceTrends>({
     url: `/endpoints/${encodeURIComponent(workspace ?? "")}/${encodeURIComponent(name ?? "")}/performance-trends?${new URLSearchParams(
@@ -70,7 +68,7 @@ export function useEndpointPerformanceTrends(
   });
 
   const data = query.error ? undefined : query.data?.data;
-  const series = performanceTrendSeriesSince(data?.series ?? [], startedAt);
+  const series = data?.series ?? [];
 
   return {
     series,

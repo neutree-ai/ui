@@ -108,39 +108,6 @@ describe("EndpointPerformanceCard", () => {
     );
   });
 
-  it("ignores points from before the Endpoint started", () => {
-    useCustomMock.mockReturnValue({
-      isLoading: false,
-      data: {
-        data: {
-          status: "ok",
-          window: "24h",
-          series: [
-            {
-              metric: "total_tokens_per_second",
-              unit: "tokens_per_second",
-              points: [
-                { timestamp: 100, value: 1 },
-                { timestamp: 200, value: 42 },
-              ],
-            },
-          ],
-        },
-      },
-    });
-
-    render(
-      <EndpointPerformanceCard
-        workspace="default"
-        name="chat-ep"
-        startedAt="1970-01-01T00:03:20Z"
-      />,
-    );
-
-    screen.getByText("42 tok/s");
-    expect(screen.queryByText("1 tok/s")).toBeNull();
-  });
-
   it("switches KV cache between hit rate and read/write trends", () => {
     render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
 
