@@ -362,6 +362,7 @@ export const FeaturePicker = ({
     if (type === "input") {
       const vt = f.input?.value_type ?? "string";
       const numeric = vt === "int" || vt === "number";
+      const step = vt === "int" ? 1 : vt === "number" ? "any" : undefined;
       const required = Boolean(f.input?.required);
       const current = byName.get(key)?.value ?? "";
       const suggestions = (f.input?.suggestions ?? [])
@@ -406,6 +407,7 @@ export const FeaturePicker = ({
               <Input
                 aria-label={key}
                 type={numeric ? "number" : "text"}
+                step={step}
                 value={current}
                 placeholder={f.input?.default ?? ""}
                 disabled={itemDisabled}
