@@ -123,12 +123,14 @@ describe("EndpointPerformanceCard", () => {
     });
   });
 
-  it("labels only the throughput summary values as current", () => {
+  it("labels throughput current values and latency statistics", () => {
     render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
 
     expect(screen.getAllByText("endpoints.performance.current")).toHaveLength(
       3,
     );
+    expect(screen.getAllByText("endpoints.performance.p95")).toHaveLength(2);
+    expect(screen.getAllByText("endpoints.performance.avg")).toHaveLength(2);
   });
 
   it("fetches a manually selected absolute time range", () => {

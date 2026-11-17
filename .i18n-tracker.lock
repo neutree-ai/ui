@@ -498,7 +498,7 @@
   "src/foundation/components/ObservationStatus.tsx": "72070cc927e9285b655609e92af68e45",
   "src/domains/model-catalog/lib/advanced-parameters.ts": "f85dce83b2bb701b3949c829555f8c59",
   "src/domains/endpoint/lib/performance-format.ts": "c7bf250010751ac6deb17a600d0e6fcd",
-  "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "d709f0a5e46f5051d0935f1c691e699d",
+  "src/domains/endpoint/components/EndpointPerformanceCard.tsx": "92b07638a6abb7b2292611676bd80089",
   "src/domains/cluster/lib/zcache-dashboard.ts": "022a6c3b0eca23bbe761fb60c5309aec",
   "src/domains/cluster/components/ZCacheUpgrade.tsx": "329968f04d88efd51d93cd48a6e02d5b",
   "src/foundation/lib/cache-versions.ts": "9cfd55dd9c18f61fce9bbdc66d54b816",

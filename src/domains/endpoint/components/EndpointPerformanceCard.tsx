@@ -141,8 +141,9 @@ export function EndpointPerformanceCard({
         >
           <div className="mt-3 space-y-3">
             <div className="flex items-baseline justify-between gap-2">
-              <CurrentMetricLabel
+              <PerformanceMetricLabel
                 label={t("endpoints.performance.totalTokensPerSecond")}
+                statistic={t("endpoints.performance.current")}
               />
               <span
                 data-testid="perf-tps-value"
@@ -154,8 +155,9 @@ export function EndpointPerformanceCard({
             <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
               <SmallStat
                 label={
-                  <CurrentMetricLabel
+                  <PerformanceMetricLabel
                     label={t("endpoints.performance.promptTokensPerSecond")}
+                    statistic={t("endpoints.performance.current")}
                     stacked
                   />
                 }
@@ -166,8 +168,9 @@ export function EndpointPerformanceCard({
               />
               <SmallStat
                 label={
-                  <CurrentMetricLabel
+                  <PerformanceMetricLabel
                     label={t("endpoints.performance.generationTokensPerSecond")}
+                    statistic={t("endpoints.performance.current")}
                     stacked
                   />
                 }
@@ -322,12 +325,14 @@ function LatencyStat({
 
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground">
-        {label} ·{" "}
-        {primaryStatistic === "p95"
-          ? t("endpoints.performance.p95")
-          : t("endpoints.performance.avg")}
-      </div>
+      <PerformanceMetricLabel
+        label={label}
+        statistic={
+          primaryStatistic === "p95"
+            ? t("endpoints.performance.p95")
+            : t("endpoints.performance.avg")
+        }
+      />
       <div
         data-testid={testId}
         className="mt-1 text-xl font-semibold tabular-nums text-foreground"
@@ -335,8 +340,9 @@ function LatencyStat({
         {formatLatency(p95 ?? avg)}
       </div>
       {primaryStatistic === "p95" && (
-        <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-          {t("endpoints.performance.avg")} {formatLatency(avg)}
+        <div className="mt-1 flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
+          <StatisticBadge>{t("endpoints.performance.avg")}</StatisticBadge>
+          <span>{formatLatency(avg)}</span>
         </div>
       )}
     </div>
@@ -387,15 +393,15 @@ function SmallStat({
   );
 }
 
-function CurrentMetricLabel({
+function PerformanceMetricLabel({
   label,
+  statistic,
   stacked = false,
 }: {
   label: string;
+  statistic: string;
   stacked?: boolean;
 }) {
-  const { t } = useTranslation();
-
   return (
     <span
       className={cn(
@@ -404,9 +410,15 @@ function CurrentMetricLabel({
       )}
     >
       <span>{label}</span>
-      <span className="inline-flex rounded bg-muted px-1 py-0.5 text-[9px] font-semibold leading-none">
-        {t("endpoints.performance.current")}
-      </span>
+      <StatisticBadge>{statistic}</StatisticBadge>
+    </span>
+  );
+}
+
+function StatisticBadge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex rounded bg-muted px-1 py-0.5 text-[9px] font-semibold leading-none">
+      {children}
     </span>
   );
 }
