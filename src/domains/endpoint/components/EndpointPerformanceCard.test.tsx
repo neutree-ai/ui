@@ -110,39 +110,62 @@ describe("EndpointPerformanceCard", () => {
     );
   });
 
-  it("keeps the API window when only recent data is returned", () => {
-    const end = Date.UTC(2026, 0, 2, 12) / 1000;
-    const start = end - 24 * 60 * 60;
-    useCustomMock.mockReturnValue({
-      isLoading: false,
-      data: {
+  it.each([
+    {
+      window: "5m",
+      button: "endpoints.performance.window5m",
+      duration: 5 * 60,
+      startLabel: "11:55",
+      middleLabel: "11:57",
+    },
+    {
+      window: "1h",
+      button: "endpoints.performance.window1h",
+      duration: 60 * 60,
+      startLabel: "11:00",
+      middleLabel: "11:30",
+    },
+    {
+      window: "24h",
+      button: "endpoints.performance.window24h",
+      duration: 24 * 60 * 60,
+      startLabel: "01/01",
+      middleLabel: "01/02",
+    },
+  ] as const)(
+    "keeps the $window API window when only recent data is returned",
+    ({ window, button, duration, startLabel, middleLabel }) => {
+      const end = Date.UTC(2026, 0, 2, 12) / 1000;
+      const start = end - duration;
+      useCustomMock.mockReturnValue({
+        isLoading: false,
         data: {
-          status: "ok",
-          window: "24h",
-          start,
-          end,
-          series: [
-            {
-              metric: "ttft_p95_seconds",
-              unit: "seconds",
-              points: [{ timestamp: end - 60, value: 0.18 }],
-            },
-          ],
+          data: {
+            status: "ok",
+            window,
+            start,
+            end,
+            series: [
+              {
+                metric: "ttft_p95_seconds",
+                unit: "seconds",
+                points: [{ timestamp: end - 60, value: 0.18 }],
+              },
+            ],
+          },
         },
-      },
-    });
+      });
 
-    render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
+      render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "endpoints.performance.window24h" }),
-    );
-    const chart = screen.getByRole("img", {
-      name: "endpoints.performance.trendAriaLabel:endpoints.performance.latency",
-    });
-    within(chart).getByText("01/01");
-    within(chart).getAllByText("01/02");
-  });
+      fireEvent.click(screen.getByRole("button", { name: button }));
+      const chart = screen.getByRole("img", {
+        name: "endpoints.performance.trendAriaLabel:endpoints.performance.latency",
+      });
+      within(chart).getByText(startLabel);
+      within(chart).getAllByText(middleLabel);
+    },
+  );
 
   it("switches KV cache between hit rate and read/write trends", () => {
     render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
