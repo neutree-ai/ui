@@ -149,9 +149,10 @@ export function EndpointPerformanceCard({
         >
           <div className="mt-3 space-y-3">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t("endpoints.performance.totalTokensPerSecond")}
-              </span>
+              <PerformanceMetricLabel
+                label={t("endpoints.performance.totalTokensPerSecond")}
+                statistic={t("endpoints.performance.current")}
+              />
               <span
                 data-testid="perf-tps-value"
                 className="text-xl font-semibold tabular-nums text-foreground"
@@ -161,14 +162,24 @@ export function EndpointPerformanceCard({
             </div>
             <div className="grid grid-cols-2 gap-3 border-t pt-2.5 text-xs">
               <SmallStat
-                label={t("endpoints.performance.promptTokensPerSecond")}
+                label={
+                  <PerformanceMetricLabel
+                    label={t("endpoints.performance.promptTokensPerSecond")}
+                    statistic={t("endpoints.performance.current")}
+                  />
+                }
                 value={formatTokenRate(
                   throughputCurrent?.prompt_tokens_per_second,
                 )}
                 testId="perf-prompt-tps-value"
               />
               <SmallStat
-                label={t("endpoints.performance.generationTokensPerSecond")}
+                label={
+                  <PerformanceMetricLabel
+                    label={t("endpoints.performance.generationTokensPerSecond")}
+                    statistic={t("endpoints.performance.current")}
+                  />
+                }
                 value={formatTokenRate(
                   throughputCurrent?.generation_tokens_per_second,
                 )}
@@ -213,12 +224,22 @@ export function EndpointPerformanceCard({
               <div className="mt-3 space-y-2.5">
                 <div className="grid grid-cols-2 gap-3">
                   <MetricStat
-                    label={t("endpoints.performance.l0HitRate")}
+                    label={
+                      <PerformanceMetricLabel
+                        label={t("endpoints.performance.l0HitRate")}
+                        statistic={t("endpoints.performance.avg")}
+                      />
+                    }
                     testId="perf-l0-hit-rate"
                     value={formatPercent(cacheHitSummary?.l0_hit_rate)}
                   />
                   <MetricStat
-                    label={t("endpoints.performance.l1HitRate")}
+                    label={
+                      <PerformanceMetricLabel
+                        label={t("endpoints.performance.l1HitRate")}
+                        statistic={t("endpoints.performance.avg")}
+                      />
+                    }
                     testId="perf-l1-hit-rate"
                     value={formatPercent(cacheHitSummary?.l1_hit_rate)}
                   />
@@ -235,14 +256,24 @@ export function EndpointPerformanceCard({
               <div className="mt-3 space-y-2.5">
                 <div className="grid grid-cols-2 gap-3">
                   <MetricStat
-                    label={t("endpoints.performance.l1ReadSpeed")}
+                    label={
+                      <PerformanceMetricLabel
+                        label={t("endpoints.performance.l1ReadSpeed")}
+                        statistic={t("endpoints.performance.current")}
+                      />
+                    }
                     testId="perf-l1-read-speed"
                     value={formatBandwidth(
                       cacheIOCurrent?.l1_read_bytes_per_second,
                     )}
                   />
                   <MetricStat
-                    label={t("endpoints.performance.l1WriteSpeed")}
+                    label={
+                      <PerformanceMetricLabel
+                        label={t("endpoints.performance.l1WriteSpeed")}
+                        statistic={t("endpoints.performance.current")}
+                      />
+                    }
                     testId="perf-l1-write-speed"
                     value={formatBandwidth(
                       cacheIOCurrent?.l1_write_bytes_per_second,
@@ -314,12 +345,14 @@ function LatencyStat({
 
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground">
-        {label} ·{" "}
-        {primaryStatistic === "p95"
-          ? t("endpoints.performance.p95")
-          : t("endpoints.performance.avg")}
-      </div>
+      <PerformanceMetricLabel
+        label={label}
+        statistic={
+          primaryStatistic === "p95"
+            ? t("endpoints.performance.p95")
+            : t("endpoints.performance.avg")
+        }
+      />
       <div
         data-testid={testId}
         className="mt-1 text-xl font-semibold tabular-nums text-foreground"
@@ -327,8 +360,9 @@ function LatencyStat({
         {formatLatency(p95 ?? avg)}
       </div>
       {primaryStatistic === "p95" && (
-        <div className="mt-1 text-xs tabular-nums text-muted-foreground">
-          {t("endpoints.performance.avg")} {formatLatency(avg)}
+        <div className="mt-1 flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
+          <StatisticBadge>{t("endpoints.performance.avg")}</StatisticBadge>
+          <span>{formatLatency(avg)}</span>
         </div>
       )}
     </div>
@@ -340,7 +374,7 @@ function MetricStat({
   value,
   testId,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   testId: string;
 }) {
@@ -362,7 +396,7 @@ function SmallStat({
   value,
   testId,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   testId: string;
 }) {
@@ -376,6 +410,29 @@ function SmallStat({
         {value}
       </div>
     </div>
+  );
+}
+
+function PerformanceMetricLabel({
+  label,
+  statistic,
+}: {
+  label: string;
+  statistic: string;
+}) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs font-medium text-muted-foreground">
+      <span>{label}</span>
+      <StatisticBadge>{statistic}</StatisticBadge>
+    </span>
+  );
+}
+
+function StatisticBadge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex rounded bg-muted px-1 py-0.5 text-[9px] font-semibold leading-none">
+      {children}
+    </span>
   );
 }
 
