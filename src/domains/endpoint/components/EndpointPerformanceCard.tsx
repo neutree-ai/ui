@@ -158,7 +158,6 @@ export function EndpointPerformanceCard({
                   <PerformanceMetricLabel
                     label={t("endpoints.performance.promptTokensPerSecond")}
                     statistic={t("endpoints.performance.current")}
-                    stacked
                   />
                 }
                 value={formatTokenRate(
@@ -171,7 +170,6 @@ export function EndpointPerformanceCard({
                   <PerformanceMetricLabel
                     label={t("endpoints.performance.generationTokensPerSecond")}
                     statistic={t("endpoints.performance.current")}
-                    stacked
                   />
                 }
                 value={formatTokenRate(
@@ -396,19 +394,12 @@ function SmallStat({
 function PerformanceMetricLabel({
   label,
   statistic,
-  stacked = false,
 }: {
   label: string;
   statistic: string;
-  stacked?: boolean;
 }) {
   return (
-    <span
-      className={cn(
-        "flex items-center gap-x-1 gap-y-0.5 text-xs font-medium text-muted-foreground",
-        stacked ? "flex-col items-start" : "flex-wrap",
-      )}
-    >
+    <span className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs font-medium text-muted-foreground">
       <span>{label}</span>
       <StatisticBadge>{statistic}</StatisticBadge>
     </span>
