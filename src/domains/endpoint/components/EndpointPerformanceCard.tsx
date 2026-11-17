@@ -45,12 +45,12 @@ export function EndpointPerformanceCard({
   const [cacheMetric, setCacheMetric] = useState<"hitRate" | "throughput">(
     "hitRate",
   );
-  const { series, status: trendStatus } = useEndpointPerformanceTrends(
-    workspace,
-    name,
-    timeRange,
-    !paused,
-  );
+  const {
+    series,
+    start: trendStart,
+    end: trendEnd,
+    status: trendStatus,
+  } = useEndpointPerformanceTrends(workspace, name, timeRange, !paused);
   const displayWindow = performanceRangeDisplayWindow(timeRange);
   const latencyLines = useMemo(() => LATENCY_LINES(t), [t]);
   const throughputLines = useMemo(() => THROUGHPUT_LINES(t), [t]);
@@ -129,6 +129,8 @@ export function EndpointPerformanceCard({
               })}
               lines={latencyLines}
               series={series}
+              start={trendStart}
+              end={trendEnd}
               status={trendStatus}
               window={displayWindow}
             />
@@ -173,6 +175,8 @@ export function EndpointPerformanceCard({
               })}
               lines={throughputLines}
               series={series}
+              start={trendStart}
+              end={trendEnd}
               status={trendStatus}
               window={displayWindow}
             />
@@ -223,6 +227,8 @@ export function EndpointPerformanceCard({
                   })}
                   lines={cacheHitLines}
                   series={series}
+                  start={trendStart}
+                  end={trendEnd}
                   status={trendStatus}
                   window={displayWindow}
                 />
@@ -251,6 +257,8 @@ export function EndpointPerformanceCard({
                   })}
                   lines={cacheIOLines}
                   series={series}
+                  start={trendStart}
+                  end={trendEnd}
                   status={trendStatus}
                   window={displayWindow}
                 />

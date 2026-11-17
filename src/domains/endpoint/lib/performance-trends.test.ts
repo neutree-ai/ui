@@ -99,18 +99,12 @@ describe("performanceRangeDisplayWindow", () => {
 
 describe("performanceTrendTicks", () => {
   it.each([
-    { rows: [], expected: [] },
-    { rows: [{ timestamp: 10 }], expected: [10] },
-    {
-      rows: [{ timestamp: 10 }, { timestamp: 20 }, { timestamp: 30 }],
-      expected: [10, 20, 30],
-    },
-  ])(
-    "selects up to three ticks from $rows.length rows",
-    ({ rows, expected }) => {
-      expect(performanceTrendTicks(rows)).toEqual(expected);
-    },
-  );
+    { start: 10, end: 10, expected: [10] },
+    { start: 10, end: 30, expected: [10, 20, 30] },
+    { start: 10, end: 35, expected: [10, 22, 35] },
+  ])("covers the window from $start to $end", ({ start, end, expected }) => {
+    expect(performanceTrendTicks(start, end)).toEqual(expected);
+  });
 });
 
 describe("performance trend timestamp formatting", () => {
