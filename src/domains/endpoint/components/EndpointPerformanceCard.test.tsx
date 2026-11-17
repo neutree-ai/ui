@@ -21,6 +21,14 @@ describe("EndpointPerformanceCard", () => {
           window: "5m",
           start: 90,
           end: 110,
+          summary: {
+            ttft_p95_seconds: 0.24,
+            ttft_avg_seconds: 0.15,
+            tpot_p95_seconds: 0.045,
+            tpot_avg_seconds: 0.03,
+            l0_hit_rate: 0.46,
+            l1_hit_rate: 0.63,
+          },
           series: [
             {
               metric: "ttft_p95_seconds",
@@ -60,12 +68,12 @@ describe("EndpointPerformanceCard", () => {
             {
               metric: "l0_hit_rate",
               unit: "ratio",
-              points: [{ timestamp: 100, value: 0.46 }],
+              points: [{ timestamp: 100, value: 0.35 }],
             },
             {
               metric: "l1_hit_rate",
               unit: "ratio",
-              points: [{ timestamp: 100, value: 0.63 }],
+              points: [{ timestamp: 100, value: 0.5 }],
             },
             {
               metric: "l1_read_bytes_per_second",
@@ -83,9 +91,14 @@ describe("EndpointPerformanceCard", () => {
     });
   });
 
-  it("uses the latest trend point for current values and refetches the selected window", () => {
+  it("uses summary for latency and hit rate, latest trend point for throughput, and refetches the selected window", () => {
     render(<EndpointPerformanceCard workspace="default" name="chat-ep" />);
 
+    screen.getByText("240 ms");
+    screen.getByText("endpoints.performance.avg 150 ms");
+    screen.getByText("45 ms");
+    screen.getByText("endpoints.performance.avg 30 ms");
+    expect(screen.queryByText("180 ms")).toBeNull();
     screen.getByText("505.8 tok/s");
     screen.getAllByText("endpoints.performance.totalTokensPerSecond");
     screen.getAllByText("endpoints.performance.l0HitRate");
@@ -93,6 +106,7 @@ describe("EndpointPerformanceCard", () => {
     expect(screen.queryByText(/^endpoints\.performance\.current/)).toBeNull();
     screen.getByText("46.0%");
     screen.getByText("63.0%");
+    expect(screen.queryByText("35.0%")).toBeNull();
     screen.getByRole("img", {
       name: "endpoints.performance.trendAriaLabel:endpoints.performance.latency",
     });

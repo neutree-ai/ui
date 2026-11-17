@@ -51,23 +51,27 @@ export function EndpointPerformanceCard({
     timeRange,
     !paused,
   );
-  const { series, status: trendStatus } = trends;
+  const { series, start, end, summary, status: trendStatus } = trends;
   /** Data and axis window shared by every trend chart on the card. */
   const trendProps = {
-    ...trends,
+    series,
+    start,
+    end,
+    status: trendStatus,
     window: performanceRangeDisplayWindow(timeRange),
   };
   const latencyLines = useMemo(() => LATENCY_LINES(t), [t]);
   const throughputLines = useMemo(() => THROUGHPUT_LINES(t), [t]);
   const cacheHitLines = useMemo(() => CACHE_HIT_LINES(t), [t]);
   const cacheIOLines = useMemo(() => CACHE_IO_LINES(t), [t]);
-  const latencyCurrent = useMemo(
+  const latencySummary = useMemo(
     () =>
+      summary ??
       performanceTrendLatestRow(
         series,
         latencyLines.map((line) => line.metric),
       ),
-    [series, latencyLines],
+    [series, summary, latencyLines],
   );
   const throughputCurrent = useMemo(
     () =>
@@ -77,13 +81,14 @@ export function EndpointPerformanceCard({
       ),
     [series, throughputLines],
   );
-  const cacheHitCurrent = useMemo(
+  const cacheHitSummary = useMemo(
     () =>
+      summary ??
       performanceTrendLatestRow(
         series,
         cacheHitLines.map((line) => line.metric),
       ),
-    [series, cacheHitLines],
+    [series, summary, cacheHitLines],
   );
   const cacheIOCurrent = useMemo(
     () =>
@@ -117,14 +122,14 @@ export function EndpointPerformanceCard({
             <div className="grid grid-cols-2 gap-4">
               <LatencyStat
                 label={t("endpoints.performance.ttft")}
-                p95={latencyCurrent?.ttft_p95_seconds}
-                avg={latencyCurrent?.ttft_avg_seconds}
+                p95={latencySummary?.ttft_p95_seconds}
+                avg={latencySummary?.ttft_avg_seconds}
                 testId="perf-ttft-value"
               />
               <LatencyStat
                 label={t("endpoints.performance.tpot")}
-                p95={latencyCurrent?.tpot_p95_seconds}
-                avg={latencyCurrent?.tpot_avg_seconds}
+                p95={latencySummary?.tpot_p95_seconds}
+                avg={latencySummary?.tpot_avg_seconds}
                 testId="perf-tpot-value"
               />
             </div>
@@ -210,12 +215,12 @@ export function EndpointPerformanceCard({
                   <MetricStat
                     label={t("endpoints.performance.l0HitRate")}
                     testId="perf-l0-hit-rate"
-                    value={formatPercent(cacheHitCurrent?.l0_hit_rate)}
+                    value={formatPercent(cacheHitSummary?.l0_hit_rate)}
                   />
                   <MetricStat
                     label={t("endpoints.performance.l1HitRate")}
                     testId="perf-l1-hit-rate"
-                    value={formatPercent(cacheHitCurrent?.l1_hit_rate)}
+                    value={formatPercent(cacheHitSummary?.l1_hit_rate)}
                   />
                 </div>
                 <EndpointPerformanceTrendChart
