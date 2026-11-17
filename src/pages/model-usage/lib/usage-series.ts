@@ -17,6 +17,8 @@ export type UsageSeries = {
   requests?: number;
   // Only set on the folded "other" series: how many series it stands for.
   hiddenCount?: number;
+  // Overlaps another series on the same chart, so a total must not add it.
+  excludeFromTotal?: boolean;
 };
 
 // The synthetic series that carries every series outside the top K. It has one

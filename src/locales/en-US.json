@@ -3557,7 +3557,8 @@
 			"tooltip": {
 				"prompt": "Prompt",
 				"completion": "Completion",
-				"total": "Total"
+				"total": "Total",
+				"totalDepartments": "Total (departments)"
 			},
 			"otherKeys": "Other {{n}} API keys",
 			"otherGroups": "Other {{n}}",

@@ -101,6 +101,32 @@ describe("TrendTooltip", () => {
   });
 });
 
+describe("TrendTooltip with overlapping series", () => {
+  it("lists a series flagged as overlapping but leaves it out of the total", () => {
+    const overlapMeta = new Map([
+      ["dept", series("dept", "Dept")],
+      ["team:t", { ...series("team:t", "Team"), excludeFromTotal: true }],
+    ]);
+    render(
+      <TrendTooltip
+        meta={overlapMeta}
+        active
+        label="2026-11-04"
+        payload={[
+          { dataKey: "dept", value: 495, color: "blue" },
+          { dataKey: "team:t", value: 180, color: "green" },
+        ]}
+      />,
+    );
+
+    screen.getByText("Team");
+    screen.getByText("180");
+    screen.getByText("model_usage.daily.tooltip.totalDepartments");
+    screen.getAllByText("495");
+    expect(screen.queryByText("675")).toBeNull();
+  });
+});
+
 describe("DayTooltip", () => {
   it("renders nothing when no category is hovered", () => {
     const { container } = render(<DayTooltip active payload={[]} />);

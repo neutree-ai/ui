@@ -392,9 +392,11 @@ export const ModelUsageList = () => {
         }),
       TEAM_TOP_K,
       (n) => t("model_usage.trend.otherTeams", { n }),
-    ).map((s) =>
-      s.key === OTHER_SERIES_KEY ? { ...s, key: OTHER_TEAMS_SERIES_KEY } : s,
-    );
+    ).map((s) => ({
+      ...s,
+      key: s.key === OTHER_SERIES_KEY ? OTHER_TEAMS_SERIES_KEY : s.key,
+      excludeFromTotal: true,
+    }));
     const teamTrend = buildTrend(
       teamFacts,
       teamSeries.map((s) =>
