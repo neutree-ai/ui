@@ -311,7 +311,7 @@
   "src/foundation/recipe/types.ts": "6b11c3319d89fc7158795a4dc2bfe661",
   "src/foundation/recipe/vram.ts": "f88e860dfad69d93ddf339f47e663faa",
   "src/domains/model-catalog/components/ModelInfoBadges.tsx": "e2f906fcecc495e5d7c38e19e0d83bf3",
-  "src/domains/endpoint/components/FeaturePicker.tsx": "426fa7bf53e94d1b46f83159860bc26e",
+  "src/domains/endpoint/components/FeaturePicker.tsx": "7bfce87c0b30b5951d08449eed33a49d",
   "src/domains/endpoint/components/VRAMCheckBadge.tsx": "fabece8afefef4d81f383462c9158554",
   "src/domains/endpoint/components/VariantPicker.tsx": "9c28a8d86d0774b726537f6c3e1f253b",
   "src/components/ui/switch.tsx": "0f7d0c988dc31375fbc7b59379414d56",

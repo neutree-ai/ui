@@ -109,6 +109,33 @@ describe("FeaturePicker input addons", () => {
   });
 });
 
+describe("FeaturePicker numeric input constraints", () => {
+  it.each([
+    { valueType: "int", inputType: "number", step: "1" },
+    { valueType: "number", inputType: "number", step: "any" },
+    { valueType: "string", inputType: "text", step: null },
+  ])(
+    "uses the $valueType input semantics",
+    ({ valueType, inputType, step }) => {
+      renderPicker({
+        features: [
+          imageFeature({
+            input: { value_type: valueType as "string" | "int" | "number" },
+          }),
+        ],
+      });
+
+      const input = screen.getByLabelText("image");
+      expect(input.getAttribute("type")).toBe(inputType);
+      if (step) {
+        expect(input.getAttribute("step")).toBe(step);
+      } else {
+        expect(input.getAttribute("step")).toBeNull();
+      }
+    },
+  );
+});
+
 // A feature's description lives behind the same hover hint InfoHint offers
 // elsewhere, so the label row stays one line.
 describe("FeaturePicker feature descriptions", () => {
