@@ -186,7 +186,7 @@ export function ZCacheFields({
     meta: {
       workspace,
       workspaced: true,
-      select: "id,metadata,spec,status",
+      select: "id,metadata,status",
     },
     queryOptions: {
       enabled: isEdit && !!name && !!workspace && (enabled || savedEnabled),

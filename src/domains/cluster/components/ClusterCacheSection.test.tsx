@@ -260,9 +260,9 @@ describe("ClusterCacheSection", () => {
           {
             id: 1,
             metadata: { name: "chat-api", display_name: "Chat API" },
-            spec: { kv_cache: { provider: "zcache" } },
             status: {
               phase: "Running",
+              kv_cache: { provider: "zcache", details: { in_use: true } },
               resources: {
                 replicas: [
                   {
@@ -328,7 +328,6 @@ describe("ClusterCacheSection", () => {
             {
               id: 1,
               metadata: { name: "chat-api" },
-              spec: { kv_cache: { provider: "zcache" } },
               status: {
                 resources: {
                   replicas: [
@@ -364,8 +363,8 @@ describe("ClusterCacheSection", () => {
         endpoints={[
           {
             id: 9,
-            spec: { kv_cache: { provider: "zcache" } },
             status: {
+              kv_cache: { provider: "zcache", details: { in_use: true } },
               resources: {
                 replicas: [{ instance_id: "orphan-0", node_id: "a" }],
               },
