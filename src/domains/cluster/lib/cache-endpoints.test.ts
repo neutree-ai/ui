@@ -21,7 +21,6 @@ const endpoint = (
 ): CacheEndpointCandidate => ({
   id,
   metadata: { name: `ep-${id}` },
-  spec: { kv_cache: { provider: "zcache" } },
   status: observed(true),
   ...overrides,
 });
@@ -32,8 +31,7 @@ describe("cacheEndpointRefs", () => {
       endpoint(1, { status: observed(false) }),
       endpoint(2, { status: undefined }),
       endpoint(3, { status: observed(true) }),
-      endpoint(4, { spec: { kv_cache: null }, status: observed(true) }),
-      endpoint(5, {
+      endpoint(4, {
         status: {
           phase: "Running",
           kv_cache: { provider: "lmcache", details: { in_use: true } },
@@ -41,7 +39,7 @@ describe("cacheEndpointRefs", () => {
       }),
     ]);
 
-    expect(refs.map((ref) => ref.name)).toEqual(["ep-3", "ep-4"]);
+    expect(refs.map((ref) => ref.name)).toEqual(["ep-3"]);
   });
 
   it("deduplicates one Endpoint across rows and collects its nodes", () => {
@@ -54,7 +52,6 @@ describe("cacheEndpointRefs", () => {
       }),
       endpoint(2, {
         metadata: { name: "chat", workspace: "team-a" },
-        spec: { kv_cache: null },
         status: observed(true, ["node-a", "node-b", "node-a"]),
       }),
     ]);

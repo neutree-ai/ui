@@ -11,7 +11,6 @@ const cacheDependencies = vi.hoisted(() => ({
   rows: [] as Array<{
     id: number;
     metadata?: { name?: string; display_name?: string; workspace?: string };
-    spec: { kv_cache?: { provider: string } | null };
     status?: { kv_cache?: { provider: string; details: { in_use: boolean } } };
   }>,
 }));
@@ -155,7 +154,6 @@ describe("ZCacheFields", () => {
       {
         id: 1,
         metadata: { name: "endpoint-a" },
-        spec: { kv_cache: null },
         status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
@@ -185,7 +183,6 @@ describe("ZCacheFields", () => {
           display_name: "Endpoint display name",
           workspace: "team-a",
         },
-        spec: { kv_cache: { provider: "zcache" } },
         status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
@@ -204,7 +201,6 @@ describe("ZCacheFields", () => {
       {
         id: 1,
         metadata: { name: "endpoint-a" },
-        spec: { kv_cache: { provider: "zcache" } },
         status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
@@ -238,7 +234,7 @@ describe("ZCacheFields", () => {
       ).toBe(true),
     );
     expect(cacheDependencies.query.mock.lastCall?.[0].meta.select).toBe(
-      "id,metadata,spec,status",
+      "id,metadata,status",
     );
     fireEvent.click(
       screen.getByRole("switch", { name: "clusters.zcache.enable" }),

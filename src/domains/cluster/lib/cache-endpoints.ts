@@ -8,7 +8,6 @@ export type CacheEndpointCandidate = {
     display_name?: string | null;
     workspace?: string | null;
   };
-  spec?: { kv_cache?: { provider: string } | null };
   status?:
     | (BaseStatus & {
         kv_cache?: {
@@ -33,8 +32,7 @@ export type CacheEndpointRef = {
  *
  * Matches backend admission (`status.kv_cache.details.in_use === true`):
  * paused or unscheduled Endpoints without running Pods do not block cache node
- * removal or disabling cluster cache, while terminating old Pods remain guarded
- * even after `spec.kv_cache` is cleared.
+ * removal or disabling cluster cache, while terminating Pods still do.
  */
 export function cacheEndpointRefs(
   endpoints: CacheEndpointCandidate[],
@@ -62,8 +60,6 @@ export function cacheEndpointRefs(
       const existing = refs.find((ref) => ref.key === key);
       if (existing) {
         existing.nodes = [...new Set([...existing.nodes, ...nodes])];
-        if (!existing.status && endpoint.status)
-          existing.status = endpoint.status;
         return refs;
       }
 
