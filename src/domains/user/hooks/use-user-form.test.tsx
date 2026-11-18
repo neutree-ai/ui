@@ -76,7 +76,7 @@ describe("useUserForm", () => {
     });
   });
 
-  it("submits create values and forwards the returned id for department assignment", async () => {
+  it("submits create values and forwards the returned id, department and teams", async () => {
     const onCreated = vi.fn();
     const { result } = renderForm(
       () => useUserForm({ action: "create", onCreated }),
@@ -88,6 +88,7 @@ describe("useUserForm", () => {
       password: "password123",
       confirmPassword: "password123",
       orgUnit: "eng",
+      teams: ["guild", "launch"],
     };
     act(() => result.current.form.reset(values));
     await act(() => result.current.form.handleSubmit(refineForm.onFinish)());
@@ -97,7 +98,17 @@ describe("useUserForm", () => {
       onMutationSuccess: (data: unknown, variables: unknown) => unknown;
     };
     options.onMutationSuccess({ data: { id: "u-1" } }, values);
-    expect(onCreated).toHaveBeenCalledWith({ id: "u-1", orgUnit: "eng" });
+    expect(onCreated).toHaveBeenCalledWith({
+      id: "u-1",
+      orgUnit: "eng",
+      teams: ["guild", "launch"],
+    });
+    options.onMutationSuccess({ data: { id: "u-2" } }, {});
+    expect(onCreated).toHaveBeenLastCalledWith({
+      id: "u-2",
+      orgUnit: "",
+      teams: [],
+    });
   });
 
   it.each([

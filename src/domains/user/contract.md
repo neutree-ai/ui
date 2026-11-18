@@ -1,17 +1,15 @@
 # User contract
 
-Backend: `v1.UserProfile`, `UserProfileSpec`, `UserProfileStatus` (`api/v1/user_profile_types.go`),
-`api.user_profiles` (`002_user-extend`, `036_user_profile_status_fix`). `RegisterUserProfileRoutes`
-(`internal/routes/proxies/user_profile_proxy.go`): GET/POST/PATCH. Local creation uses
-`RegisterAuthRoutes` / `handleCreateUser` (`internal/routes/auth/auth.go`), POST `/api/v1/auth/admin/users`.
-Permissions: `user_profile:read|create|update|delete`; read/update may be department-scoped (`125`, `131`).
-Refine resource `user_profiles`, global, key `metadata->name`; UUID `id` identifies memberships and grants.
-Backend: `origin/main@062192f6`; no User RPCs.
+Backend: `v1.UserProfile`, `UserProfileSpec`, `UserProfileStatus` (`api/v1/user_profile_types.go`), `api.user_profiles`
+(`002_user-extend`, `036_user_profile_status_fix`). `RegisterUserProfileRoutes`
+(`internal/routes/proxies/user_profile_proxy.go`): GET/POST/PATCH. Local creation uses `RegisterAuthRoutes` /
+`handleCreateUser` (`internal/routes/auth/auth.go`), POST `/api/v1/auth/admin/users`. Permissions:
+`user_profile:read|create|update|delete`; read/update may be department-scoped (`125`, `131`). Refine: global
+`user_profiles`, key metadata->name; UUID identifies memberships/grants. Backend: `origin/main@062192f6`; no User RPCs.
 
 ## Type
 
-UI: `src/domains/user/types.ts`; creation uses flat auth fields.
-Optional fields default to absent/null; editability describes these pages.
+UI: `src/domains/user/types.ts`; flat auth creation; optional fields absent/null; edit means these pages.
 
 | path | type | required/default | owner | secret | edit | backend rule |
 |---|---|---|---|---|---|---|
@@ -27,10 +25,11 @@ Optional fields default to absent/null; editability describes these pages.
 | create `password` | string | blank | user | write-only | create only | `CreateUserRequest.Password` required |
 | create `confirmPassword` | string | blank | user | input only | create only | no API field |
 | create `orgUnit` | department name | blank | user | no | create only | separate membership write |
+| create `teams` | Team-name array | empty | user | no | create only | separate membership writes |
 
-`metadata.name` is globally unique (`user_profiles_name_unique_idx`, `002`). `validate_metadata_name`
-(`004_required_fields`) requires nonblank, at most 63 characters and lowercase DNS-style names allowing dots.
-`handle_new_user` (`107`) copies username or uses `derive_user_profile_name` (`102`) for IdP claims.
+Names are globally unique (`user_profiles_name_unique_idx`, `002`); `validate_metadata_name` (`004_required_fields`)
+requires nonblank lowercase DNS-style names allowing dots, at most 63 characters. `handle_new_user` (`107`): username or
+`derive_user_profile_name` (`102`) from IdP claims.
 
 ## Roles
 
@@ -41,7 +40,7 @@ Optional fields default to absent/null; editability describes these pages.
 - Columns: `useMetadataColumns`; time: `MetadataTimestampMeta`; empty email/department: `EmptyValue`.
 - Department path: `orgUnitPathLabel`, tested in `domains/organization/lib/org-tree.test.ts`.
   Missing ancestors are omitted; missing membership displays empty.
-- No status role is rendered. Password and confirmation inputs use `type="password"`.
+- No status; password/confirmation inputs are masked.
 
 ## Scenes
 
@@ -52,13 +51,16 @@ Optional fields default to absent/null; editability describes these pages.
   null; named uses equality on `metadata->labels->>"neutree.ai/identity-source-name"`.
 - Show (`UsersShow`): human/technical names, email, source, timestamps; department, teams, effective grants and model
   access use their domain components; grant tables separate global, workspace and department assignments.
-- Create (`useUserForm`, `UsersCreate`): flat auth fields; `mode:"all"`, unsaved-change warning.
-  `dataProvider.create` sends only `{email,password,username:name}`.
-- Department on create: picker only with global `org_unit:assign-member`; `onMutationSuccess` passes returned UUID
-  and selected name to `UsersCreate.onCreated`; membership POST is `{user_id,org_unit_id}`.
-  Blank skips assignment; failure reports created-but-unassigned without rollback.
+- Create (`useUserForm`, `UsersCreate`): flat auth fields; `mode:"all"`, unsaved-change warning. `dataProvider.create`:
+  `{email,password,username:name}`.
+- Department on create: global org_unit:assign-member offers the picker; callback receives UUID/name. POST
+  `{user_id,org_unit_id}`; blank skips, failure reports partial success.
+- Teams on create: global team:assign-member offers manual Teams/scenarios. `onMutationSuccess` forwards
+  `{id,orgUnit,teams}` with empty fallbacks. `UsersCreate.onCreated` resolves names to IDs after department assignment,
+  skips missing Teams and reports failed display names with the first cause; created users remain. Memberships:
+  `src/domains/organization/contract.md`, “Scenes”.
 - Edit (`UsersEdit` / `useUserForm`): loaded metadata/spec retained, name disabled, source email disabled with a hint.
-  Hidden placeholder email is resent unchanged; no password or department field.
+  Hidden placeholder email is resent unchanged; no password or membership fields.
 - Edit payload mechanics: `src/foundation/contract.md`, “Edit PATCH”.
 - Delete mechanics: `src/foundation/contract.md`, “Soft delete and force”. `validateUserProfileDeletion` refuses
   direct role assignments with 10130; force does not bypass it. `125` policies protect self and name `admin`.
@@ -72,7 +74,7 @@ Optional fields default to absent/null; editability describes these pages.
 - Password minimum six (`user_profiles.validation.passwordMinLength`); no required rule on password itself.
   Confirmation is required and must match (`pages.auth.errors.confirmPasswordRequired|confirmPasswordNotMatch`).
 - External email: `user_profiles.hints.externalEmail`; hidden email placeholder is `EMPTY_VALUE`.
-- Department is optional; `OrgUnitField` supplies active readable departments.
+- Department and Teams are optional; `OrgUnitField` supplies active departments, `ManualTeamsField` manual Teams.
 
 ## Overrides
 
@@ -84,12 +86,11 @@ Optional fields default to absent/null; editability describes these pages.
 
 ## Password and source trace
 
-`UserProfile` has no `api:"-"` fields; password is absent from `UserProfileSpec` and every profile PATCH.
-`createUser` passes password to `AdminCreateUser`; `CreateUserResponse` returns `{id,email,username}` only.
-Untouched edit sends the loaded record with `spec:{email:"alice@example.org"}` and no password key.
-Local email replacement/clear sends `spec:{email:"new@example.org"}` or `spec:{email:""}`.
-Hidden external email sends `spec:{email:"id@corp.oidc.neutree.local"}`.
-Untouched null email sends `spec:{email:null}`.
+No masked `UserProfile` fields; `UserProfileSpec` and profile PATCHes have no password. `createUser` passes password to
+`AdminCreateUser`; `CreateUserResponse` returns `{id,email,username}` only. Untouched edit sends the loaded record with
+`spec:{email:"alice@example.org"}` and no password key. Local email replacement/clear sends
+`spec:{email:"new@example.org"}` or `spec:{email:""}`. Hidden external email sends
+`spec:{email:"id@corp.oidc.neutree.local"}`. Untouched null email sends `spec:{email:null}`.
 
 `api.apply_user_profile_identity_source` (`108`) accepts unchanged external email and recomputes source labels
 from auth metadata. `public.user_profile_email` (`107`) prefers directory email, else the auth placeholder.
@@ -100,16 +101,16 @@ email/password/phone. These pages offer no password edit for any source.
 Unlabeled SSO follows local rules; labeled OIDC follows external rules.
 
 Department writes are valid for new local users: `api.org_unit_members_before_write` (`120`) allows an omitted
-`identity_source` only without an external identity link and rejects inactive targets (10277).
-Detail `UserDepartmentSection` delegates source locking to `orgUnitAssignmentMode`; memberships are separate records.
+`identity_source` only without an external identity link and rejects inactive targets (10277). `UserDepartmentSection`
+uses `orgUnitAssignmentMode` for source locks; memberships are separate.
 
 ## Error mapping
 
-Profile failures: `src/foundation/contract.md`, “Error toast path”. No User field mapping.
-Auth JSON `error` becomes provider code 20001; name/email/password requirements surface through this toast path.
-Profile codes: 10001/10003/10004 name, 10265 rename, 10260 external email; deletion 10130; permission failures.
-Department creation catches membership errors separately, translates `ORGANIZATION_ERROR_KEYS` or unknown fallback,
-and reports partial success.
+Profile failures: `src/foundation/contract.md`, “Error toast path”. No User field mapping. Auth JSON `error` becomes
+provider code 20001; name/email/password requirements surface through this toast path. Profile codes: 10001/10003/10004
+name, 10265 rename, 10260 external email; deletion 10130; permission failures. Membership failures use
+`ORGANIZATION_ERROR_KEYS` or unknown. Team failures use `user_profiles.teams.errors.createdNotAssigned`; successes are
+retained.
 
 ## Known deviations
 
@@ -132,4 +133,4 @@ and reports partial success.
 
 ## Open points
 
-No live GoTrue/PostgREST or concurrent edit was run. Empty/null email is pinned at submit; auth acceptance is untested.
+No live GoTrue/PostgREST/concurrency; empty/null email payloads are pinned, auth acceptance untested.

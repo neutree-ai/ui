@@ -69,14 +69,14 @@ mark missing directory objects Inactive rather than deleting them.
   Team-only readers start on Teams. No standalone show/create/edit route, default time sort or batch action.
 - Departments (`DepartmentsPanel`): all readable rows, source filter, case-insensitive path search, Inactive hidden;
   detail reads direct members or RPC `{p_org_unit_id}` for subtree members. No department mutation controls.
-- Teams (`TeamsPanel`): display-name order; name/human-name search, project/nonproject and Inactive filters;
-  detail shows source, members, role assignments and group model access. Synced Team mutations are hidden.
+- Teams (`TeamsPanel`): display-name order; name/human-name search, project/nonproject and Inactive filters; detail
+  follows the filtered selection. Synced Team mutations are hidden; scenario actions use scenario wording.
 - Usage picker (`useReadableUsageTeams`): POST `{}` to `get_readable_usage_teams` (`136`); returns identity/status
   without spec, under global workspace-usage or readable-Team usage rights.
 - URL selections: `useOrganizationView`; tests in `lib/organization-view.test.ts`. Filters stay local.
 - Create (`TeamFormDialog`, `useTeamWrites.create`): name/display name trimmed, project false unless scenario preset;
   POST headers are `api_version:"v1"`, `kind:"Team"`; metadata has name/display_name/labels,
-  spec is `{identity_source:null,external_id:null}`.
+  spec is `{identity_source:null,external_id:null}`. Creation resets filters that would hide the new Team.
 - Edit (`TeamFormDialog`, `useTeamWrites.update`): prefill from Team; lock name; trim display name; unchanged saves
   disabled. PATCH by numeric id sends only `{metadata}` with the loaded metadata and updated display name/labels.
 - Delete (`useTeamWrites.remove`): immediate DELETE by numeric id, no force; members cascade (`120`). The backend
@@ -90,6 +90,9 @@ mark missing directory objects Inactive rather than deleting them.
   New local assignment needs global assign-member; existing hand assignment accepts any-scope assign-member.
 - `useAssignOrgUnit`: POST `{user_id,org_unit_id}`, PATCH `{org_unit_id}` by UUID, DELETE `{}` by UUID.
   `useCreateOrgUnitMembership` supplies the same POST for newly created users. Active department picker stores its ID.
+- New-user Teams: `ManualTeamsField` stores technical names, lists only manual Teams/scenarios and needs global
+  team:assign-member in `UsersCreate`. `useCreateTeamMemberships` POSTs one `[{team_id,user_id}]` per selection,
+  continues after failures and returns `{teamId,cause}` entries. No rollback; empty selections send nothing.
 - `UserTeamsSection`: joined Teams with source and Inactive label, display-name order, global Team read required.
 - `src/pages/organization/team-detail-tabs.tsx:TeamDetailTabs` embeds accounts/keys, application permissions,
   usage and token pools under their Team permissions; their contracts belong to those domains.
@@ -99,11 +102,12 @@ mark missing directory objects Inactive rather than deleting them.
 
 ## Descriptions
 
-`TeamFormDialog`: name, display name, project mark; descriptions use `organization.teams.*`.
-`validateTeamName` checks required, length, shared resource-name pattern and reserved suffix, after trimming.
-Name errors appear after edited blur or submit; display name is optional.
-`AssignOrgUnitDialog`: Active choices; unchanged/absent selection disables save.
-`AddTeamMembersDialog`: name/display-name/email search; save requires a new selection.
+`TeamFormDialog`: name, display name, project mark; descriptions use `organization.teams.*`. `validateTeamName` checks
+required, length, shared resource-name pattern and reserved suffix, after trimming. Name errors appear after edited blur
+or submit; display name is optional. `AssignOrgUnitDialog`: Active choices; unchanged/absent selection disables save.
+`AddTeamMembersDialog`: name/display-name/email search; save requires a new selection. `ManualTeamsField` omits synced
+Teams because `api.team_members_before_write` (`131_group_role_assignments`) reserves their membership for directory
+sync; `api.team_members_check_grants` (`131`) still checks each new membership.
 
 ## Overrides
 

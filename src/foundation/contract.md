@@ -155,3 +155,22 @@ Only list routes copy URL selection into storage. Loading is returned separately
 These are query/form decisions, not API authorization: `api.validate_metadata_workspace` (`004_required_fields`)
 checks required text, DNS-style format and length on attached resource triggers, and resource policies call
 `api.has_permission` (`001_rbac`, later policy migrations). The selection neither creates a Workspace nor grants access.
+
+## Accelerator resources
+
+Cluster and Endpoint share `gpu-device-resources`, `accelerator-observations` and `GpuObservationCard`. Backend
+observations: `observations.RegisterRoutes` / `handler` (`internal/routes/observations/accelerators.go`), `Snapshot` and
+metric samples; read permission follows the resource. Allocation snapshots use `v1.ClusterResources` and
+`v1.EndpointResourceStatus`; placement is a UI estimate, not backend admission (`validateEndpointResourceShape`).
+
+`calculateGpuPlacementCapacity` handles CPU-only, full, fractional and vGPU requests. Only absent/empty node maps are
+unknown; partial snapshots exclude missing dimensions/devices rather than disabling checks. Zero requests pass.
+Comparisons tolerate 1e-6 drift; vGPU memory also accepts the one-decimal GiB display bucket. Search limits bound GPU
+capacity estimates; CPU-only capacity uses resource bounds directly. `maxCpuPerReplica` / `maxMemoryPerReplica` are
+maxima among GPU-eligible nodes. `addBackEndpointDeviceAllocationsToNodeResources` credits observed ownership, capped at
+allocatable values; unknown nodes/devices gain nothing. Full-card availability uses the same shared check. Tests:
+`foundation/lib/gpu-device-resources.test.ts`; callers retain their own validation policy.
+
+`actualUsageMarkerState` hides zero/negative actual VRAM, marks known reservation excess serious and otherwise uses the
+neutral marker. Missing readings stay empty; zero remains a numeric reading. Tests:
+`foundation/lib/accelerator-observations.test.ts`, `foundation/components/GpuObservationCard.test.tsx`.

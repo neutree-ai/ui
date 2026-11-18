@@ -45,6 +45,8 @@ No row means model-invoker everywhere; explicit empty roles or workspaces grants
 ## Roles
 
 - Names: shared `displayName` (tests beside it); `ServiceAccountLabel` falls back to the UUID for unreadable accounts.
+- Scenario wording: `TeamServiceAccounts` forwards `project` to create/permission dialogs; storage remains
+  ServiceAccount with the same team_id. `TeamDetailTabs` supplies `isProjectTeam`.
 - Enabled state: `spec.disabled` truthiness; `TeamServiceAccounts` badges use
   `service_accounts.status.enabled|disabled`.
   No `STATUS_TONE` mapping applies.

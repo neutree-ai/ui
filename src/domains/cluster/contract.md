@@ -1,11 +1,10 @@
 # Cluster contract
 
 Backend: `v1.Cluster` (`api/v1/cluster_types.go`, `cache_types.go`, `ray_types.go`), table `api.clusters`, proxy
-`/api/v1/clusters` (`RegisterClusterRoutes`: GET via `CreateStructProxyHandler[v1.Cluster]`, `validateClusterRequest` in
-front of POST and PATCH). Extra: `GET /clusters/available_versions` (`getAvailableClusterVersions`), RPC
-`upgrade_zcache`. Permissions: `cluster:read|create|update|delete`, `cluster:read-credentials` (`037`; credentials
-route, YAML export). Refine resource `clusters`: workspaced, `idColumnName: "metadata->name"`. Shared mechanics:
-`src/foundation/contract.md`.
+`/api/v1/clusters` (`RegisterClusterRoutes`: GET; POST/PATCH through `validateClusterRequest`). Extra: `GET
+/clusters/available_versions` (`getAvailableClusterVersions`), RPC `upgrade_zcache`. Permissions:
+`cluster:read|create|update|delete`, `cluster:read-credentials` (`037`; credentials route, YAML export). Refine:
+workspaced `clusters`, key metadata->name. Shared mechanics: `src/foundation/contract.md`.
 
 ## Type
 
@@ -41,8 +40,7 @@ UI type: `src/domains/cluster/types.ts`. Owner is user unless noted; "edit" = ed
 | `status.cache` | `{provider, phase, conditions, details}` | server | no | no | `ClusterCacheStatus`; phase Disabled / Reconciling / Ready / Unavailable / Failed |
 | `status.observed_spec_hash`, `.accelerator_virtualization` | string / object | server | no | no | `055`, `085`; not in UI type |
 
-Masked: `ssh_private_key` and `kubeconfig` (`api:"-"`, Foundation "Masked fields"). YAML export fetches them through the
-credentials route (Foundation "YAML import and export").
+Masking and credential export: `src/foundation/contract.md`, “Masked fields”, “YAML import and export”.
 
 ## Roles
 
@@ -52,8 +50,9 @@ credentials route (Foundation "YAML import and export").
   `common.messages.leaveEmptyToKeepValue`.
 - Columns `useMetadataColumns`; time `Timestamp`; empty marker `EmptyValue`; type label `ClusterType` (other values as
   is); `getAccessModeLabel`; `isAcceleratorVirtualizationEnabled` (`lib/accelerator-virtualization.ts`).
+- Device observations and placement: `src/foundation/contract.md`, “Accelerator resources”.
 - Version: `status.version` (what runs); `Upgrading` shows `status.version -> spec.version`; else `ClusterUpgradeTip`.
-  Resource quantities use own formatting (`ClusterResourceSummary`, `NodeResourcesTable`).
+  Resources: `ClusterResourceSummary`, `NodeResourcesTable`.
 
 ## Scenes
 
@@ -64,9 +63,8 @@ credentials route (Foundation "YAML import and export").
   replaces `spec.config` with that type's defaults. Versions come from `/clusters/available_versions` for workspace,
   registry and type; the newest is selected, cleared when none.
 - Edit: locked name, workspace, type, image registry, version, head IP, ssh user, model cache fields of ssh clusters.
-  Secrets start empty (API never returns them). Refetch on focus/reconnect is off (status rewritten every few seconds
-  would revert edits). Save `transformClusterValues(values, true, touchedFields)`; whole record PATCH with
-  `spec.cache` normalized.
+  Secrets start empty. Focus/reconnect refetch is off to avoid overwriting edits with controller updates. Save
+  `transformClusterValues(values, true, touchedFields)`; whole record PATCH with `spec.cache` normalized.
 - Upgrade (`ClusterUpgradeAction`): `available_versions` (with `accelerator_type` when known), only versions above
   `spec.version` (`getUpgradeVersions`); PATCH `{...cluster, spec: {...cluster.spec, version}}`; error toasts
   `getErrorMessage`.
@@ -140,8 +138,8 @@ No field mapping; Foundation "Error toast path". Exceptions:
    - UI: `omitEmptyUntouched` keeps a touched empty `kubeconfig` / `ssh_private_key` and sends `""` (pinned by
      `use-cluster-form.test.tsx`).
    - API: `mergeExcludedFields` (`resource_proxy.go`) treats `""` as `isEmptyValue` and backfills the stored value.
-   - Effect: save succeeds, secret unchanged; clearing a kubeconfig is invalid anyway (10021), so the cost is a silent
-     no-op. Same mechanism as Foundation "Masked fields" item 2. Ticket: TBD
+   - Effect: saving succeeds but leaves the secret unchanged; an empty kubeconfig is invalid (10021). Same mechanism as
+   Foundation "Masked fields" item 2. Ticket: TBD
 4. A kubeconfig or ssh key with characters outside Latin-1 cannot be saved.
    - UI: `transformClusterValues` calls `btoa` on the raw text, which throws (pinned by
      `transform-cluster-values.test.ts`); submit fails with no field error.

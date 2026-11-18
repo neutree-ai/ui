@@ -2599,7 +2599,7 @@ describe("endpoint write payloads", () => {
     },
   );
 
-  it("blocks an edit of a paused CPU-only endpoint at validation", async () => {
+  it("blocks a paused CPU-only edit only on the replica minimum", async () => {
     const stored = storedEndpoint();
     stored.spec.cluster = "no-resources";
     stored.spec.replicas = { num: 0 };
@@ -2621,9 +2621,7 @@ describe("endpoint write payloads", () => {
     expect(formError(result, "spec.replicas.num")?.message).toBe(
       "endpoints.messages.replicasMustBeAtLeastOne",
     );
-    expect(formError(result, "spec.resources.accelerator")?.message).toBe(
-      "common.validation.required",
-    );
+    expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
   });
 
   it("drops API-supplied custom accelerator keys on an untouched edit", async () => {

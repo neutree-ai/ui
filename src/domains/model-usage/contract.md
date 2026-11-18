@@ -8,8 +8,8 @@ UI paths: `src/pages/model-usage/`; RPC hooks/types: `src/domains/api-key/`.
 
 ## Type
 
-`ApiUsageRecord`, `GroupUsageRecord` (`src/domains/api-key/types.ts`): server-owned, read-only, unmasked rows.
-`lib/usage-scope.ts:UsageFact` keeps the displayed subset. No secrets or edit payload.
+`ApiUsageRecord`, `GroupUsageRecord` (`src/domains/api-key/types.ts`): server-owned, read-only, unmasked.
+`lib/usage-scope.ts:UsageFact` keeps the displayed subset; no edit payload.
 
 | path | type | required/default | backend rule |
 |---|---|---|---|
@@ -47,10 +47,9 @@ these rows overlap. User rows exclude applications; key output lacks requests.
 | `p_direct` | true for direct department reads | department alone; group RPC also supports unassigned |
 | `p_user_id`, `p_service_account_id` | key reads for one owner | current or recorded owner |
 
-All-workspaces `_all_` omits `p_workspace`; empty workspace disables reads. Absent filters and false direct are
-omitted. Key reads send direct only with a department. No granularity, timezone, model, sort or page is sent.
-Grouping is daily by identity, workspace, endpoint type/name and model; order is date descending, identity/endpoint,
-then model for group rows.
+All-workspaces `_all_` omits workspace; blank disables reads. Absent filters/false direct are omitted; key direct needs
+a department. No granularity/timezone/model/sort/page parameters. Daily grouping: identity/workspace/endpoint/model;
+order date descending, identity/endpoint, then group model.
 
 | scope | group queries | key filters |
 |---|---|---|
@@ -62,9 +61,9 @@ then model for group rows.
 | User | UUID; originating group; department direct | user UUID and same group/direct filter |
 | Application | UUID; originating Team if present | account UUID and same group filter |
 
-Team/key reads run only for their tab, except null scope always reads keys. Comparison reads the equal-length
-preceding range. Refresh refetches current queries only. The UI filters exact `modelOf` equality; choices/shares keep
-all models. It aggregates rankings/series, selects immediate child departments and adds readable idle direct members.
+Team reads run for the Team/overview tabs and every global Platform view; key reads run for their tab or key detail.
+Null scope always reads keys. Comparison uses the preceding equal-length range; refresh refetches current queries. Exact
+`modelOf` filtering retains choices/shares; rankings add idle readable members and child departments.
 
 ## Permission scope
 
@@ -81,16 +80,14 @@ with `useHasPermission("org_unit:usage-read")`. `useOrgTree` supplies readable d
 | own personal keys | directly readable key history | Visible keys fallback |
 | service_account:read | directly readable application key history | Visible keys fallback |
 
-`get_usage_by_group` (`136`) checks global rights, `can_read_team_usage`, or `readable_usage_org_unit_ids`.
-Unassigned direct reads require global rights. `usage_filter_org_unit_ids` / `usage_filter_team_id` resolve names;
-unknown departments return no rows, unknown Teams can fail permission.
-`get_usage_by_dimension` (`138`) calls `can_read_key_usage` (`136`), which accepts owner or workspace usage rights.
-`can_read_api_key_owner_usage` and `can_read_service_account_usage` (`132`) accept self, service-account read or Team
-usage read on the account. Unscoped directly readable live keys use full `api_daily_usage` history; group-scoped
-reads use group rows only. Other keys expose rows intersecting `readable_usage_team_ids` or
-`readable_usage_org_unit_ids`. Deleted keys use recorded owner/workspace rights or those group rights.
-Filters only narrow access. `get_readable_usage_teams` (`136`) returns all Teams for global workspace usage rights,
-otherwise usage-readable Teams.
+`get_usage_by_group` (`136`) checks global rights, `can_read_team_usage`, or `readable_usage_org_unit_ids`. Unassigned
+direct reads require global rights. `usage_filter_org_unit_ids` / `usage_filter_team_id` resolve names; unknown
+departments return no rows, unknown Teams can fail permission. `get_usage_by_dimension` (`138`) calls
+`can_read_key_usage` (`136`), which accepts owner or workspace usage rights. `can_read_api_key_owner_usage` /
+`can_read_service_account_usage` (`132`): self, account read or Team usage read. Unscoped readable live keys use full
+`api_daily_usage`; scoped reads use group rows. Others intersect `readable_usage_team_ids` /
+`readable_usage_org_unit_ids`. Deleted keys use recorded owner/workspace or group rights. Filters only narrow access.
+`get_readable_usage_teams` (`136`) returns all Teams for global workspace usage rights, otherwise usage-readable Teams.
 
 ## Roles
 
@@ -100,20 +97,26 @@ otherwise usage-readable Teams.
   Shares use one decimal or 0% without a denominator; nonpositive previous usage shows no comparison.
 - Names: `groupFact` uses `displayName`; `keyFact` prefers display name, then technical name, or a deleted-key
   label with eight UUID characters; `ApiKeyLabel` displays it.
-- Null model groups use `EMPTY_VALUE` through `modelOf`; detail missing model/endpoint/type uses `EmptyValue`.
-  Null token splits count as zero. `formatTick` shows M/D; range labels use `formatRangeLabel`.
-- Empty results use `model_usage.empty` and zero totals; first loading chart uses a loader.
-  Comparison errors/placeholders hide change. No status role.
+- Null model groups use `EMPTY_VALUE` through `modelOf`; detail missing model/endpoint/type uses `EmptyValue`. Null
+  splits count as zero; ticks use M/D (`formatTick`), ranges use `formatRangeLabel`.
+- Empty: `model_usage.empty`, zero totals; first load has a loader; comparison failures hide change.
+  `useApplicationTeams` labels current readable Team/scenario membership; unreadable Teams use the kind fallback. No
+  status role.
 
 ## Scenes
 
-- List (`list.tsx:ModelUsageList`): summary, daily trend, model distribution and breakdown/Team/key/detail tabs.
-  Detail: date, identity, endpoint type/name, model, requests when available and token counts. No writes or export.
+- List (`list.tsx:ModelUsageList`): summary, trend, model distribution and overview/breakdown/Team/key/detail tabs.
+  Platform defaults to overview; others use their first allowed tab. Headings distinguish Teams/scenarios. Detail shows
+  date, identity, endpoint/model, requests and tokens; scopes with a key tab can switch to key detail. Detail grouping
+  stays local; switching resets its page. No writes or export.
 - Scope panel (`UsageScopePanel`): departments, Teams and scenarios, including Inactive Teams for past usage.
 - URL (`readUsageView`, `writeUsageView`): scope, group, owner UUID/label, model, tab, from/to. Reload restores it.
   Absent scope uses the permission default; rejected choices use Visible keys. Tests beside `usage-view.ts`.
 - Tables rank descending tokens; details sort descending date then usage. Paging is local, 10 ranking or 50 detail
   rows. Team shares are hidden for overlap. Key shares use the key total; a lower key total gets a coverage warning.
+
+`UsageScopeOverview` ranks departments, Teams and scenarios separately against the Platform total, eight rows per block
+plus remainder. Team/scenario shares may overlap; empty blocks distinguish no groups from no usage.
 
 ## Descriptions
 
@@ -125,7 +128,9 @@ Owner scopes have key/detail tabs and model series.
 
 - `useScopeUsage` retains the last complete result while parameters change so totals and breakdown never mix scopes
   (hook comment). Disabled queries return no rows; visible-page polling is every 60 seconds.
-- Folding/trends: `lib/usage-series.ts`, tests beside it; eight series plus Other bounds chart entries.
+- Folding/trends: `lib/usage-series.ts`, tests beside it. `daysIn` fills every selected date with zero-valued gaps.
+  Platform multiline trends add five Teams/scenarios plus a separate Other; these overlap departments and are excluded
+  from tooltip totals. Department/key series retain eight plus Other. Bars exclude the overlapping Team family.
 - Totals sum users/applications once; department totals exclude applications. Key coverage can be shorter (`136`).
 
 ## Error mapping
@@ -146,5 +151,5 @@ current-query error inline. Identity/comparison failures are excluded. Group err
 
 ## Open points
 
-Live API, licensed permissions, RPC row limits and bigint precision are unverified.
-Database timezone controls buckets; presets use browser days. Deployment timezone is unverified.
+Live API, licensing, RPC row limits and bigint precision are unverified. Database timezone controls buckets; presets use
+browser days. Deployment timezone is unverified.

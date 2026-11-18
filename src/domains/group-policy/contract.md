@@ -69,7 +69,8 @@ keys/exact duplicates, and maps empty arrays to null.
   empty string defers reading. `UserGroupModelAccess` hides denied reads, selects `model_access_workspace` or first
   visible workspace or null, and shows merged rules, workspace-filtered sources, activity and applying pools.
 - `TeamTokenPool` reads `get_group_token_pools` with `{p_kind:"Team",p_name}`; distinguishes absent/unreadable.
-  `ApiKeyGroupPolicyHint` shows applying policies and links to readable user detail.
+  `project` changes no-pool/unreadable text to scenario wording; RPC identity stays Team/name. `ApiKeyGroupPolicyHint`
+  shows applying policies and links to readable user detail.
 - YAML: `src/foundation/contract.md`, “YAML import and export”; no export option.
 
 ## Subject, scope and protection

@@ -813,7 +813,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const availableFullGpuCards = hasNodeResourceSnapshot
     ? nonVgpuPhysicalCardUsage.available
     : (selectedAcceleratorOption?.available ?? 0);
-  const fullGpuCardCapacity = availableFullGpuCards;
   const maxFullGpuCards =
     selectedAcceleratorOption?.total ?? maxAvailable.gpu.total;
   const hasRawAvailableVgpuMemoryMiB =
@@ -825,8 +824,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const rawAvailableVgpuCoreUnits = hasSelectedDeviceResources
     ? matchingDeviceAvailableResources.coreUnits
     : Number(selectedAcceleratorOption?.virtualizationCoreUnits || 0);
-  const availableVgpuMemoryMiB = rawAvailableVgpuMemoryMiB;
-  const availableVgpuCoreUnits = rawAvailableVgpuCoreUnits;
   const fallbackVgpuAvailablePhysicalCards =
     selectedAcceleratorOption?.available ?? maxAvailable.gpu.available;
   const fallbackVgpuMaxPhysicalCards =
@@ -874,7 +871,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
     const requestedCardCount = Math.max(1, boundaryRequestedCardCount);
     const perCardBoundaryMiB = Math.floor(
-      availableVgpuMemoryMiB / requestedCardCount,
+      rawAvailableVgpuMemoryMiB / requestedCardCount,
     );
     if (!Number.isFinite(perCardBoundaryMiB)) {
       return rawMaxMiB;
@@ -902,7 +899,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           )
         : "";
   const currentRequestAvailableCoreUnits = isVgpuAllocationMode
-    ? availableVgpuCoreUnits
+    ? rawAvailableVgpuCoreUnits
     : 0;
   const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
     ? vgpuCoreUnitsPerCard
@@ -1779,14 +1776,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         cpuPerReplica: normalizedResources?.cpu,
         memoryPerReplica: normalizedResources?.memory,
         requestedFullGpuCards,
-        fullGpuCardCapacity,
+        fullGpuCardCapacity: availableFullGpuCards,
         fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
         requestedVirtualCards,
         totalVirtualCardCapacity,
         requestedVgpuMemoryMiB,
-        availableVgpuMemoryMiB,
+        availableVgpuMemoryMiB: rawAvailableVgpuMemoryMiB,
         requestedVgpuCoreUnits,
-        availableVgpuCoreUnits,
+        availableVgpuCoreUnits: rawAvailableVgpuCoreUnits,
         memoryMiBPerCard: effectiveVgpuMemoryMiB,
         coreUnitsPerCard: vgpuCoreUnitsPerCard,
         vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
@@ -2382,7 +2379,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     : requestedFullGpuCards,
                   available: isVgpuAllocationMode
                     ? totalVirtualCardCapacity
-                    : fullGpuCardCapacity,
+                    : availableFullGpuCards,
                   total: maxFullGpuCards,
                 },
               ]
@@ -2392,7 +2389,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {
                   key: "vram" as const,
                   requested: requestedVgpuMemoryMiB / 1024,
-                  available: availableVgpuMemoryMiB / 1024,
+                  available: rawAvailableVgpuMemoryMiB / 1024,
                   total:
                     Number.isFinite(selectedVgpuMemoryTotalMiB) &&
                     selectedVgpuMemoryTotalMiB > 0
@@ -2402,7 +2399,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {
                   key: "core" as const,
                   requested: requestedVgpuCoreUnits,
-                  available: availableVgpuCoreUnits,
+                  available: rawAvailableVgpuCoreUnits,
                   total:
                     Number.isFinite(selectedVgpuCoreTotal) &&
                     selectedVgpuCoreTotal > 0
@@ -3443,7 +3440,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 : t("endpoints.messages.cardsAvailable", {
                                     count: isVgpuAllocationMode
                                       ? totalVirtualCardCapacity
-                                      : fullGpuCardCapacity,
+                                      : availableFullGpuCards,
                                   })}
                             </Badge>
                             <InfoHint
@@ -3473,7 +3470,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               ) : (
                                 `${formatOneDecimal(
                                   requestedFullGpuCards,
-                                )} / ${formatOneDecimal(fullGpuCardCapacity)}`
+                                )} / ${formatOneDecimal(availableFullGpuCards)}`
                               ),
                             },
                             ...(isVgpuAllocationMode
@@ -3490,7 +3487,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                       `${formatOneDecimal(
                                         requestedVgpuMemoryMiB / 1024,
                                       )} / ${formatOneDecimal(
-                                        availableVgpuMemoryMiB / 1024,
+                                        rawAvailableVgpuMemoryMiB / 1024,
                                       )}`
                                     ),
                                   },

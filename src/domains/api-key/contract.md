@@ -89,6 +89,9 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
 - YAML mechanics: `src/foundation/contract.md`, “YAML import and export”. API keys are exportable without secrets;
   generic ApiKey import attempts resource creation, whose proxy has no POST route.
 
+`TeamUsage.project` changes hints to scenario wording; the subject and RPC filters remain Team/name. `TeamDetailTabs`
+supplies `isProjectTeam`; usage fields, permissions and key writes are unchanged.
+
 ## Descriptions
 
 `CreateApiKeyForm` and `ApiKeyLimitsCard` require a trimmed-nonblank human name of at most 63 characters; transmitted
