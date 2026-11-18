@@ -411,6 +411,37 @@ describe("TeamsPanel", () => {
     );
   });
 
+  it("does not show a selected team that the filters hide", () => {
+    grant(...ALL);
+    render(<Panel />, "/o?team=guild");
+    screen.getByTestId("team-delete");
+    fireEvent.change(screen.getByTestId("organization-search"), {
+      target: { value: "nomatch" },
+    });
+    screen.getByTestId("teams-empty");
+    expect(screen.queryByTestId("team-delete")).toBeNull();
+    screen.getByText("organization.members.selectTeam");
+  });
+
+  it("clears a search that would hide the team just created", async () => {
+    grant("team:create");
+    writes.create.mockResolvedValue({ ...manual, id: 9 });
+    render(<Panel />);
+    fireEvent.change(screen.getByTestId("organization-search"), {
+      target: { value: "nomatch" },
+    });
+    fireEvent.click(screen.getByTestId("team-create-scenario"));
+    fireEvent.change(screen.getByTestId("team-form-name"), {
+      target: { value: "launch" },
+    });
+    fireEvent.click(screen.getByTestId("team-form-save"));
+    await waitFor(() =>
+      expect(
+        (screen.getByTestId("organization-search") as HTMLInputElement).value,
+      ).toBe(""),
+    );
+  });
+
   it("creates a scenario with the mark preset, which can be turned off", async () => {
     grant("team:create");
     writes.create.mockResolvedValue({ ...manual, id: 9 });
@@ -474,6 +505,78 @@ describe("TeamsPanel", () => {
     within(screen.getByTestId("team-3")).getByTestId("team-project-badge");
     // The selected Team's header shows the mark too.
     expect(screen.getAllByTestId("team-project-badge")).toHaveLength(2);
+  });
+
+  it("filters by team or scenario under one combined title", () => {
+    const project = {
+      ...manual,
+      id: 3,
+      metadata: {
+        name: "launch",
+        display_name: "Launch",
+        labels: { "neutree.ai/team-kind": "project" },
+      },
+    } as unknown as Team;
+    vi.mocked(useTeams).mockReturnValue({
+      data: { data: [synced, manual, project], total: 3 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useTeams>);
+    render(<Panel />);
+    screen.getByText("organization.teams.title");
+    expect(
+      screen.getByTestId("organization-search").getAttribute("placeholder"),
+    ).toBe("organization.filters.searchTeams");
+
+    const options = () =>
+      screen.getAllByRole("option").map((option) => option.textContent);
+    const open = () =>
+      fireEvent.keyDown(screen.getByTestId("team-kind-filter"), {
+        key: "Enter",
+      });
+    open();
+    // All, then Teams, then Scenarios.
+    expect(options()).toEqual([
+      "organization.filters.allTeamKinds",
+      "organization.filters.nonProjects",
+      "organization.filters.projectsOnly",
+    ]);
+    fireEvent.click(
+      screen.getByRole("option", { name: "organization.filters.projectsOnly" }),
+    );
+    expect(
+      within(screen.getByTestId("team-list")).getAllByRole("button"),
+    ).toHaveLength(1);
+    open();
+    fireEvent.click(
+      screen.getByRole("option", { name: "organization.filters.nonProjects" }),
+    );
+    expect(
+      within(screen.getByTestId("team-list")).getAllByRole("button"),
+    ).toHaveLength(2);
+  });
+
+  it("words the member and delete texts of a scenario as a scenario", () => {
+    const project = {
+      ...manual,
+      id: 3,
+      metadata: {
+        name: "launch",
+        display_name: "Launch",
+        labels: { "neutree.ai/team-kind": "project" },
+      },
+    } as unknown as Team;
+    vi.mocked(useTeams).mockReturnValue({
+      data: { data: [manual, project], total: 2 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useTeams>);
+    grant(...ALL);
+    render(<Panel />, "/o?team=launch");
+    screen.getByTitle("organization.teams.removeMemberProject");
+    fireEvent.click(screen.getByTestId("team-delete"));
+    screen.getByText("organization.teams.deleteTitleProject");
+    screen.getByText("organization.teams.deleteHintProject");
   });
 
   it("shows a taken name as a readable error", async () => {

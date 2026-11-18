@@ -24,6 +24,7 @@ import {
   trailingRange,
 } from "@/foundation/components/DateRangePicker";
 import { ListPage } from "@/foundation/components/ListPage";
+import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import {
   useHasGlobalPermission,
   useHasPermission,
@@ -37,24 +38,32 @@ import {
   ModelShare,
   UsageSummary,
 } from "@/pages/model-usage/components/UsageOverview";
+import {
+  type OverviewRow,
+  UsageScopeOverview,
+} from "@/pages/model-usage/components/UsageScopeOverview";
 import { UsageScopePanel } from "@/pages/model-usage/components/UsageScopePanel";
 import {
   DetailTable,
   UsageTable,
 } from "@/pages/model-usage/components/UsageTables";
 import {
+  APPLICATIONS_KEY,
   type BreakdownLabels,
   breakdownLabelKeys,
   groupOf,
   isOwnerScope,
   scopeTrail,
+  UNASSIGNED_KEY,
   type UsageScope,
 } from "@/pages/model-usage/lib/usage-scope";
 import {
   buildTrend,
+  daysIn,
   foldRemainder,
+  OTHER_SERIES_KEY,
+  OTHER_TEAMS_SERIES_KEY,
   type TrendMetric,
-  type UsageSeries,
 } from "@/pages/model-usage/lib/usage-series";
 import {
   readUsageView,
@@ -62,6 +71,7 @@ import {
   type UsageView,
   writeUsageView,
 } from "@/pages/model-usage/lib/usage-view";
+import { useApplicationTeams } from "@/pages/model-usage/lib/use-application-teams";
 import { useScopeCollapsed } from "@/pages/model-usage/lib/use-scope-collapsed";
 import { useScopeUsage } from "@/pages/model-usage/lib/use-scope-usage";
 
@@ -72,6 +82,7 @@ const DEFAULT_RANGE_DAYS = 30;
 // It bounds the tooltip row count: at 8 the tooltip is ~200px inside the 240px
 // chart card, and every extra series pushes it closer to spilling out.
 const TOP_K = 8;
+const TEAM_TOP_K = 5;
 // The model filter's "every model" value.
 const ALL_MODELS = "__all__";
 const PLATFORM: UsageScope = { type: "platform" };
@@ -129,7 +140,7 @@ export const ModelUsageList = () => {
   // The range to come back to after drilling into a day, so the way back is
   // whatever the reader was looking at — a preset or their own custom window.
   const [lastRange, setLastRange] = useState<DateRange | null>(null);
-  const pickedTab = view.tab ?? "breakdown";
+  const pickedTab = view.tab;
   const setTab = useCallback(
     (next: UsageTab) => updateView({ tab: next }),
     [updateView],
@@ -220,13 +231,20 @@ export const ModelUsageList = () => {
     if (scope.type === "applications") return ["breakdown", "detail"];
     if (scope.type === "team") return ["breakdown", "apiKey", "detail"];
     return [
+      ...(scope.type === "platform" ? (["overview"] as const) : []),
       "breakdown",
       ...(canReadAllGroups ? (["team"] as const) : []),
       "apiKey",
       "detail",
     ];
   }, [scope, canReadAllGroups]);
-  const tab = tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  const tab = pickedTab && tabs.includes(pickedTab) ? pickedTab : tabs[0];
+  // The daily detail lists the scope's users and applications, or, where the
+  // scope has an API keys tab, its keys. A key reader's detail is by key.
+  const [pickedDetailBy, setDetailBy] = useState<"subject" | "key">("subject");
+  const canDetailByKey = !!scope && tabs.includes("apiKey");
+  const detailByKey =
+    canDetailByKey && pickedDetailBy === "key" && tab === "detail";
   // Usage by API key carries no request count.
   const metric: TrendMetric = scope ? pickedMetric : "tokens";
   const deletedKeyLabel = useCallback(
@@ -236,11 +254,16 @@ export const ModelUsageList = () => {
   const breakdownLabels = useMemo<BreakdownLabels>(
     () => ({
       unassigned: t("model_usage.scope.unassigned"),
-      applications: t("model_usage.scope.applications"),
+      applications: t("model_usage.scope.applicationsNoDepartment"),
       application: t("model_usage.group.kinds.ServiceAccount"),
     }),
     [t],
   );
+
+  // Only a global reader reads the platform's Team usage.
+  const showTeamChart = scope?.type === "platform" && canReadAllGroups;
+
+  const applicationTeams = useApplicationTeams(hasScopes);
 
   const {
     models,
@@ -253,7 +276,9 @@ export const ModelUsageList = () => {
     breakdownSeries,
     keyFacts,
     keyRows,
+    teamFacts,
     teamRows,
+    teamsLoading: teamRowsLoading,
     loading,
     error,
     refetch,
@@ -262,12 +287,13 @@ export const ModelUsageList = () => {
     range,
     model,
     scope,
-    teamsOpen: tab === "team",
-    keysOpen: tab === "apiKey",
+    teamsOpen: tab === "team" || tab === "overview" || showTeamChart,
+    keysOpen: tab === "apiKey" || detailByKey,
     roots,
     nodesByName,
     teamsByName,
     breakdownLabels,
+    applicationTeams,
     deletedKeyLabel,
   });
 
@@ -318,25 +344,105 @@ export const ModelUsageList = () => {
 
   // The chart splits the scope like the first tab: departments and users,
   // a user's models, or a key reader's API keys.
+  const days = useMemo(() => daysIn(range), [range]);
+  // At the platform, the line view adds the Teams and scenarios to the
+  // departments. They overlap, so the stacked bars keep to departments.
+  const mixedLines = showTeamChart && chartType === "line" && !isSingleDay;
   const chart = useMemo(() => {
-    const [base, otherKey, trendOf] = scope
-      ? ([
-          // Members without usage have nothing to draw.
-          breakdownSeries.filter((s) => s.total > 0),
-          "model_usage.daily.otherGroups",
-          (series: UsageSeries[]) =>
-            buildTrend(breakdown, series, (r) => r.entry, metric),
-        ] as const)
-      : ([
-          keyRows,
-          "model_usage.daily.otherKeys",
-          (series: UsageSeries[]) =>
-            buildTrend(keyFacts, series, (r) => r.who.key),
-        ] as const);
-    const series = foldRemainder(base, TOP_K, (n) => t(otherKey, { n }));
-    return { series, trend: trendOf(series) };
-  }, [scope, breakdownSeries, breakdown, keyRows, keyFacts, metric, t]);
+    if (!scope) {
+      const series = foldRemainder(keyRows, TOP_K, (n) =>
+        t("model_usage.daily.otherKeys", { n }),
+      );
+      return {
+        series,
+        trend: buildTrend(keyFacts, series, (r) => r.who.key, "tokens", days),
+      };
+    }
+    // Members without usage have nothing to draw.
+    const base = breakdownSeries
+      .filter((s) => s.total > 0)
+      .map((s) =>
+        mixedLines && s.key !== UNASSIGNED_KEY && s.key !== APPLICATIONS_KEY
+          ? {
+              ...s,
+              name: `${s.name}${t("model_usage.trend.departmentSuffix")}`,
+            }
+          : s,
+      );
+    const series = foldRemainder(base, TOP_K, (n) =>
+      t("model_usage.daily.otherGroups", { n }),
+    );
+    const trend = buildTrend(breakdown, series, (r) => r.entry, metric, days);
+    if (!mixedLines) return { series, trend };
+
+    const teamSeries = foldRemainder(
+      teamRows
+        .filter((row) => row.total > 0)
+        .map((row) => {
+          const team = teamsByName.get(row.key);
+          const suffix =
+            team && isProjectTeam(team)
+              ? t("model_usage.trend.scenarioSuffix")
+              : t("model_usage.trend.teamSuffix");
+          return {
+            ...row,
+            key: `team:${row.key}`,
+            name: `${row.name}${suffix}`,
+          };
+        }),
+      TEAM_TOP_K,
+      (n) => t("model_usage.trend.otherTeams", { n }),
+    ).map((s) => ({
+      ...s,
+      key: s.key === OTHER_SERIES_KEY ? OTHER_TEAMS_SERIES_KEY : s.key,
+      excludeFromTotal: true,
+    }));
+    const teamTrend = buildTrend(
+      teamFacts,
+      teamSeries.map((s) =>
+        s.key === OTHER_TEAMS_SERIES_KEY ? { ...s, key: OTHER_SERIES_KEY } : s,
+      ),
+      (r) => `team:${r.who.key}`,
+      metric,
+      days,
+    );
+    // Both trends cover the same days, so the points line up by index.
+    return {
+      series: [...series, ...teamSeries],
+      trend: trend.map((point, i) => {
+        const {
+          date: _date,
+          [OTHER_SERIES_KEY]: other,
+          ...rest
+        } = teamTrend[i];
+        return {
+          ...point,
+          ...rest,
+          ...(other === undefined ? {} : { [OTHER_TEAMS_SERIES_KEY]: other }),
+        };
+      }),
+    };
+  }, [
+    scope,
+    mixedLines,
+    breakdownSeries,
+    breakdown,
+    keyRows,
+    keyFacts,
+    teamRows,
+    teamFacts,
+    teamsByName,
+    metric,
+    days,
+    t,
+  ]);
   const labelKeys = breakdownLabelKeys(scope);
+  const mixedTitle = t(
+    metric === "requests"
+      ? "model_usage.trend.titleRequestsMixed"
+      : "model_usage.trend.titleMixed",
+  );
+  const barHint = showTeamChart && chartType === "bar" && !isSingleDay;
 
   const keyTotal = keyRows.reduce((sum, r) => sum + r.total, 0);
   // Usage recorded before per-key attribution, or by keys deleted since, is in
@@ -345,11 +451,11 @@ export const ModelUsageList = () => {
 
   const detailRows = useMemo(
     () =>
-      [...facts].sort(
+      [...(detailByKey ? keyFacts : facts)].sort(
         (a, b) =>
           b.date.localeCompare(a.date) || (b.usage ?? 0) - (a.usage ?? 0),
       ),
-    [facts],
+    [detailByKey, keyFacts, facts],
   );
 
   const trail = useMemo(
@@ -359,10 +465,60 @@ export const ModelUsageList = () => {
         nodesByName,
         nodesById,
         platformLabel: t("model_usage.scope.platform"),
-        applicationsLabel: breakdownLabels.applications,
+        applicationsLabel: t("model_usage.scope.applications"),
       }),
-    [scope, canReadAllGroups, nodesByName, nodesById, breakdownLabels, t],
+    [scope, canReadAllGroups, nodesByName, nodesById, t],
   );
+
+  // What the page is counting, named in the heading: the breadcrumb leads
+  // away from the scope, so it cannot be the only place that says which it is.
+  const heading = useMemo(() => {
+    const title = t("model_usage.title");
+    if (!scope || scope.type === "platform") return title;
+    const named = (kind: string, name: string) =>
+      t(`model_usage.heading.${kind}`, { title, name });
+    switch (scope.type) {
+      case "applications":
+        return named("applications", breakdownLabels.applications);
+      case "orgUnit":
+        return named(
+          "department",
+          nodesByName.get(scope.name)?.label ?? scope.name,
+        );
+      case "team": {
+        const team = teamsByName.get(scope.name);
+        return named(
+          team && isProjectTeam(team) ? "scenario" : "team",
+          scope.label,
+        );
+      }
+      case "user":
+        return named("user", scope.label);
+      case "application":
+        return named("application", scope.label);
+    }
+  }, [scope, nodesByName, teamsByName, breakdownLabels, t]);
+
+  // The platform's Teams and scenarios, split by the Team's scenario flag.
+  const overview = useMemo(() => {
+    const teams: OverviewRow[] = [];
+    const scenarios: OverviewRow[] = [];
+    for (const row of teamRows) {
+      const team = teamsByName.get(row.key);
+      (team && isProjectTeam(team) ? scenarios : teams).push({
+        ...row,
+        target: row.target ?? null,
+      });
+    }
+    return { teams, scenarios };
+  }, [teamRows, teamsByName]);
+
+  // Whether the platform has none at all, as opposed to none with usage.
+  const noTeams =
+    !teamsLoading &&
+    ![...teamsByName.values()].some((team) => !isProjectTeam(team));
+  const noScenarios =
+    !teamsLoading && ![...teamsByName.values()].some(isProjectTeam);
 
   // The tables reset to page 1 when the scope changes — and only then. The
   // usage RPC polls every minute and hands back new arrays, which must not
@@ -388,6 +544,7 @@ export const ModelUsageList = () => {
   };
 
   const tabLabel: Record<UsageTab, string> = {
+    overview: t("model_usage.tabs.overview"),
     breakdown: labelKeys.tab ? t(labelKeys.tab) : "",
     team: t("model_usage.tabs.teams"),
     apiKey: t("model_usage.tabs.apiKeys"),
@@ -413,6 +570,8 @@ export const ModelUsageList = () => {
           seriesLabel={t(labelKeys.series)}
           chartType={chartType}
           onChartTypeChange={setChartType}
+          title={mixedLines ? mixedTitle : undefined}
+          hint={barHint ? t("model_usage.trend.barHint") : undefined}
           metric={metric}
           onMetricChange={scope ? setMetric : undefined}
           hidden={hidden}
@@ -445,6 +604,20 @@ export const ModelUsageList = () => {
               ))}
             </TabsList>
           </div>
+          <TabsContent value="overview" className="mt-0">
+            <UsageScopeOverview
+              departments={breakdownSeries}
+              teams={overview.teams}
+              scenarios={overview.scenarios}
+              total={totals.total}
+              teamsLoading={teamRowsLoading}
+              noTeams={noTeams}
+              noScenarios={noScenarios}
+              onOpen={changeScope}
+              onViewDepartments={() => setTab("breakdown")}
+              onViewTeams={() => setTab("team")}
+            />
+          </TabsContent>
           <TabsContent value="breakdown" className="mt-0">
             <UsageTable
               nameHeader={labelKeys.column ? t(labelKeys.column) : ""}
@@ -485,10 +658,30 @@ export const ModelUsageList = () => {
             />
           </TabsContent>
           <TabsContent value="detail" className="mt-0">
+            {canDetailByKey ? (
+              <div className="px-4 pt-3">
+                <SegmentedControl<"subject" | "key">
+                  ariaLabel={t("model_usage.detail.groupBy")}
+                  value={pickedDetailBy}
+                  onValueChange={setDetailBy}
+                  items={[
+                    {
+                      value: "subject",
+                      label: t("model_usage.detail.bySubject", {
+                        who: t(labelKeys.who),
+                      }),
+                    },
+                    { value: "key", label: t("model_usage.detail.byKey") },
+                  ]}
+                />
+              </div>
+            ) : null}
             <DetailTable
               rows={detailRows}
-              resetKey={scopeKey}
-              whoHeader={t(labelKeys.who)}
+              resetKey={`${scopeKey}|${detailByKey}`}
+              whoHeader={
+                detailByKey ? t("model_usage.apiKey") : t(labelKeys.who)
+              }
             />
           </TabsContent>
         </Tabs>
@@ -498,7 +691,7 @@ export const ModelUsageList = () => {
 
   return (
     <ListPage
-      title={t("model_usage.title")}
+      title={heading}
       canCreate={false}
       breadcrumb={false}
       extra={

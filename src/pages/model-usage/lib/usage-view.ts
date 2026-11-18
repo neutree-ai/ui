@@ -12,7 +12,7 @@ import {
  * id.
  */
 
-const TABS = ["breakdown", "team", "apiKey", "detail"] as const;
+const TABS = ["overview", "breakdown", "team", "apiKey", "detail"] as const;
 export type UsageTab = (typeof TABS)[number];
 
 export type UsageView = {

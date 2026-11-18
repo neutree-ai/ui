@@ -109,6 +109,21 @@ describe("FeaturePicker input addons", () => {
   });
 });
 
+// jsdom does not enforce `step`, so the attribute is the observable contract:
+// browsers reject decimals in a number input unless step allows them.
+describe("FeaturePicker numeric inputs", () => {
+  it.each([
+    { valueType: "number", step: "any" },
+    { valueType: "int", step: "1" },
+  ] as const)("a $valueType input has step $step", ({ valueType, step }) => {
+    renderPicker({
+      features: [imageFeature({ input: { value_type: valueType } })],
+    });
+
+    expect(screen.getByLabelText("image").getAttribute("step")).toBe(step);
+  });
+});
+
 // A feature's description lives behind the same hover hint InfoHint offers
 // elsewhere, so the label row stays one line.
 describe("FeaturePicker feature descriptions", () => {

@@ -178,7 +178,14 @@ function GroupTotalsSection({
  * Usage of one Team in every workspace: its members' personal keys and its
  * applications' keys, then split by member and by application.
  */
-export function TeamUsage({ teamName }: { teamName: string }) {
+export function TeamUsage({
+  teamName,
+  project = false,
+}: {
+  teamName: string;
+  /** A scenario: its texts say scenario instead of team. */
+  project?: boolean;
+}) {
   const { t } = useTranslation();
   const [range, setRange] = useState<DateRange>(() => trailingRange(30));
   const team = useGroupUsage(ALL_WORKSPACES, range.start, range.end, "Team", [
@@ -212,7 +219,11 @@ export function TeamUsage({ teamName }: { teamName: string }) {
     <div className="space-y-3" data-testid="team-usage">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {t("api_keys.team.usageHint")}
+          {t(
+            project
+              ? "api_keys.team.usageHintProject"
+              : "api_keys.team.usageHint",
+          )}
         </p>
         <DateRangePicker className="h-8" value={range} onChange={setRange} />
       </div>
@@ -224,7 +235,11 @@ export function TeamUsage({ teamName }: { teamName: string }) {
       />
       <GroupTotalsSection
         title={t("api_keys.team.byMember")}
-        hint={t("api_keys.team.byMemberHint")}
+        hint={t(
+          project
+            ? "api_keys.team.byMemberHintProject"
+            : "api_keys.team.byMemberHint",
+        )}
         firstColumn={t("api_keys.team.member")}
         rows={byMember}
         error={members.error}
@@ -233,7 +248,11 @@ export function TeamUsage({ teamName }: { teamName: string }) {
       />
       <GroupTotalsSection
         title={t("api_keys.team.byApplication")}
-        hint={t("api_keys.team.byApplicationHint")}
+        hint={t(
+          project
+            ? "api_keys.team.byApplicationHintProject"
+            : "api_keys.team.byApplicationHint",
+        )}
         firstColumn={t("api_keys.team.application")}
         rows={byApp}
         error={apps.error}

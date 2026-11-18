@@ -1,6 +1,11 @@
 import { ChevronDown } from "lucide-react";
-import { useId, useState } from "react";
-import type { Control, FieldValues } from "react-hook-form";
+import { useId, useLayoutEffect, useState } from "react";
+import {
+  type Control,
+  type FieldValues,
+  get,
+  useFormState,
+} from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ModelSpec } from "@/domains/endpoint/types";
@@ -17,6 +22,11 @@ type Props = {
   className?: string;
 };
 
+const OPTIONAL_MODEL_ERROR_PATHS = [
+  "spec.model.version",
+  "spec.model.file",
+] as const;
+
 /**
  * Version and file are optional refinements of a registry model. Keep them out
  * of the default form scan, while expanding automatically when an existing
@@ -31,10 +41,21 @@ export function ModelOptionalFields({
 }: Props) {
   const { t } = useTranslation();
   const contentId = useId();
+  const { errors } = useFormState({
+    control,
+    name: [...OPTIONAL_MODEL_ERROR_PATHS],
+  });
+  const hasError = OPTIONAL_MODEL_ERROR_PATHS.some((path) =>
+    Boolean(get(errors, path)),
+  );
   const [expandedOverride, setExpandedOverride] = useState<boolean | null>(
     null,
   );
   const expanded = expandedOverride ?? Boolean(values.version || values.file);
+
+  useLayoutEffect(() => {
+    if (hasError) setExpandedOverride(true);
+  }, [hasError]);
 
   return (
     <div
@@ -63,29 +84,31 @@ export function ModelOptionalFields({
         />
       </Button>
 
-      {expanded && (
-        <div
-          id={contentId}
-          className={cn("grid grid-cols-1 sm:grid-cols-2", FORM_GRID_GAP_CLASS)}
+      <div
+        id={contentId}
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-2",
+          FORM_GRID_GAP_CLASS,
+          !expanded && "hidden",
+        )}
+      >
+        <FormFieldGroup
+          control={control}
+          name="spec.model.version"
+          label={t("endpoints.fields.modelVersion")}
+          description={t("endpoints.wizard.model.versionHint")}
         >
-          <FormFieldGroup
-            control={control}
-            name="spec.model.version"
-            label={t("endpoints.fields.modelVersion")}
-            description={t("endpoints.wizard.model.versionHint")}
-          >
-            <Input onInput={onVersionInput} />
-          </FormFieldGroup>
-          <FormFieldGroup
-            control={control}
-            name="spec.model.file"
-            label={t("endpoints.fields.modelFile")}
-            description={t("endpoints.wizard.model.fileHint")}
-          >
-            <Input onInput={onFileInput} />
-          </FormFieldGroup>
-        </div>
-      )}
+          <Input onInput={onVersionInput} />
+        </FormFieldGroup>
+        <FormFieldGroup
+          control={control}
+          name="spec.model.file"
+          label={t("endpoints.fields.modelFile")}
+          description={t("endpoints.wizard.model.fileHint")}
+        >
+          <Input onInput={onFileInput} />
+        </FormFieldGroup>
+      </div>
     </div>
   );
 }

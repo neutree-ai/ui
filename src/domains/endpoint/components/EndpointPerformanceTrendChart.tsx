@@ -40,6 +40,8 @@ type PerformanceTrendChartProps = {
   ariaLabel: string;
   series: PerformanceTrendSeries[];
   lines: PerformanceTrendLine[];
+  start?: number | null;
+  end?: number | null;
   window: PerformanceWindow;
   status: string;
 };
@@ -48,6 +50,8 @@ export function EndpointPerformanceTrendChart({
   ariaLabel,
   series,
   lines,
+  start,
+  end,
   window,
   status,
 }: PerformanceTrendChartProps) {
@@ -71,7 +75,13 @@ export function EndpointPerformanceTrendChart({
     );
   }
 
-  if (status !== "ok" || rows.length === 0) {
+  if (
+    status !== "ok" ||
+    rows.length === 0 ||
+    start == null ||
+    end == null ||
+    end <= start
+  ) {
     const message =
       status === "unavailable" || status === "not_configured"
         ? t("endpoints.performance.trendUnavailable")
@@ -85,7 +95,7 @@ export function EndpointPerformanceTrendChart({
     );
   }
 
-  const ticks = performanceTrendTicks(rows);
+  const ticks = performanceTrendTicks(start, end);
 
   if (leftLines.length > 0 && rightLines.length > 0) {
     return (
@@ -94,6 +104,8 @@ export function EndpointPerformanceTrendChart({
         leftLines={leftLines}
         rightLines={rightLines}
         rows={rows}
+        start={start}
+        end={end}
         ticks={ticks}
         window={window}
       />
@@ -103,7 +115,13 @@ export function EndpointPerformanceTrendChart({
   return (
     <div aria-label={ariaLabel} role="img">
       <div className="h-[104px]">
-        <TrendPlot lines={lines} rows={rows} window={window} />
+        <TrendPlot
+          end={end}
+          lines={lines}
+          rows={rows}
+          start={start}
+          window={window}
+        />
       </div>
       <TrendTimeline
         leftPadding={0}
@@ -121,6 +139,8 @@ function SplitLatencyTrend({
   leftLines,
   rightLines,
   rows,
+  start,
+  end,
   ticks,
   window,
 }: {
@@ -128,16 +148,26 @@ function SplitLatencyTrend({
   leftLines: PerformanceTrendLine[];
   rightLines: PerformanceTrendLine[];
   rows: ReturnType<typeof performanceTrendRows>;
+  start: number;
+  end: number;
   ticks: number[];
   window: PerformanceWindow;
 }) {
   return (
     <div aria-label={ariaLabel} role="img">
-      <SplitLatencyRow lines={leftLines} rows={rows} window={window} />
+      <SplitLatencyRow
+        end={end}
+        lines={leftLines}
+        rows={rows}
+        start={start}
+        window={window}
+      />
       <SplitLatencyRow
         bordered
+        end={end}
         lines={rightLines}
         rows={rows}
+        start={start}
         window={window}
       />
       <TrendTimeline
@@ -153,11 +183,15 @@ function SplitLatencyTrend({
 
 function SplitLatencyRow({
   bordered = false,
+  start,
+  end,
   lines,
   rows,
   window,
 }: {
   bordered?: boolean;
+  start: number;
+  end: number;
   lines: PerformanceTrendLine[];
   rows: ReturnType<typeof performanceTrendRows>;
   window: PerformanceWindow;
@@ -178,18 +212,29 @@ function SplitLatencyRow({
         {first.groupLabel}
       </span>
       <div className="h-[58px] min-w-0">
-        <TrendPlot lines={lines} rows={rows} window={window} split />
+        <TrendPlot
+          end={end}
+          lines={lines}
+          rows={rows}
+          split
+          start={start}
+          window={window}
+        />
       </div>
     </div>
   );
 }
 
 function TrendPlot({
+  start,
+  end,
   lines,
   rows,
   window,
   split = false,
 }: {
+  start: number;
+  end: number;
   lines: PerformanceTrendLine[];
   rows: ReturnType<typeof performanceTrendRows>;
   window: PerformanceWindow;
@@ -226,7 +271,8 @@ function TrendPlot({
         )}
         <XAxis
           dataKey="timestamp"
-          domain={["dataMin", "dataMax"]}
+          allowDataOverflow
+          domain={[start, end]}
           hide
           type="number"
         />

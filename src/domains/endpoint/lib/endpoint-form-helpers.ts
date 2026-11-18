@@ -597,12 +597,6 @@ export function validateEndpointValues(
 
   const accelerator = spec.resources?.accelerator;
   const hasAccelerator = Boolean(accelerator?.type && accelerator?.product);
-  if (!hasAccelerator) {
-    errors["spec.resources.accelerator"] = {
-      type: "manual",
-      message: requiredMessage,
-    };
-  }
   if (hasAccelerator && context.clusterType) {
     const gpuRaw = spec.resources?.gpu;
     if (gpuRaw !== undefined && gpuRaw !== null && gpuRaw !== "") {

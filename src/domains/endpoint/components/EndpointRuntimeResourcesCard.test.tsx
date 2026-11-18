@@ -547,6 +547,19 @@ describe("EndpointRuntimeResourcesCard", () => {
     screen.getByText(/observations\.reservedOfPhysical:8\.0,80\.0/);
   });
 
+  it("omits the Endpoint qualifier when no other Endpoint shares the GPU", () => {
+    render(
+      <EndpointRuntimeResourcesCard
+        endpointName="endpoint-abc"
+        resources={withReplicas(makeReplica())}
+      />,
+    );
+
+    const legend = screen.getByTestId("allocation-ownership-legend");
+    expect(within(legend).queryByText("observations.thisEndpoint")).toBeNull();
+    within(legend).getByText("8.0 GiB observations.reservedLower");
+  });
+
   it("keeps known composition when Actual usage is unavailable", () => {
     render(
       <EndpointRuntimeResourcesCard

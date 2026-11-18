@@ -30,6 +30,7 @@ import {
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokens } from "@/foundation/lib/unit";
 import {
+  isOtherSeries,
   OTHER_SERIES_KEY,
   type TrendMetric,
   type UsageSeries,
@@ -89,7 +90,7 @@ const StripePatterns = ({ soft = false }: { soft?: boolean }) => (
 // trend is blue in the single-day bars too. "Other" is always the neutral mark.
 function seriesMark(series: UsageSeries[], key: string): ChartMark {
   const index = series.findIndex((s) => s.key === key);
-  if (key === OTHER_SERIES_KEY || index < 0) return chartMoreMark();
+  if (isOtherSeries(key) || index < 0) return chartMoreMark();
   if (index >= MAX_SVG_MARKS) return chartMoreMark();
   return chartCategoryMark(index);
 }
@@ -161,11 +162,15 @@ export const TrendTooltip = ({
   // individual keys for a rank.
   const ordered = [
     ...rows
-      .filter((p) => String(p.dataKey) !== OTHER_SERIES_KEY)
+      .filter((p) => !isOtherSeries(String(p.dataKey)))
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0)),
-    ...rows.filter((p) => String(p.dataKey) === OTHER_SERIES_KEY),
+    ...rows.filter((p) => isOtherSeries(String(p.dataKey))),
   ];
-  const total = ordered.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const counted = ordered.filter(
+    (p) => !meta.get(String(p.dataKey))?.excludeFromTotal,
+  );
+  const total = counted.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  const partial = counted.length < ordered.length;
   return (
     <div className="rounded border bg-popover px-2 py-1 text-xs shadow">
       <div className="font-medium mb-1">{label}</div>
@@ -199,7 +204,13 @@ export const TrendTooltip = ({
         );
       })}
       <div className="mt-1 flex border-t pt-1">
-        <span>{t("model_usage.daily.tooltip.total")}</span>
+        <span>
+          {t(
+            partial
+              ? "model_usage.daily.tooltip.totalDepartments"
+              : "model_usage.daily.tooltip.total",
+          )}
+        </span>
         <span className="ml-auto font-mono">{formatMetric(metric, total)}</span>
       </div>
     </div>
@@ -262,6 +273,8 @@ export const UsageChart = ({
   seriesLabel,
   chartType,
   onChartTypeChange,
+  title: titleOverride,
+  hint,
   metric,
   onMetricChange,
   hidden,
@@ -279,6 +292,10 @@ export const UsageChart = ({
   seriesLabel: string;
   chartType: "line" | "bar";
   onChartTypeChange: (chartType: "line" | "bar") => void;
+  /** Replaces the trend's title. */
+  title?: string;
+  /** A note under the title. */
+  hint?: string;
   /** What the trend counts. */
   metric: TrendMetric;
   /** Absent when the rows carry no request count (usage by API key). */
@@ -325,9 +342,12 @@ export const UsageChart = ({
   const titleKey = isSingleDay
     ? "model_usage.daily.titleDayByGroup"
     : TREND_TITLE_KEYS[metric];
-  const title = t(titleKey, { kind: seriesLabel });
+  const title = titleOverride ?? t(titleKey, { kind: seriesLabel });
 
-  const isEmpty = isSingleDay ? dayBars.length === 0 : trendData.length === 0;
+  // Days of the range count as data only when some series has a line.
+  const isEmpty = isSingleDay
+    ? dayBars.length === 0
+    : trendData.length === 0 || series.length === 0;
 
   // Recharts hands the chart state to onClick; the picked day is activeLabel.
   const handleChartClick = (state: { activeLabel?: string | number }) => {
@@ -396,7 +416,7 @@ export const UsageChart = ({
 
   return (
     <Card className="p-4">
-      <div className="flex items-baseline justify-between mb-2 gap-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className="text-sm font-medium">{title}</span>
           {isSingleDay ? (
@@ -418,7 +438,7 @@ export const UsageChart = ({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {/* The single-day chart is a distribution across API keys (or
               models), not a trend, so there is nothing to switch. */}
           {/* The single-day chart splits tokens into prompt and completion;
@@ -426,6 +446,7 @@ export const UsageChart = ({
           {isSingleDay || !onMetricChange ? null : (
             <SegmentedControl
               ariaLabel={t("model_usage.chart.metric")}
+              className="flex-nowrap"
               value={metric}
               items={[
                 { value: "tokens", label: t("model_usage.chart.tokens") },
@@ -462,6 +483,9 @@ export const UsageChart = ({
           )}
         </div>
       </div>
+      {hint && !isSingleDay ? (
+        <p className="mb-2 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
       <div className="h-[240px]">
         {isLoading && isEmpty ? (
           <div className="flex h-full items-center justify-center">

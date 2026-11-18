@@ -1265,11 +1265,11 @@
 			"nodes": "nodes",
 			"fullGpu": "Full Card",
 			"vgpu": "Virtual Card",
-			"physicalGpuCount": "Full cards per replica",
+			"physicalGpuCount": "Full cards",
 			"physicalGpu": "Card Count",
 			"perReplica": "Per Replica",
 			"perCard": "per card",
-			"vgpuCount": "Virtual cards per replica",
+			"vgpuCount": "Virtual cards",
 			"npuCount": "NPU Count",
 			"modelName": "Model Name",
 			"modelVersion": "Model Version",
@@ -1330,7 +1330,7 @@
 			"allocatedResources": "Allocated Resources",
 			"clusterDeviceResources": "Cluster Resources",
 			"resourceSummary": "Resource Summary",
-			"replicaResources": "Replica Resources",
+			"replicaResources": "Per replica resources",
 			"gpuAllocation": "GPU Allocation & Usage",
 			"weights": "Weights & Cache",
 			"monitoringMetrics": "Monitoring Metrics",
@@ -1428,8 +1428,8 @@
 				"editTitle": "Review changes",
 				"edit": "Edit",
 				"redeployHint": "Saving these changes will redeploy the endpoint.",
-				"model": "{{model}} · {{count}} replica",
-				"model_other": "{{model}} · {{count}} replicas",
+				"model": "{{model}}",
+				"model_other": "{{model}}",
 				"resources": "{{cluster}} · {{count}} × {{gpu}} GPU · {{cpu}} CPU / {{memory}} GiB",
 				"runtimeCache": "{{engine}} {{version}} · ZCache · {{timeout}} s",
 				"runtimeNoCache": "{{engine}} {{version}} · KV cache not enabled",
@@ -1543,9 +1543,9 @@
 			"vgpuCoreResourcesInsufficient": "Requested virtual card core capacity exceeds the currently available virtual card core capacity.",
 			"cpuResourcesInsufficient": "Requested CPU exceeds the currently available capacity for this cluster.",
 			"memoryResourcesInsufficient": "Requested memory exceeds the currently available capacity for this cluster.",
-			"noNodeCanScheduleCpuRequest": "No node with the selected accelerator has enough CPU for one replica.",
-			"noNodeCanScheduleMemoryRequest": "No node with the selected accelerator has enough memory for one replica.",
-			"noNodeCanScheduleCombinedResourceRequest": "No single node can satisfy the selected accelerator, CPU, and memory requirements for one replica.",
+			"noNodeCanScheduleCpuRequest": "The available nodes cannot place all replicas with the requested CPU.",
+			"noNodeCanScheduleMemoryRequest": "The available nodes cannot place all replicas with the requested memory.",
+			"noNodeCanScheduleCombinedResourceRequest": "The available nodes cannot satisfy the combined resource requirements for all replicas.",
 			"noRunningVgpuPods": "No running virtual accelerator pods",
 			"vgpuCoreLimitUnlimitedHint": "0 means no limit; compute is shared",
 			"vgpuCoreLimitUnsupportedMode": "Accelerator virtualization mode does not support compute splitting",
@@ -1778,7 +1778,7 @@
 			"unavailable": "The registry could not be reached just now. Type the image name, or close this and try again."
 		},
 		"weights": {
-			"declared": "Declared by the catalog",
+			"declared": "Weights",
 			"estimated": "Estimated from checkpoint metadata",
 			"estimatedFromSize": "Estimated from model size",
 			"sourceCatalog": "Measured by the model catalog for the weights alone, per replica.",
@@ -1872,6 +1872,7 @@
 			"tps": "TPS",
 			"avg": "Avg",
 			"p95": "P95",
+			"current": "Current",
 			"totalTokensPerSecond": "Total tokens/s (TPS)",
 			"promptTokensPerSecond": "Prompt tokens/s",
 			"generationTokensPerSecond": "Generation tokens/s",
@@ -1904,17 +1905,17 @@
 			"title": "Resolved model",
 			"selectedTitle": "Selected model",
 			"direct": "Direct",
-			"custom": "Custom",
-			"customizeModel": "Customize model",
-			"editModel": "Edit model",
+			"custom": "Deployment override",
+			"customizeModel": "Customize for this deployment",
+			"editModel": "Edit deployment override",
 			"doneEditing": "Done editing",
 			"versionFile": "Version / file",
 			"auto": "Auto",
-			"overrideHint": "Registry, model, version, and file changes override the selected catalog profile.",
-			"reset": "Reset to profile",
+			"overrideHint": "Changes here apply only to this endpoint deployment. They do not update the selected Model Catalog.",
+			"reset": "Restore catalog defaults",
 			"switched": "Switched to {{variant}}",
-			"resetNotice": "{{count}} custom model value was reset to the profile defaults. Endpoint name, cluster, replicas and cache settings were preserved.",
-			"resetNotice_other": "{{count}} custom model values were reset to the profile defaults. Endpoint name, cluster, replicas and cache settings were preserved.",
+			"resetNotice": "{{count}} deployment-specific model value was reset to the Model Catalog defaults. Endpoint name, cluster, replicas, and cache settings were preserved.",
+			"resetNotice_other": "{{count}} deployment-specific model values were reset to the Model Catalog defaults. Endpoint name, cluster, replicas, and cache settings were preserved.",
 			"undo": "Undo"
 		}
 	},
@@ -2093,7 +2094,8 @@
 			"confirmPassword": "Confirm Password",
 			"displayName": "Display Name",
 			"identitySource": "Identity Source",
-			"department": "Department (optional)"
+			"department": "Department (optional)",
+			"teams": "Teams / scenarios (optional)"
 		},
 		"filters": {
 			"source": "Filter by Identity Source"
@@ -2136,7 +2138,10 @@
 			}
 		},
 		"teams": {
-			"none": "Not in a team."
+			"none": "Not in a team.",
+			"errors": {
+				"createdNotAssigned": "The user was created, but could not be added to these teams or scenarios: {{teams}}. Add them from the Organization page."
+			}
 		}
 	},
 	"roles": {
@@ -2434,6 +2439,7 @@
 		"team": {
 			"usageTab": "Usage",
 			"usageHint": "Token usage of the team: its members' personal keys and its applications' keys.",
+			"usageHintProject": "Token usage of the scenario: its members' personal keys and its applications' keys.",
 			"usageFailed": "Failed to load the team usage.",
 			"usageEmpty": "No usage in this period.",
 			"totalTokens": "Total tokens",
@@ -2441,9 +2447,11 @@
 			"requests": "Requests",
 			"byMember": "By member",
 			"byMemberHint": "Usage of each member's personal keys, part of the team total.",
+			"byMemberHintProject": "Usage of each member's personal keys, part of the scenario total.",
 			"member": "Member",
 			"byApplication": "By application",
 			"byApplicationHint": "Usage of each application's keys, part of the team total.",
+			"byApplicationHintProject": "Usage of each application's keys, part of the scenario total.",
 			"application": "Application"
 		},
 		"serviceAccount": {
@@ -3006,12 +3014,12 @@
 		},
 		"filters": {
 			"searchDepartments": "Search by path, e.g. Engineering / Platform",
-			"searchTeams": "Search teams",
+			"searchTeams": "Search teams or scenarios",
 			"allSources": "All identity sources",
 			"showInactive": "Show inactive",
-			"allTeamKinds": "All teams",
+			"allTeamKinds": "All",
 			"projectsOnly": "Scenarios",
-			"nonProjects": "Non-scenario teams"
+			"nonProjects": "Teams"
 		},
 		"departments": {
 			"title": "Departments",
@@ -3021,9 +3029,9 @@
 			"noPermission": "You do not have permission to view departments."
 		},
 		"teams": {
-			"title": "Teams",
-			"empty": "No teams yet.",
-			"noMatch": "No teams match the filter.",
+			"title": "Teams & scenarios",
+			"empty": "No teams or scenarios yet.",
+			"noMatch": "No teams or scenarios match the filter.",
 			"create": "Create Team",
 			"createTitle": "Create Team",
 			"createScenario": "Create Scenario",
@@ -3052,12 +3060,17 @@
 			"viewTree": "Tree",
 			"noDepartment": "No department",
 			"removeMember": "Remove from team",
+			"removeMemberProject": "Remove from scenario",
 			"removeMemberTitle": "Remove the member?",
 			"removeMemberHint": "{{user}} will no longer be a member of {{team}}.",
 			"deleteTitle": "Delete team {{team}}?",
+			"deleteTitleProject": "Delete scenario {{team}}?",
 			"deleteHint": "The team is deleted together with its member list ({{count}} members). This cannot be undone.",
+			"deleteHintProject": "The scenario is deleted together with its member list ({{count}} members). This cannot be undone.",
 			"deleteBlocked": "{{count}} policies still grant roles to this team. Delete them in Workspace Policies first, then delete the team.",
+			"deleteBlockedProject": "{{count}} policies still grant roles to this scenario. Delete them in Workspace Policies first, then delete the scenario.",
 			"deleteChecking": "Checking the policies granted to this team…",
+			"deleteCheckingProject": "Checking the policies granted to this scenario…",
 			"deletePolicyHint": "Its model access and token pool are deleted with it.",
 			"validation": {
 				"nameRequired": "Enter a name.",
@@ -3116,6 +3129,10 @@
 			"title": "Select Department",
 			"hint": "Pick an active department.",
 			"placeholder": "Select a department"
+		},
+		"teamsPicker": {
+			"placeholder": "Select teams or scenarios",
+			"empty": "No teams or scenarios created here."
 		}
 	},
 	"org_units": {
@@ -3191,7 +3208,9 @@
 			"userTitle": "Token pools",
 			"userHint": "Usage counts toward the groups the user was in when it happened. Every pool must have tokens left; usage is counted about every 30 seconds, so a pool can go slightly over.",
 			"none": "This team has no token pool.",
-			"unreadable": "You cannot read this team's token pool."
+			"noneProject": "This scenario has no token pool.",
+			"unreadable": "You cannot read this team's token pool.",
+			"unreadableProject": "You cannot read this scenario's token pool."
 		},
 		"subject": {
 			"column": "Limits",
@@ -3520,6 +3539,10 @@
 		},
 		"apiKey": "API key",
 		"deletedKey": "Deleted {{id}}",
+		"applicationOf": {
+			"team": "Team · {{name}}",
+			"project": "Scenario · {{name}}"
+		},
 		"model": "Model",
 		"promptTokens": "Prompt",
 		"completionTokens": "Completion",
@@ -3535,7 +3558,8 @@
 			"tooltip": {
 				"prompt": "Prompt",
 				"completion": "Completion",
-				"total": "Total"
+				"total": "Total",
+				"totalDepartments": "Total (departments)"
 			},
 			"otherKeys": "Other {{n}} API keys",
 			"otherGroups": "Other {{n}}",
@@ -3552,7 +3576,10 @@
 			"endpointType": "Endpoint type",
 			"endpoint": "Endpoint",
 			"internal": "Internal",
-			"external": "External"
+			"external": "External",
+			"groupBy": "Group the daily detail by",
+			"bySubject": "By {{who}}",
+			"byKey": "By API key"
 		},
 		"chart": {
 			"line": "Line chart",
@@ -3575,6 +3602,7 @@
 			"title": "Scope",
 			"platform": "Entire platform",
 			"unassigned": "No department",
+			"applicationsNoDepartment": "Applications (no department)",
 			"hint": "Usage counts toward the department and Teams the user was in at the time. A department includes its sub-departments. Applications count toward their Team and belong to no department.",
 			"teams": "Teams",
 			"visible": "All usage you can see",
@@ -3594,6 +3622,34 @@
 			"change": "{{change}} vs. previous period",
 			"noPrevious": "No usage in the previous period",
 			"activity": "{{users}} active users · {{applications}} applications"
+		},
+		"heading": {
+			"team": "{{title}} · {{name}} (Team)",
+			"scenario": "{{title}} · {{name}} (Scenario)",
+			"department": "{{title}} · {{name}} (Department)",
+			"applications": "{{title}} · {{name}}",
+			"application": "{{title}} · {{name}} (Application)",
+			"user": "{{title}} · {{name}} (User)"
+		},
+		"trend": {
+			"departmentSuffix": " (Department)",
+			"teamSuffix": " (Team)",
+			"scenarioSuffix": " (Scenario)",
+			"otherTeams": "Other {{n}} Teams and scenarios",
+			"barHint": "Bars show departments only; Teams and scenarios overlap departments, so stacking them would double count.",
+			"titleMixed": "Daily tokens by department, Team and scenario",
+			"titleRequestsMixed": "Daily requests by department, Team and scenario"
+		},
+		"overview": {
+			"departments": "Departments",
+			"teams": "Teams",
+			"scenarios": "Scenarios",
+			"overlapHint": "Teams and scenarios can overlap, so the shares may add up to more than 100%.",
+			"others": "Other {{n}}",
+			"viewAll": "View all",
+			"noTeams": "No Teams yet.",
+			"noScenarios": "No scenarios yet.",
+			"goToTeams": "Go to Teams and scenarios"
 		},
 		"modelShare": {
 			"title": "Usage by model",
@@ -3618,7 +3674,8 @@
 		"tabs": {
 			"departments": "By department",
 			"subUnits": "By sub-department and user",
-			"teams": "By Team",
+			"overview": "Overview",
+			"teams": "By team & scenario",
 			"apiKeys": "By API key",
 			"detail": "Daily detail",
 			"teamHint": "A user may be in several Teams, so the Teams' totals can add up to more than the scope's total. Usage counts toward the Teams the user was in at the time; a Team's total includes its applications.",
@@ -3756,10 +3813,13 @@
 		"tab": "Applications",
 		"title": "Applications",
 		"hint": "Applications of {{team}}. Each one calls models with its own API keys, holds the team's application permissions, stays within the team's model access and token pool, and keeps working when members leave.",
+		"hintProject": "Applications of {{team}}. Each one calls models with its own API keys, holds the scenario's application permissions, stays within the scenario's model access and token pool, and keeps working when members leave.",
 		"empty": "This team has no applications yet.",
+		"emptyProject": "This scenario has no applications yet.",
 		"create": "Create Application",
 		"createTitle": "Create Application",
 		"createHint": "An application belongs to the team, not to you. It holds the team's application permissions at once.",
+		"createHintProject": "An application belongs to the scenario, not to you. It holds the scenario's application permissions at once.",
 		"back": "Applications",
 		"disabledHint": "This application is disabled: its API keys cannot call models. Enable it to resume.",
 		"deleteTitle": "Delete application {{name}}?",
@@ -3786,17 +3846,21 @@
 		"appPermissions": {
 			"title": "Application permissions",
 			"hint": "Every application of the team holds these roles, in the selected workspaces only. Group policy decides which models it may call and how much it may use.",
+			"hintProject": "Every application of the scenario holds these roles, in the selected workspaces only. Group policy decides which models it may call and how much it may use.",
 			"unreadable": "The application permissions cannot be read.",
 			"roles": "Roles",
 			"workspaces": "Workspaces",
 			"allWorkspaces": "All workspaces",
 			"noRoles": "No role: the team's applications cannot call models.",
+			"noRolesProject": "No role: the scenario's applications cannot call models.",
 			"noWorkspaces": "No workspace",
 			"isDefault": "Default: model-invoker in all workspaces.",
 			"editTitle": "Edit application permissions",
 			"editHint": "Every application of the team holds these roles, in these workspaces only.",
+			"editHintProject": "Every application of the scenario holds these roles, in these workspaces only.",
 			"managementHidden": "Roles that manage access (roles, role assignments, users, identity sources, departments, teams, group policies or applications) are not listed.",
 			"effectHint": "Changes take effect at once for all of the team's applications.",
+			"effectHintProject": "Changes take effect at once for all of the scenario's applications.",
 			"reset": "Restore default"
 		},
 		"errors": {
