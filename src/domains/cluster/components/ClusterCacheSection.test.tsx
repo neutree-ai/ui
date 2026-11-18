@@ -263,6 +263,7 @@ describe("ClusterCacheSection", () => {
             spec: { kv_cache: { provider: "zcache" } },
             status: {
               phase: "Running",
+              kv_cache: { provider: "zcache", details: { in_use: true } },
               resources: {
                 replicas: [
                   {
@@ -366,6 +367,7 @@ describe("ClusterCacheSection", () => {
             id: 9,
             spec: { kv_cache: { provider: "zcache" } },
             status: {
+              kv_cache: { provider: "zcache", details: { in_use: true } },
               resources: {
                 replicas: [{ instance_id: "orphan-0", node_id: "a" }],
               },

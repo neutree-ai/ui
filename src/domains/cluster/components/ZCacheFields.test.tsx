@@ -186,6 +186,7 @@ describe("ZCacheFields", () => {
           workspace: "team-a",
         },
         spec: { kv_cache: { provider: "zcache" } },
+        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
     render(<Form onSubmit={vi.fn()} status={observed} />);
@@ -204,7 +205,7 @@ describe("ZCacheFields", () => {
         id: 1,
         metadata: { name: "endpoint-a" },
         spec: { kv_cache: { provider: "zcache" } },
-        status: undefined,
+        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
       },
     ];
     render(
