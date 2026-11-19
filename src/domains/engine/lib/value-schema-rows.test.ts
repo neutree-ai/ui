@@ -258,7 +258,9 @@ describe("splitDescriptionJson", () => {
   });
 
   it("keeps braces and brackets inside JSON strings within the same value", () => {
-    const value = { shape: { template: '{"literal": ["value"]}', count: 1 } };
+    const value = {
+      shape: { template: 'a "}]" inside {"literal": [1]}', count: 1 },
+    };
     const segments = splitDescriptionJson(JSON.stringify(value));
 
     expect(segments).toEqual([

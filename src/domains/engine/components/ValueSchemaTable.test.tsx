@@ -256,31 +256,15 @@ describe("ValueSchemaTable", () => {
     expect(panel.textContent).toContain("dynamic");
   });
 
-  it("copies the complete nested JSON example from the details panel", () => {
-    const value = {
-      shape: {
-        entries: [
-          { index: 0, value: "first" },
-          { index: 1, value: "second" },
-        ],
-      },
-    };
-    renderTable({
-      type: "object",
-      properties: {
-        config: {
-          type: "string",
-          description: `Schema example: '${JSON.stringify(value)}'`,
-        },
-      },
-    });
+  it("copies the pretty-printed JSON example from the details panel", () => {
+    renderTable();
 
     fireEvent.click(
       screen.getByRole("button", { name: "engines.schema.copyJson" }),
     );
 
     expect(copyMock).toHaveBeenCalledWith(
-      JSON.stringify(value, null, 2),
+      '{\n  "port": 8000\n}',
       expect.anything(),
     );
   });

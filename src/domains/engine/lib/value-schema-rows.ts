@@ -251,20 +251,15 @@ export function formatDefaultValue(value: unknown): string {
 
 type DescriptionSegment = { kind: "text" | "json"; value: string };
 
-function nextJsonStart(text: string, from: number): number {
-  const objectStart = text.indexOf("{", from);
-  const arrayStart = text.indexOf("[", from);
-  if (objectStart === -1) return arrayStart;
-  if (arrayStart === -1) return objectStart;
-  return Math.min(objectStart, arrayStart);
-}
-
-/** Read one complete object or array candidate, skipping brackets in strings. */
+/**
+ * Read one bracket-balanced candidate starting at `start`, skipping brackets
+ * inside strings, and pretty-print it when it parses as JSON.
+ */
 function readJsonValue(
   text: string,
   start: number,
 ): { pretty: string; end: number } | null {
-  const closing: string[] = [];
+  let depth = 0;
   let inString = false;
   let escaped = false;
 
@@ -284,21 +279,15 @@ function readJsonValue(
 
     if (character === '"') {
       inString = true;
-    } else if (character === "{") {
-      closing.push("}");
-    } else if (character === "[") {
-      closing.push("]");
+    } else if (character === "{" || character === "[") {
+      depth += 1;
     } else if (character === "}" || character === "]") {
-      if (closing.pop() !== character) return null;
-      if (closing.length > 0) continue;
+      depth -= 1;
+      if (depth > 0) continue;
 
       try {
-        const pretty = JSON.stringify(
-          JSON.parse(text.slice(start, index + 1)),
-          null,
-          2,
-        );
-        return pretty === undefined ? null : { pretty, end: index };
+        const value = JSON.parse(text.slice(start, index + 1));
+        return { pretty: JSON.stringify(value, null, 2), end: index };
       } catch {
         return null;
       }
@@ -319,18 +308,13 @@ export function splitDescriptionJson(
 ): DescriptionSegment[] {
   const text = description ?? "";
   const segments: DescriptionSegment[] = [];
+  const opener = /[{[]/g;
   let last = 0;
-  let cursor = 0;
 
-  while (cursor < text.length) {
-    const start = nextJsonStart(text, cursor);
-    if (start === -1) break;
-
+  for (let match = opener.exec(text); match; match = opener.exec(text)) {
+    const start = match.index;
     const json = readJsonValue(text, start);
-    if (!json) {
-      cursor = start + 1;
-      continue;
-    }
+    if (!json) continue;
 
     const quotedBefore = text[start - 1] === "'";
     const quotedAfter = text[json.end + 1] === "'";
@@ -345,7 +329,7 @@ export function splitDescriptionJson(
     }
     segments.push({ kind: "json", value: json.pretty });
     last = json.end + 1 + (quotedAfter ? 1 : 0);
-    cursor = last;
+    opener.lastIndex = last;
   }
 
   const tail = text.slice(last);
