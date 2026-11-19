@@ -8,7 +8,6 @@ export type CacheEndpointCandidate = {
     display_name?: string | null;
     workspace?: string | null;
   };
-  spec: { kv_cache?: { provider: string } | null };
   status?:
     | (BaseStatus & {
         kv_cache?: {
@@ -29,11 +28,11 @@ export type CacheEndpointRef = {
   nodes: string[];
 };
 
-/** Endpoints that depend on this cluster's cache configuration.
+/** Endpoints actively using this cluster's cache runtime.
  *
- * The dependency exists at cluster scope: an Endpoint can declare the cache
- * provider before the runtime reports it in use. Preserve either signal so the
- * details and editor show the same set used by removal guards.
+ * Matches backend admission (`status.kv_cache.details.in_use === true`):
+ * paused or unscheduled Endpoints without running Pods do not block cache node
+ * removal or disabling cluster cache, while terminating Pods still do.
  */
 export function cacheEndpointRefs(
   endpoints: CacheEndpointCandidate[],
@@ -42,9 +41,8 @@ export function cacheEndpointRefs(
   return endpoints
     .filter(
       (endpoint) =>
-        endpoint.spec.kv_cache?.provider === "zcache" ||
-        (endpoint.status?.kv_cache?.provider === "zcache" &&
-          endpoint.status.kv_cache.details?.in_use === true),
+        endpoint.status?.kv_cache?.provider === "zcache" &&
+        endpoint.status.kv_cache.details?.in_use === true,
     )
     .reduce<CacheEndpointRef[]>((refs, endpoint) => {
       const name = endpoint.metadata?.name;
@@ -62,8 +60,6 @@ export function cacheEndpointRefs(
       const existing = refs.find((ref) => ref.key === key);
       if (existing) {
         existing.nodes = [...new Set([...existing.nodes, ...nodes])];
-        if (!existing.status && endpoint.status)
-          existing.status = endpoint.status;
         return refs;
       }
 
