@@ -128,7 +128,8 @@ Owner scopes have key/detail tabs and model series.
 
 - `useScopeUsage` retains the last complete result while parameters change so totals and breakdown never mix scopes
   (hook comment). Disabled queries return no rows; visible-page polling is every 60 seconds.
-- Folding/trends: `lib/usage-series.ts`, tests beside it. `daysIn` fills every selected date with zero-valued gaps.
+- Folding/trends: `lib/usage-series.ts`, tests beside it. `daysIn` fills every selected date with zero-valued gaps;
+  with a selected range, trend points cover exactly those days and rows outside it are dropped.
   Platform multiline trends add five Teams/scenarios plus a separate Other; these overlap departments and are excluded
   from tooltip totals. Department/key series retain eight plus Other. Bars exclude the overlapping Team family.
 - Totals sum users/applications once; department totals exclude applications. Key coverage can be shorter (`136`).

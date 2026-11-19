@@ -105,6 +105,11 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 - Version combobox on edit includes the current version though `available_versions` lists upgrade targets only.
 - Model cache fields disabled on edit for ssh only: reason unknown (cluster form fix #115); the API's 10206 / 10207 are
   not mirrored for kubernetes (deviation 2).
+- Cache dependents (`lib/cache-endpoints.ts:cacheEndpointRefs`, shared by `ClusterCacheSection` and `ZCacheFields`):
+  only endpoints whose `status.kv_cache` reports zcache with `details.in_use === true`; an endpoint that only
+  declares the provider in spec does not count. These block disabling the cache and removing applied target nodes.
+  Reason: matches the backend admission check (code comment); paused or unscheduled endpoints have no running Pods.
+  The backend side is not on neutree-be `origin/main@062192f6`, so it is untraced here.
 
 ## Error mapping
 

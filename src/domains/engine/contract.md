@@ -49,7 +49,8 @@ Paths: `src/domains/engine/` unless prefixed.
 - Time: shared `MetadataTimestampMeta` on show only; no card version uses `EMPTY_VALUE` (`-`).
 - Versions: `newestVersion` / `sortVersionsNewestFirst`; tests: `foundation/lib/version-order.test.ts`.
 - Schema: `buildValueSchemaRows`; tests: `lib/value-schema-rows.test.ts`.
-- Defaults: `formatDefaultValue`; tests: `lib/value-schema-rows.test.ts`.
+- Defaults/descriptions: `formatDefaultValue`, `splitDescriptionJson` (`lib/value-schema-rows.ts`); tests beside them.
+  The schema detail dialog preserves complete nested JSON objects/arrays, including brackets in strings, as examples.
 - Playground: `resolvePlayground`; tests: `lib/resolve-capabilities.test.ts`.
 
 ## Scenes
