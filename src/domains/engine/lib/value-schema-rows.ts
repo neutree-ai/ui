@@ -251,6 +251,63 @@ export function formatDefaultValue(value: unknown): string {
 
 type DescriptionSegment = { kind: "text" | "json"; value: string };
 
+function nextJsonStart(text: string, from: number): number {
+  const objectStart = text.indexOf("{", from);
+  const arrayStart = text.indexOf("[", from);
+  if (objectStart === -1) return arrayStart;
+  if (arrayStart === -1) return objectStart;
+  return Math.min(objectStart, arrayStart);
+}
+
+/** Read one complete object or array candidate, skipping brackets in strings. */
+function readJsonValue(
+  text: string,
+  start: number,
+): { pretty: string; end: number } | null {
+  const closing: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+    } else if (character === "{") {
+      closing.push("}");
+    } else if (character === "[") {
+      closing.push("]");
+    } else if (character === "}" || character === "]") {
+      if (closing.pop() !== character) return null;
+      if (closing.length > 0) continue;
+
+      try {
+        const pretty = JSON.stringify(
+          JSON.parse(text.slice(start, index + 1)),
+          null,
+          2,
+        );
+        return pretty === undefined ? null : { pretty, end: index };
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  return null;
+}
+
 /**
  * Engine descriptions embed JSON examples in prose, e.g. SGLang's
  * `modelexpress_config`: `… Example: '{"url": "localhost:8001"}'`. The dialog
@@ -262,35 +319,33 @@ export function splitDescriptionJson(
 ): DescriptionSegment[] {
   const text = description ?? "";
   const segments: DescriptionSegment[] = [];
-  const pattern = /\{[^{}]*\}/g;
   let last = 0;
-  let match = pattern.exec(text);
+  let cursor = 0;
 
-  while (match) {
-    let pretty: string | null = null;
-    try {
-      pretty = JSON.stringify(JSON.parse(match[0]), null, 2);
-    } catch {
-      pretty = null;
+  while (cursor < text.length) {
+    const start = nextJsonStart(text, cursor);
+    if (start === -1) break;
+
+    const json = readJsonValue(text, start);
+    if (!json) {
+      cursor = start + 1;
+      continue;
     }
 
-    if (pretty) {
-      const quotedBefore = text[match.index - 1] === "'";
-      const quotedAfter = text[match.index + match[0].length] === "'";
-      const textEnd = quotedBefore ? match.index - 1 : match.index;
-      if (textEnd > last) {
-        // Drop the space that separated the prose from the snippet: the block
-        // below it carries its own spacing.
-        segments.push({
-          kind: "text",
-          value: text.slice(last, textEnd).replace(/\s+$/, ""),
-        });
-      }
-      segments.push({ kind: "json", value: pretty });
-      last = match.index + match[0].length + (quotedAfter ? 1 : 0);
+    const quotedBefore = text[start - 1] === "'";
+    const quotedAfter = text[json.end + 1] === "'";
+    const textEnd = quotedBefore ? start - 1 : start;
+    if (textEnd > last) {
+      // Drop the space that separated the prose from the snippet: the block
+      // below it carries its own spacing.
+      segments.push({
+        kind: "text",
+        value: text.slice(last, textEnd).replace(/\s+$/, ""),
+      });
     }
-
-    match = pattern.exec(text);
+    segments.push({ kind: "json", value: json.pretty });
+    last = json.end + 1 + (quotedAfter ? 1 : 0);
+    cursor = last;
   }
 
   const tail = text.slice(last);
