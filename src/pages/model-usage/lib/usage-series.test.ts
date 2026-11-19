@@ -142,7 +142,10 @@ describe("buildTrend", () => {
   });
 
   it("gives every day of the range a point, so two charts share an axis", () => {
-    const rows = [record({ date: "2026-09-02", api_key_id: "a", usage: 5 })];
+    const rows = [
+      record({ date: "2026-09-02", api_key_id: "a", usage: 5 }),
+      record({ date: "2026-08-30", api_key_id: "a", usage: 9 }),
+    ];
     const series = aggregateSeries(rows, byKey, metaOfKey);
     const days = daysIn({ start: "2026-08-31", end: "2026-09-03" });
 
