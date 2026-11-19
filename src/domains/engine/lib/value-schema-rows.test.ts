@@ -227,6 +227,47 @@ describe("splitDescriptionJson", () => {
     expect(segments).toHaveLength(2);
   });
 
+  it.each([
+    {
+      name: "a nested object containing an array of objects",
+      value: {
+        shape: {
+          entries: [
+            { index: 0, value: "first" },
+            { index: 1, value: "second" },
+          ],
+        },
+      },
+    },
+    {
+      name: "a top-level array",
+      value: [
+        { index: 0, value: "first" },
+        { index: 1, value: "second" },
+      ],
+    },
+  ])("pretty-prints $name as one complete JSON value", ({ value }) => {
+    const segments = splitDescriptionJson(
+      `Schema example: '${JSON.stringify(value)}'`,
+    );
+
+    expect(segments).toEqual([
+      { kind: "text", value: "Schema example:" },
+      { kind: "json", value: JSON.stringify(value, null, 2) },
+    ]);
+  });
+
+  it("keeps braces and brackets inside JSON strings within the same value", () => {
+    const value = {
+      shape: { template: 'a "}]" inside {"literal": [1]}', count: 1 },
+    };
+    const segments = splitDescriptionJson(JSON.stringify(value));
+
+    expect(segments).toEqual([
+      { kind: "json", value: JSON.stringify(value, null, 2) },
+    ]);
+  });
+
   it("leaves prose that only looks like JSON alone", () => {
     const segments = splitDescriptionJson(
       "Represent tokens as token_id:{id} strings",
