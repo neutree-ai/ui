@@ -18,6 +18,11 @@ const renderPage = (url = "/") =>
     </MemoryRouter>,
   );
 
+// The page asks for a range ending today, so the fixtures' usage is dated today.
+const { USAGE_DAY } = vi.hoisted(() => ({
+  USAGE_DAY: new Date().toISOString().slice(0, 10),
+}));
+
 // Page wiring: which usage the page asks for in each scope, and that every
 // panel shows that scope. The breakdown arithmetic is covered in
 // lib/usage-scope.test.ts.
@@ -49,7 +54,7 @@ vi.mock("recharts", () => {
       {onClick ? (
         <button
           type="button"
-          onClick={() => onClick({ activeLabel: "2026-10-20" })}
+          onClick={() => onClick({ activeLabel: USAGE_DAY })}
         >
           pick-day
         </button>
@@ -185,7 +190,7 @@ const group = (
   usage: number,
   model = "qwen",
 ): GroupUsageRecord => ({
-  date: "2026-10-20",
+  date: USAGE_DAY,
   kind,
   name,
   display_name: `${name}-name`,
@@ -278,7 +283,7 @@ const keyRow = (
   usage: number,
   name: string | null = id,
 ): ApiUsageRecord => ({
-  date: "2026-10-20",
+  date: USAGE_DAY,
   api_key_id: id,
   api_key_name: name,
   endpoint_type: "endpoint",

@@ -163,11 +163,14 @@ export function buildTrend<R extends TrendRow>(
   metric: TrendMetric = "tokens",
   days: string[] = [],
 ): Array<Record<string, number | string>> {
-  // Days with no usage still get a point, so the axis is the range's.
+  // With a range, the axis is exactly its days: days with no usage still get a
+  // point and rows outside it are dropped, so trends built over the same range
+  // line up point for point.
   const byDate = new Map<string, Record<string, number>>(
     days.map((day) => [day, {}]),
   );
   for (const r of rows) {
+    if (days.length > 0 && !byDate.has(r.date)) continue;
     const key = keyOf(r);
     const day = byDate.get(r.date) ?? {};
     const value = metric === "requests" ? (r.requests ?? 0) : (r.usage ?? 0);
