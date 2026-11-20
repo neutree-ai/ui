@@ -1,7 +1,6 @@
 import { useParsed, useShow } from "@refinedev/core";
 import { useSearchParams } from "react-router-dom";
 import { ModelDetailDrawer } from "@/domains/model-registry/components/ModelDetailDrawer";
-import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { RegistryAvailabilityNotice } from "@/domains/model-registry/components/RegistryAvailabilityNotice";
 import { RegistryModelsTable } from "@/domains/model-registry/components/RegistryModelsTable";
@@ -11,6 +10,7 @@ import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
+import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { MODEL_REGISTRY_SELECT } from "@/foundation/lib/model-registry-visibility";
@@ -65,7 +65,7 @@ export const ModelRegistriesShow = () => {
     >
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<ModelRegistryStatus {...record.status} />}
+        status={<RegistryStatus {...record.status} />}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("common.fields.type")}>

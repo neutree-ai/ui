@@ -11,7 +11,7 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/domains/image-registry/components/ImageRegistryStatus", () => ({
+vi.mock("@/foundation/components/RegistryStatus", () => ({
   default: () => <span>Status</span>,
 }));
 

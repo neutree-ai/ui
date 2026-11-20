@@ -2,7 +2,6 @@ import {
   ModelRegistryModelCount,
   ModelRegistryStorage,
 } from "@/domains/model-registry/components/ModelRegistryStats";
-import ModelRegistryStatus from "@/domains/model-registry/components/ModelRegistryStatus";
 import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
 import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
@@ -10,6 +9,7 @@ import { RegistryVisibility } from "@/domains/model-registry/components/Registry
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { ListPage } from "@/foundation/components/ListPage";
 import { useMetadataColumns } from "@/foundation/components/metadata-columns";
+import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -49,7 +49,7 @@ export const ModelRegistriesList = () => {
           enableHiding
           cell={({ getValue }) => {
             return (
-              <ModelRegistryStatus {...(getValue() as unknown as BaseStatus)} />
+              <RegistryStatus {...(getValue() as unknown as BaseStatus)} />
             );
           }}
         />

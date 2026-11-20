@@ -18,7 +18,6 @@ export const useWorkspaceForm = ({ action }: { action: "create" | "edit" }) => {
         name: "",
       },
     },
-    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

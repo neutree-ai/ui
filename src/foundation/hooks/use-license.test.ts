@@ -2,8 +2,6 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { License } from "@/foundation/types/license";
 
-// --- Module mocks ---
-
 const mockRefetch = vi.fn();
 const mockMutate = vi.fn();
 const mockToastError = vi.fn();
@@ -32,8 +30,6 @@ vi.mock("sonner", () => ({
     success: mockToastSuccess,
   },
 }));
-
-// --- Helpers ---
 
 function makeLicense(workspaceLimit?: number): { data: License } {
   return {
@@ -77,16 +73,12 @@ async function licenseHook() {
   return renderHook(() => useLicense());
 }
 
-// --- Setup ---
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockLicenseData = undefined;
   mockIsLoading = false;
   mockError = null;
 });
-
-// --- Tests ---
 
 describe("useLicense", () => {
   describe("supportMultiWorkspace", () => {
@@ -157,23 +149,26 @@ describe("useLicense", () => {
       expect(mockMutate).not.toHaveBeenCalled();
     });
 
-    it("calls mutate with correct arguments", async () => {
-      const { result } = await licenseHook();
+    it.each(["new-license-code", "  padded-code  ", "line-one\nline-two"])(
+      "sends the code verbatim: %j",
+      async (code) => {
+        const { result } = await licenseHook();
 
-      result.current.updateLicense("new-license-code");
+        result.current.updateLicense(code);
 
-      expect(mockMutate).toHaveBeenCalledWith(
-        {
-          url: "/license",
-          method: "patch",
-          values: { code: "new-license-code" },
-        },
-        expect.objectContaining({
-          onSuccess: expect.any(Function),
-          onError: expect.any(Function),
-        }),
-      );
-    });
+        expect(mockMutate).toHaveBeenCalledWith(
+          {
+            url: "/license",
+            method: "patch",
+            values: { code },
+          },
+          expect.objectContaining({
+            onSuccess: expect.any(Function),
+            onError: expect.any(Function),
+          }),
+        );
+      },
+    );
 
     it("shows success toast and refetches on success", async () => {
       const onSuccess = vi.fn();
@@ -181,7 +176,6 @@ describe("useLicense", () => {
 
       result.current.updateLicense("code", { onSuccess });
 
-      // Invoke the onSuccess callback
       const mutateCall = mockMutate.mock.calls[0];
       const callbacks = mutateCall[1];
       callbacks.onSuccess();
@@ -197,7 +191,6 @@ describe("useLicense", () => {
 
       result.current.updateLicense("code", { onError });
 
-      // Invoke the onError callback
       const mutateCall = mockMutate.mock.calls[0];
       const callbacks = mutateCall[1];
       callbacks.onError({ message: "invalid license" });

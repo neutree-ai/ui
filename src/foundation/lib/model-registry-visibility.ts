@@ -19,8 +19,7 @@ import type { RegistryModelPage } from "@/foundation/lib/api/registry-models";
  * importing another. Same reason `useRegistryModels` sits here.
  *
  * The rules that read a registry's *phase* rather than its visibility are in
- * `domains/model-registry/lib/capabilities`, next to the record type they need
- * and the only domain that asks.
+ * `./model-registry-availability`.
  */
 
 export type ModelRegistryVisibility = "public" | "private";

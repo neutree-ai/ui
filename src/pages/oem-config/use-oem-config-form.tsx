@@ -49,7 +49,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
   const { setValue, watch } = form;
   const formValues = watch();
 
-  // File upload handler
   const handleFileUpload = (
     file: File,
     fieldName: "spec.logo_base64" | "spec.logo_collapsed_base64",
@@ -64,7 +63,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // File clear handler
   const handleFileClear = (
     fieldName: "spec.logo_base64" | "spec.logo_collapsed_base64",
   ) => {
@@ -83,7 +81,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
           <Input placeholder={t("oem_configs.placeholders.brandName")} />
         </FormFieldGroup>
 
-        {/* Main Logo */}
         <div className="space-y-2">
           <Label>{t("oem_configs.fields.mainLogo")}</Label>
           <div className="space-y-3">
@@ -130,7 +127,6 @@ export const useOemConfigForm = ({ action }: { action: "create" | "edit" }) => {
           </p>
         </div>
 
-        {/* Collapsed Logo */}
         <div className="space-y-2">
           <Label>
             {t("oem_configs.fields.collapsedLogo")}{" "}

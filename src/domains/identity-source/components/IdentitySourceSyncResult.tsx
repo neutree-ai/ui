@@ -3,19 +3,17 @@ import type { IdentitySource } from "@/domains/identity-source/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { STATUS_TONE } from "@/foundation/lib/status-tone";
 import { cn } from "@/foundation/lib/utils";
 
 const pillClassNames = {
-  ok: "border border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-  failed:
-    "border border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-  pending:
-    "border border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
+  ok: STATUS_TONE.positive,
+  failed: STATUS_TONE.serious,
+  pending: STATUS_TONE.notice,
 };
 
 type SyncResult = keyof typeof pillClassNames;
 
-/** The state of the latest sync: requested and not reported yet, or its outcome. */
 export const syncResultOf = (record: IdentitySource): SyncResult | null => {
   if (isSyncRequestPending(record)) return "pending";
   const last = record.status?.last_sync;
@@ -38,7 +36,6 @@ export function SyncResultPill({ result }: { result: SyncResult }) {
   );
 }
 
-/** List cell: the latest sync's outcome and when it finished. */
 export function IdentitySourceLastSync({ record }: { record: IdentitySource }) {
   const result = syncResultOf(record);
   if (!result) {

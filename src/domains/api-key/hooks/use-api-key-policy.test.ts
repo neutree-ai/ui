@@ -208,6 +208,20 @@ describe("buildApiKeyLimits", () => {
 });
 
 describe("limitsToForm", () => {
+  it.each([
+    { stored: null, payload: {} },
+    { stored: { allowed_models: [] }, payload: {} },
+    { stored: { allowed_models: null }, payload: {} },
+    { stored: { token_quota: { period: "weekly" } }, payload: {} },
+  ])(
+    "pins the current untouched reopen payload for $stored",
+    ({ stored, payload }) => {
+      expect(
+        buildApiKeyLimits(limitsToForm(stored as ApiKeyLimits | null)),
+      ).toEqual(payload);
+    },
+  );
+
   it("round-trips a token quota through the form without losing precision", () => {
     for (const limit of [1, 12_345, 10_000, 1_500_000, 200_000_000]) {
       const v = limitsToForm({ token_quota: { limit, period: "monthly" } });

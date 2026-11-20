@@ -877,6 +877,100 @@ describe("submit adapter", () => {
   );
 });
 
+describe("upstream credentials on edit", () => {
+  // The API never returns auth.credential, so a stored upstream arrives as { type }.
+  const stored = {
+    timeout: 120000,
+    upstreams: [
+      makeUpstream({ name: "a", auth: { type: "bearer" } }),
+      makeUpstream({
+        name: "b",
+        upstream: { url: "https://b.example.com" },
+        auth: { type: "bearer" },
+      }),
+      { name: "c", endpoint_ref: "internal", model_mapping: {}, models: null },
+    ],
+    model_routes: [
+      makeRoute({
+        targets: [makeTarget({ upstream: "a" })],
+      }),
+      makeRoute({
+        model: "other",
+        targets: [makeTarget({ upstream: "c" })],
+      }),
+    ],
+  };
+  const typeCredential = (index: number, value: string, then = value) => {
+    const input = field("credential")[index];
+    fireEvent.change(input, { target: { value } });
+    fireEvent.change(input, { target: { value: then } });
+    fireEvent.blur(input);
+  };
+
+  it("sends the record unchanged when nothing is edited", async () => {
+    const view = renderEndpointForm({ spec: stored });
+
+    await submit(view);
+
+    expect(submitted()).toEqual(makeExternalEndpoint(stored).spec);
+  });
+
+  it("sends only the typed credential, on its own upstream", async () => {
+    const view = renderEndpointForm({ spec: stored });
+
+    typeCredential(1, "sk-new");
+    await submit(view);
+
+    expect(submitted().upstreams.map((u) => u.auth)).toEqual([
+      { type: "bearer" },
+      { type: "bearer", credential: "sk-new" },
+      undefined,
+    ]);
+  });
+
+  it("sends a credential typed into and then emptied as an empty string", async () => {
+    const view = renderEndpointForm({ spec: stored });
+
+    typeCredential(0, "x", "");
+    await submit(view);
+
+    expect(submitted().upstreams.map((u) => u.auth)).toEqual([
+      { type: "bearer", credential: "" },
+      { type: "bearer" },
+      undefined,
+    ]);
+  });
+
+  it("sends no credential for an upstream whose URL was changed", async () => {
+    const view = renderEndpointForm({ spec: stored });
+
+    fillField("spec.upstreams.0.upstream.url", "https://changed.example.com");
+    await submit(view);
+
+    expect(submitted().upstreams[0]).toMatchObject({
+      upstream: { url: "https://changed.example.com" },
+      auth: { type: "bearer" },
+    });
+    expect(submitted().upstreams[0].auth).not.toHaveProperty("credential");
+  });
+
+  it("sends the empty credential of a new upstream on create", async () => {
+    const view = renderEndpointForm({
+      action: "create",
+      spec: {
+        upstreams: [makeUpstream({ auth: { type: "bearer", credential: "" } })],
+      },
+    });
+
+    await submit(view);
+
+    expect(submitted().upstreams[0].auth).toEqual({
+      type: "bearer",
+      credential: "",
+    });
+  });
+});
+
 describe("loading a saved endpoint", () => {
   it.each([
     { strategy: "fixed" as const, priorities: [0], locked: false, tiers: [0] },

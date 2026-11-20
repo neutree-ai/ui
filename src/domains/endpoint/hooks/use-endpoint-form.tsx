@@ -279,7 +279,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     registry: string;
     model: string;
   } | null>(null);
-  // Recipe-mode state: only meaningful when the selected catalog is a Recipe MC.
   const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [featureSelections, setFeatureSelections] = useState<
     FeatureSelection[]
@@ -835,7 +834,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const availableFullGpuCards = hasNodeResourceSnapshot
     ? nonVgpuPhysicalCardUsage.available
     : (selectedAcceleratorOption?.available ?? 0);
-  const fullGpuCardCapacity = availableFullGpuCards;
   const maxFullGpuCards =
     selectedAcceleratorOption?.total ?? maxAvailable.gpu.total;
   const hasRawAvailableVgpuMemoryMiB =
@@ -847,8 +845,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const rawAvailableVgpuCoreUnits = hasSelectedDeviceResources
     ? matchingDeviceAvailableResources.coreUnits
     : Number(selectedAcceleratorOption?.virtualizationCoreUnits || 0);
-  const availableVgpuMemoryMiB = rawAvailableVgpuMemoryMiB;
-  const availableVgpuCoreUnits = rawAvailableVgpuCoreUnits;
   const fallbackVgpuAvailablePhysicalCards =
     selectedAcceleratorOption?.available ?? maxAvailable.gpu.available;
   const fallbackVgpuMaxPhysicalCards =
@@ -896,7 +892,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
     const requestedCardCount = Math.max(1, boundaryRequestedCardCount);
     const perCardBoundaryMiB = Math.floor(
-      availableVgpuMemoryMiB / requestedCardCount,
+      rawAvailableVgpuMemoryMiB / requestedCardCount,
     );
     if (!Number.isFinite(perCardBoundaryMiB)) {
       return rawMaxMiB;
@@ -924,7 +920,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           )
         : "";
   const currentRequestAvailableCoreUnits = isVgpuAllocationMode
-    ? availableVgpuCoreUnits
+    ? rawAvailableVgpuCoreUnits
     : 0;
   const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
     ? vgpuCoreUnitsPerCard
@@ -1113,8 +1109,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ) ||
     Boolean(isPlacementMemoryCapacityExceeded) ||
     hasNodeMemoryPlacementCapacityExceeded;
-  // Any over-allocated resource blocks deploy (returned as `submitBlocked` and
-  // handed to ResourceForm); each card renders its own warning message.
   const isResourceCapacityExceeded =
     hasClusterCapacityEvidence &&
     (isCpuCapacityExceeded ||
@@ -1155,23 +1149,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const next = { ...selectedVirtualization };
     let changed = false;
 
-    if (!isVgpuCoreResourceSupported) {
-      const corePercent = (selectedVirtualization as Record<string, unknown>)
-        .core_percent;
-      if (
-        corePercent !== undefined &&
-        corePercent !== null &&
-        corePercent !== ""
-      ) {
-        delete next.core_percent;
-        changed = true;
-      }
-    }
-    if (!isVgpuMemoryResourceSupported) {
-      const memoryMiB = (selectedVirtualization as Record<string, unknown>)
-        .memory_mib;
-      if (memoryMiB !== undefined && memoryMiB !== null && memoryMiB !== "") {
-        delete next.memory_mib;
+    for (const [key, supported] of [
+      ["core_percent", isVgpuCoreResourceSupported],
+      ["memory_mib", isVgpuMemoryResourceSupported],
+    ] as const) {
+      const value = (selectedVirtualization as Record<string, unknown>)[key];
+      if (!supported && value !== undefined && value !== null && value !== "") {
+        delete next[key];
         changed = true;
       }
     }
@@ -1586,7 +1570,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
   }, [action, form, watchedResources, setLeafValues]);
 
-  // Apply a merged catalog spec (or defaults when null) to the form.
   const applyCatalogSpec = (catalogSpec: Record<string, unknown> | null) => {
     const merged = buildCatalogMergedSpec(catalogSpec);
     for (const [key, value] of Object.entries(merged)) {
@@ -1594,7 +1577,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   };
 
-  // Locate the currently selected catalog (or undefined).
   const selectedCatalog = useMemo<EndpointModelCatalogRef | undefined>(
     () =>
       modelCatalogs.query.data?.data.find(
@@ -1603,7 +1585,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     [modelCatalogs.query.data?.data, selectedModelCatalog],
   );
 
-  // True when the selected catalog uses the Recipe extension.
   const isRecipeCatalog = useMemo(
     () => isRecipeShape(selectedCatalog?.spec ?? null),
     [selectedCatalog],
@@ -1627,8 +1608,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ? featureGroups.slice(1)
     : featureGroups;
 
-  // Live composition for Recipe MCs — used for preview and for populating the
-  // form fields on selection / when the user toggles features/variant.
   const composeResult = useMemo(() => {
     if (!selectedCatalog || !isRecipeCatalog) return null;
     return composeEndpointSpec(
@@ -1677,9 +1656,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
   }, [composeResult, modelSourceMode]);
 
-  // Handle model catalog selection with merge logic. Trivial MCs go through
-  // the original `applyCatalogSpec` path; Recipe MCs go through the composer,
-  // driven by the effect above once selectedVariant/featureSelections land.
   const handleModelCatalogSelect = (catalogId: string) => {
     pendingRegistryModelPreservationRef.current = null;
     setModelSourceMode("catalog");
@@ -1703,8 +1679,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (!catalog) return;
 
     if (isRecipeShape(catalog.spec)) {
-      // Recipe path — initialize variant/features defaults; the effect above
-      // composes and applies once these land.
       const variants = Object.keys(catalog.spec.variants ?? {});
       const initialVariant = variants.includes(DEFAULT_VARIANT)
         ? DEFAULT_VARIANT
@@ -1715,7 +1689,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       setSelectedVariant(initialVariant);
       setFeatureSelections(initialFeatures);
     } else {
-      // Trivial path — current behavior, unchanged.
       applyCatalogSpec(catalog.spec as Record<string, unknown>);
       setSelectedVariant("");
       setFeatureSelections([]);
@@ -1772,8 +1745,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     });
   }, [form, modelRegistryNames, preselectRegistryModel, workspace]);
 
-  // When user changes variant or features, the effect above re-composes and
-  // re-applies from the new selection.
   const handleVariantChange = (v: string) => {
     if (v === selectedVariant) return;
     const previousVariantModel = modelIdentity(
@@ -1826,14 +1797,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         cpuPerReplica: normalizedResources?.cpu,
         memoryPerReplica: normalizedResources?.memory,
         requestedFullGpuCards,
-        fullGpuCardCapacity,
+        fullGpuCardCapacity: availableFullGpuCards,
         fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
         requestedVirtualCards,
         totalVirtualCardCapacity,
         requestedVgpuMemoryMiB,
-        availableVgpuMemoryMiB,
+        availableVgpuMemoryMiB: rawAvailableVgpuMemoryMiB,
         requestedVgpuCoreUnits,
-        availableVgpuCoreUnits,
+        availableVgpuCoreUnits: rawAvailableVgpuCoreUnits,
         memoryMiBPerCard: effectiveVgpuMemoryMiB,
         coreUnitsPerCard: vgpuCoreUnitsPerCard,
         vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
@@ -1940,7 +1911,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     applyModelValues(variantResetSnapshot.model);
   };
 
-  // Active variant + its display metadata, used for the estimate summary.
   const activeVariant =
     modelSourceMode === "catalog"
       ? (selectedCatalog?.spec.variants?.[selectedVariant] ??
@@ -2430,7 +2400,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                     : requestedFullGpuCards,
                   available: isVgpuAllocationMode
                     ? totalVirtualCardCapacity
-                    : fullGpuCardCapacity,
+                    : availableFullGpuCards,
                   total: maxFullGpuCards,
                 },
               ]
@@ -2440,7 +2410,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {
                   key: "vram" as const,
                   requested: requestedVgpuMemoryMiB / 1024,
-                  available: availableVgpuMemoryMiB / 1024,
+                  available: rawAvailableVgpuMemoryMiB / 1024,
                   total:
                     Number.isFinite(selectedVgpuMemoryTotalMiB) &&
                     selectedVgpuMemoryTotalMiB > 0
@@ -2450,7 +2420,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                 {
                   key: "core" as const,
                   requested: requestedVgpuCoreUnits,
-                  available: availableVgpuCoreUnits,
+                  available: rawAvailableVgpuCoreUnits,
                   total:
                     Number.isFinite(selectedVgpuCoreTotal) &&
                     selectedVgpuCoreTotal > 0
@@ -2829,8 +2799,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form: formWithTransformedOnFinish,
     editQuery: form.refineCore.query,
     currentWorkspace,
-    // Block deploy while any requested resource exceeds cluster capacity; the
-    // page forwards this straight to <ResourceForm submitBlocked>.
     submitBlocked: isResourceCapacityExceeded,
     metadataFields: (
       <FormCardGrid
@@ -2899,7 +2867,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       value as string,
                       userSetValueOptions,
                     );
-                    // Reset model name and search when registry changes
                     form.setValue("spec.model.name", "", userSetValueOptions);
                     form.setValue("spec.model.info", null, userSetValueOptions);
                     setModelSearch("");
@@ -3029,7 +2996,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       form.watch() as unknown as Endpoint,
       !hidesModelFields,
     ),
-    // Scheduling target and resource selection section - always visible.
     resourceFields: (
       <FormCardGrid
         title={t("endpoints.sections.schedulingTargetResources")}
@@ -3245,7 +3211,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               : ""
                           }
                           onChange={(value) => {
-                            // Parse "type:product" format
                             const selectedOption =
                               displayedAcceleratorOptions.find(
                                 (opt) => opt.value === value,
@@ -3496,7 +3461,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                 : t("endpoints.messages.cardsAvailable", {
                                     count: isVgpuAllocationMode
                                       ? totalVirtualCardCapacity
-                                      : fullGpuCardCapacity,
+                                      : availableFullGpuCards,
                                   })}
                             </Badge>
                             <InfoHint
@@ -3526,7 +3491,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               ) : (
                                 `${formatOneDecimal(
                                   requestedFullGpuCards,
-                                )} / ${formatOneDecimal(fullGpuCardCapacity)}`
+                                )} / ${formatOneDecimal(availableFullGpuCards)}`
                               ),
                             },
                             ...(isVgpuAllocationMode
@@ -3543,7 +3508,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                                       `${formatOneDecimal(
                                         requestedVgpuMemoryMiB / 1024,
                                       )} / ${formatOneDecimal(
-                                        availableVgpuMemoryMiB / 1024,
+                                        rawAvailableVgpuMemoryMiB / 1024,
                                       )}`
                                     ),
                                   },
@@ -3608,7 +3573,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           </div>
         </div>
 
-        {/* Cluster status indicator */}
         {currentCluster && !clusterResources && (
           <div className="col-span-4 mt-2">
             <div className="text-sm text-yellow-600">
@@ -3618,7 +3582,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         )}
       </FormCardGrid>
     ),
-    // Advanced settings keep endpoint deployment controls and runtime details.
     customizeFields: (
       <FormCardGrid
         title={t("endpoints.sections.advancedOptions")}

@@ -37,9 +37,9 @@ import {
 } from "@/foundation/hooks/use-has-permission";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { isHidden } from "@/foundation/testing/interactions";
+import { refineForm } from "@/foundation/testing/refine-form";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";
 
-/** Stands in for the organization domain's picker: one click picks "rnd". */
 const OrgUnitFieldMock = React.forwardRef<
   HTMLButtonElement,
   { value?: string | null; onChange?: (value: string) => void }
@@ -71,7 +71,7 @@ const TeamFieldMock = React.forwardRef<
 let formRef: UseFormReturn<RoleAssignment> | undefined;
 
 function TestForm({ action = "create" }: { action?: "create" | "edit" }) {
-  const { form, specFields } = useRoleAssignmentForm({
+  const { form, metadataFields, specFields } = useRoleAssignmentForm({
     action,
     orgUnitField: <OrgUnitFieldMock />,
     teamField: <TeamFieldMock />,
@@ -79,7 +79,13 @@ function TestForm({ action = "create" }: { action?: "create" | "edit" }) {
   formRef = form as unknown as UseFormReturn<RoleAssignment>;
   return (
     <FormProvider {...form}>
-      <form>{specFields}</form>
+      <form
+        onSubmit={form.handleSubmit((data) => form.refineCore.onFinish(data))}
+      >
+        {metadataFields}
+        {specFields}
+        <button type="submit">Save</button>
+      </form>
     </FormProvider>
   );
 }
@@ -334,85 +340,123 @@ describe("useRoleAssignmentForm", () => {
     });
   });
 
-  describe("edit", () => {
-    it("submits the whole spec of a group assignment", async () => {
-      render(<TestForm action="edit" />);
-      expect(spec()).toHaveProperty("subject_kind", "User");
-      expect(spec()).toHaveProperty("subject_name", null);
-
-      act(() =>
-        formRef?.reset({
-          api_version: "v1",
-          kind: "RoleAssignment",
-          metadata: { name: "ra-2" } as RoleAssignment["metadata"],
-          spec: {
-            user_id: null,
-            role: "viewer",
-            global: true,
-            workspace: null,
-            org_unit: null,
-            subject_kind: "Team",
-            subject_name: "sre",
-          },
-        }),
-      );
-
-      expect(kindTrigger().textContent).toBe(TEAM);
-      let submitted: RoleAssignment | undefined;
-      await act(async () => {
-        await formRef?.handleSubmit((data) => {
-          submitted = data;
-        })();
-      });
-      expect(submitted?.spec).toEqual({
-        user_id: null,
+  describe("payloads", () => {
+    const makeAssignment = (
+      overrides: Partial<RoleAssignment["spec"]> = {},
+    ): RoleAssignment => ({
+      id: 7,
+      api_version: "v1",
+      kind: "RoleAssignment",
+      metadata: { name: "policy" } as RoleAssignment["metadata"],
+      spec: {
+        user_id: "u-1",
         role: "viewer",
         global: true,
         workspace: null,
         org_unit: null,
+        subject_kind: "User",
+        subject_name: null,
+        ...overrides,
+      },
+    });
+
+    it.each([
+      { name: "policy", role: "viewer" },
+      { name: "", role: "" },
+    ])(
+      "sends create name=$name and role=$role unchanged",
+      async ({ name, role }) => {
+        render(<TestForm />);
+        act(() => {
+          formRef?.setValue("spec.user_id", "u-1");
+          formRef?.setValue("metadata.name", name);
+          formRef?.setValue("spec.role", role);
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+        await waitFor(() =>
+          expect(refineForm.onFinish).toHaveBeenCalledWith({
+            api_version: "v1",
+            kind: "RoleAssignment",
+            metadata: { name },
+            spec: {
+              user_id: "u-1",
+              workspace: "",
+              global: true,
+              role,
+              org_unit: null,
+              subject_kind: "User",
+              subject_name: null,
+            },
+          }),
+        );
+      },
+    );
+
+    it.each([
+      { label: "global user", fields: {} },
+      { label: "workspace user", fields: { global: false, workspace: "ws" } },
+      { label: "subtree user", fields: { global: false, org_unit: "rnd" } },
+      { label: "Team scope", fields: { global: false, team: "sre" } },
+      {
+        label: "Team subject",
+        fields: { user_id: null, subject_kind: "Team", subject_name: "sre" },
+      },
+      {
+        label: "department subject",
+        fields: { user_id: null, subject_kind: "OrgUnit", subject_name: "rnd" },
+      },
+      {
+        label: "legacy user",
+        fields: { subject_kind: null, subject_name: null },
+      },
+    ] satisfies { label: string; fields: Partial<RoleAssignment["spec"]> }[])(
+      "reopens $label and sends the loaded record unchanged",
+      async ({ fields }) => {
+        const record = makeAssignment(fields);
+        render(<TestForm action="edit" />);
+        // refine fills only the fields present in the defaults.
+        expect(spec()).toHaveProperty("org_unit", null);
+        act(() => formRef?.reset(record));
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+        await waitFor(() =>
+          expect(refineForm.onFinish).toHaveBeenCalledWith(record),
+        );
+      },
+    );
+
+    it("sends a Team subject and scope, then clears both on switching", async () => {
+      render(<TestForm />);
+      selectKind(TEAM);
+      fireEvent.click(screen.getByTestId("team-field-mock"));
+      selectScope(TEAM_SCOPE);
+      act(() => formRef?.setValue("spec.team", "ml"));
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledTimes(1));
+      expect(refineForm.onFinish.mock.calls[0][0].spec).toEqual({
+        user_id: null,
+        role: "",
+        global: false,
+        workspace: null,
+        org_unit: null,
+        team: "ml",
         subject_kind: "Team",
         subject_name: "sre",
       });
-    });
-
-    it("submits the whole spec, org_unit included", async () => {
-      render(<TestForm action="edit" />);
-      // refine fills only the fields present in the defaults (NEU-717).
-      expect(spec()).toHaveProperty("org_unit", null);
-
-      act(() =>
-        formRef?.reset({
-          api_version: "v1",
-          kind: "RoleAssignment",
-          metadata: { name: "ra-1" } as RoleAssignment["metadata"],
-          spec: {
-            user_id: "u-1",
-            role: "viewer",
-            global: false,
-            workspace: null,
-            org_unit: "rnd",
-            subject_kind: "User",
-            subject_name: null,
-          },
-        }),
-      );
-
-      let submitted: RoleAssignment | undefined;
-      await act(async () => {
-        await formRef?.handleSubmit((data) => {
-          submitted = data;
-        })();
-      });
-      expect(submitted?.spec).toEqual({
-        user_id: "u-1",
-        role: "viewer",
-        global: false,
+      selectKind(USER);
+      selectScope(GLOBAL);
+      act(() => formRef?.setValue("spec.user_id", "u-2"));
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => expect(refineForm.onFinish).toHaveBeenCalledTimes(2));
+      expect(refineForm.onFinish.mock.calls[1][0].spec).toEqual({
+        user_id: "u-2",
+        role: "",
+        global: true,
         workspace: null,
-        org_unit: "rnd",
+        org_unit: null,
+        team: null,
         subject_kind: "User",
         subject_name: null,
       });
-      expect(scopeTrigger().textContent).toBe(SUBTREE);
     });
   });
 

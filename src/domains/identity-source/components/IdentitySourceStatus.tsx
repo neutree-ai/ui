@@ -6,17 +6,14 @@ import {
 import type { IdentitySourceStatus as IdentitySourceStatusType } from "@/domains/identity-source/types";
 import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { STATUS_TONE } from "@/foundation/lib/status-tone";
 import { cn } from "@/foundation/lib/utils";
 
 const phaseClassNames: Record<string, string> = {
-  Connected:
-    "border border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-  Failed:
-    "border border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-  Pending:
-    "border border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-  Deleted:
-    "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
+  Connected: STATUS_TONE.positive,
+  Failed: STATUS_TONE.serious,
+  Pending: STATUS_TONE.notice,
+  Deleted: STATUS_TONE.neutral,
 };
 
 /**

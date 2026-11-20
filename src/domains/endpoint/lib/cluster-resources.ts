@@ -9,22 +9,16 @@ import type {
   ResourceInfo,
 } from "@/foundation/types/resource-types";
 
-/**
- * Cluster-level resource summary (for display purposes)
- */
 type ClusterResourceSummary = {
   cpu: { available: number; total: number };
   memory: { available: number; total: number };
 };
 
-/**
- * Accelerator option for selection dropdown
- */
 type AcceleratorOption = {
-  label: string; // Display label: "NVIDIA GPU - Tesla-V100"
-  value: string; // Unique value: "nvidia_gpu:Tesla-V100"
-  type: string; // Accelerator type: "nvidia_gpu"
-  product: string; // Product name: "Tesla-V100"
+  label: string;
+  value: string;
+  type: string;
+  product: string;
   available: number; // Fully free cards, or the aggregate fallback
   total: number; // Physical cards, or the aggregate fallback
   memoryTotalMiB?: number | null;
@@ -44,9 +38,6 @@ type SingleNodeMax = {
   gpu: { available: number; total: number };
 };
 
-/**
- * Result of parsing cluster resources
- */
 type ParsedClusterResources = {
   summary: ClusterResourceSummary | null;
   acceleratorOptions: AcceleratorOption[];
@@ -131,9 +122,6 @@ const getProductMemoryTotalMiB = (
   return undefined;
 };
 
-/**
- * Parse cluster resource info into a summary and available accelerator options.
- */
 export function parseClusterResources(
   resourceInfo: ClusterResourceInfo | null | undefined,
   translateAcceleratorType: (type: string) => string,
@@ -160,7 +148,6 @@ export function parseClusterResources(
     },
   };
 
-  // Build accelerator options from accelerator_groups
   const acceleratorOptions: AcceleratorOption[] = [];
   // Device details are the physical inventory. The aggregate view can lag
   // behind them or describe scheduler allocations differently, so prefer the
@@ -197,6 +184,36 @@ export function parseClusterResources(
 
       const translatedType = translateAcceleratorType(type);
 
+      const addProductOption = (
+        product: string,
+        counts: { available: number; total: number },
+        productResources?: AcceleratorProductResources,
+        availableProduct?: AcceleratorProductResources,
+      ) =>
+        acceleratorOptions.push(
+          withAcceleratorMetrics(
+            {
+              label: `${translatedType} - ${product}`,
+              value: `${type}:${product}`,
+              type,
+              product,
+              ...counts,
+            },
+            {
+              memoryTotalMiB: getProductMemoryTotalMiB(
+                resourceInfo,
+                type,
+                product,
+                productResources,
+              ),
+              virtualizationMemoryMiB:
+                availableProduct?.virtualization?.memory_mib,
+              virtualizationCoreUnits:
+                availableProduct?.virtualization?.core_units,
+            },
+          ),
+        );
+
       const allocatableProducts = allocatableGroup.products;
 
       if (allocatableProducts && Object.keys(allocatableProducts).length > 0) {
@@ -210,36 +227,12 @@ export function parseClusterResources(
             productResources.quantity || 0,
           );
 
-          acceleratorOptions.push(
-            withAcceleratorMetrics(
-              {
-                label: `${translatedType} - ${product}`,
-                value: `${type}:${product}`,
-                type,
-                product,
-                available: counts.available,
-                total: counts.total,
-              },
-              {
-                memoryTotalMiB: getProductMemoryTotalMiB(
-                  resourceInfo,
-                  type,
-                  product,
-                  productResources,
-                ),
-                virtualizationMemoryMiB:
-                  availableProduct?.virtualization?.memory_mib,
-                virtualizationCoreUnits:
-                  availableProduct?.virtualization?.core_units,
-              },
-            ),
-          );
+          addProductOption(product, counts, productResources, availableProduct);
         }
       } else if (
         allocatableGroup.product_groups &&
         Object.keys(allocatableGroup.product_groups).length > 0
       ) {
-        // Create an option for each product
         for (const [product, productTotal] of Object.entries(
           allocatableGroup.product_groups,
         )) {
@@ -247,28 +240,9 @@ export function parseClusterResources(
             availableGroup?.product_groups?.[product] || 0;
           const counts = productCounts(product, productAvailable, productTotal);
 
-          acceleratorOptions.push(
-            withAcceleratorMetrics(
-              {
-                label: `${translatedType} - ${product}`,
-                value: `${type}:${product}`,
-                type,
-                product,
-                available: counts.available,
-                total: counts.total,
-              },
-              {
-                memoryTotalMiB: getProductMemoryTotalMiB(
-                  resourceInfo,
-                  type,
-                  product,
-                ),
-              },
-            ),
-          );
+          addProductOption(product, counts);
         }
       } else {
-        // No product breakdown, create a generic option
         acceleratorOptions.push({
           label: translatedType,
           value: `${type}:generic`,
@@ -326,7 +300,6 @@ export function findBestNodeForAccelerator(
     if (!available) continue;
 
     if (!hasAccelerator) {
-      // CPU-only: all nodes are candidates, gpu = 0
       candidateNodes.push({
         nodeName,
         gpu: { available: 0, total: 0 },
@@ -342,7 +315,6 @@ export function findBestNodeForAccelerator(
       continue;
     }
 
-    // Check if this node has the specified accelerator type and product
     const accGroupAvailable = available.accelerator_groups?.[acceleratorType];
     if (!accGroupAvailable) continue;
 
@@ -356,7 +328,6 @@ export function findBestNodeForAccelerator(
     }).get(product);
 
     if (product === "" || product === "generic") {
-      // Generic accelerator (no product breakdown)
       gpuAvailable = accGroupAvailable.quantity || 0;
       gpuTotal = allocatableAccGroup?.quantity || 0;
     } else if (
@@ -378,7 +349,6 @@ export function findBestNodeForAccelerator(
         0;
       gpuTotal = allocatableAccGroup?.product_groups?.[product] ?? 0;
     } else {
-      // This node doesn't have the specified product
       continue;
     }
 
@@ -400,30 +370,11 @@ export function findBestNodeForAccelerator(
     return null;
   }
 
-  if (!hasAccelerator) {
-    // CPU-only: select by (cpu + memory) score directly
-    const bestNode = candidateNodes.reduce((best, current) => {
-      const bestScore = best.cpu.available + best.memory.available;
-      const currentScore = current.cpu.available + current.memory.available;
-      return currentScore > bestScore ? current : best;
-    });
-
-    return {
-      nodeName: bestNode.nodeName,
-      cpu: bestNode.cpu,
-      memory: bestNode.memory,
-      gpu: bestNode.gpu,
-    };
-  }
-
-  // Step 2: Find the maximum GPU count among candidates
   const maxGpu = Math.max(...candidateNodes.map((n) => n.gpu.available));
-
-  // Step 3: Filter to nodes with max GPU count
-  const topGpuNodes = candidateNodes.filter((n) => n.gpu.available === maxGpu);
-
-  // Step 4: Among top GPU nodes, select by (cpu + memory) score
-  const bestNode = topGpuNodes.reduce((best, current) => {
+  const rankedNodes = hasAccelerator
+    ? candidateNodes.filter((n) => n.gpu.available === maxGpu)
+    : candidateNodes;
+  const bestNode = rankedNodes.reduce((best, current) => {
     const bestScore = best.cpu.available + best.memory.available;
     const currentScore = current.cpu.available + current.memory.available;
     return currentScore > bestScore ? current : best;

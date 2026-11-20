@@ -1471,8 +1471,7 @@ const getAggregateDimensionStatus = (
 ): GpuPlacementStatus => {
   if (requested === 0) return "pass";
   if (!hasAnySignal) return "fail";
-  if (isAtLeastWithTolerance(available, requested)) return "pass";
-  return "fail";
+  return isAtLeastWithTolerance(available, requested) ? "pass" : "fail";
 };
 
 const solvePlacementForCards = (

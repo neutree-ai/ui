@@ -22,11 +22,10 @@ vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
   ),
 }));
 
-vi.mock("@/domains/api-key/hooks/use-api-key-policy", () => ({
-  resolveQuotaPeriod: () => "monthly",
-  apiKeyPolicyDefaults: () => ({}),
-  buildApiKeyLimits: () => ({ rps: 10 }),
-  limitsToForm: () => ({}),
+vi.mock("@/domains/api-key/hooks/use-api-key-policy", async () => ({
+  ...(await vi.importActual<
+    typeof import("@/domains/api-key/hooks/use-api-key-policy")
+  >("@/domains/api-key/hooks/use-api-key-policy")),
   useApiKeyDisable: () => ({ disable: vi.fn(), enable: vi.fn() }),
   useApiKeyLimits: () => ({ load }),
   // The card reads each entry's source from the workspace options rather than
@@ -39,8 +38,59 @@ import { ApiKeyLimitsCard } from "./ApiKeyLimitsCard";
 describe("ApiKeyLimitsCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    load.mockResolvedValue({});
+    load.mockResolvedValue({ rps: 10 });
     mutateAsync.mockResolvedValue({ data: {} });
+  });
+
+  it("reopens and saves per-model limits without resending computed usage or the secret", async () => {
+    load.mockResolvedValue({
+      disabled: true,
+      token_quota: { period: "weekly" },
+      allowed_models: [
+        {
+          model: "chat",
+          type: "external",
+          token_limit: 12345,
+          used: 13000,
+          remaining: -655,
+        },
+      ],
+      quota_granularity: "per_model",
+      quota_period: "weekly",
+      quota_period_start: "2026-11-09",
+      quota_resets_at: "2026-11-16",
+    });
+    render(
+      <ApiKeyLimitsCard
+        apiKeyId="key-1"
+        workspace="default"
+        projectId={null}
+        displayName="App key"
+        description=""
+        serviceAccountId="sa-7"
+      />,
+    );
+    await screen.findByText("api_keys.limits.statusDisabled");
+    fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({
+        url: "/rpc/update_api_key_configuration",
+        method: "post",
+        values: {
+          p_api_key_id: "key-1",
+          p_project_id: null,
+          p_display_name: "App key",
+          p_description: "",
+          p_limits: {
+            disabled: true,
+            token_quota: { period: "weekly" },
+            allowed_models: [
+              { model: "chat", type: "external", token_limit: 12345 },
+            ],
+          },
+        },
+      }),
+    );
   });
 
   it("saves the edited display name and description with the configuration", async () => {

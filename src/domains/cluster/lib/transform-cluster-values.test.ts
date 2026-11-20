@@ -103,6 +103,10 @@ describe("transformClusterValues", () => {
     },
   );
 
+  it("cannot encode a kubeconfig with characters outside Latin-1", () => {
+    expect(() => transformClusterValues(k8sCluster("name: 集群"))).toThrow();
+  });
+
   it("converts router replicas to number", () => {
     const result = transformClusterValues(k8sCluster("apiVersion: v1"));
     expect(result.spec.config.kubernetes_config?.router?.replicas).toBe(3);

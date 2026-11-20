@@ -1,6 +1,7 @@
 import type { Cluster } from "@/domains/cluster/types";
 import {
   isTouchedField,
+  omitEmptyUntouched,
   type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 import { zcacheSpec } from "../types";
@@ -12,10 +13,9 @@ import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualizati
  * - Convert router replicas to number
  * - In edit mode, strip unchanged empty sensitive fields to avoid overwriting backend values
  *
- * In edit mode the form is pre-populated with the stored values, which are
- * already base64-encoded. Encoding is therefore applied only to values the
- * user actually entered (create mode, or touched in edit mode); untouched
- * values round-trip unchanged to avoid double encoding.
+ * The API stores both secrets base64-encoded and never returns them, so an
+ * edit form starts with them empty. Encoding applies only to values the user
+ * entered (create mode, or touched in edit mode).
  */
 export function transformClusterValues(
   values: Cluster,
@@ -58,7 +58,6 @@ export function transformClusterValues(
     "kubeconfig",
   ]);
 
-  // Transform SSH private key for SSH type clusters
   if (
     config.ssh_config?.auth?.ssh_private_key &&
     values.spec.type === "ssh" &&
@@ -71,7 +70,6 @@ export function transformClusterValues(
       config.ssh_config.auth.ssh_private_key,
     );
   }
-  // Transform kubeconfig for Kubernetes type clusters
   if (
     config.kubernetes_config?.kubeconfig &&
     values.spec.type === "kubernetes" &&
@@ -81,7 +79,6 @@ export function transformClusterValues(
       config.kubernetes_config.kubeconfig,
     );
   }
-  // Transform router replicas to number
   if (config.kubernetes_config?.router?.replicas) {
     config.kubernetes_config.router.replicas = Number(
       config.kubernetes_config.router.replicas,
@@ -93,22 +90,19 @@ export function transformClusterValues(
   ) {
     delete transformed.spec.accelerator_virtualization;
   }
-  // In edit mode, remove unchanged empty sensitive fields to avoid overwriting backend config.
   if (isEdit) {
-    if (
-      config.ssh_config?.auth &&
-      !config.ssh_config.auth.ssh_private_key &&
-      !sshPrivateKeyTouched
-    ) {
-      delete config.ssh_config.auth.ssh_private_key;
-    }
-    if (
-      config.kubernetes_config &&
-      !config.kubernetes_config.kubeconfig &&
-      !kubeconfigTouched
-    ) {
-      delete config.kubernetes_config.kubeconfig;
-    }
+    omitEmptyUntouched(
+      config.ssh_config?.auth,
+      ["spec", "config", "ssh_config", "auth"],
+      ["ssh_private_key"],
+      touchedFields,
+    );
+    omitEmptyUntouched(
+      config.kubernetes_config,
+      ["spec", "config", "kubernetes_config"],
+      ["kubeconfig"],
+      touchedFields,
+    );
   }
   return transformed;
 }

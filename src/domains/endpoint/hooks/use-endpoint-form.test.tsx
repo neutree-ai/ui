@@ -48,7 +48,8 @@ vi.mock("@/foundation/components/VariablesInput", () => ({
 
 import { useSelect } from "@refinedev/core";
 import { defaultEndpointSpec } from "@/domains/endpoint/lib/endpoint-form-helpers";
-import type { EndpointClusterRef } from "@/domains/endpoint/types";
+import { makeEndpoint } from "@/domains/endpoint/testing/builders";
+import type { Endpoint, EndpointClusterRef } from "@/domains/endpoint/types";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
@@ -2483,5 +2484,215 @@ describe("the weights estimate", () => {
     await waitFor(() =>
       expect(result.current.reviewContext.requiredVramGb).toBe(49),
     );
+  });
+});
+
+describe("endpoint write payloads", () => {
+  const storedEndpoint = () =>
+    ({
+      ...makeEndpoint({
+        metadata: {
+          display_name: "Production chat",
+          labels: { team: "inference" },
+          annotations: { "neutree.ai/catalog-origin": "recipe" },
+        },
+        spec: {
+          cluster: "plain-gpu",
+          resources: {
+            cpu: "4",
+            memory: "8",
+            gpu: "1",
+            accelerator: { type: "nvidia_gpu", product: T4 },
+          } as unknown as Endpoint["spec"]["resources"],
+          deployment_options: { scheduler: { type: "consistent_hash" } },
+          variables: {
+            engine_args: { token: "plain-env-value", optional: null },
+          },
+          env: { API_TOKEN: "plain-secret-value" },
+        },
+      }),
+      status: { phase: "Running", service_url: "https://example.test/v1" },
+    }) as unknown as Endpoint;
+
+  function reopen(record: Endpoint) {
+    refineForm.queryData = record;
+    const rendered = renderEndpointForm("edit", {
+      clusters: [plainGpuCluster()],
+    });
+    const { select } = (
+      refineForm.options as {
+        refineCoreProps: {
+          queryOptions: {
+            select: (response: { data: Endpoint }) => { data: Endpoint };
+          };
+        };
+      }
+    ).refineCoreProps.queryOptions;
+    act(() =>
+      rendered.result.current.form.reset(select({ data: record }).data),
+    );
+    return rendered;
+  }
+
+  it("reopens the API record and preserves the complete untouched edit payload", async () => {
+    const stored = storedEndpoint();
+    const { result } = reopen(stored);
+
+    expect(await submit(result)).toEqual(stored);
+    expect(stored.spec.resources?.cpu).toBe("4");
+  });
+
+  it.each([
+    { path: "spec.replicas.num", value: "3", sent: 3 },
+    { path: "spec.model.version", value: "", sent: "" },
+    { path: "spec.model.file", value: "", sent: "" },
+    { path: "spec.variables", value: null, sent: null },
+    { path: "spec.resources.cpu", value: 2.5, sent: "2.5" },
+    { path: "spec.resources.memory", value: 16, sent: "16" },
+    {
+      path: "spec.resources",
+      value: null,
+      sent: { accelerator: { type: "nvidia_gpu", product: T4 } },
+    },
+    { path: "spec.kv_cache", value: null, sent: null },
+    { path: "spec.env", value: { API_TOKEN: "" }, sent: { API_TOKEN: "" } },
+    { path: "spec.env", value: {}, sent: {} },
+    {
+      path: "spec.kv_cache",
+      value: { provider: "zcache", options: { timeout_seconds: 15 } },
+      sent: { provider: "zcache", options: { timeout_seconds: 15 } },
+    },
+  ])(
+    "edits $path without changing sibling payload fields",
+    async ({ path, value, sent }) => {
+      const stored = storedEndpoint();
+      const { result } = reopen(stored);
+      setValues(result, { [path]: value });
+      const expected = structuredClone(stored);
+      const segments = path.split(".");
+      let parent = expected as unknown as Record<string, unknown>;
+      for (const segment of segments.slice(0, -1)) {
+        parent = parent[segment] as Record<string, unknown>;
+      }
+      parent[segments[segments.length - 1]] = sent;
+
+      expect(await submit(result)).toEqual(expected);
+    },
+  );
+
+  it.each(["v2", "v1"])(
+    "selects an engine and saves version %s with its task",
+    async (version) => {
+      const stored = storedEndpoint();
+      const { result } = reopen(stored);
+      mockLists({
+        clusters: [plainGpuCluster()],
+        engines: [
+          {
+            ...engineRef("sglang"),
+            spec: {
+              versions: [{ version: "v1" }, { version: "v2" }],
+              supported_tasks: ["embedding"],
+            },
+          },
+        ],
+      });
+      setValues(result, { "spec.engine.version": "0.31.0" });
+      selectOption("spec.engine.engine", "sglang");
+      if (version !== "v2") selectOption("spec.engine.version", version);
+
+      expect(await submit(result)).toEqual({
+        ...stored,
+        spec: {
+          ...stored.spec,
+          engine: { engine: "sglang", version },
+          model: { ...stored.spec.model, task: "embedding" },
+        },
+      });
+    },
+  );
+
+  it("blocks a paused CPU-only edit only on the replica minimum", async () => {
+    const stored = storedEndpoint();
+    stored.spec.cluster = "no-resources";
+    stored.spec.replicas = { num: 0 };
+    stored.spec.resources = {
+      cpu: "4",
+      memory: "8",
+      gpu: "0",
+      accelerator: null,
+    } as unknown as Endpoint["spec"]["resources"];
+    const { result } = reopen(stored);
+
+    await act(async () => {
+      await result.current.form.handleSubmit(
+        result.current.form.refineCore.onFinish,
+      )();
+    });
+
+    expect(refineForm.onFinish).not.toHaveBeenCalled();
+    expect(formError(result, "spec.replicas.num")?.message).toBe(
+      "endpoints.messages.replicasMustBeAtLeastOne",
+    );
+    expect(formError(result, "spec.resources.accelerator")).toBeUndefined();
+  });
+
+  it("drops API-supplied custom accelerator keys on an untouched edit", async () => {
+    const stored = storedEndpoint();
+    Object.assign(stored.spec.resources?.accelerator ?? {}, {
+      topology: "numa-0",
+    });
+    const { result } = reopen(stored);
+    const expected = storedEndpoint();
+
+    expect(await submit(result)).toEqual(expected);
+    expect(stored.spec.resources?.accelerator).toHaveProperty(
+      "topology",
+      "numa-0",
+    );
+  });
+
+  it("creates the complete wizard payload from the chosen catalog", async () => {
+    const { result } = renderEndpointForm("create", {
+      clusters: [plainGpuCluster()],
+    });
+    selectCatalog("vllm-llama");
+    setValues(result, {
+      "metadata.name": "new-chat",
+      "spec.cluster": "plain-gpu",
+    });
+    const submitted = await submit(result);
+
+    expect(submitted).toEqual({
+      api_version: "v1",
+      kind: "Endpoint",
+      metadata: {
+        name: "new-chat",
+        workspace: "default",
+        annotations: { "neutree.ai/model-catalog": "vllm-llama" },
+      },
+      spec: {
+        cluster: "plain-gpu",
+        model: {
+          registry: "hf",
+          name: "llama-3",
+          version: "1.0",
+          file: "model.bin",
+          task: "text-generation",
+          info: null,
+        },
+        engine: { engine: "vllm", version: "0.6.0" },
+        resources: {
+          cpu: "4",
+          memory: "8",
+          gpu: "1",
+          accelerator: { type: "nvidia_gpu", product: T4 },
+        },
+        replicas: { num: 2 },
+        deployment_options: { scheduler: { type: "roundrobin" } },
+        variables: { engine_args: { tensor_parallel: "1" } },
+        env: {},
+      },
+    });
   });
 });

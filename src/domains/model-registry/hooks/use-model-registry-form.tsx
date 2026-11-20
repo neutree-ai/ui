@@ -41,7 +41,6 @@ export const useModelRegistryForm = ({
         credentials: "",
       },
     },
-    refineCoreProps: {},
     warnWhenUnsavedChanges: true,
   });
 

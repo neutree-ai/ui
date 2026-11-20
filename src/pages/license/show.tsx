@@ -65,7 +65,6 @@ export const LicenseShow: React.FC = () => {
   return (
     <div className="w-full flex justify-center items-start pt-8">
       <div className="w-full flex flex-col gap-6 max-w-4xl px-4">
-        {/* License Info Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold">
@@ -81,7 +80,6 @@ export const LicenseShow: React.FC = () => {
               <EmptyState>{t("license.noLicense")}</EmptyState>
             ) : license?.status ? (
               <>
-                {/* Status */}
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-semibold min-w-[120px]">
                     {t("common.fields.status")}:
@@ -96,7 +94,6 @@ export const LicenseShow: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label className="text-sm text-muted-foreground">
@@ -203,7 +200,6 @@ export const LicenseShow: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Usage Info */}
                 {license.status.usage && (
                   <div className="pt-4 border-t">
                     <Label className="text-base font-semibold mb-3 block">
@@ -245,7 +241,6 @@ export const LicenseShow: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Update License Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold">
