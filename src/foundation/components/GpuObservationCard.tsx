@@ -1057,18 +1057,23 @@ function Utilization({
 function VramAllocationReading({
   allocated,
   total,
+  kind = "allocation",
   showLabel = true,
   className,
 }: {
   allocated: number | null;
   total: number | null;
+  kind?: "allocation" | "actual";
   showLabel?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation();
+  const actual = kind === "actual";
   return (
     <div
-      data-testid="vram-allocation-reading"
+      data-testid={
+        actual ? "vram-actual-usage-reading" : "vram-allocation-reading"
+      }
       className={cn(
         "flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4",
         className,
@@ -1076,7 +1081,9 @@ function VramAllocationReading({
     >
       {showLabel && (
         <span className="min-w-0 text-muted-foreground">
-          {t("observations.vramAllocation")}
+          {actual
+            ? t("observations.actualVramUsage")
+            : t("observations.vramAllocation")}
         </span>
       )}
       <span
@@ -1085,7 +1092,8 @@ function VramAllocationReading({
           !showLabel && "ml-auto",
         )}
       >
-        {t("observations.allocated")} {gibValue(allocated)}
+        {!actual && `${t("observations.allocated")} `}
+        {gibValue(allocated)}
         {" / "}
         {gibValue(total)}
         <span className="font-normal text-muted-foreground"> GiB</span>
@@ -1359,7 +1367,8 @@ export function GpuDetailsSheet({
                 <>
                   <div className="space-y-1">
                     <VramAllocationReading
-                      allocated={reserved}
+                      kind="actual"
+                      allocated={actual}
                       total={physical}
                     />
                     <MetricBar
@@ -1453,7 +1462,10 @@ export function GpuDetailsSheet({
               <h3 className="text-sm font-medium">
                 {t("observations.vramAllocation")}
               </h3>
-              <span className="text-[11px] tabular-nums text-muted-foreground">
+              <span
+                data-testid="vram-allocation-reading"
+                className="text-[11px] tabular-nums text-muted-foreground"
+              >
                 {t("observations.allocated")} {gibValue(reserved)} /{" "}
                 {gibValue(physical)} GiB
               </span>
