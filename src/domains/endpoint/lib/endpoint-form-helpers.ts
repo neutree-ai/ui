@@ -1,3 +1,4 @@
+import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
 import { normalizeVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
@@ -382,6 +383,53 @@ export function isResourceRequestExceeded(
     total > 0 &&
     requestedTotal > 0 &&
     requestedTotal - available > RESOURCE_REQUEST_EPSILON
+  );
+}
+
+type EndpointResourceRequest = {
+  resources: ResourceSpec | null | undefined;
+  replicas: number;
+};
+
+const sameAccelerator = (
+  left: ResourceSpec["accelerator"] | undefined,
+  right: ResourceSpec["accelerator"] | undefined,
+) =>
+  (left?.type ?? "") === (right?.type ?? "") &&
+  (left?.product ?? "") === (right?.product ?? "") &&
+  endpointValuesEqual(
+    left?.virtualization ?? null,
+    right?.virtualization ?? null,
+  );
+
+/**
+ * Whether `next` asks for nothing beyond what `current` already holds: no more
+ * replicas, no more CPU, memory or GPU per replica, and — when it asks for a
+ * GPU at all — the same accelerator. Such a request needs no additional
+ * cluster capacity.
+ */
+export function isRequestWithinAllocation(
+  current: EndpointResourceRequest,
+  next: EndpointResourceRequest,
+): boolean {
+  if (!current.resources || !next.resources) return false;
+
+  const notAbove = (key: "cpu" | "memory" | "gpu") =>
+    Number(next.resources?.[key] || 0) -
+      Number(current.resources?.[key] || 0) <=
+    RESOURCE_REQUEST_EPSILON;
+  const needsGpu = Number(next.resources.gpu || 0) > 0;
+
+  return (
+    next.replicas <= current.replicas &&
+    notAbove("cpu") &&
+    notAbove("memory") &&
+    notAbove("gpu") &&
+    (!needsGpu ||
+      sameAccelerator(
+        current.resources.accelerator,
+        next.resources.accelerator,
+      ))
   );
 }
 
