@@ -36,6 +36,7 @@ import {
 import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
+  isRequestWithinAllocation,
   isResourceRequestExceeded,
   normalizeEndpointRecordForForm,
   normalizeEndpointResourcesForForm,
@@ -480,6 +481,24 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // Capacity reuse is performed only on the node/device snapshot below. Do
   // not add the old Spec globally as a second credit path.
   const currentUsage = { cpu: 0, memory: 0, gpu: 0 };
+  // Static-node clusters report runtime placement only for replicas holding
+  // GPU devices, so a running CPU-only endpoint has no node to credit its own
+  // CPU/memory back to. A request that asks for nothing beyond what it already
+  // holds needs no new capacity, so placement is not checked for it.
+  const requestNeedsNoNewCapacity = Boolean(
+    action === "edit" &&
+      queryEndpoint?.status?.phase === "Running" &&
+      !currentEndpointRuntimeResources?.replicas?.length &&
+      queryEndpoint.spec?.cluster === currentCluster &&
+      !cacheChanged &&
+      isRequestWithinAllocation(
+        {
+          resources: normalizedQueryResources,
+          replicas: Math.max(1, Number(queryEndpoint.spec?.replicas?.num || 1)),
+        },
+        { resources: normalizedResources, replicas: replicaCount },
+      ),
+  );
 
   const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
@@ -751,6 +770,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (
       !currentCluster ||
       !hasNodeResourceSnapshot ||
+      requestNeedsNoNewCapacity ||
       (gpuUsage > 0 && (!selectedAccelerator?.product || isVgpuCapacityPending))
     ) {
       return null;
@@ -773,6 +793,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   }, [
     currentCluster,
     hasNodeResourceSnapshot,
+    requestNeedsNoNewCapacity,
     effectiveVgpuMemoryMiB,
     gpuUsage,
     isFractionalGpuAllocationMode,
