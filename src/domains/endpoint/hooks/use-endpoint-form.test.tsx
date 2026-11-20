@@ -1220,6 +1220,19 @@ describe("capacity checks", () => {
     it.each([
       { state: "absent", status: null, cpu: 4, blocked: true },
       { state: "empty", status: { resources: {} }, cpu: 4, blocked: true },
+      // Static-node clusters report no placement for CPU-only replicas.
+      {
+        state: "running without placement",
+        status: { phase: "Running" },
+        cpu: 4,
+        blocked: false,
+      },
+      {
+        state: "running without placement and larger new request",
+        status: { phase: "Running" },
+        cpu: 5,
+        blocked: true,
+      },
       {
         state: "allocated",
         status: { resources: { replicas: [allocation("node-a")] } },

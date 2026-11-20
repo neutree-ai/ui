@@ -4,6 +4,7 @@ import {
   computeMaxAvailable,
   deepMerge,
   defaultEndpointSpec,
+  isRequestWithinAllocation,
   isResourceRequestExceeded,
   normalizeEndpointRecordForForm,
   normalizeEndpointResourcesForForm,
@@ -31,6 +32,71 @@ describe("isResourceRequestExceeded", () => {
       );
     },
   );
+});
+
+describe("isRequestWithinAllocation", () => {
+  const card = { type: "nvidia_gpu", product: "Tesla-T4" };
+  const current = {
+    resources: { cpu: 2, memory: 4, gpu: 1, accelerator: card },
+    replicas: 2,
+  };
+
+  it.each([
+    { change: "nothing", resources: {}, replicas: 2, within: true },
+    {
+      change: "fewer CPU and replicas",
+      resources: { cpu: 1 },
+      replicas: 1,
+      within: true,
+    },
+    // The CPU field steps by 0.1, so float drift must not count as growth.
+    {
+      change: "float-drifted CPU",
+      resources: { cpu: 0.1 * 20 },
+      replicas: 2,
+      within: true,
+    },
+    { change: "more CPU", resources: { cpu: 2.1 }, replicas: 2, within: false },
+    {
+      change: "more memory",
+      resources: { memory: 5 },
+      replicas: 2,
+      within: false,
+    },
+    { change: "more GPU", resources: { gpu: 2 }, replicas: 2, within: false },
+    { change: "more replicas", resources: {}, replicas: 3, within: false },
+    {
+      change: "another product",
+      resources: { accelerator: { ...card, product: "A100" } },
+      replicas: 2,
+      within: false,
+    },
+    {
+      change: "a vGPU slice",
+      resources: {
+        accelerator: { ...card, virtualization: { memory_mib: 4096 } },
+      },
+      replicas: 2,
+      within: false,
+    },
+  ])("$change -> within: $within", ({ resources, replicas, within }) => {
+    expect(
+      isRequestWithinAllocation(current, {
+        resources: { ...current.resources, ...resources },
+        replicas,
+      }),
+    ).toBe(within);
+  });
+
+  it("ignores the accelerator of a request that asks for no GPU", () => {
+    const cpuOnly = { cpu: 2, memory: 4, gpu: 0, accelerator: null };
+    expect(
+      isRequestWithinAllocation(
+        { resources: cpuOnly, replicas: 1 },
+        { resources: { ...cpuOnly, accelerator: card }, replicas: 1 },
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("validateCurrentUsage", () => {

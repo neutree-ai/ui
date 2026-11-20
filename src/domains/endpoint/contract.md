@@ -99,7 +99,9 @@ use response bounds. Backend `performanceTrendsHandler` / `performanceRange`
 days.
 
 Shared placement/observations: `src/foundation/contract.md`, “Accelerator resources”. `useEndpointForm` credits only
-observed same-cluster allocations on eligible nodes/devices. Without snapshots, legacy aggregate checks apply. Empty
+observed same-cluster allocations on eligible nodes/devices. A Running edit with no reported replica placement (static
+CPU-only replicas report none), same cluster and cache, and a request within its current allocation skips the placement
+check (`isRequestWithinAllocation`, tests beside it). Without snapshots, legacy aggregate checks apply. Empty
 cache pools fail positive requests. CPU/memory input ceilings retain values above the per-node maximum.
 
 ## Submit and reopen
