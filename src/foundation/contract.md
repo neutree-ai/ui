@@ -172,5 +172,7 @@ allocatable values; unknown nodes/devices gain nothing. Full-card availability u
 `foundation/lib/gpu-device-resources.test.ts`; callers retain their own validation policy.
 
 `actualUsageMarkerState` hides zero/negative actual VRAM, marks known reservation excess serious and otherwise uses the
-neutral marker. Missing readings stay empty; zero remains a numeric reading. Tests:
+neutral marker. Missing readings stay empty; zero remains a numeric reading. The GPU details sheet labels the live
+reading as actual usage (observed VRAM / physical) and keeps the allocation reading (allocated / physical) separate.
+Tests:
 `foundation/lib/accelerator-observations.test.ts`, `foundation/components/GpuObservationCard.test.tsx`.
