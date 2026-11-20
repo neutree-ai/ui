@@ -493,7 +493,7 @@
   "src/foundation/lib/accelerator-observations.ts": "35c5007c84c1ebd9b1d83edc3d60088a",
   "src/foundation/lib/accelerator-tflops.ts": "87083d4682910f93cb2e4ca09fc7d161",
   "src/foundation/hooks/use-accelerator-observations.ts": "9bc9687a9a0bb63dd6576b8cafed8fe0",
-  "src/foundation/components/GpuObservationCard.tsx": "dc2c9321816e12916a58fb8b03f1b1a6",
+  "src/foundation/components/GpuObservationCard.tsx": "1a076eb2443188f474f2e83c5deda954",
   "src/foundation/components/GrafanaDashboardLink.tsx": "7862ccafc12a19c02c1eb8c35d173258",
   "src/foundation/components/ObservationStatus.tsx": "72070cc927e9285b655609e92af68e45",
   "src/domains/model-catalog/lib/advanced-parameters.ts": "f85dce83b2bb701b3949c829555f8c59",
