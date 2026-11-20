@@ -1358,10 +1358,23 @@ export function GpuDetailsSheet({
               ) : hasRuntimeMetric ? (
                 <>
                   <div className="space-y-1">
-                    <VramAllocationReading
-                      allocated={reserved}
-                      total={physical}
-                    />
+                    <div
+                      data-testid="vram-actual-usage-reading"
+                      className="flex min-w-0 items-center justify-between gap-3 text-[11px] leading-4"
+                    >
+                      <span className="min-w-0 text-muted-foreground">
+                        {t("observations.actualVramUsage")}
+                      </span>
+                      <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground">
+                        {gibValue(actual)}
+                        {" / "}
+                        {gibValue(physical)}
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          GiB
+                        </span>
+                      </span>
+                    </div>
                     <MetricBar
                       size="sm"
                       series={actualExceedsPhysical ? "red" : "violet"}
@@ -1453,7 +1466,10 @@ export function GpuDetailsSheet({
               <h3 className="text-sm font-medium">
                 {t("observations.vramAllocation")}
               </h3>
-              <span className="text-[11px] tabular-nums text-muted-foreground">
+              <span
+                data-testid="vram-allocation-reading"
+                className="text-[11px] tabular-nums text-muted-foreground"
+              >
                 {t("observations.allocated")} {gibValue(reserved)} /{" "}
                 {gibValue(physical)} GiB
               </span>

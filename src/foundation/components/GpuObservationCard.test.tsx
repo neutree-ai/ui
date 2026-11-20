@@ -584,6 +584,37 @@ describe("GPU observation row", () => {
     expect(dialog.textContent).not.toContain("observations.otherReservation");
   });
 
+  it("labels the live VRAM summary as actual usage rather than allocation", () => {
+    const partialAllocation = {
+      ...allocation,
+      memoryMiB: 8 * 1024,
+    };
+    render(
+      card({
+        allocations: [partialAllocation],
+        device: {
+          ...device,
+          allocatedMiB: 8 * 1024,
+        },
+        samples: [
+          sample("neutree_accelerator_memory_total_bytes", 15 * 1024 ** 3),
+          sample("neutree_accelerator_memory_used_bytes", 10 * 1024 ** 3),
+          sample("neutree_accelerator_utilization_ratio", 0.5),
+        ],
+      }),
+    );
+
+    openDetails();
+    const dialog = screen.getByRole("dialog");
+    const actualUsage = within(dialog).getByTestId("vram-actual-usage-reading");
+    within(actualUsage).getByText("observations.actualVramUsage");
+    expect(actualUsage.textContent).toContain("10.0 / 15.0 GiB");
+    expect(actualUsage.textContent).not.toContain("observations.allocated");
+    expect(
+      within(dialog).getByTestId("vram-allocation-reading").textContent,
+    ).toContain("8.0 / 15.0 GiB");
+  });
+
   it("reports allocation that exceeds physical VRAM", () => {
     render(
       card({
