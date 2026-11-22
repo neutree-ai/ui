@@ -58,6 +58,9 @@ jobs:
         continue-on-error: true
         run: node tools/check-contract-touch.cjs "origin/$GITHUB_BASE_REF"
 
+      - name: Check DDU layer overrides
+        run: node tools/ddu-layers.cjs check
+
       - name: Run tests
         run: yarn test:coverage
 

@@ -9,6 +9,9 @@ Follow the architecture guide: [contributing/architecture.md](contributing/archi
 Before changing a resource kind, read its contract: `src/domains/<kind>/contract.md`.
 When a change alters what the kind stores, sends, shows, validates or locks, update that contract in
 the same PR. Facts that span kinds go to `src/foundation/contract.md`.
+A rule about a resource field belongs in the kind's `lib/` or a shared `foundation/type|role` piece,
+not inline in a component: run `yarn ddu:check` and see
+[Layer check](contributing/architecture.md#layer-check).
 
 ## Unit Tests
 

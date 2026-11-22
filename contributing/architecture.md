@@ -20,6 +20,9 @@ L3 ──→ L2 ──→ L1 ──→ L0
               L1 ←──→ L1  (internal free)
 ```
 
+Inside L1 the shared layers point one way: `type/` imports neither `role/` nor `scene/`, and `role/`
+does not import `scene/` (tests excepted).
+
 Enforced by `dependency-cruiser` — run `yarn dep-check`. CI will catch violations.
 
 ## Directory Layout
@@ -51,6 +54,31 @@ tests:
 `components/`, `hooks/` and `lib/` keep what is not a shared layer: the app shell (`BaseLayout`,
 `AppSidebar`, `lib/utils`, `lib/i18n`, the API client) and modules that serve a single resource
 kind.
+
+#### Layer check
+
+`tools/ddu-layers.cjs` finds every place a resource field is read or declared as a form path and
+names the layer that decides what happens with it: a shared `type/`, `role/` or `scene/` piece, the
+kind's own `lib/` (description), or the component or page itself. The last is an **override**: a
+comparison, fallback, format or raw render of a field written inline, which the next page will
+have to repeat. Passing a field on unchanged is not a decision.
+
+- `yarn ddu:layers` — the per-kind layer table, plus the kind-specific modules still living in
+  `foundation/`. `--json <file>` and `--sites <file>` write the details.
+- `yarn ddu:check` — reports overrides that are new. Move the rule into the kind's `lib/` or a
+  `type/`/`role/` piece, or, when it cannot live lower, mark it on the line above with the reason.
+
+```tsx
+// ddu-override: the upgrade tip follows the raw phase, not the displayed status
+const showTip = cluster.status?.phase === "Failed";
+```
+
+Between JSX children the mark is `{/* ddu-override: <reason> */}`. A mark without a reason, or with
+no override on the next line, fails the check.
+
+Existing overrides are listed in `tools/ddu-baseline.json` (per file, by expression, not by line),
+so only new ones are reported: as warnings in CI, as failures with `--strict`. After removing
+overrides, shrink the baseline with `yarn ddu:check --update-baseline`.
 
 ### L2 `domains/<resource>/`
 
