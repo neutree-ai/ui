@@ -122,7 +122,7 @@ type PhysicalCardUsageOptions = {
   coreUnitsPerCard?: number | null;
 };
 
-export const GPU_DEVICE_FILTER_ALL = "__all__";
+const GPU_DEVICE_FILTER_ALL = "__all__";
 
 /** Narrowest a GPU cell can get before its readings stop being readable.
  *
@@ -177,12 +177,6 @@ export const GPU_GRID_CELL_CLASS =
 /** Cell surface and padding. */
 export const GPU_CELL_CLASS =
   "min-w-0 bg-[var(--nt-fill-neutral-opaque-1)] p-2.5";
-
-/** Chrome for a cell whose device is out of service. Uses the same disabled
- * fill and tertiary text as the shared form controls, so "inert" looks the same
- * here as everywhere else — and stays legible, unlike a blanket opacity drop. */
-export const GPU_CELL_INERT_CLASS =
-  "bg-[var(--nt-fill-neutral-trans-3)] text-[var(--nt-text-neutral-tertiary)]";
 
 /** Supporting text under or beside a usage bar. */
 export const GPU_USAGE_TEXT_CLASS = "text-[11px] leading-4";
@@ -2145,13 +2139,4 @@ export function filterGpuDeviceResourceRows(
       .toLowerCase()
       .includes(search);
   });
-}
-
-export function getGpuDeviceResourceFilterOptions(
-  rows: GpuDeviceResourceRow[],
-): { nodeNames: string[]; products: string[] } {
-  return {
-    nodeNames: Array.from(new Set(rows.map((row) => row.nodeName))).sort(),
-    products: Array.from(new Set(rows.map((row) => row.product))).sort(),
-  };
 }
