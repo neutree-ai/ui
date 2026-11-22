@@ -477,6 +477,9 @@
 		"spec.ldap.user_filter": 1,
 		"spec.sync.enabled": 1
 	},
+	"src/domains/license/components/LicenseStatus.tsx": {
+		"status.phase": 2
+	},
 	"src/domains/log-sink/components/LogSinkStatus.tsx": {
 		"status.phase": 2
 	},
