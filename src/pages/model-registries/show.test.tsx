@@ -97,7 +97,7 @@ vi.mock(
 vi.mock("@/domains/model-registry/components/RegistryVisibility", () => ({
   RegistryVisibility: () => <span>Public</span>,
 }));
-vi.mock("@/foundation/role/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/scene/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span>Created:3 days ago</span>,
 }));
 

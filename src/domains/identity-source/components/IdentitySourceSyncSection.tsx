@@ -8,8 +8,8 @@ import type {
   IdentitySourceSyncStatus,
 } from "@/domains/identity-source/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { InfoHint } from "@/foundation/role/InfoHint";
 import Timestamp from "@/foundation/role/Timestamp";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { IdentitySourceSyncNowButton } from "./IdentitySourceSyncNowButton";

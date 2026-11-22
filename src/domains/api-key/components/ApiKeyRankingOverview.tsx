@@ -17,7 +17,7 @@ import {
   CHART_SERIES_SEPARATOR,
   chartCategoryMark,
 } from "@/foundation/role/chart-palette";
-import { InfoHint } from "@/foundation/role/InfoHint";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 
 // Per-key reference (id + display name) for attributing ranking entries.
 type RankingKeyRef = { id: string; name: string; description?: string | null };

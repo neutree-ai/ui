@@ -16,8 +16,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
-import { InfoHint } from "@/foundation/role/InfoHint";
 import { METRIC_BAR_SERIES_FILL_CLASSES } from "@/foundation/role/MetricBar";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 
 type EndpointDeclaredWeights = {
   /** Weights per replica, from the catalog, the model version's size, or the

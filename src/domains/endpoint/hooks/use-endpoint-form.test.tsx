@@ -38,7 +38,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
-vi.mock("@/foundation/type/VariablesInput", () => ({
+vi.mock("@/foundation/scene/VariablesInput", () => ({
   VariablesInput: React.forwardRef(
     (_props: unknown, ref: React.Ref<HTMLDivElement>) => (
       <div data-testid="variables-input-mock" ref={ref} />

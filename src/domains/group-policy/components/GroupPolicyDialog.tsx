@@ -23,7 +23,7 @@ import type {
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { LabelWithHint } from "@/foundation/role/InfoHint";
+import { LabelWithHint } from "@/foundation/scene/InfoHint";
 
 /** Edits the lists and the token pool of a group's policy. Mount it when opening. */
 export function GroupPolicyDialog({

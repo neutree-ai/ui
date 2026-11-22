@@ -16,7 +16,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { displayName } from "@/foundation/role/display-name";
 import { InactiveBadge } from "@/foundation/role/InactiveBadge";
-import { InfoHint } from "@/foundation/role/InfoHint";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { groupOf, type UsageScope } from "@/pages/model-usage/lib/usage-scope";
 
 const ScopeButton = ({

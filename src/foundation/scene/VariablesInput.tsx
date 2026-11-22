@@ -40,7 +40,7 @@ import {
   INVALID_PATTERN_ERROR,
   type Schema,
   useVariablesInput,
-} from "@/foundation/type/use-variables-input";
+} from "@/foundation/scene/use-variables-input";
 
 /** What an overriding input is handed: the current value and a way to replace it. */
 interface VariableValueInputProps {

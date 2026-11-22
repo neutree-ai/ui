@@ -15,7 +15,7 @@ vi.mock("@/foundation/scene/ShowPage", () => ({
   },
 }));
 
-vi.mock("./Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: ({
     timestamp,
     relative,

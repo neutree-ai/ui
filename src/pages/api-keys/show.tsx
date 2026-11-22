@@ -7,7 +7,7 @@ import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
 import { userModelAccessHref } from "@/domains/group-policy/components/UserGroupModelAccess";
 import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";

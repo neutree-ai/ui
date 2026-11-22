@@ -14,7 +14,7 @@ import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { FeaturesList } from "./components/FeaturesList";

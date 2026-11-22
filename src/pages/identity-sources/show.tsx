@@ -6,8 +6,8 @@ import { isSyncRequestPending } from "@/domains/identity-source/lib/identity-sou
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import Timestamp from "@/foundation/role/Timestamp";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
 const text = (value?: string | number | null) =>

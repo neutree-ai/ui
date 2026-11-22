@@ -13,12 +13,12 @@ import { UserEffectiveRoleAssignments } from "@/domains/role-assignment/componen
 import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import {
   profileDisplayName,
   profileEmail,
   profileIdentitySourceName,
 } from "@/foundation/role/user-identity";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";

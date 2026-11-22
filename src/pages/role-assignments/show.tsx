@@ -6,7 +6,7 @@ import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 

@@ -35,8 +35,8 @@ import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { GroupKindIcon } from "@/foundation/role/GroupKindIcon";
 import { InactiveBadge } from "@/foundation/role/InactiveBadge";
-import { InfoHint } from "@/foundation/role/InfoHint";
 import { getErrorMessage } from "@/foundation/scene/error-message";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 

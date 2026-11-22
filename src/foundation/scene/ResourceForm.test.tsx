@@ -8,8 +8,8 @@ import {
 import type { ReactNode } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
-import type { Schema } from "@/foundation/type/use-variables-input";
-import { VariablesInput } from "@/foundation/type/VariablesInput";
+import type { Schema } from "@/foundation/scene/use-variables-input";
+import { VariablesInput } from "@/foundation/scene/VariablesInput";
 import { FormFieldGroup } from "./FormFieldGroup";
 import { ResourceForm } from "./ResourceForm";
 

@@ -23,7 +23,7 @@ import type {
   FeatureSelection,
   RecipeFeature,
 } from "@/foundation/recipe/types";
-import { InfoHint } from "@/foundation/role/InfoHint";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { BreakableReference } from "@/foundation/type/BreakableReference";
 
 type Props = {

@@ -9,6 +9,22 @@ module.exports = {
       to: { path: "^src/(domains|pages)/" },
     },
     {
+      name: "no-type-import-role-scene",
+      comment:
+        "foundation/type must not import from foundation/role or foundation/scene (tests may use a higher layer as harness)",
+      severity: "error",
+      from: { path: "^src/foundation/type/", pathNot: "\\.test\\.tsx?$" },
+      to: { path: "^src/foundation/(role|scene)/" },
+    },
+    {
+      name: "no-role-import-scene",
+      comment:
+        "foundation/role must not import from foundation/scene (tests may use a higher layer as harness)",
+      severity: "error",
+      from: { path: "^src/foundation/role/", pathNot: "\\.test\\.tsx?$" },
+      to: { path: "^src/foundation/scene/" },
+    },
+    {
       name: "no-L2-import-L3",
       comment: "L2 domains must not import from L3 pages",
       severity: "error",

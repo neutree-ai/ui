@@ -117,7 +117,6 @@ import type {
 } from "@/foundation/recipe/types";
 import { formatGb, matchesAcceleratorName } from "@/foundation/recipe/vram";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
-import { InfoHint } from "@/foundation/role/InfoHint";
 import {
   newestVersion,
   sortVersionsNewestFirst,
@@ -127,11 +126,12 @@ import { EmptyState } from "@/foundation/scene/EmptyState";
 import FormCardGrid from "@/foundation/scene/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { nestFieldErrors } from "@/foundation/scene/form-errors";
+import { InfoHint } from "@/foundation/scene/InfoHint";
+import type { Schema } from "@/foundation/scene/use-variables-input";
+import { VariablesInput } from "@/foundation/scene/VariablesInput";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 import { NumberInput } from "@/foundation/type/NumberInput";
 import { SegmentedControl } from "@/foundation/type/SegmentedControl";
-import type { Schema } from "@/foundation/type/use-variables-input";
-import { VariablesInput } from "@/foundation/type/VariablesInput";
 
 // Reads the query string off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").

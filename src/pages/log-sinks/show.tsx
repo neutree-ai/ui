@@ -16,8 +16,8 @@ import {
 import type { LogSink } from "@/domains/log-sink/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import Timestamp from "@/foundation/role/Timestamp";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 

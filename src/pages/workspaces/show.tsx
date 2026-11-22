@@ -5,7 +5,7 @@ import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";

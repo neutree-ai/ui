@@ -66,7 +66,7 @@ vi.mock("@/foundation/scene/ShowPage", () => {
   return { ShowPage };
 });
 
-vi.mock("@/foundation/role/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/scene/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span data-testid="created-at" />,
 }));
 

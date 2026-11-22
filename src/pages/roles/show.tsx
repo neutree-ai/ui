@@ -3,7 +3,7 @@ import PermissionsTree from "@/domains/role/components/PermissionsTree";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const RolesShow = () => {

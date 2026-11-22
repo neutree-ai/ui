@@ -23,11 +23,11 @@ import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/lib/model-source";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/scene/detail-tabs";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 

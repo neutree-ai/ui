@@ -18,8 +18,8 @@ import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   isValidTokenQuota,
 } from "@/foundation/lib/token-quota";
-import { LabelWithHint } from "@/foundation/role/InfoHint";
 import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { LabelWithHint } from "@/foundation/scene/InfoHint";
 
 type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.

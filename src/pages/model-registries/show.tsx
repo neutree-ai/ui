@@ -17,7 +17,7 @@ import {
   readRegistryModelSelection,
   writeRegistryModelSelection,
 } from "@/foundation/lib/registry-model-link";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const ModelRegistriesShow = () => {

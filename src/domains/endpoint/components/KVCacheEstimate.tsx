@@ -48,7 +48,7 @@ import {
   precisionBytes,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
-import { InfoHint } from "@/foundation/role/InfoHint";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { InfoHint } from "@/foundation/role/InfoHint";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { SaveButton } from "@/foundation/scene/SaveButton";
 import { useFormEnterSubmitGuard } from "@/foundation/scene/use-form-enter-submit-guard";
 import { useOnBack } from "@/foundation/scene/use-on-back";

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import { ResourceFormSubmitContext } from "@/foundation/scene/resource-form-submit-context";
-import type { Schema } from "@/foundation/type/use-variables-input";
+import type { Schema } from "@/foundation/scene/use-variables-input";
 import { VariablesInput } from "./VariablesInput";
 
 const objectSchema = {

@@ -9,8 +9,8 @@ import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { cn } from "@/foundation/lib/utils";
-import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const EnginesShow = () => {

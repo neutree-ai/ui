@@ -22,10 +22,10 @@ import { Switch } from "@/components/ui/switch";
 import type { KvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import type { EndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
 import { cn } from "@/foundation/lib/utils";
-import { InfoHint } from "@/foundation/role/InfoHint";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import FormCardGrid from "@/foundation/scene/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import type { EndpointClusterRef } from "../types";
 
 const CACHE_MANAGER_DISPLAY: Record<

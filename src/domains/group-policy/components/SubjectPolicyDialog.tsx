@@ -33,7 +33,7 @@ import type {
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { InactiveBadge } from "@/foundation/role/InactiveBadge";
-import { LabelWithHint } from "@/foundation/role/InfoHint";
+import { LabelWithHint } from "@/foundation/scene/InfoHint";
 import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 

@@ -15,7 +15,7 @@ vi.mock("@/foundation/components/RegistryStatus", () => ({
   default: () => <span>Status</span>,
 }));
 
-vi.mock("@/foundation/role/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/scene/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span>Created</span>,
 }));
 
