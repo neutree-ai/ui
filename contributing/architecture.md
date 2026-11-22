@@ -73,6 +73,11 @@ kind's own `lib/` (description), or the component or page itself. The last is an
 comparison, fallback, format or raw render of a field written inline, which the next page will
 have to repeat. Passing a field on unchanged is not a decision.
 
+A read inside a scene descriptor (`field()` from `foundation/scene/detail-field`; helpers are listed in
+`DESCRIPTOR_HELPERS`) is credited to the piece that shows it: `type` when the accessor returns the value as read,
+`type`/`role` when it hands the value to a shared function or component, and the kind's description when the
+accessor computes with it.
+
 - `yarn ddu:layers` — the per-kind layer table, the concept directories, and any concept module
   that only one kind uses (move it into that domain). `--json <file>` and `--sites <file>` write
   the details.
