@@ -51,14 +51,17 @@ GET/POST/PATCH. RPCs: `request_identity_source_sync`, `list_login_identity_sourc
 - `IdentitySourceSyncResult` → `STATUS_TONE`: ok positive, failed serious, pending notice; `syncResultOf` prefers
   pending request, else finished outcome. `IdentitySourceLastSync` adds relative finish time.
 - Shared `Timestamp`, `MetadataTimestampMeta`, `useMetadataColumns`, `EmptyValue`, `displayName`;
-  fallback `display_name || name`; password inputs; lists `StringListInput`.
+  password inputs; lists `StringListInput`.
 
 ## Scenes
 
 - List (`IdentitySourcesList`): name/display name/type/enabled/status/last sync/created/actions; name search,
   created descending (`defaultSorters`), filters/sorting, edit/delete, no batch actions; poll 10s.
-- Show (`IdentitySourcesShow`): name/type/times, enable, connection result/message, protocol and LDAP sync;
-  no secrets or attribute/claim mappings. Pending poll 3s, else 10s.
+- Show (`IdentitySourcesShow`): `DetailFields` over `lib/detail-fields.tsx` (header name/type; state: enable
+  switch, connection result, message = `status.error_message` or else the test message; LDAP or OIDC settings),
+  plus LDAP sync; no secrets or attribute/claim mappings. Values go through `FieldValue` (Foundation "Detail
+  fields"): TLS switches yes / no (unset = no), scopes and allowed redirects comma-joined, absent values the empty
+  marker; CA is `caConfigured` or `systemTrust`. Tests: `lib/detail-fields.test.ts`. Pending poll 3s, else 10s.
 - Forms (`useIdentitySourceForm`): `mode:"all"`; `select` → `toFormValues` fills nulls/defaults, both protocols,
   blank secrets. Edit locks name/type. `toIdentitySourcePayload`: chosen settings, opposite null.
 - Create `{api_version:"v1",kind:"IdentitySource",metadata:{name,display_name},spec}`; edit `{metadata,spec}`.

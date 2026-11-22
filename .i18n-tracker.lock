@@ -372,7 +372,7 @@
   "src/pages/identity-sources/create.tsx": "ff129ed102addb25e6365739a85f4d85",
   "src/pages/identity-sources/edit.tsx": "aa99eae9c7feaca1d7e921296106a36b",
   "src/pages/identity-sources/list.tsx": "f2c04b948fa0d2d64bbf04145825f0cc",
-  "src/pages/identity-sources/show.tsx": "7cff79c6c810b8905c65dbf7aad732b6",
+  "src/pages/identity-sources/show.tsx": "692c2010d97eec4dda058d279277736e",
   "src/domains/log-sink/components/LogSinkStatus.tsx": "a60e1064fb555db3a84904fa737dd8c6",
   "src/domains/log-sink/components/TestConnectionButton.tsx": "a42998619e43bf670dc4f38fb18b2488",
   "src/domains/log-sink/hooks/use-log-sink-delete-confirmation.ts": "1bb92ea7f19ed9424907561908f85c18",
@@ -645,5 +645,6 @@
   "src/domains/license/components/LicenseSerial.tsx": "bba0de11f100b4b2165f22eaeacdbc88",
   "src/domains/license/components/LicenseStatus.tsx": "2af3b2947491a1800b3745e899f226b8",
   "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9",
-  "src/domains/log-sink/lib/detail-fields.tsx": "72f30bbc6ede1ca728c01013de3bba4e"
+  "src/domains/log-sink/lib/detail-fields.tsx": "72f30bbc6ede1ca728c01013de3bba4e",
+  "src/domains/identity-source/lib/detail-fields.tsx": "680bb2b69686113a1eaa2bbff1ed1a00"
 }

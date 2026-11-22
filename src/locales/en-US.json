@@ -2847,8 +2847,6 @@
 			"syncWaiting": "Sync requested. Waiting for the result."
 		},
 		"values": {
-			"yes": "Yes",
-			"no": "No",
 			"testOk": "Succeeded",
 			"testFailed": "Failed",
 			"caConfigured": "Custom CA",

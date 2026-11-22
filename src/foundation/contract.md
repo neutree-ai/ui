@@ -121,9 +121,9 @@ A kind describes its show-page fields once in `domains/<kind>/lib/detail-fields.
 `foundation/scene/DetailFields` lays them out as `ShowPage.Row` cells in the four-column grid, or as `ShowPage.Meta`
 items with `inline`. `foundation/type/FieldValue` alone decides how a `value` is shown, by runtime type: null,
 undefined, `""`, empty array and empty object are `EmptyValue`; a boolean is `common.values.yes|no`; a number is
-formatted for the resolved language; a string is shown as is and may wrap anywhere; an array is joined with `, `;
+formatted for the resolved language; a string is shown as is, keeps its line breaks and may wrap anywhere; an array is joined with `, `;
 a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role piece (`Timestamp`,
-the kind's status component). Used by License and Log Sink. Tests: `type/FieldValue.test.tsx` (per-type rules),
+the kind's status component). Used by License, Log Sink and Identity Source. Tests: `type/FieldValue.test.tsx` (per-type rules),
 `scene/DetailFields.test.tsx` (wiring).
 
 ## Concepts
