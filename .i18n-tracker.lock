@@ -639,5 +639,7 @@
   "src/domains/identity-source/testing/visual-fixtures.ts": "1933affad7b04bf626b69318ce028f8e",
   "src/domains/cluster/testing/visual-fixtures.ts": "3d9aa71cbc82273107b5179a4449b3ec",
   "src/domains/api-key/testing/visual-fixtures.ts": "4c3dd79aaa8a4c5d22ac25e76e4471ae",
-  "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01"
+  "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01",
+  "src/foundation/scene/DetailFields.tsx": "0d30de91296566dc62a97def5617732b",
+  "src/foundation/type/FieldValue.tsx": "fe1536d71cd116ac37d5488ecbd036bc"
 }

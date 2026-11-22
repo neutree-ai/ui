@@ -50,6 +50,10 @@
 		"errors": {
 			"unknown": "Unknown error"
 		},
+		"values": {
+			"yes": "Yes",
+			"no": "No"
+		},
 		"tabs": {
 			"basic": "Basic",
 			"monitor": "Monitor",
