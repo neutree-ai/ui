@@ -721,67 +721,16 @@
 		"upstreamStatus?.phase": 1,
 		"upstreams[index]?.name": 1
 	},
-	"src/pages/identity-sources/show.tsx": {
-		"ldap.bind_dn": 1,
-		"ldap.ca_cert": 1,
-		"ldap.insecure_skip_verify": 1,
-		"ldap.start_tls": 1,
-		"ldap.timeout": 1,
-		"ldap.url": 1,
-		"ldap.user_base_dn": 1,
-		"ldap.user_filter": 1,
-		"oidc.ca_cert": 1,
-		"oidc.client_id": 1,
-		"oidc.issuer": 1,
-		"oidc.redirect_url": 1,
-		"record.metadata.display_name": 1,
-		"record.metadata.name": 2,
-		"record.status?.error_message": 1,
-		"test.ok": 1,
-		"test?.message": 1,
-		"test?.time": 1
-	},
 	"src/pages/image-registries/show.tsx": {
 		"record.spec.repository": 1,
 		"record.spec.url": 2
-	},
-	"src/pages/license/show.tsx": {
-		"license.status.info.edition": 1,
-		"license.status.info.license_type": 1,
-		"license.status.info.max_gpus": 2,
-		"license.status.info.period": 5,
-		"license.status.info.serial": 1,
-		"license.status.info.sign_date": 3,
-		"license.status.info.vendor": 1,
-		"license.status.phase": 2,
-		"license.status.usage.GPU.limit": 2,
-		"license.status.usage.GPU.used": 1,
-		"license.status.usage.Workspace.limit": 2,
-		"license.status.usage.Workspace.used": 1,
-		"license.status?.info.serial": 1
 	},
 	"src/pages/log-sinks/list.tsx": {
 		"(original as LogSink).metadata.name": 1,
 		"(row.original as LogSink).spec?.type": 1
 	},
 	"src/pages/log-sinks/show.tsx": {
-		"lastTest.message": 1,
-		"lastTest.ok": 2,
-		"lastTest?.message": 1,
-		"record.metadata.name": 1,
-		"record.spec?.type": 2,
-		"s3?.bucket": 1,
-		"s3?.compression": 2,
-		"s3?.endpoint": 1,
-		"s3?.flush_interval_seconds": 1,
-		"s3?.force_path_style": 2,
-		"s3?.key_prefix": 1,
-		"s3?.region": 1,
-		"vl?.auth?.username": 1,
-		"vl?.ca_cert": 1,
-		"vl?.insecure_skip_verify": 1,
-		"vl?.timeout_seconds": 1,
-		"vl?.url": 1
+		"record.metadata.name": 1
 	},
 	"src/pages/model-catalogs/components/ModelCatalogCard.tsx": {
 		"catalog.metadata.workspace": 1,

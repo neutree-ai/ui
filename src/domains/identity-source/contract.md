@@ -51,7 +51,7 @@ GET/POST/PATCH. RPCs: `request_identity_source_sync`, `list_login_identity_sourc
 - `IdentitySourceSyncResult` → `STATUS_TONE`: ok positive, failed serious, pending notice; `syncResultOf` prefers
   pending request, else finished outcome. `IdentitySourceLastSync` adds relative finish time.
 - Shared `Timestamp`, `MetadataTimestampMeta`, `useMetadataColumns`, `EmptyValue`, `displayName`;
-  password inputs; lists `StringListInput`.
+  list fallback `display_name || name`; password inputs; lists `StringListInput`.
 
 ## Scenes
 
