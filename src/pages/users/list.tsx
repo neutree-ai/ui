@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { useOrgUnits } from "@/domains/organization/hooks/use-organization";
-import { isInactive } from "@/domains/organization/lib/org-tree";
+import {
+  isInactive,
+  orgUnitPathLabel,
+} from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import type { UserProfile } from "@/domains/user/types";
 import { EmptyValue } from "@/foundation/components/EmptyValue";
@@ -16,13 +19,11 @@ import {
   profileIdentitySourceName,
 } from "@/foundation/lib/user-identity";
 import { UserSourceFilter } from "./components/UserSourceFilter";
-import { userDepartmentPath } from "./lib/user-department";
 
 const NO_UNITS: OrgUnit[] = [];
 
 const useUserColumns = (canReadOrgUnits: boolean) => {
   const { t } = useTranslation();
-  // One list of the readable departments names every user's path.
   const { data: orgUnits } = useOrgUnits(canReadOrgUnits);
   const unitsById = useMemo(
     () => new Map((orgUnits?.data ?? NO_UNITS).map((u) => [u.id, u])),
@@ -75,7 +76,7 @@ const useUserColumns = (canReadOrgUnits: boolean) => {
             row.original.org_unit_members?.org_units;
           if (!unit) return <EmptyValue />;
           const path =
-            userDepartmentPath(unit, unitsById) || displayName(unit.metadata);
+            orgUnitPathLabel(unit, unitsById) || displayName(unit.metadata);
           return (
             <span
               className={isInactive(unit) ? "text-muted-foreground" : ""}

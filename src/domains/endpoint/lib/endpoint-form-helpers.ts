@@ -1,10 +1,12 @@
 import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
-import { normalizeVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
+import {
+  getVgpuVirtualization,
+  VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY as VGPU_CORE_PERCENT_KEY,
+  VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY as VGPU_MEMORY_MIB_KEY,
+} from "@/domains/endpoint/lib/vgpu";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
-const VGPU_MEMORY_MIB_KEY = "virtualization.memory_mib";
 const VGPU_MEMORY_PERCENT_KEY = "virtualization.memory_percent";
-const VGPU_CORE_PERCENT_KEY = "virtualization.core_percent";
 const ALLOWED_ACCELERATOR_KEYS = new Set([
   "type",
   "product",
@@ -48,12 +50,11 @@ export function deepMerge(
   for (const key of Object.keys(source)) {
     const sourceValue = source[key];
     if (sourceValue === null || sourceValue === undefined) {
-      continue; // Skip null/undefined values from source
+      continue;
     }
 
     const targetValue = target[key];
 
-    // Special handling for nested objects
     if (
       typeof sourceValue === "object" &&
       typeof targetValue === "object" &&
@@ -154,15 +155,12 @@ function normalizeEndpointAcceleratorForForm(
   if (!isPlainRecord(accelerator)) return null;
 
   const normalized = { ...accelerator };
-  const nestedVirtualization = isPlainRecord(normalized.virtualization)
-    ? normalized.virtualization
-    : {};
-  const virtualization = normalizeVgpuVirtualization({
-    memory_mib: normalized[VGPU_MEMORY_MIB_KEY],
-    memory_percent: normalized[VGPU_MEMORY_PERCENT_KEY],
-    core_percent: normalized[VGPU_CORE_PERCENT_KEY],
-    ...nestedVirtualization,
-  } as NonNullable<NonNullable<ResourceSpec["accelerator"]>["virtualization"]>);
+  const virtualization = getVgpuVirtualization({
+    ...normalized,
+    virtualization: isPlainRecord(normalized.virtualization)
+      ? normalized.virtualization
+      : {},
+  } as ResourceSpec["accelerator"]);
 
   delete normalized[VGPU_MEMORY_MIB_KEY];
   delete normalized[VGPU_MEMORY_PERCENT_KEY];
@@ -386,6 +384,20 @@ export function isResourceRequestExceeded(
   );
 }
 
+/** Objects and arrays, or a string holding one. Primitives are left alone:
+ * "8192" and "true" gain nothing from being reparsed and reprinted. */
+export function parseStructuredArgument(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return undefined;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // Preserve invalid JSON strings so custom no-schema args keep old behavior.
+    return undefined;
+  }
+}
+
 type EndpointResourceRequest = {
   resources: ResourceSpec | null | undefined;
   replicas: number;
@@ -466,26 +478,19 @@ export function transformEndpointValues(spec: {
       | null
       | undefined;
     if (accelerator) {
-      const nestedVirtualization = isPlainRecord(accelerator.virtualization)
-        ? accelerator.virtualization
-        : {};
-      const normalized = normalizeVgpuVirtualization({
-        memory_mib: accelerator[VGPU_MEMORY_MIB_KEY],
-        memory_percent: accelerator[VGPU_MEMORY_PERCENT_KEY],
-        core_percent: accelerator[VGPU_CORE_PERCENT_KEY],
-        ...nestedVirtualization,
-      } as NonNullable<
-        NonNullable<ResourceSpec["accelerator"]>["virtualization"]
-      >);
+      const normalized = getVgpuVirtualization({
+        ...accelerator,
+        virtualization: isPlainRecord(accelerator.virtualization)
+          ? accelerator.virtualization
+          : {},
+      } as ResourceSpec["accelerator"]);
 
       delete accelerator.virtualization;
       delete accelerator[VGPU_MEMORY_MIB_KEY];
       delete accelerator[VGPU_MEMORY_PERCENT_KEY];
       delete accelerator[VGPU_CORE_PERCENT_KEY];
 
-      const hasVirtualMemory = normalized?.memory_mib !== undefined;
-
-      if (normalized && hasVirtualMemory) {
+      if (normalized?.memory_mib !== undefined) {
         setFlatVgpuValue(
           accelerator,
           VGPU_MEMORY_MIB_KEY,
@@ -525,27 +530,12 @@ export function transformEndpointValues(spec: {
     !Array.isArray(engineArgs)
   ) {
     for (const [key, value] of Object.entries(engineArgs)) {
-      if (typeof value !== "string") continue;
-      const trimmed = value.trim();
-      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) continue;
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (
-          (typeof parsed === "object" && parsed !== null) ||
-          Array.isArray(parsed)
-        ) {
-          engineArgs[key] = parsed;
-        }
-      } catch {
-        // Preserve invalid JSON strings so custom no-schema args keep old behavior.
-      }
+      const parsed = parseStructuredArgument(value);
+      if (parsed !== undefined) engineArgs[key] = parsed;
     }
   }
 }
 
-/**
- * Validate endpoint spec values. Returns an errors map (empty = valid).
- */
 export function validateEndpointValues(
   spec: {
     cluster?: string | null;
@@ -784,7 +774,6 @@ export function buildCatalogMergedSpec(
   return result;
 }
 
-/** Default endpoint spec used for form initialization and catalog merge resets. */
 export const defaultEndpointSpec = {
   cluster: "",
   model: {

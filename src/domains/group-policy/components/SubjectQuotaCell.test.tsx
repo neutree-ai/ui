@@ -34,6 +34,7 @@ const writes = { save: vi.fn(), remove: vi.fn(), isPending: false };
 
 beforeEach(() => {
   writes.save.mockReset().mockResolvedValue([]);
+  writes.remove.mockReset().mockResolvedValue([]);
 });
 
 describe("SubjectQuotaCell", () => {
@@ -86,4 +87,50 @@ describe("SubjectQuotaCell", () => {
       token_quota: { limit: 2_000_000, period: "monthly" },
     });
   });
+
+  it.each([false, true])(
+    "reopens a subject policy and preserves hidden denies, clear quota: %s",
+    async (clear) => {
+      const stored = row({
+        id: 7,
+        policy_name: "p",
+        allowed_models: [{ model: "a", workspace: "ws" }],
+        denied_models: [{ model: "b" }],
+        token_quota: { limit: 1_500_000, period: "weekly" },
+      });
+      render(
+        <SubjectQuotaCell
+          scope={scope}
+          subject={subject}
+          policy={stored}
+          access={{ canCreate: false, canUpdate: true, canDelete: false }}
+          writes={writes}
+        />,
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "group_policies.subject.edit" }),
+      );
+      if (clear) {
+        fireEvent.change(screen.getByTestId("subject-policy-quota-amount"), {
+          target: { value: "" },
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+      await vi.waitFor(() =>
+        expect(writes.save).toHaveBeenCalledWith(
+          { id: 7 },
+          {
+            subject_kind: stored.subject_kind,
+            subject_name: stored.subject_name,
+            scope_kind: scope.kind,
+            scope_name: scope.name,
+            allowed_models: stored.allowed_models,
+            denied_models: stored.denied_models,
+            token_quota: clear ? null : stored.token_quota,
+          },
+        ),
+      );
+      expect(writes.remove).not.toHaveBeenCalled();
+    },
+  );
 });

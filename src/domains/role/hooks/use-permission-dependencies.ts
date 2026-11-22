@@ -27,7 +27,7 @@ const ALL_RULES: PermissionDependencyRule[] = [
   { action: "delete", deps: ["read"] },
   // model:delete/pull depend on model_registry:read, NOT model:read
   { action: "model:delete", deps: ["model_registry:read"] },
-  // NEU-674: pushing a model updates its alias, which is only visible under
+  // Pushing a model updates its alias, which is only visible under
   // model_aliases RLS when the identity can also read models. Without
   // model:read the UPDATE silently affects 0 rows, so model:push must
   // auto-select and lock model:read.
@@ -92,7 +92,6 @@ function parseRuleKey(key: string): {
   return { resource: null, action: key };
 }
 
-/** Check if a rule key matches a given resource:action pair */
 function ruleKeyMatches(
   ruleKey: string,
   resource: string,
@@ -105,7 +104,6 @@ function ruleKeyMatches(
   return parsed.action === action;
 }
 
-/** Check if a resource-specific rule exists for a given resource and action */
 function hasSpecificRule(
   resource: string,
   action: string,
@@ -134,14 +132,12 @@ function getDepsForAction(
   const skipGeneric = hasSpecificRule(resource, action, rules);
   for (const rule of rules) {
     if (!ruleKeyMatches(rule.action, resource, action)) continue;
-    // Skip generic rules when a resource-specific rule exists
     if (skipGeneric && parseRuleKey(rule.action).resource === null) continue;
     for (const dep of rule.deps) {
       const parsed = parseRuleKey(dep);
       deps.push(`${parsed.resource ?? resource}:${parsed.action}`);
     }
   }
-  // Workspaced resources implicitly depend on workspace:read for write actions
   if (
     workspacedResources.has(resource) &&
     action !== "read" &&
@@ -215,7 +211,6 @@ function findActionDependents(
         }
       }
     }
-    // Implicit workspace:read dependency for workspaced write actions
     if (
       resource === "workspace" &&
       action === "read" &&
@@ -298,13 +293,10 @@ export function usePermissionDependencies(options: {
           ]),
         ]);
       } else {
-        // Remove all this resource's permissions first, then check which
-        // are still needed by OTHER resources' selected permissions.
         const resourcePerms = new Set(
           resourceData.actions.map((a) => `${resource}:${a}`),
         );
         const valueWithoutResource = value.filter((p) => !resourcePerms.has(p));
-        // Re-add actions that are locked by cross-resource deps
         const lockedPerms = resourceData.actions
           .filter(
             (action) =>
@@ -331,7 +323,7 @@ export function usePermissionDependencies(options: {
 
   /** Dependencies required by `value` but missing from it — non-empty only for
    *  permission sets built outside this hook, e.g. an existing role loaded into
-   *  the edit form before a new dependency rule was introduced (NEU-674). */
+   *  the edit form before a new dependency rule was introduced. */
   const missingDependencies = useMemo(
     () => findMissingDeps(value, rules, allPermissionsSet),
     [value, rules, allPermissionsSet],

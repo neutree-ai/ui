@@ -1,18 +1,15 @@
 import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { STATUS_TONE } from "@/foundation/lib/status-tone";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
 export default function ModelCatalogStatus(status: BaseStatusType) {
   const { t } = useTranslation();
 
   const classMapping = {
-    Ready:
-      "border border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-    Failed:
-      "border border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
-    Pending:
-      "border border-[var(--nt-stroke-notice-light)] bg-[var(--nt-fill-notice-light)] text-[var(--nt-text-colorful-notice)]",
-    Deleted:
-      "border border-[var(--nt-stroke-neutral-trans-2)] bg-[var(--nt-fill-neutral-opaque-1)] text-[var(--nt-text-neutral-secondary)]",
+    Ready: STATUS_TONE.positive,
+    Failed: STATUS_TONE.serious,
+    Pending: STATUS_TONE.notice,
+    Deleted: STATUS_TONE.neutral,
   }[status.phase ?? ""];
 
   const translatedPhase = t(`status.phases.catalog.${status.phase}`);

@@ -55,5 +55,5 @@ export type ModelRegistryStatus = BaseStatus<ModelRegistryPhase> & {
 
 /** Every phase the control plane reports for a registry. Not exported: it exists
  * to type `status.phase`, and the two phases the UI branches on are compared as
- * literals in `lib/capabilities` so that a typo is a type error there. */
+ * literals in `@/foundation/lib/model-registry-availability` so that a typo is a type error there. */
 type ModelRegistryPhase = "Pending" | "Connected" | "Failed" | "Deleted";

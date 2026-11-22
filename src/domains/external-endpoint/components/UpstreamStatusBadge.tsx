@@ -4,12 +4,11 @@ import type {
 } from "@/domains/external-endpoint/types";
 import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { STATUS_TONE } from "@/foundation/lib/status-tone";
 
 const classMapping: Record<UpstreamStatusPhase, string> = {
-  Ready:
-    "border border-[var(--nt-stroke-positive-light)] bg-[var(--nt-fill-positive-light)] text-[var(--nt-text-colorful-positive)]",
-  Failed:
-    "border border-[var(--nt-stroke-serious-light)] bg-[var(--nt-fill-serious-light)] text-[var(--nt-text-colorful-serious)]",
+  Ready: STATUS_TONE.positive,
+  Failed: STATUS_TONE.serious,
 };
 
 export default function UpstreamStatusBadge({

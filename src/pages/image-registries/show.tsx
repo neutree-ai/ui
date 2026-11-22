@@ -1,8 +1,8 @@
 import { useShow } from "@refinedev/core";
-import ImageRegistryStatus from "@/domains/image-registry/components/ImageRegistryStatus";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
+import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 
@@ -30,7 +30,7 @@ export const ImageRegistriesShow = () => {
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<ImageRegistryStatus {...record.status} />}
+        status={<RegistryStatus {...record.status} />}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <MetadataTimestampMeta metadata={record.metadata} />

@@ -77,6 +77,57 @@ describe("useTeamWrites", () => {
     expect(invalidate).toHaveBeenCalled();
   });
 
+  it.each([
+    { displayName: "Guild", project: false },
+    { displayName: "", project: false },
+    { displayName: "Renamed", project: true },
+  ])("sends only metadata for edit $displayName / $project", async (values) => {
+    const stored = {
+      ...team,
+      metadata: {
+        ...team.metadata,
+        annotations: { owner: "platform" },
+        creation_timestamp: "2026-01-01T00:00:00Z",
+      },
+      status: { phase: "Active" as const },
+    };
+    mutateAsync.mockResolvedValue({ data: [stored] });
+    const { result } = renderHook(() => useTeamWrites());
+    await result.current.update(stored, values);
+    expect(mutateAsync.mock.calls[0][0].values).toEqual({
+      metadata: {
+        ...stored.metadata,
+        display_name: values.displayName,
+        labels: values.project
+          ? { a: "b", "neutree.ai/team-kind": "project" }
+          : { a: "b" },
+      },
+    });
+  });
+
+  it("removes an unfamiliar team-kind value during a display-name edit", async () => {
+    const stored = {
+      ...team,
+      metadata: {
+        ...team.metadata,
+        labels: { a: "b", "neutree.ai/team-kind": "custom" },
+      },
+    };
+    mutateAsync.mockResolvedValue({ data: [stored] });
+    const { result } = renderHook(() => useTeamWrites());
+    await result.current.update(stored, {
+      displayName: "Renamed",
+      project: false,
+    });
+    expect(mutateAsync.mock.calls[0][0].values).toEqual({
+      metadata: {
+        ...stored.metadata,
+        display_name: "Renamed",
+        labels: { a: "b" },
+      },
+    });
+  });
+
   it("fails a delete that changed no row", async () => {
     mutateAsync.mockResolvedValue({ data: [] });
     const { result } = renderHook(() => useTeamWrites());

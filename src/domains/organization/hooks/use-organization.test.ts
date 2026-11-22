@@ -13,6 +13,7 @@ vi.mock("@refinedev/core", () => ({
 import {
   MembershipOutOfScopeError,
   useAssignOrgUnit,
+  useCreateTeamMemberships,
 } from "./use-organization";
 
 describe("useAssignOrgUnit", () => {
@@ -59,5 +60,41 @@ describe("useAssignOrgUnit", () => {
   it("never reports a create as out of scope", async () => {
     mutateAsync.mockResolvedValue({ data: [] });
     await expect(assign().create(2)).resolves.toBeUndefined();
+  });
+});
+
+describe("useCreateTeamMemberships", () => {
+  beforeEach(() => mutateAsync.mockReset());
+
+  it("posts each selected Team and continues after a refused membership", async () => {
+    const denied = new Error("denied");
+    mutateAsync
+      .mockResolvedValueOnce({ data: [{ team_id: 2, user_id: "u-1" }] })
+      .mockRejectedValueOnce(denied)
+      .mockResolvedValueOnce({ data: [{ team_id: 4, user_id: "u-1" }] });
+    const { result } = renderHook(() => useCreateTeamMemberships());
+
+    await expect(result.current("u-1", [2, 3, 4])).resolves.toEqual([
+      { teamId: 3, cause: denied },
+    ]);
+    expect(
+      mutateAsync.mock.calls.map(([{ url, method, values }]) => ({
+        url,
+        method,
+        values,
+      })),
+    ).toEqual(
+      [2, 3, 4].map((team_id) => ({
+        url: "/team_members",
+        method: "post",
+        values: [{ team_id, user_id: "u-1" }],
+      })),
+    );
+  });
+
+  it("sends no request for an empty selection", async () => {
+    const { result } = renderHook(() => useCreateTeamMemberships());
+    await expect(result.current("u-1", [])).resolves.toEqual([]);
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 });

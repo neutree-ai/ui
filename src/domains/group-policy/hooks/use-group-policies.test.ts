@@ -86,7 +86,7 @@ describe("useGroupPolicyWrites", () => {
     const call = mutateAsync.mock.calls[0][0];
     expect(call.url).toBe("/group_policies?id=eq.3");
     expect(call.method).toBe("patch");
-    expect(call.values.spec).toHaveProperty("denied_models", null);
+    expect(call.values).toEqual({ spec });
   });
 
   it("reports a policy someone else removed", async () => {
@@ -136,7 +136,11 @@ describe("useGroupPolicyWrites", () => {
         scope_name: "sre",
       },
     });
-    expect(mutateAsync.mock.calls[0][0].url).toBe("/group_policies?id=eq.9");
+    expect(mutateAsync.mock.calls[0][0]).toMatchObject({
+      url: "/group_policies?id=eq.9",
+      method: "delete",
+      values: {},
+    });
     expect(
       keys.map((key) => queryClient.getQueryState(key)?.isInvalidated),
     ).toEqual([true, false, true, false, false]);

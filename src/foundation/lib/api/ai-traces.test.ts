@@ -23,6 +23,55 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("trace list query", () => {
+  it.each([
+    {
+      params: { status: "", endpoint_type: undefined },
+      expected: {},
+    },
+    {
+      params: {
+        limit: 50,
+        before: "2026-10-03T12:00:00Z",
+        status: "499",
+        endpoint_type: "external-endpoint",
+      },
+      expected: {
+        limit: "50",
+        before: "2026-10-03T12:00:00Z",
+        status: "499",
+        endpoint_type: "external-endpoint",
+      },
+    },
+  ])(
+    "sends filters and paging without adding a sort: $params",
+    async ({ params, expected }) => {
+      respond(200, { items: [] });
+      const { workspace, ...filters } = {
+        workspace: "team/a",
+        endpoint_name: "gateway & proxy",
+        model: "org/model",
+        api_key_id: "key-1",
+        finish_reason: "tool_calls",
+        start: "2026-10-01T00:00:00Z",
+        end: "2026-10-07T23:59:59Z",
+      };
+
+      await fetchAITraces({ workspace, ...filters, ...params });
+
+      const url = new URL(
+        String(vi.mocked(fetch).mock.calls[0][0]),
+        "http://x",
+      );
+      expect(url.pathname).toBe("/api/v1/ai-traces/team%2Fa");
+      expect(Object.fromEntries(url.searchParams)).toEqual({
+        ...filters,
+        ...expected,
+      });
+    },
+  );
+});
+
 describe("trace request errors", () => {
   it("reports a 403 as forbidden and keeps the server's reason", async () => {
     respond(403, { error: "insufficient permissions" });

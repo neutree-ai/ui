@@ -1,13 +1,12 @@
 import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import {
-  isTouchedField,
+  omitEmptyUntouched,
   type TouchedFields,
 } from "@/foundation/lib/touched-fields";
 
 /**
- * Clean upstream data before submitting to the API.
- * - Strips mutually exclusive fields (endpoint_ref vs upstream/auth)
- * - In edit mode, removes unchanged empty credentials so the backend retains existing values.
+ * Strips the fields of the unused upstream kind (endpoint_ref vs upstream/auth).
+ * On edit an empty untouched credential is dropped so the server keeps the stored one.
  */
 export function cleanUpstreamsForSubmit(
   upstreams: UpstreamSpec[],
@@ -15,24 +14,21 @@ export function cleanUpstreamsForSubmit(
   touchedFields?: TouchedFields,
 ): UpstreamSpec[] {
   return upstreams.map((u, index) => {
-    let result = { ...u };
-    // Mutual exclusion: endpoint_ref vs upstream/auth
+    const result = { ...u };
     if (result.endpoint_ref) {
-      const { upstream, auth, ...rest } = result;
-      result = rest as UpstreamSpec;
-    } else {
-      const { endpoint_ref, ...rest } = result;
-      result = rest as UpstreamSpec;
+      delete result.upstream;
+      delete result.auth;
+      return result;
     }
-    // In edit mode, strip unchanged empty credentials so the backend retains existing values.
-    if (
-      isEdit &&
-      result.auth &&
-      !result.auth.credential &&
-      !isTouchedField(touchedFields, [String(index), "auth", "credential"])
-    ) {
-      const { credential, ...authRest } = result.auth;
-      result = { ...result, auth: authRest };
+    delete result.endpoint_ref;
+    if (isEdit && result.auth) {
+      result.auth = { ...result.auth };
+      omitEmptyUntouched(
+        result.auth,
+        [String(index), "auth"],
+        ["credential"],
+        touchedFields,
+      );
     }
     return result;
   });
