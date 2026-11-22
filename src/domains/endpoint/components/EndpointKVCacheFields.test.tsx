@@ -3,13 +3,13 @@ import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { beforeEach, expect, it, vi } from "vitest";
 import { useKvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
+import { useCacheVersions } from "@/foundation/cache-version/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { EndpointClusterRef } from "../types";
 import { EndpointKVCacheFields } from "./EndpointKVCacheFields";
 
 vi.mock("@/foundation/hooks/use-system-api", () => ({ useSystemApi: vi.fn() }));
-vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+vi.mock("@/foundation/cache-version/use-cache-versions", () => ({
   useCacheVersions: vi.fn(),
 }));
 

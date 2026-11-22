@@ -4,7 +4,7 @@ import { Loader } from "@/foundation/components/Loader";
 import {
   buildGrafanaDashboardUrl,
   type GrafanaDashboardConfig,
-} from "@/foundation/lib/grafana-dashboard-url";
+} from "@/foundation/grafana/grafana-dashboard-url";
 
 const DEFAULT_GRAFANA_CSS = `
   /* The dashboard provides its own theme CSS, so no background override is injected here. */

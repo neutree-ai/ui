@@ -74,7 +74,7 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
   `ZCacheUpgrade` posts RPC `upgrade_zcache` (`p_cluster_id`, `p_version`, `p_expected_signature`, `p_endpoints`).
 - Delete: Foundation "Soft delete and force". Pre-check `validateClusterDeletion` (`validateClusterSoftDelete`): 10126
   while an endpoint in the workspace has `spec.cluster` equal to the name.
-- YAML: kind `Cluster` <-> `clusters`, credential-capable. Quick start (`foundation/hooks/use-quick-start.ts`,
+- YAML: kind `Cluster` <-> `clusters`, credential-capable. Quick start (`domains/dashboard/hooks/use-quick-start.ts`,
   `buildClusterValues`): `quick-start-cluster`, ssh, registry `public-docker`, own copy of the ssh key encoding.
 
 ## Descriptions

@@ -180,7 +180,7 @@ function registryModelsPath(query: RegistryModelsQuery): string {
   }`;
 }
 
-/** Shared with `./model-registries`, which calls a registry-level route the same
+/** Shared with `@/domains/model-registry/lib/model-registries`, which calls a registry-level route the same
  * way and reports its failures with the same error type. */
 export function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};

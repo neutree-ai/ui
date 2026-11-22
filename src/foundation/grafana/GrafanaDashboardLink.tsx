@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   buildGrafanaDashboardUrl,
   type GrafanaDashboardUrlOptions,
-} from "@/foundation/lib/grafana-dashboard-url";
+} from "@/foundation/grafana/grafana-dashboard-url";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**

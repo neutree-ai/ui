@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useOemConfig } from "@/foundation/hooks/use-oem-config";
+import { useOemConfig } from "@/foundation/oem-config/use-oem-config";
 
 export const OemFavicon = () => {
   const { logoBase64 } = useOemConfig();

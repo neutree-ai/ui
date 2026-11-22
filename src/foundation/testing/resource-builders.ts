@@ -1,4 +1,4 @@
-import type { AcceleratorSample } from "@/foundation/lib/accelerator-observations";
+import type { AcceleratorSample } from "@/foundation/accelerator/accelerator-observations";
 import type {
   AcceleratorProductResources,
   DeviceResource,

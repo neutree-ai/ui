@@ -3,15 +3,15 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
 import type { PolicyModelRow } from "@/domains/api-key/hooks/use-api-key-policy";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
+import { cn } from "@/foundation/lib/utils";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   isValidTokenQuota,
   TOKEN_QUOTA_UNITS,
   type TokenQuotaUnit,
-} from "@/foundation/lib/token-quota";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/token-quota/token-quota";
 import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 // The allowed-model rows of an API key, one per allowlist entry, each with the

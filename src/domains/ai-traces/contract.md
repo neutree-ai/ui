@@ -10,7 +10,7 @@ restricts single-permission readers to that type. `resolveAllWorkspacesTraceScop
 
 ## Type
 
-UI: `src/foundation/lib/api/ai-traces.ts:AITrace`. All fields are server-owned/read-only, without a resource envelope.
+UI: `src/foundation/ai-traces/ai-traces.ts:AITrace`. All fields are server-owned/read-only, without a resource envelope.
 Required means serialized, not validated at ingestion. `decodeVLRecord` omits empty strings and preserves zero counts.
 No masked fields or secret writes; bodies return as stored.
 
@@ -118,7 +118,7 @@ unconfigured. Store errors: 502; `handleGetAITrace`: 404 absent trace. JSON erro
 
 ## Known deviations
 
-1. Partial bodies have no warning. UI: `src/foundation/lib/api/ai-traces.ts:AITrace` omits both body flags and
+1. Partial bodies have no warning. UI: `src/foundation/ai-traces/ai-traces.ts:AITrace` omits both body flags and
    `src/pages/ai-traces/components/TraceDetailDrawer.tsx:TraceDetailDrawer` reads only the bodies.
    API: `AITrace.BodyTruncated` and `traceStore.reassembleBodies` expose truncation and missing chunks.
    Users can mistake a retained body prefix for the complete request or response. Ticket: TBD

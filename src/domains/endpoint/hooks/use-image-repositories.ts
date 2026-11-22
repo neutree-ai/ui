@@ -3,7 +3,7 @@ import {
   fetchImageRepositories,
   type ImageRegistryContentError,
   type ImageRepositoryPage,
-} from "@/foundation/lib/api/image-registry-content";
+} from "@/domains/endpoint/lib/image-registry-content";
 
 type UseImageRepositoriesParams = {
   workspace?: string | null;

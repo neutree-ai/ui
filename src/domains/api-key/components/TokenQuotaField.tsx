@@ -1,12 +1,12 @@
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import {
   isValidTokenQuota,
   QUOTA_PERIODS,
   TOKEN_QUOTA_UNITS,
-} from "@/foundation/lib/token-quota";
-import { FormCombobox } from "@/foundation/role/FormCombobox";
-import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+} from "@/foundation/token-quota/token-quota";
 import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 // Token quota editor: amount + unit (Tokens/K/M/B) + reset period. The token

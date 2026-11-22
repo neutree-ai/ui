@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuickStart } from "@/foundation/hooks/use-quick-start";
+import { useQuickStart } from "@/domains/dashboard/hooks/use-quick-start";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { isValidIPAddress } from "@/foundation/role/validate";
 import {

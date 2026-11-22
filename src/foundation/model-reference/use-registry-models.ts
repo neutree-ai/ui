@@ -3,7 +3,7 @@ import {
   fetchRegistryModels,
   type RegistryModelError,
   type RegistryModelPage,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
 
 type UseRegistryModelsParams = {
   workspace?: string | null;

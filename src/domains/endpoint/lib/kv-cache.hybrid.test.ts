@@ -5,7 +5,7 @@ import {
   type KvCacheComponentKey,
   type KvCacheEstimate,
   type KvCacheInputs,
-} from "@/foundation/lib/kv-cache";
+} from "@/domains/endpoint/lib/kv-cache";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 /**

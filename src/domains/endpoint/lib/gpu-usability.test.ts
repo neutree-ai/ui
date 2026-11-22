@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGpuDeviceResourceRows } from "@/foundation/lib/gpu-device-resources";
+import { buildGpuDeviceResourceRows } from "@/foundation/accelerator/gpu-device-resources";
 import {
   FULL_T4,
   makeGpuDevice,

@@ -1,5 +1,5 @@
-import type { GrafanaDashboardProps } from "@/foundation/components/GrafanaDashboard";
-import type { GrafanaDashboardConfig } from "@/foundation/lib/grafana-dashboard-url";
+import type { GrafanaDashboardProps } from "@/foundation/grafana/GrafanaDashboard";
+import type { GrafanaDashboardConfig } from "@/foundation/grafana/grafana-dashboard-url";
 
 /** Grafana template variable value that selects all options */
 export const GRAFANA_VAR_ALL = "$__all";

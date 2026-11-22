@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelReadme } from "@/domains/model-registry/components/ModelReadme";
 import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-registry-model-readme";
-import { RegistryModelError } from "@/foundation/lib/api/registry-models";
+import { RegistryModelError } from "@/foundation/model-reference/registry-models";
 
 vi.mock("@/domains/model-registry/hooks/use-registry-model-readme", () => ({
   useRegistryModelReadme: vi.fn(),

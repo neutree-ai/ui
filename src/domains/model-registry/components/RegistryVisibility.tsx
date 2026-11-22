@@ -1,6 +1,6 @@
 import { Globe, Lock } from "lucide-react";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+import type { ModelRegistryVisibility } from "@/foundation/model-reference/model-registry-visibility";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 /**

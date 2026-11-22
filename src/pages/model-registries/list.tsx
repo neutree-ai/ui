@@ -7,12 +7,12 @@ import { ModelRegistryWriteActions } from "@/domains/model-registry/components/M
 import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   MODEL_REGISTRY_SELECT,
   MODEL_REGISTRY_VISIBILITY_FIELD,
-} from "@/foundation/lib/model-registry-visibility";
+} from "@/foundation/model-reference/model-registry-visibility";
+import RegistryStatus from "@/foundation/role/RegistryStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";

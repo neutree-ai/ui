@@ -13,7 +13,7 @@ import {
   type AITraceExportFormat,
   type AITraceFilterParams,
   exportAITraces,
-} from "@/foundation/lib/api/ai-traces";
+} from "@/foundation/ai-traces/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 type TraceExportButtonProps = {

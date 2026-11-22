@@ -33,14 +33,14 @@ import {
   useModelSourceByValue,
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { modelOptionValue } from "@/foundation/hooks/use-workspace-models";
-import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";
+import { modelOptionValue } from "@/foundation/model-reference/use-workspace-models";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { useFormEnterSubmitGuard } from "@/foundation/scene/use-form-enter-submit-guard";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 
 // Editable Limits panel on the API key detail page: shows the key's current
 // limits (a single object at spec.limits), its token-quota consumption

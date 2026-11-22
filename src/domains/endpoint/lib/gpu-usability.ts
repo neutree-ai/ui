@@ -2,7 +2,7 @@ import {
   type GpuDeviceResourceRow,
   getFractionalGpuCoreRequirement,
   isDeviceAvailableForFullCardAllocation,
-} from "@/foundation/lib/gpu-device-resources";
+} from "@/foundation/accelerator/gpu-device-resources";
 import type {
   DeviceResource,
   NodeResourceStatus,

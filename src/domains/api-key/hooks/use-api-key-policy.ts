@@ -5,22 +5,22 @@ import type {
   ApiKeyLimits,
   QuotaGranularity,
 } from "@/domains/api-key/types";
+import { fetchAITraceKeyStats } from "@/foundation/ai-traces/ai-traces";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
+import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
+import { isEndpointPhaseWithdrawn } from "@/foundation/model-reference/endpoint-availability";
+import {
+  type ModelSource,
+  parseStoredModelSource,
+  SELF_HOSTED_MODEL_SOURCE,
+} from "@/foundation/model-reference/model-source";
 import {
   compareWorkspaceModelOptions,
   modelOptionValue,
   nonBlankModelName,
   useWorkspaceModels,
   type WorkspaceModelOption,
-} from "@/foundation/hooks/use-workspace-models";
-import { fetchAITraceKeyStats } from "@/foundation/lib/api/ai-traces";
-import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
-import { isEndpointPhaseWithdrawn } from "@/foundation/lib/endpoint-availability";
-import {
-  type ModelSource,
-  parseStoredModelSource,
-  SELF_HOSTED_MODEL_SOURCE,
-} from "@/foundation/lib/model-source";
+} from "@/foundation/model-reference/use-workspace-models";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   formatThousands,
@@ -29,7 +29,7 @@ import {
   splitTokenQuota,
   type TokenQuotaUnit,
   toTokenCount,
-} from "@/foundation/lib/token-quota";
+} from "@/foundation/token-quota/token-quota";
 
 // API-key limits live on the key itself: quota + access are a single object
 // stored at api_key.spec.limits and read/written via

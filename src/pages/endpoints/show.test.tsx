@@ -149,10 +149,10 @@ vi.mock("@/domains/endpoint/lib/catalog-origin", () => ({
 vi.mock("@/domains/engine/lib/resolve-capabilities", () => ({
   resolvePlayground: () => ({ enabled: false }),
 }));
-vi.mock("@/foundation/components/EndpointStatus", () => ({
+vi.mock("@/foundation/role/EndpointStatus", () => ({
   default: () => <span data-testid="endpoint-status" />,
 }));
-vi.mock("@/foundation/components/GrafanaDashboard", () => ({
+vi.mock("@/foundation/grafana/GrafanaDashboard", () => ({
   default: () => null,
 }));
 vi.mock("@/foundation/components/Loader", () => ({
@@ -175,7 +175,7 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
     },
   }),
 }));
-vi.mock("@/foundation/lib/grafana-dashboard-configs", () => ({
+vi.mock("@/foundation/grafana/grafana-dashboard-configs", () => ({
   getEndpointSplitDashboardProps: () => ({}),
 }));
 

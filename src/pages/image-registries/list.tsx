@@ -1,5 +1,5 @@
-import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
+import RegistryStatus from "@/foundation/role/RegistryStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";

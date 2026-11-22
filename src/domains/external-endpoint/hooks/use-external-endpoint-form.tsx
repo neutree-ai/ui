@@ -29,18 +29,18 @@ import type {
   ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
-import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import { useModelSourceLabel } from "@/foundation/model-reference/ModelSourceBadge";
 import {
   deriveRouteModelSource,
   modelSourceSuggestions,
   parseStoredModelSource,
-} from "@/foundation/lib/model-source";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/model-reference/model-source";
 import { FormSelect } from "@/foundation/role/FormSelect";
 import WorkspaceField from "@/foundation/role/WorkspaceField";
 import { Disclosure } from "@/foundation/scene/Disclosure";

@@ -54,6 +54,7 @@ import {
   estimateModelWeightsGb,
   perReplicaRequiredGb,
 } from "@/domains/endpoint/lib/estimate-weights";
+import { resolveModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
 import {
   type EndpointReviewCapacityMetric,
   type EndpointReviewContext,
@@ -78,15 +79,6 @@ import type {
   ModelSpec,
   ResourceSpec,
 } from "@/domains/endpoint/types";
-import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
-import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
-import {
-  isValidWorkspace,
-  useWorkspace,
-} from "@/foundation/hooks/use-workspace";
-import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
-import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
   calculateGpuPlacementCapacity,
@@ -95,15 +87,23 @@ import {
   calculateVgpuMemoryBoundaryMiB,
   calculateVgpuPhysicalCardUsage,
   sumMatchingDeviceAvailableResources,
-} from "@/foundation/lib/gpu-device-resources";
-import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
-import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
+} from "@/foundation/accelerator/gpu-device-resources";
+import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
+import {
+  isValidWorkspace,
+  useWorkspace,
+} from "@/foundation/hooks/use-workspace";
+import { cn } from "@/foundation/lib/utils";
+import { engineNeedsModelSpec } from "@/foundation/model-reference/engine-model-spec";
+import { registryUnavailability } from "@/foundation/model-reference/model-registry-availability";
 import {
   MODEL_REGISTRY_SELECT,
   registryModelDelivery,
-} from "@/foundation/lib/model-registry-visibility";
-import { registryModelLabel } from "@/foundation/lib/registry-model-display";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/model-reference/model-registry-visibility";
+import { registryModelLabel } from "@/foundation/model-reference/registry-model-display";
+import type { RegistryModelRef } from "@/foundation/model-reference/registry-models";
+import { useRegistryModelVersion } from "@/foundation/model-reference/use-registry-model-version";
+import { useRegistryModels } from "@/foundation/model-reference/use-registry-models";
 import {
   composeEndpointSpec,
   defaultFeatureSelections,

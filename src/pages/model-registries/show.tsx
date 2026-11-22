@@ -9,14 +9,14 @@ import { RegistryVisibility } from "@/domains/model-registry/components/Registry
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { MODEL_REGISTRY_SELECT } from "@/foundation/lib/model-registry-visibility";
+import { MODEL_REGISTRY_SELECT } from "@/foundation/model-reference/model-registry-visibility";
 import {
   type RegistryModelSelection,
   readRegistryModelSelection,
   writeRegistryModelSelection,
-} from "@/foundation/lib/registry-model-link";
+} from "@/foundation/model-reference/registry-model-link";
+import RegistryStatus from "@/foundation/role/RegistryStatus";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 

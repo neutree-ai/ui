@@ -12,12 +12,12 @@ import {
   writeCatalogImageSlot,
   writeCatalogModelSlot,
 } from "@/domains/model-catalog/lib/catalog-model-slots";
-import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
-import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { registryUnavailability } from "@/foundation/lib/model-registry-availability";
-import { registryModelLabel } from "@/foundation/lib/registry-model-display";
+import { engineNeedsModelSpec } from "@/foundation/model-reference/engine-model-spec";
+import { registryUnavailability } from "@/foundation/model-reference/model-registry-availability";
+import { registryModelLabel } from "@/foundation/model-reference/registry-model-display";
+import { useRegistryModelVersion } from "@/foundation/model-reference/use-registry-model-version";
+import { useRegistryModels } from "@/foundation/model-reference/use-registry-models";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";
 

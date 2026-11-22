@@ -1,5 +1,5 @@
 import { useCustom } from "@refinedev/core";
-import { observationStatus } from "@/foundation/lib/accelerator-observations";
+import { observationStatus } from "@/foundation/accelerator/accelerator-observations";
 
 export type PerformanceWindow = "5m" | "1h" | "24h";
 

@@ -1,13 +1,13 @@
 import { useInvalidate } from "@refinedev/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { registryModelDetailKey } from "@/foundation/hooks/use-registry-model-version";
 import {
   deleteRegistryModel,
   type PatchRegistryModelBody,
   patchRegistryModel,
   type RegistryModelError,
   type RegistryModelRef,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
+import { registryModelDetailKey } from "@/foundation/model-reference/use-registry-model-version";
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
 
 /**

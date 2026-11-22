@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   type ModelRegistryConnectionCheck,
   retryModelRegistryConnection,
-} from "@/foundation/lib/api/model-registries";
-import type { RegistryModelError } from "@/foundation/lib/api/registry-models";
+} from "@/domains/model-registry/lib/model-registries";
+import type { RegistryModelError } from "@/foundation/model-reference/registry-models";
 
 type RetryTarget = {
   workspace: string;

@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
 import {
   compareWorkspaceModelOptions,
   useWorkspaceModels,

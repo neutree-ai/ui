@@ -22,10 +22,10 @@ vi.mock("@refinedev/core", () => ({
 
 // The model dropdown and the exact-name existence lookup both list registry
 // models; picking a model reads that version's detail.
-vi.mock("@/foundation/hooks/use-registry-models", () => ({
+vi.mock("@/foundation/model-reference/use-registry-models", () => ({
   useRegistryModels: vi.fn(),
 }));
-vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
+vi.mock("@/foundation/model-reference/use-registry-model-version", () => ({
   useRegistryModelVersion: vi.fn(),
 }));
 
@@ -50,9 +50,9 @@ import { useSelect } from "@refinedev/core";
 import { defaultEndpointSpec } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import { makeEndpoint } from "@/domains/endpoint/testing/builders";
 import type { Endpoint, EndpointClusterRef } from "@/domains/endpoint/types";
-import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
+import { useRegistryModelVersion } from "@/foundation/model-reference/use-registry-model-version";
+import { useRegistryModels } from "@/foundation/model-reference/use-registry-models";
 import { selectOption } from "@/foundation/testing/interactions";
 import { refineForm } from "@/foundation/testing/refine-form";
 import { renderForm } from "@/foundation/testing/render-form";

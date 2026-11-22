@@ -2,7 +2,7 @@ import { REST_URL } from "@/foundation/lib/api";
 import {
   authHeaders,
   describeErrorBody,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
 
 /**
  * What an image registry holds, as opposed to the registry records themselves —

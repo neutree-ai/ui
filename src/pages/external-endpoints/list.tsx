@@ -6,9 +6,9 @@ import {
 } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveExternalModelSource } from "@/foundation/lib/model-source";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";

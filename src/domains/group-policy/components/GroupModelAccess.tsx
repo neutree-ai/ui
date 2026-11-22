@@ -22,9 +22,9 @@ import type {
 import { Loader } from "@/foundation/components/Loader";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
 import { ShowPage } from "@/foundation/scene/ShowPage";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 import type { GroupKind } from "@/foundation/types/group-scope";
 
 /** Limit, period and, when read, the usage of the current period. */

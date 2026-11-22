@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   describeErrorBody,
   parseContentRangeTotal,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
 
 describe("parseContentRangeTotal", () => {
   it("reads the total out of a populated range", () => {

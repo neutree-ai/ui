@@ -34,20 +34,20 @@ import {
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
-import EndpointStatus from "@/foundation/components/EndpointStatus";
-import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
-import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
-import { Loader } from "@/foundation/components/Loader";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
-import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { gpuAllocations as collectGpuAllocations } from "@/foundation/lib/accelerator-observations";
+import { gpuAllocations as collectGpuAllocations } from "@/foundation/accelerator/accelerator-observations";
 import {
   parseTflops,
   TFLOPS_ANNOTATION,
-} from "@/foundation/lib/accelerator-tflops";
-import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
+} from "@/foundation/accelerator/accelerator-tflops";
+import { useAcceleratorObservations } from "@/foundation/accelerator/use-accelerator-observations";
+import { Loader } from "@/foundation/components/Loader";
+import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
+import { getEndpointSplitDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
+import EndpointStatus from "@/foundation/role/EndpointStatus";
 import Timestamp from "@/foundation/role/Timestamp";
 import {
   detailTabsListClassName,

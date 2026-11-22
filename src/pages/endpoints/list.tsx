@@ -8,10 +8,10 @@ import {
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
-import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
+import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";

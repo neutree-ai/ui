@@ -1,4 +1,4 @@
-import { RegistryModelError } from "@/foundation/lib/api/registry-models";
+import { RegistryModelError } from "@/foundation/model-reference/registry-models";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 /**

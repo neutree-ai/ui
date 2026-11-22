@@ -23,8 +23,8 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useLicense } from "@/foundation/license/use-license";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
 import { FormSelect } from "@/foundation/role/FormSelect";
 import { profileOptionLabel } from "@/foundation/role/user-identity";

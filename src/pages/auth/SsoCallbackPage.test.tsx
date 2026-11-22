@@ -19,13 +19,13 @@ vi.mock("@/foundation/providers/auth-provider", () => ({
   verifySsoToken: vi.fn(),
 }));
 
+import { verifySsoToken } from "@/foundation/providers/auth-provider";
 import {
   captureSsoCallback,
   clearCapturedSsoCallback,
   getCapturedSsoCallback,
   rememberPostLoginPath,
-} from "@/foundation/lib/sso-callback";
-import { verifySsoToken } from "@/foundation/providers/auth-provider";
+} from "@/foundation/sso/sso-callback";
 import { SsoCallbackPage } from "./SsoCallbackPage";
 
 const arrive = (hash: string) =>

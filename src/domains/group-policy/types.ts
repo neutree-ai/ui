@@ -1,4 +1,4 @@
-import type { QuotaPeriod } from "@/foundation/lib/token-quota";
+import type { QuotaPeriod } from "@/foundation/token-quota/token-quota";
 import type { Metadata } from "@/foundation/types/basic-types";
 import type { GroupKind } from "@/foundation/types/group-scope";
 

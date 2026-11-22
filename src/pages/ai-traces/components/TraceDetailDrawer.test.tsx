@@ -30,7 +30,7 @@ vi.mock("@refinedev/core", () => ({
   useGo: () => vi.fn(),
 }));
 
-vi.mock("@/foundation/lib/api/ai-traces", () => ({
+vi.mock("@/foundation/ai-traces/ai-traces", () => ({
   fetchAITrace: vi.fn(),
 }));
 

@@ -116,15 +116,15 @@ for `BaseStatus` callers.
 
 ## Domain code in foundation
 
-Image repository listing (`foundation/lib/api/image-registry-content.ts`,
-`foundation/hooks/use-image-repositories.ts`) is consumed only by `domains/endpoint`
+Image repository listing (`domains/endpoint/lib/image-registry-content.ts`,
+`domains/endpoint/hooks/use-image-repositories.ts`) is consumed only by `domains/endpoint`
 (`ImageRegistryExplorerDialog`), not by `domains/image-registry`. It stays in foundation because
 `.dependency-cruiser.cjs` (`no-L2-cross-domain`) forbids the endpoint domain importing it from
 another domain. The same holds for `model-registry-visibility` / `model-registry-availability`.
 
 ## Token quotas
 
-API Key and Group Policy use `foundation/lib/token-quota.ts` for amount/unit conversion, periods and display.
+API Key and Group Policy use `foundation/token-quota/token-quota.ts` for amount/unit conversion, periods and display.
 `splitTokenQuota`, `toTokenCount` and `formatTokenQuota` are tested in `token-quota.test.ts`; forms permit blank
 as unset and require a positive safe integer after unit conversion. Backend validators accept positive int64 limits
 (`api.validate_api_key_limits` in `099_apikey_per_model_quota`,
@@ -169,10 +169,10 @@ Comparisons tolerate 1e-6 drift; vGPU memory also accepts the one-decimal GiB di
 capacity estimates; CPU-only capacity uses resource bounds directly. `maxCpuPerReplica` / `maxMemoryPerReplica` are
 maxima among GPU-eligible nodes. `addBackEndpointDeviceAllocationsToNodeResources` credits observed ownership, capped at
 allocatable values; unknown nodes/devices gain nothing. Full-card availability uses the same shared check. Tests:
-`foundation/lib/gpu-device-resources.test.ts`; callers retain their own validation policy.
+`foundation/accelerator/gpu-device-resources.test.ts`; callers retain their own validation policy.
 
 `actualUsageMarkerState` hides zero/negative actual VRAM, marks known reservation excess serious and otherwise uses the
 neutral marker. Missing readings stay empty; zero remains a numeric reading. The GPU details sheet labels the live
 reading as actual usage (observed VRAM / physical) and keeps the allocation reading (allocated / physical) separate.
 Tests:
-`foundation/lib/accelerator-observations.test.ts`, `foundation/components/GpuObservationCard.test.tsx`.
+`foundation/accelerator/accelerator-observations.test.ts`, `foundation/accelerator/GpuObservationCard.test.tsx`.

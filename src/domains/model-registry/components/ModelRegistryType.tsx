@@ -11,7 +11,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
  * This table is the one place allowed to read `spec.type`. Nothing the UI *does*
  * with a registry may branch on it — what can be listed, measured, paged or
  * written follows from what the server reported about the registry itself, in
- * `@/foundation/lib/model-registry-visibility`, `@/foundation/lib/model-registry-availability`
+ * `@/foundation/model-reference/model-registry-visibility`, `@/foundation/model-reference/model-registry-availability`
  * and `../lib/provisioning`. A
  * kind missing from this table still works everywhere else; it renders under its
  * raw identifier, which is a plain label rather than a broken page.

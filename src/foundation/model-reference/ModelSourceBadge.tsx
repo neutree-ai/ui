@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/foundation/lib/utils";
 import {
   type ModelSource,
   modelSourceTranslationKey,
-} from "@/foundation/lib/model-source";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/model-reference/model-source";
 
 /**
  * A model's source, rendered as a badge.

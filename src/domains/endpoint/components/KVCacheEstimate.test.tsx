@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { KVCacheEstimate } from "@/domains/endpoint/components/KVCacheEstimate";
-import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
+import type { ModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
 import { pickOption } from "@/foundation/testing/interactions";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 

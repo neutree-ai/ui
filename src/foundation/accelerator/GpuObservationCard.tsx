@@ -26,9 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
-import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
+import { extraHardwareFields } from "@/foundation/accelerator/accelerator-extra-info";
 import {
   type AcceleratorSample,
   actualUsageMarkerState,
@@ -47,15 +45,17 @@ import {
   sampleAge,
   splitGpuEndpointAllocations,
   visibleHardwareFields,
-} from "@/foundation/lib/accelerator-observations";
-import { peakTflops } from "@/foundation/lib/accelerator-tflops";
-import { buildPoolUsage } from "@/foundation/lib/gpu-device-resources";
+} from "@/foundation/accelerator/accelerator-observations";
+import { peakTflops } from "@/foundation/accelerator/accelerator-tflops";
+import { buildPoolUsage } from "@/foundation/accelerator/gpu-device-resources";
 import {
   l0Pattern,
   OWNER_SECONDARY_TONE,
   OWNER_WEIGHTS_TONE,
   ownerTone,
-} from "@/foundation/lib/gpu-ownership";
+} from "@/foundation/accelerator/gpu-ownership";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import {

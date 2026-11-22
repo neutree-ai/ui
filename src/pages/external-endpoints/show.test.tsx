@@ -95,7 +95,7 @@ vi.mock(
   "@/domains/external-endpoint/components/ModelRouteDetails",
   async () => {
     const { ModelSourceBadge } = await import(
-      "@/foundation/components/ModelSourceBadge"
+      "@/foundation/model-reference/ModelSourceBadge"
     );
     return {
       default: ({

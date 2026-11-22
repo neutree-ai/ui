@@ -16,7 +16,6 @@ import {
 } from "@/domains/api-key/lib/usage-summary";
 import { Loader } from "@/foundation/components/Loader";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import {
   type DateRange,
   DateRangePicker,
@@ -24,6 +23,7 @@ import {
 } from "@/foundation/role/DateRangePicker";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import { ShowPage } from "@/foundation/scene/ShowPage";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 
 function TotalsTable({
   rows,

@@ -23,9 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { engineVersionsFor } from "@/foundation/cache-version/cache-versions";
+import { useCacheVersions } from "@/foundation/cache-version/use-cache-versions";
 import { Link } from "@/foundation/components/Link";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
-import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 import { cacheUpgradeErrorMessage } from "../lib/zcache-errors";
 import {

@@ -22,7 +22,7 @@ import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-le
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveExternalModelSource } from "@/foundation/lib/model-source";
+import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,

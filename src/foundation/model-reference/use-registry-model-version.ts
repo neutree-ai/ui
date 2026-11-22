@@ -3,7 +3,7 @@ import {
   fetchRegistryModel,
   type RegistryModelError,
   type RegistryModelRef,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
 
 /**

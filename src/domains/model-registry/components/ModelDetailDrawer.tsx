@@ -18,9 +18,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Loader } from "@/foundation/components/Loader";
-import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { registryAcceptsWrites } from "@/foundation/lib/model-registry-visibility";
+import { registryAcceptsWrites } from "@/foundation/model-reference/model-registry-visibility";
+import { useRegistryModelVersion } from "@/foundation/model-reference/use-registry-model-version";
 import Timestamp from "@/foundation/role/Timestamp";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import { EmptyValue } from "@/foundation/type/EmptyValue";

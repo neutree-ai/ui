@@ -7,7 +7,7 @@ import {
   type AITraceFilterOptions,
   AITraceRequestError,
   fetchAITraceFilterOptions,
-} from "@/foundation/lib/api/ai-traces";
+} from "@/foundation/ai-traces/ai-traces";
 import { AITracesList } from "@/pages/ai-traces/list";
 
 const context = vi.hoisted(() => ({
@@ -16,9 +16,9 @@ const context = vi.hoisted(() => ({
   optionsQuery: vi.fn(),
 }));
 
-vi.mock("@/foundation/lib/api/ai-traces", async () => ({
-  ...(await vi.importActual<typeof import("@/foundation/lib/api/ai-traces")>(
-    "@/foundation/lib/api/ai-traces",
+vi.mock("@/foundation/ai-traces/ai-traces", async () => ({
+  ...(await vi.importActual<typeof import("@/foundation/ai-traces/ai-traces")>(
+    "@/foundation/ai-traces/ai-traces",
   )),
   fetchAITraceFilterOptions: vi.fn(),
 }));

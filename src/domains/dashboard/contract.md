@@ -5,7 +5,7 @@ Backend: `v1.Cluster`, `v1.Endpoint`, `api.clusters`, `api.endpoints` (`003_reso
 (`internal/routes/system/system.go`). No Dashboard RPC.
 Backend: `origin/main@062192f6`. Counts need `cluster:read` / `endpoint:read`; quick start needs read/create for
 four kinds and `engine:read` (`003_resources` policies).
-UI: `src/pages/dashboard/`; wizard: `src/foundation/hooks/use-quick-start.ts:useQuickStart`.
+UI: `src/pages/dashboard/`; wizard: `src/domains/dashboard/hooks/use-quick-start.ts:useQuickStart`.
 
 ## Type
 
@@ -25,7 +25,7 @@ Aggregates are server-owned/read-only; inputs are user-owned. Wizard progress is
 - Counts are raw numbers. Loading shows a skeleton; missing cluster data stays blank, endpoint data becomes zero.
 - `ResourceResultList` shows Created/Skipped/errors; progress counts success and skipped equally. No lifecycle tone.
 - Grafana owns units/missing data. Embed: `getOverviewDashboardProps` / `buildGrafanaDashboardUrl`;
-  tests: `src/foundation/lib/grafana-dashboard-configs.test.ts`, `grafana-dashboard-url.test.ts`.
+  tests: `src/foundation/grafana/grafana-dashboard-configs.test.ts`, `grafana-dashboard-url.test.ts`.
 
 ## Aggregate sources
 
@@ -132,11 +132,11 @@ Endpoint validation: 10232 invalid engine (`endpointEngineError`),
 ## Known deviations
 
 1. A missing engine still permits deployment with a fabricated version.
-   UI: `src/foundation/hooks/use-quick-start.ts:useQuickStart` falls back to v0.3.7 after missing/empty engine data.
+   UI: `src/domains/dashboard/hooks/use-quick-start.ts:useQuickStart` falls back to v0.3.7 after missing/empty engine data.
    API: `validateEndpointEngineExists` rejects an absent engine or unpublished version with 10233.
    Users can create three resources and then fail at the Endpoint step. Ticket: TBD
 2. Private-key text outside Latin-1 cannot be submitted.
-   UI: `src/foundation/hooks/use-quick-start.ts:buildClusterValues` calls `btoa` without byte encoding.
+   UI: `src/domains/dashboard/hooks/use-quick-start.ts:buildClusterValues` calls `btoa` without byte encoding.
    API: `raySSHLocalConfigGenerator.Generate` decodes arbitrary file bytes without a Latin-1 restriction.
    Users pasting a Unicode key comment get a Cluster-step error before its POST. Ticket: TBD
 
@@ -145,5 +145,5 @@ Endpoint validation: 10232 invalid engine (`endpointEngineError`),
 No live API/Grafana/provisioning test; deployed datasource/auth scope is unverified.
 `buildImageRegistryValues` sends obsolete ca; `ImageRegistrySpec` omits it and
 `041_remove_image_registry_ca.up.sql` drops it. Acceptance is unverified; Image Registry deviation 2.
-Tests: `src/foundation/hooks/use-quick-start.test.ts`: sequence, retry, workspace, key encoding, engine fallback.
+Tests: `src/domains/dashboard/hooks/use-quick-start.test.ts`: sequence, retry, workspace, key encoding, engine fallback.
 Fixed payloads are not fully pinned. No submit/transform moved.

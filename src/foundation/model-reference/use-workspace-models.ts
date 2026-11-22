@@ -4,14 +4,14 @@ import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import {
   type EndpointLifecycle,
   isEndpointWithdrawn,
-} from "@/foundation/lib/endpoint-availability";
+} from "@/foundation/model-reference/endpoint-availability";
 import {
   type ExternalModelSourceSpec,
   type ModelSource,
   modelSourceRank,
   resolveExternalModelSource,
   SELF_HOSTED_MODEL_SOURCE,
-} from "@/foundation/lib/model-source";
+} from "@/foundation/model-reference/model-source";
 
 // A model name is an identity the engine reports and the gateway matches
 // exactly, so it is returned verbatim, surrounding whitespace included. Only a

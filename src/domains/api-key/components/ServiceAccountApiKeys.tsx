@@ -33,13 +33,13 @@ import {
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { Loader } from "@/foundation/components/Loader";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { displayName } from "@/foundation/role/display-name";
 import Timestamp from "@/foundation/role/Timestamp";
 import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
 import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import { ShowPage } from "@/foundation/scene/ShowPage";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 
 type ServiceAccountApiKeysProps = {

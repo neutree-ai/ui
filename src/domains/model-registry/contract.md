@@ -4,13 +4,13 @@ Backend: `v1.ModelRegistry` (`api/v1/model_registry_types.go`), table `api.model
 `api.visibility(api.model_registries)` (`084_model_registry_checked_at_and_visibility`,
 `088_model_registry_visibility_model_scope`). Proxy `/api/v1/model_registries` (`model_registry_proxy.go`:
 `CreateStructProxyHandler` + `builtinModelRegistryGuard` + `DeletionValidation`). Reconciled by
-`internal/model_registry`. Extra route: connection check (`foundation/lib/api/model-registries.ts`,
+`internal/model_registry`. Extra route: connection check (`domains/model-registry/lib/model-registries.ts`,
 `retryModelRegistryConnection`). Permissions: `model_registry:read|create|update|delete`, `read-credentials` (`037`; the
 guard requires it to change a built-in registry's credentials). Refine resource `model_registries`: workspaced,
 `idColumnName: "metadata->name"`. Shared mechanics: `src/foundation/contract.md`.
 
 Scope: the registry record. Models inside a registry (`RegistryModelsTable`, `ModelDetailDrawer`, `ModelEditDialog`,
-...) are a sub-API under `foundation/lib/api/registry-models.ts`, not covered.
+...) are a sub-API under `foundation/model-reference/registry-models.ts`, not covered.
 
 ## Type
 
@@ -35,15 +35,15 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
 
 ## Roles
 
-- Status: shared `RegistryStatus` (`foundation/components/RegistryStatus`; Foundation "Status tone"), label
+- Status: shared `RegistryStatus` (`foundation/role/RegistryStatus`; Foundation "Status tone"), label
   `status.phases.registry.<phase>`.
 - Columns `useMetadataColumns`; time `metadataColumns.creation_timestamp`, `MetadataTimestampMeta`, `formatTimestamp`
   (`stats_updated_at`, `last_checked_at`); empty marker `EmptyValue` (visibility only).
 - Type: `PRESENTATION` table in `ModelRegistryType.tsx` (icon, label, URL placeholder); the only place allowed to read
   `spec.type`; unknown types render the raw string.
 - Visibility: `RegistryVisibility` (`model_registries.visibility.<v>`). Capability rules from server `visibility` live
-  in `foundation/lib/model-registry-visibility` (`registryContentsAreMeasured`, `registryAcceptsWrites`,
-  `registryModelDelivery`, `registryPagesFromOffset`); reachability in `foundation/lib/model-registry-availability`
+  in `foundation/model-reference/model-registry-visibility` (`registryContentsAreMeasured`, `registryAcceptsWrites`,
+  `registryModelDelivery`, `registryPagesFromOffset`); reachability in `foundation/model-reference/model-registry-availability`
   (`registryIsUnreachable`, `registryIsDisabled`).
 - Provisioned: `registryIsProvisioned` (`lib/provisioning.ts`) reads `neutree.ai/builtin` (Go `v1.IsBuiltin`).
 - Stats: `ModelRegistryModelCount` / `ModelRegistryStorage` (`formatBytes`): number, "not counted" (public),
@@ -69,7 +69,7 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
   `validateModelRegistryDeletion`: 400 10128 while an endpoint in the workspace has `spec.model.registry` equal to the
   name (the SQL trigger of `035` dropped in `044_drop_sql_deletion_validation`).
 - YAML: kind `ModelRegistry` <-> `model_registries`, credential-capable. Quick start
-  (`foundation/hooks/use-quick-start.ts`, `buildModelRegistryValues`): `public-hugging-face` (`hugging-face`,
+  (`domains/dashboard/hooks/use-quick-start.ts`, `buildModelRegistryValues`): `public-hugging-face` (`hugging-face`,
   `https://huggingface.co`, `credentials: ""`).
 
 ## Descriptions

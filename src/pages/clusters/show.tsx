@@ -25,23 +25,23 @@ import { zcacheStatus } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import type { Endpoint } from "@/domains/endpoint/types";
-import EndpointStatus from "@/foundation/components/EndpointStatus";
-import type { GpuObservationDisplay } from "@/foundation/components/GpuObservationCard";
-import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
-import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
-import { Loader } from "@/foundation/components/Loader";
-import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
-import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
   gpuAllocations,
   nodeL1CacheByNode,
-} from "@/foundation/lib/accelerator-observations";
+} from "@/foundation/accelerator/accelerator-observations";
 import {
   parseTflops,
   TFLOPS_ANNOTATION,
-} from "@/foundation/lib/accelerator-tflops";
-import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
+} from "@/foundation/accelerator/accelerator-tflops";
+import type { GpuObservationDisplay } from "@/foundation/accelerator/GpuObservationCard";
+import { useAcceleratorObservations } from "@/foundation/accelerator/use-accelerator-observations";
+import { Loader } from "@/foundation/components/Loader";
+import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
+import { getClusterSplitDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
+import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
+import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { ObservationStatus } from "@/foundation/role/ObservationStatus";
 import Timestamp from "@/foundation/role/Timestamp";
 import {

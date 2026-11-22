@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { RegistryModelPage } from "@/foundation/lib/api/registry-models";
 import {
   MODEL_REGISTRY_SELECT,
   registryAcceptsWrites,
   registryContentsAreMeasured,
   registryModelDelivery,
   registryPagesFromOffset,
-} from "@/foundation/lib/model-registry-visibility";
+} from "@/foundation/model-reference/model-registry-visibility";
+import type { RegistryModelPage } from "@/foundation/model-reference/registry-models";
 
 const page = (total: number | null): RegistryModelPage => ({
   models: [],

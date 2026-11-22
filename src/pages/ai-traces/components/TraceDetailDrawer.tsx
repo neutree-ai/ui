@@ -27,8 +27,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import { type AITrace, fetchAITrace } from "@/foundation/ai-traces/ai-traces";
 import { Loader } from "@/foundation/components/Loader";
-import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import Timestamp from "@/foundation/role/Timestamp";

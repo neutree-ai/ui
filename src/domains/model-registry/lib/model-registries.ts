@@ -1,5 +1,8 @@
 import { REST_URL } from "@/foundation/lib/api";
-import { authHeaders, errorFrom } from "@/foundation/lib/api/registry-models";
+import {
+  authHeaders,
+  errorFrom,
+} from "@/foundation/model-reference/registry-models";
 
 /**
  * Registry-level routes that are not PostgREST tables.

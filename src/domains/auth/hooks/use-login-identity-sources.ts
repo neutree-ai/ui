@@ -3,7 +3,7 @@ import {
   LOGIN_IDENTITY_SOURCES_PATH,
   type LoginIdentitySource,
   normalizeLoginIdentitySources,
-} from "@/foundation/lib/api/identity-sources";
+} from "@/domains/auth/lib/identity-sources";
 
 /**
  * The enabled identity sources for the login page, split by type. A failed

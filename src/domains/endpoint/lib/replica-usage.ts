@@ -2,7 +2,7 @@ import {
   type AcceleratorSample,
   type GpuAllocation,
   reading,
-} from "@/foundation/lib/accelerator-observations";
+} from "@/foundation/accelerator/accelerator-observations";
 
 type ReplicaGroupUsage = {
   actualMiB: number | null;

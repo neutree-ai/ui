@@ -30,7 +30,6 @@ import {
   NO_ENGINE_CACHE_ARG_CONTROLS,
   NO_ENGINE_CACHE_ARGS,
 } from "@/domains/endpoint/lib/engine-cache-args";
-import { useTranslation } from "@/foundation/lib/i18n";
 import {
   BYTES_PER_GB,
   defaultPrecisionId,
@@ -46,8 +45,9 @@ import {
   unreportedFactorKeys as listUnreportedFactorKeys,
   NOTED_KV_CACHE_SOURCES,
   precisionBytes,
-} from "@/foundation/lib/kv-cache";
-import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
+} from "@/domains/endpoint/lib/kv-cache";
+import type { ModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
+import { useTranslation } from "@/foundation/lib/i18n";
 import { InfoHint } from "@/foundation/scene/InfoHint";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { modelFieldSource } from "@/foundation/types/model-types";

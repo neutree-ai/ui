@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { RegistryModelError } from "@/foundation/lib/api/registry-models";
-import { resolveModelInfoRead } from "@/foundation/lib/model-info-read";
+import { resolveModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
+import { RegistryModelError } from "@/foundation/model-reference/registry-models";
 
 const idle = {
   selected: true,

@@ -1,6 +1,6 @@
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { registryContentsAreMeasured } from "@/foundation/lib/model-registry-visibility";
+import { registryContentsAreMeasured } from "@/foundation/model-reference/model-registry-visibility";
 import { formatTimestamp } from "@/foundation/role/Timestamp";
 import { formatBytes } from "@/foundation/role/unit";
 

@@ -9,10 +9,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelSource } from "@/foundation/lib/model-source";
 import { cn } from "@/foundation/lib/utils";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import type { ModelSource } from "@/foundation/model-reference/model-source";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import CurlExample from "./CurlExample";
 

@@ -15,15 +15,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/foundation/lib/utils";
 import {
   ModelOptionGroups,
   phaseClass,
   useModelOptionMatcher,
   usePhaseLabel,
-} from "@/foundation/components/ModelOptionGroups";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import type { WorkspaceModelOption } from "@/foundation/hooks/use-workspace-models";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/model-reference/ModelOptionGroups";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import type { WorkspaceModelOption } from "@/foundation/model-reference/use-workspace-models";
 
 type Option = WorkspaceModelOption;
 

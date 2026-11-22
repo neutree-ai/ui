@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import {
   type AcceleratorSnapshot,
   observationStatus,
-} from "@/foundation/lib/accelerator-observations";
+} from "@/foundation/accelerator/accelerator-observations";
 
 export function useAcceleratorObservations(
   resource: "clusters" | "endpoints",

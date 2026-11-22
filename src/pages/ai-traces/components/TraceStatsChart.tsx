@@ -11,7 +11,7 @@ import {
 import {
   type AITraceDayCount,
   fetchAITraceStats,
-} from "@/foundation/lib/api/ai-traces";
+} from "@/foundation/ai-traces/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   CHART_BRAND,

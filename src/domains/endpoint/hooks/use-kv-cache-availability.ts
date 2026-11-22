@@ -7,9 +7,9 @@ import {
   kvCacheUnavailableReason,
 } from "@/domains/endpoint/lib/zcache";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
+import { engineVersionsFor } from "@/foundation/cache-version/cache-versions";
+import { useCacheVersions } from "@/foundation/cache-version/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { engineVersionsFor } from "@/foundation/lib/cache-versions";
 
 export type KvCacheAvailability = {
   /** Whether the platform offers ZCache at all. */

@@ -2,7 +2,7 @@ import {
   compareDevicesByOrderThenUuid,
   getDeviceOrder,
   mergePoolTotals,
-} from "@/foundation/lib/device-resource-utils";
+} from "@/foundation/accelerator/device-resource-utils";
 import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 import type {
   ClusterResourceInfo,

@@ -2,7 +2,7 @@ import {
   BYTES_PER_GB,
   precisionBytes,
   precisionIdForDtype,
-} from "@/foundation/lib/kv-cache";
+} from "@/domains/endpoint/lib/kv-cache";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 
 const SIZE_UNIT_BYTES: Record<string, number> = {

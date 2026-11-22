@@ -24,8 +24,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   buildGpuDeviceResourceRows,
   filterGpuDeviceResourceRows,
@@ -39,7 +37,9 @@ import {
   GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
   getGpuDeviceResourceFilterOptions,
-} from "@/foundation/lib/gpu-device-resources";
+} from "@/foundation/accelerator/gpu-device-resources";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { cn } from "@/foundation/lib/utils";
 import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
 import { formatToDecimal } from "@/foundation/role/unit";

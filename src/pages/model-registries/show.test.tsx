@@ -84,7 +84,7 @@ vi.mock("@/domains/model-registry/components/ModelDetailDrawer", () => ({
   ),
 }));
 
-vi.mock("@/foundation/components/RegistryStatus", () => ({
+vi.mock("@/foundation/role/RegistryStatus", () => ({
   default: () => null,
 }));
 vi.mock("@/domains/model-registry/components/ModelRegistryType", () => ({

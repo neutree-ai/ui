@@ -15,18 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLoginIdentitySources } from "@/foundation/hooks/use-login-identity-sources";
+import { useLoginIdentitySources } from "@/domains/auth/hooks/use-login-identity-sources";
 import {
   buildOidcAuthorizeUrl,
   type LoginIdentitySource,
-} from "@/foundation/lib/api/identity-sources";
+} from "@/domains/auth/lib/identity-sources";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import type { LdapLoginParams } from "@/foundation/providers/auth-provider";
 import {
   rememberPostLoginPath,
   ssoRedirectTarget,
-} from "@/foundation/lib/sso-callback";
-import { cn } from "@/foundation/lib/utils";
-import type { LdapLoginParams } from "@/foundation/providers/auth-provider";
+} from "@/foundation/sso/sso-callback";
 import { authStyles } from "./styles";
 import { ThemedTitle } from "./ThemedTitle";
 

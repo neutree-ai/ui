@@ -1,5 +1,5 @@
 import { useCustom } from "@refinedev/core";
-import type { CacheVersion } from "@/foundation/lib/cache-versions";
+import type { CacheVersion } from "@/foundation/cache-version/cache-versions";
 
 /** The cache runtime versions the platform can install, with their vLLM support. */
 export function useCacheVersions(enabled = true) {

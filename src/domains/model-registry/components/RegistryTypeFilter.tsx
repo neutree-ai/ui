@@ -25,8 +25,8 @@ import { useTranslation } from "@/foundation/lib/i18n";
  *
  * Reading `spec.type` is allowed here because a filter is a query the user
  * asked for, not a judgement about what a registry can do. Those still come
- * from what the server reported — see `@/foundation/lib/model-registry-visibility`
- * and `@/foundation/lib/model-registry-availability`.
+ * from what the server reported — see `@/foundation/model-reference/model-registry-visibility`
+ * and `@/foundation/model-reference/model-registry-availability`.
  */
 
 /** The column path PostgREST filters on. `->>` yields text, which is what an

@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { verifySsoToken } from "@/foundation/providers/auth-provider";
 import {
   clearCapturedSsoCallback,
   getCapturedSsoCallback,
   takePostLoginPath,
-} from "@/foundation/lib/sso-callback";
-import { verifySsoToken } from "@/foundation/providers/auth-provider";
+} from "@/foundation/sso/sso-callback";
 import { authStyles } from "./styles";
 import { ThemedTitle } from "./ThemedTitle";
 

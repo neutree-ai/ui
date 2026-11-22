@@ -1,4 +1,4 @@
-import type { RegistryModelPage } from "@/foundation/lib/api/registry-models";
+import type { RegistryModelPage } from "@/foundation/model-reference/registry-models";
 
 /**
  * What kind of thing a model registry is, as the server states it, and what

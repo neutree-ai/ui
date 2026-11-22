@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   AcceleratorSample,
   GpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
+} from "@/foundation/accelerator/accelerator-observations";
 import type {
   ClusterResourceInfo,
   EndpointResourceStatus,

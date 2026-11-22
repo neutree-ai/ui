@@ -20,12 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
+import { useTranslation } from "@/foundation/lib/i18n";
 import type {
   PatchRegistryModelBody,
   RegistryModelRef,
-} from "@/foundation/lib/api/registry-models";
-import { RegistryModelError } from "@/foundation/lib/api/registry-models";
-import { useTranslation } from "@/foundation/lib/i18n";
+} from "@/foundation/model-reference/registry-models";
+import { RegistryModelError } from "@/foundation/model-reference/registry-models";
 import type { ModelAliasConflict } from "@/foundation/types/model-types";
 import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";

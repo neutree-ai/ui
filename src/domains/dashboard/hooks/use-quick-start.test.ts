@@ -31,7 +31,7 @@ vi.mock("@refinedev/core", () => ({
 
 let mockCurrentWorkspace: string = "test-ws";
 
-vi.mock("./use-workspace", () => ({
+vi.mock("@/foundation/hooks/use-workspace", () => ({
   ALL_WORKSPACES: "_all_",
   useWorkspace: () => ({ current: mockCurrentWorkspace }),
 }));

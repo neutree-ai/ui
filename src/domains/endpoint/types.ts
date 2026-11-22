@@ -1,4 +1,4 @@
-import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+import type { ModelRegistryVisibility } from "@/foundation/model-reference/model-registry-visibility";
 import type { RecipeFeature } from "@/foundation/recipe/types";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 import type {
