@@ -641,7 +641,7 @@
   "src/domains/api-key/testing/visual-fixtures.ts": "4c3dd79aaa8a4c5d22ac25e76e4471ae",
   "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01",
   "src/foundation/scene/DetailFields.tsx": "0d30de91296566dc62a97def5617732b",
-  "src/foundation/type/FieldValue.tsx": "fe1536d71cd116ac37d5488ecbd036bc",
+  "src/foundation/type/FieldValue.tsx": "e00dd85a2d2c396c74806013a8422b88",
   "src/domains/license/components/LicenseSerial.tsx": "bba0de11f100b4b2165f22eaeacdbc88",
   "src/domains/license/components/LicenseStatus.tsx": "2af3b2947491a1800b3745e899f226b8",
   "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9",

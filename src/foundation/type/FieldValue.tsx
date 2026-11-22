@@ -44,5 +44,9 @@ export function FieldValue({ value }: { value: unknown }) {
         ))}
       </span>
     );
-  return <span className="[overflow-wrap:anywhere]">{String(value)}</span>;
+  return (
+    <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+      {String(value)}
+    </span>
+  );
 }
