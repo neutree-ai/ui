@@ -385,7 +385,7 @@
   "src/pages/log-sinks/create.tsx": "78a4fc6a8ec4a25c3ce393b4a82ccc5c",
   "src/pages/log-sinks/edit.tsx": "e4ebde0e09827b332838a9f7fc77e76e",
   "src/pages/log-sinks/list.tsx": "cfc03778f852c1f3b25566dc78c41ace",
-  "src/pages/log-sinks/show.tsx": "ff03f4ac1dcb94f891d2da9ab0fe0462",
+  "src/pages/log-sinks/show.tsx": "cabf5bb44790b039d77a60c78bb2793d",
   "src/domains/log-sink/components/LogSinkEnableAction.tsx": "61b004945e7c9f738874b9d17cad917e",
   "src/domains/log-sink/lib/forwarding-summary.ts": "ff6fd4b69533161f035d7304722a65ab",
   "src/domains/role/lib/permission-resource-order.ts": "adf8ba8e52a78108c0a8f3520cb2107f",
@@ -644,5 +644,6 @@
   "src/foundation/type/FieldValue.tsx": "fe1536d71cd116ac37d5488ecbd036bc",
   "src/domains/license/components/LicenseSerial.tsx": "bba0de11f100b4b2165f22eaeacdbc88",
   "src/domains/license/components/LicenseStatus.tsx": "2af3b2947491a1800b3745e899f226b8",
-  "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9"
+  "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9",
+  "src/domains/log-sink/lib/detail-fields.tsx": "72f30bbc6ede1ca728c01013de3bba4e"
 }

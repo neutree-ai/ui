@@ -114,6 +114,18 @@ Running is positive, Failed serious, Pending / Degraded / Deleting / Paused noti
 ModelDownloading retain their local outstanding string with a thin fill. An absent phase renders `EmptyValue`
 for `BaseStatus` callers.
 
+## Detail fields
+
+A kind describes its show-page fields once in `domains/<kind>/lib/detail-fields.tsx` as `DetailField` descriptors
+(`key`, `label` i18n key, optional `span`, and either `value(record, t)` or `render(record)`).
+`foundation/scene/DetailFields` lays them out as `ShowPage.Row` cells in the four-column grid, or as `ShowPage.Meta`
+items with `inline`. `foundation/type/FieldValue` alone decides how a `value` is shown, by runtime type: null,
+undefined, `""`, empty array and empty object are `EmptyValue`; a boolean is `common.values.yes|no`; a number is
+formatted for the resolved language; a string is shown as is and may wrap anywhere; an array is joined with `, `;
+a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role piece (`Timestamp`,
+the kind's status component). Used by License and Log Sink. Tests: `type/FieldValue.test.tsx` (per-type rules),
+`scene/DetailFields.test.tsx` (wiring).
+
 ## Concepts
 
 Besides the layers (`type/`, `role/`, `scene/`) and the app shell, `src/foundation/` holds one directory per data
