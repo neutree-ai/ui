@@ -38,9 +38,9 @@
   "src/pages/clusters/create.tsx": "c0cf6fc4fe222fe839009b99b918f15f",
   "src/pages/clusters/edit.tsx": "0d55cbfc5eeab64fd74dfb95910bcff0",
   "src/pages/clusters/list.tsx": "0be71e6a2f64dc4c09cf422a15fa2dfb",
-  "src/pages/clusters/show.tsx": "961ee778b03f8beb86de1bcb9ea016aa",
+  "src/pages/clusters/show.tsx": "8de571b99053334321560cdb66a69ece",
   "src/pages/api-keys/list.tsx": "9f896efd61392f52b5cab1ee9ffc0958",
-  "src/pages/api-keys/show.tsx": "7d4e0c497ca2c504788a46572f41f5e8",
+  "src/pages/api-keys/show.tsx": "18fd5ee5392f05248ecfc4ac817176bb",
   "src/components/ui/alert-dialog.tsx": "70af8c8b7632a7cc58b311f65ecd1309",
   "src/components/ui/alert.tsx": "fbaa8074e9f744b7c3d6aceef2c29652",
   "src/components/ui/badge.tsx": "e03f6851f659b905fb4b769a894952bd",
@@ -339,7 +339,6 @@
   "src/domains/engine/components/EngineVersionSummary.tsx": "8781476384c43b77dd8873f444a4e693",
   "src/domains/engine/components/ValueSchemaTable.tsx": "f1d77e8607c07516dc05e7c54cc33adc",
   "src/domains/external-endpoint/lib/convert-timeout.tsx": "a9c420a6b72fdfcc71c84a8002ff12c6",
-  "src/domains/cluster/lib/get-access-mode-label.tsx": "0b87b4a1233cb1cd7f12f0bb44f3b0b8",
   "src/domains/external-endpoint/lib/route-strategy.ts": "0fd034a72725d42b1f9a64726d594237",
   "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59",
   "src/pages/ai-traces/components/TraceExportButton.tsx": "4540a96a37cdb4a919b63e3e6b6e0770",
@@ -647,7 +646,9 @@
   "src/domains/license/lib/detail-fields.tsx": "919df2eefd6d2612d26936492e366632",
   "src/domains/log-sink/lib/detail-fields.tsx": "cdec7a1ac524cb096c94c3d1dfba85f0",
   "src/domains/identity-source/lib/detail-fields.tsx": "5608a0d1bdde26125c1cb34fd499a604",
-  "src/domains/license/lib/phase.ts": "a6384077b05daf9c49f658df82be5827",
   "src/foundation/role/ConnectionTestResult.tsx": "2849c3bad397bd8f83ba8384ffd82b11",
-  "src/foundation/scene/detail-field.ts": "8c6d2221d74460acd93ee383480597f7"
+  "src/foundation/scene/detail-field.ts": "8c6d2221d74460acd93ee383480597f7",
+  "src/domains/cluster/lib/detail-fields.ts": "5d2e850fc260d069410dc92cfb65045c",
+  "src/domains/cluster/lib/get-access-mode-label.ts": "a60579d778df264b99bf8a71994914b2",
+  "src/domains/api-key/lib/detail-fields.ts": "c604cb5b2e8527ee51cdcc2a5a3e775e"
 }
