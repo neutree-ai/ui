@@ -21,12 +21,12 @@ import {
   type LoginIdentitySource,
 } from "@/domains/auth/lib/identity-sources";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { cn } from "@/foundation/lib/utils";
-import type { LdapLoginParams } from "@/foundation/providers/auth-provider";
 import {
   rememberPostLoginPath,
   ssoRedirectTarget,
-} from "@/foundation/sso/sso-callback";
+} from "@/foundation/lib/sso-callback";
+import { cn } from "@/foundation/lib/utils";
+import type { LdapLoginParams } from "@/foundation/providers/auth-provider";
 import { authStyles } from "./styles";
 import { ThemedTitle } from "./ThemedTitle";
 

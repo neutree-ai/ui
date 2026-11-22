@@ -81,6 +81,7 @@ const APP_SHELL = [
   "lib/constant",
   "lib/api/",
   "lib/sidebar-active",
+  "lib/sso-callback",
   "lib/stick-to-bottom",
   "providers/",
   "types/",

@@ -99,7 +99,7 @@ and user. Unavailable localStorage falls back to SDK memory storage. Remember me
 `captureSsoCallback` runs before routing, stores the hash/error in module memory and replaces the URL fragment.
 Only the sanitized destination is in sessionStorage, under `neutree.sso.postLoginPath`.
 `sanitizePostLoginPath` rejects off-site, login and callback paths; absent/unavailable storage lands on `/`.
-Tests: `foundation/sso/sso-callback.test.ts`, `pages/auth/SsoCallbackPage.test.tsx`.
+Tests: `foundation/lib/sso-callback.test.ts`, `pages/auth/SsoCallbackPage.test.tsx`.
 
 No secret prefill or masked-field backfill. Reopen leaves password inputs blank; required checks prevent submission.
 Replacement uses the password body above; empty confirmation/mismatch sends no update.

@@ -131,7 +131,6 @@ directory it does not name; a module only one kind uses belongs in that kind's d
 - `oem-config/` — the OEM branding record (OEM Config, login, app shell).
 - `recipe/` — model catalog recipes: types, composition, VRAM estimate (Model Catalog, Endpoint).
 - `service-account/` — application (ServiceAccount) error codes (Service Account, API Key).
-- `sso/` — the SSO login result returned in the URL fragment (app start, login).
 - `token-quota/` — token quota amounts, units and periods (see Token quotas).
 
 ## Token quotas

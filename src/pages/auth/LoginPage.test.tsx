@@ -29,7 +29,7 @@ vi.mock("@/foundation/lib/api", () => ({ REST_URL: "http://h/api/v1" }));
 
 import { useParsed } from "@refinedev/core";
 import { useLoginIdentitySources } from "@/domains/auth/hooks/use-login-identity-sources";
-import { takePostLoginPath } from "@/foundation/sso/sso-callback";
+import { takePostLoginPath } from "@/foundation/lib/sso-callback";
 import { LoginPage } from "./LoginPage";
 
 const withSources = (

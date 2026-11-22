@@ -1,8 +1,8 @@
 {
   "vite.config.ts": "2f4ea227a08df0d1587921fe627a10e3",
-  "src/App.tsx": "0bf328b7e8c6646e10ff9158c76a6fb7",
+  "src/App.tsx": "d44e999061235ef91f17abbe288a3f65",
   "src/Root.tsx": "dd7ccc8e83bb3cb7f8c8fb879e4aa203",
-  "src/index.tsx": "7cc347c731b04f2a95c4d8be179f869b",
+  "src/index.tsx": "eea917dfd0f718cd42c34525bfc8cf21",
   "src/pages/workspaces/create.tsx": "2a3eaf3d1834a8877091d1c74ee4d2d3",
   "src/pages/workspaces/list.tsx": "b1ce6995f62b9d4b005a6e6fbab87572",
   "src/pages/workspaces/show.tsx": "484e75adaee196c89b80e7ceee5c5ce2",
@@ -79,7 +79,7 @@
   "playwright.config.ts": "1e624a5e7453327ec44105e414fc39d7",
   "src/pages/auth/AuthPage.tsx": "d24f5cfff735e761566cd2ff24dc36ed",
   "src/pages/auth/ForgotPasswordPage.tsx": "f16e847fd4935b49246e9e8cb6b11b6f",
-  "src/pages/auth/LoginPage.tsx": "bda6e03f18218f62705e0c45deb327b8",
+  "src/pages/auth/LoginPage.tsx": "ee0c13599d936912956034e79485e593",
   "src/pages/auth/ThemedTitle.tsx": "181b0e0fedd35634776e8301051ec94f",
   "src/pages/auth/UpdatePasswordPage.tsx": "fff33f9be3c4c868a48763b66396286e",
   "src/pages/auth/styles.ts": "64866e83620df7ffc452a58c3caf57be",
@@ -354,7 +354,7 @@
   "src/domains/endpoint/lib/zcache.ts": "83ad5ece99e594b305ad991ade511f2f",
   "src/domains/endpoint/components/EndpointKVCacheFields.tsx": "fd4157c8ea29514d604e0a679d1e8871",
   "src/domains/endpoint/components/EndpointKVCacheSummary.tsx": "3193e2fa82dedac4cc41d9427f950bf5",
-  "src/pages/auth/SsoCallbackPage.tsx": "5539ba05992078518b3651e01cd1d8ed",
+  "src/pages/auth/SsoCallbackPage.tsx": "936c5937d9c257e1a0c2e56259d907a3",
   "src/foundation/testing/interactions.ts": "5fe24b3233c94e65f6a993b537ce0826",
   "src/foundation/testing/refine-form.ts": "f411a2429aea4cfbc6d22f575ebab1a4",
   "src/foundation/testing/render-form.tsx": "10de9abc0bfa135bfd9f3a9dd324a790",
@@ -589,7 +589,6 @@
   "src/foundation/scene/VariablesInput.tsx": "78c2e27ef96969ebc6b63f391c59a35b",
   "src/foundation/scene/use-variables-input.ts": "b730f3cdb2903882cd30023f32529150",
   "src/foundation/token-quota/token-quota.ts": "83ff176d8b69f26cbc3b57a03562c5ef",
-  "src/foundation/sso/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
   "src/foundation/role/EndpointStatus.tsx": "9b353f8b8a43fab403a9af4e031972d4",
   "src/foundation/oem-config/use-oem-config.ts": "8e6127cb2238f5f28b563387e930a7fb",
   "src/foundation/model-reference/ModelSourceBadge.tsx": "05249530168cc505199baf54d0e1c26a",
@@ -632,5 +631,6 @@
   "src/foundation/model-reference/endpoint-availability.ts": "89a4a6fc251f6eb84aa68281b1d8cd79",
   "src/foundation/model-reference/model-source.ts": "685be5ca01d449960d0e8515faedc026",
   "src/foundation/model-reference/use-registry-model-version.ts": "5166578ccf6dc1d0226f4a276b5af7fa",
-  "src/foundation/role/RegistryStatus.tsx": "1994ed2f2513f50c1fa0c7751fd99207"
+  "src/foundation/role/RegistryStatus.tsx": "1994ed2f2513f50c1fa0c7751fd99207",
+  "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc"
 }
