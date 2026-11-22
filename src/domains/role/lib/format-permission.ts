@@ -1,5 +1,5 @@
 import type { useTranslation } from "react-i18next";
-import { getResourcePlural } from "@/foundation/lib/plural";
+import { getResourcePlural } from "@/foundation/type/plural";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 

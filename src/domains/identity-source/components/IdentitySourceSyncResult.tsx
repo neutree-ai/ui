@@ -1,10 +1,10 @@
 import { isSyncRequestPending } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { STATUS_TONE } from "@/foundation/lib/status-tone";
 import { cn } from "@/foundation/lib/utils";
+import { STATUS_TONE } from "@/foundation/role/status-tone";
+import Timestamp from "@/foundation/role/Timestamp";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 const pillClassNames = {
   ok: STATUS_TONE.positive,

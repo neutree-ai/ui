@@ -1,4 +1,4 @@
-import { formatBytes } from "@/foundation/lib/unit";
+import { formatBytes } from "@/foundation/role/unit";
 
 // Display formats for endpoint performance metrics. A missing, non-finite or
 // negative value is not a measurement and renders as a dash.

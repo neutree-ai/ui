@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { scopeOf } from "@/domains/role-assignment/lib/scope";
 import type { RoleAssignmentSpec } from "@/domains/role-assignment/types";
-import { ShowButton } from "@/foundation/components/ShowButton";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ShowButton } from "@/foundation/scene/ShowButton";
 
 type RoleAssignmentScopeLabelProps = {
   spec: RoleAssignmentSpec;

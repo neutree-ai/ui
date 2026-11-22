@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { EmptyValue } from "./EmptyValue";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 import "dayjs/locale/zh-cn";
 

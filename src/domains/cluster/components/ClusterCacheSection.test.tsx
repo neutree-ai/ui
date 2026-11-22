@@ -43,7 +43,7 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
 beforeEach(() => {
   capability.value = true;
 });
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({
       children,
@@ -63,7 +63,7 @@ vi.mock("@/foundation/components/ShowPage", () => ({
     Row: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   },
 }));
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
 

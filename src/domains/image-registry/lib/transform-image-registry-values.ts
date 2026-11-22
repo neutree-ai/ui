@@ -2,7 +2,7 @@ import type { ImageRegistry } from "@/domains/image-registry/types";
 import {
   omitEmptyUntouched,
   type TouchedFields,
-} from "@/foundation/lib/touched-fields";
+} from "@/foundation/role/touched-fields";
 
 export function transformImageRegistryValues(
   values: ImageRegistry,

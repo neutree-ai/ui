@@ -13,11 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAnthropicCurlCommand } from "@/domains/external-endpoint/lib/build-anthropic-curl-command";
 import { buildOpenAICurlCommand } from "@/domains/external-endpoint/lib/build-curl-command";
 import { buildEmbeddingCurlCommand } from "@/domains/external-endpoint/lib/build-embedding-curl-command";
-import { Section } from "@/foundation/components/Section";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { Section } from "@/foundation/scene/Section";
 
 type CurlExampleProps = {
   serviceUrl: string;

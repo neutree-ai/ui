@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
 import { useHasAnyPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 
 /** Renders its children only for a user holding `permission`, or any one listed. */
 export function PermissionGate({

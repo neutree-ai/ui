@@ -3,9 +3,9 @@ import type { Row } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
 
 interface BatchDeleteBarProps {
   selectedRows: Row<any>[];

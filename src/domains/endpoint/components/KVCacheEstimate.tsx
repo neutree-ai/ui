@@ -30,8 +30,6 @@ import {
   NO_ENGINE_CACHE_ARG_CONTROLS,
   NO_ENGINE_CACHE_ARGS,
 } from "@/domains/endpoint/lib/engine-cache-args";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   BYTES_PER_GB,
@@ -50,6 +48,8 @@ import {
   precisionBytes,
 } from "@/foundation/lib/kv-cache";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
+import { InfoHint } from "@/foundation/role/InfoHint";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { modelFieldSource } from "@/foundation/types/model-types";
 import type { ModelInfo } from "@/foundation/types/serving-types";
 

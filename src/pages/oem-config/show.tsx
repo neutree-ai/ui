@@ -1,8 +1,8 @@
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
 
 export function OemConfigShow() {

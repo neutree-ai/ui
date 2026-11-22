@@ -12,7 +12,7 @@ vi.mock("@/domains/model-registry/hooks/use-registry-model-readme", () => ({
 // The page shell, stubbed: it reaches refine's react-table, whose CommonJS
 // lodash import vitest cannot resolve, and none of it is what this file is
 // about. What is under test is the markdown pipeline.
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({ children }: { children?: ReactNode }) => (
       <section>{children}</section>

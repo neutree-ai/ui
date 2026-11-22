@@ -107,19 +107,19 @@ vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
   ProjectPicker: () => null,
 }));
 
-vi.mock("@/foundation/components/DeleteConfirmDialog", () => ({
+vi.mock("@/foundation/scene/DeleteConfirmDialog", () => ({
   DeleteConfirmDialog: () => null,
 }));
 
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: () => null,
 }));
 

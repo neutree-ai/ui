@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { TokenPoolSource } from "@/domains/group-policy/lib/subject-policy";
-import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
+import { GroupKindIcon } from "@/foundation/role/GroupKindIcon";
 
 export type GroupRenderer = (
   name: string,

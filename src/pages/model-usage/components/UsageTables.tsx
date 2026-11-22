@@ -10,11 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { MetricBar } from "@/foundation/components/MetricBar";
-import { PaginationControls } from "@/foundation/components/PaginationControls";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokens } from "@/foundation/lib/unit";
+import { MetricBar } from "@/foundation/role/MetricBar";
+import { formatTokens } from "@/foundation/role/unit";
+import { PaginationControls } from "@/foundation/scene/PaginationControls";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { formatTick } from "@/pages/model-usage/components/UsageChart";
 import type { UsageFact } from "@/pages/model-usage/lib/usage-scope";
 import {

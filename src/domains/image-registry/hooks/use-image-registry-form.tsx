@@ -2,14 +2,14 @@ import { useForm } from "@refinedev/react-hook-form";
 import { Input } from "@/components/ui/input";
 import { transformImageRegistryValues } from "@/domains/image-registry/lib/transform-image-registry-values";
 import type { ImageRegistry } from "@/domains/image-registry/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 export const useImageRegistryForm = ({
   action,

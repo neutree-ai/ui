@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as storage from "../lib/column-visibility-storage";
+import * as storage from "./column-visibility-storage";
 import { useColumnVisibility } from "./use-column-visibility";
 
-vi.mock("../lib/column-visibility-storage");
+vi.mock("./column-visibility-storage");
 
 describe("useColumnVisibility", () => {
   beforeEach(() => {

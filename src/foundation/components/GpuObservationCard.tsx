@@ -26,8 +26,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { extraHardwareFields } from "@/foundation/lib/accelerator-extra-info";
@@ -51,11 +49,6 @@ import {
   visibleHardwareFields,
 } from "@/foundation/lib/accelerator-observations";
 import { peakTflops } from "@/foundation/lib/accelerator-tflops";
-import {
-  CHART_SERIES_SEPARATOR,
-  chartCategoryMark,
-  chartOutlineStyle,
-} from "@/foundation/lib/chart-palette";
 import { buildPoolUsage } from "@/foundation/lib/gpu-device-resources";
 import {
   l0Pattern,
@@ -64,12 +57,19 @@ import {
   ownerTone,
 } from "@/foundation/lib/gpu-ownership";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import {
+  CHART_SERIES_SEPARATOR,
+  chartCategoryMark,
+  chartOutlineStyle,
+} from "@/foundation/role/chart-palette";
+import { MetricBar } from "@/foundation/role/MetricBar";
 import {
   formatMiBAsGiB,
   formatMiBAsGiBValue,
   formatToDecimal,
-} from "@/foundation/lib/unit";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/role/unit";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 
 type GpuObservationVariant = "inventory" | "allocation";
 export type GpuObservationDisplay = "table" | "cards";

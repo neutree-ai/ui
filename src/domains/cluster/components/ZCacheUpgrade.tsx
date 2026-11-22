@@ -26,7 +26,7 @@ import {
 import { Link } from "@/foundation/components/Link";
 import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
 import { engineVersionsFor } from "@/foundation/lib/cache-versions";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 import { cacheUpgradeErrorMessage } from "../lib/zcache-errors";
 import {
   type CacheDependentEndpoint,

@@ -8,8 +8,8 @@ import {
 } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ConfirmDialog } from "@/foundation/scene/ConfirmDialog";
 
 /** Per-resource strengthening of the delete confirmation. */
 export type DeleteConfirmation = {

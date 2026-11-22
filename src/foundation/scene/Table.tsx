@@ -64,13 +64,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { BatchDeleteBar } from "@/foundation/components/BatchDeleteBar";
-import type { DeleteConfirmation } from "@/foundation/components/DeleteConfirmDialog";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
-import { PaginationControls } from "@/foundation/components/PaginationControls";
-import { TableSearch } from "@/foundation/components/TableSearch";
-import { useColumnVisibility } from "@/foundation/hooks/use-column-visibility";
 import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -78,6 +73,11 @@ import {
   DeleteContext,
   DeleteProvider,
 } from "@/foundation/providers/delete-provider";
+import { BatchDeleteBar } from "@/foundation/scene/BatchDeleteBar";
+import type { DeleteConfirmation } from "@/foundation/scene/DeleteConfirmDialog";
+import { PaginationControls } from "@/foundation/scene/PaginationControls";
+import { TableSearch } from "@/foundation/scene/TableSearch";
+import { useColumnVisibility } from "@/foundation/scene/use-column-visibility";
 
 // ============================================================================
 // Types

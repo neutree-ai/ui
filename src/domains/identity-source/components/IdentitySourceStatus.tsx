@@ -4,10 +4,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { IdentitySourceStatus as IdentitySourceStatusType } from "@/domains/identity-source/types";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { STATUS_TONE } from "@/foundation/lib/status-tone";
 import { cn } from "@/foundation/lib/utils";
+import { STATUS_TONE } from "@/foundation/role/status-tone";
+import Timestamp from "@/foundation/role/Timestamp";
 
 const phaseClassNames: Record<string, string> = {
   Connected: STATUS_TONE.positive,

@@ -15,12 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildCatalogFromEndpoint } from "@/domains/endpoint/lib/save-as-catalog";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { RowAction, type RowActionProps } from "@/foundation/components/Table";
+import { useTranslation } from "@/foundation/lib/i18n";
 import {
   getErrorMessage,
   isDuplicateNameError,
-} from "@/foundation/lib/error-message";
-import { useTranslation } from "@/foundation/lib/i18n";
+} from "@/foundation/scene/error-message";
+import { RowAction, type RowActionProps } from "@/foundation/scene/Table";
 
 /**
  * Saves what an endpoint is running as a new model catalog.

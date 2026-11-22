@@ -9,7 +9,7 @@
  *   1. chart code (any `.ts`/`.tsx` that renders recharts, or whose file name says
  *      "chart") may not contain a literal colour — `#3b82f6`, `hsl(217 91% 60%)`,
  *      `rgb(…)`. Use `var(--nt-chart-cat-*)` / `var(--nt-chart-seq-*)`, or the
- *      helpers in `src/foundation/lib/chart-palette.ts`.
+ *      helpers in `src/foundation/role/chart-palette.ts`.
  *   2. every categorical colour should clear WCAG 1.4.11 non-text contrast
  *      (>= 3:1) against the surface it is painted on: `#f2f5fa` in light mode,
  *      `#132033` in dark mode. Cyan, Orange and Gold sit below that threshold;
@@ -132,7 +132,7 @@ const HINTS = {
     "  magnitude / ramp     var(--nt-chart-seq-1) … var(--nt-chart-seq-5)",
     "  single-series brand   CHART_BRAND (a lone series may wear --primary)",
     "  verdict (pass/watch/fail) var(--nt-chart-pass|watch|fail) — status dimensions only",
-    "  neutral “more”       chartMoreMark() from src/foundation/lib/chart-palette.ts",
+    "  neutral “more”       chartMoreMark() from src/foundation/role/chart-palette.ts",
     "If a token is missing for the role, add it to src/variables.css instead of",
     "pasting a hex value here.",
   ].join("\n"),

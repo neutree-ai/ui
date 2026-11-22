@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import { InfoHint } from "@/foundation/components/InfoHint";
+import { InfoHint } from "@/foundation/role/InfoHint";
 import { cn } from "@/foundation/lib/utils";
 
 const Dialog = DialogPrimitive.Root;

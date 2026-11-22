@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { middleTruncate } from "@/foundation/lib/middle-truncate";
+import { middleTruncate } from "@/foundation/type/middle-truncate";
 
 describe("middleTruncate", () => {
   it("leaves a value that fits untouched", () => {

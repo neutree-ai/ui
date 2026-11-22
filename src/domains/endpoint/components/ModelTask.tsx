@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 interface ModelTaskProps {
   task: string | null | undefined;

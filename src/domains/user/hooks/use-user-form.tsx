@@ -3,13 +3,13 @@ import { useForm } from "@refinedev/react-hook-form";
 import type { ReactElement } from "react";
 import { Input } from "@/components/ui/input";
 import type { UserProfile } from "@/domains/user/types";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import {
   profileEmail,
   profileIdentitySource,
-} from "@/foundation/lib/user-identity";
+} from "@/foundation/role/user-identity";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
 export const useUserForm = ({
   action,

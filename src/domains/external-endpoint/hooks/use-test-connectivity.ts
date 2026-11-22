@@ -1,7 +1,7 @@
 import { useCustomMutation } from "@refinedev/core";
 import { useCallback, useState } from "react";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { i18n } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 export type TestConnectivityResult = {
   success: boolean;

@@ -1,5 +1,5 @@
-import type { DeleteConfirmation } from "@/foundation/components/DeleteConfirmDialog";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { DeleteConfirmation } from "@/foundation/scene/DeleteConfirmDialog";
 
 /** Typed-name confirmation with the impact stated; no force path. */
 export const useLogSinkDeleteConfirmation = () => {

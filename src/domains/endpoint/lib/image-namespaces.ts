@@ -1,7 +1,7 @@
 import {
   registryHostOf,
   relativeRepository,
-} from "@/foundation/lib/image-reference";
+} from "@/foundation/role/image-reference";
 
 /**
  * Namespaces to offer for a registry that cannot enumerate its own.

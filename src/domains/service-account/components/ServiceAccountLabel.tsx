@@ -1,5 +1,5 @@
 import { useAllServiceAccounts } from "@/domains/service-account/hooks/use-service-accounts";
-import { displayName } from "@/foundation/lib/display-name";
+import { displayName } from "@/foundation/role/display-name";
 
 /** An application by id, shown by its display name. */
 export function ServiceAccountLabel({ id }: { id: string }) {

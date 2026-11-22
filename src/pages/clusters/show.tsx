@@ -25,23 +25,11 @@ import { zcacheStatus } from "@/domains/cluster/types";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import type { Endpoint } from "@/domains/endpoint/types";
-import {
-  detailTabsListClassName,
-  detailTabTriggerClassName,
-} from "@/foundation/components/detail-tabs";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import type { GpuObservationDisplay } from "@/foundation/components/GpuObservationCard";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ObservationStatus } from "@/foundation/components/ObservationStatus";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { Table } from "@/foundation/components/Table";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import {
@@ -54,6 +42,18 @@ import {
 } from "@/foundation/lib/accelerator-tflops";
 import { getClusterSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
+import { ObservationStatus } from "@/foundation/role/ObservationStatus";
+import Timestamp from "@/foundation/role/Timestamp";
+import {
+  detailTabsListClassName,
+  detailTabTriggerClassName,
+} from "@/foundation/scene/detail-tabs";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { Table } from "@/foundation/scene/Table";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 const MONITOR_PANEL_LABELS = {

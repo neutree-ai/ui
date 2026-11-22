@@ -19,7 +19,7 @@ import {
   LOCALE_LABELS,
   useTranslation,
 } from "@/foundation/lib/i18n";
-import { EmptyValue } from "./EmptyValue";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import LogoutButton from "./LogoutButton";
 
 export const UserDropdown = () => {

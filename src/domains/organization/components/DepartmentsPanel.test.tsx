@@ -15,12 +15,12 @@ vi.mock("@/foundation/lib/i18n", () => ({
   }),
 }));
 
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
 
 // ShowPage pulls in refine's table stack; a plain section is enough here.
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({
       title,

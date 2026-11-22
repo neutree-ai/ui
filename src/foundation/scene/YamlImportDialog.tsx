@@ -20,8 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   type ResourceResultItem,
   ResourceResultList,
-} from "@/foundation/components/ResourceResultList";
-import { useYamlImport } from "@/foundation/hooks/use-yaml-import";
+} from "@/foundation/scene/ResourceResultList";
+import { useYamlImport } from "@/foundation/scene/use-yaml-import";
 
 interface YamlImportDialogProps {
   trigger?: React.ReactNode;

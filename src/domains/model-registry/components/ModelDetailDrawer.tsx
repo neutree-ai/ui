@@ -17,13 +17,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { registryAcceptsWrites } from "@/foundation/lib/model-registry-visibility";
+import Timestamp from "@/foundation/role/Timestamp";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { ModelRegistry } from "../types";
 import { ModelDeleteDialog } from "./ModelDeleteDialog";
 import { ModelEditDialog } from "./ModelEditDialog";

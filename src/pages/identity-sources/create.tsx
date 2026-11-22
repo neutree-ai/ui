@@ -1,6 +1,6 @@
 import { useIdentitySourceForm } from "@/domains/identity-source/hooks/use-identity-source-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const IdentitySourcesCreate = () => {
   const { t } = useTranslation();

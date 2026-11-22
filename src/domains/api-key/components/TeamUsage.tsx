@@ -14,16 +14,16 @@ import {
   type UsageTotal,
   usageByName,
 } from "@/domains/api-key/lib/usage-summary";
+import { Loader } from "@/foundation/components/Loader";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import {
   type DateRange,
   DateRangePicker,
   trailingRange,
-} from "@/foundation/components/DateRangePicker";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
+} from "@/foundation/role/DateRangePicker";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 function TotalsTable({
   rows,

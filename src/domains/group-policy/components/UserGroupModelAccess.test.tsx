@@ -8,7 +8,7 @@ vi.mock("@refinedev/core", () => ({
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({ title, children, ...props }: Record<string, ReactNode>) => (
       <section data-testid={props["data-testid"] as string}>

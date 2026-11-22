@@ -6,13 +6,13 @@ import {
 } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/lib/model-source";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ExternalEndpointsList = () => {

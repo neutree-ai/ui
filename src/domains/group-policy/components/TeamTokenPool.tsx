@@ -1,7 +1,7 @@
 import { TokenPoolSummary } from "@/domains/group-policy/components/GroupModelAccess";
 import { useGroupTokenPool } from "@/domains/group-policy/hooks/use-group-policies";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 /**
  * A Team's token pool and what is left of it, read only. get_group_token_pools

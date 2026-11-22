@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { FormControl, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FormSelect } from "@/foundation/components/FormSelect";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { FormSelect } from "@/foundation/role/FormSelect";
 import type { UpstreamSpec } from "../types";
 import { type EndpointOption, EndpointRefSelect } from "./EndpointRefSelect";
 

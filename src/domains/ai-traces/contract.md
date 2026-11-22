@@ -39,7 +39,7 @@ No masked fields or secret writes; bodies return as stored.
 
 - Time: `Timestamp`, explicit `YYYY-MM-DD HH:mm:ss`, in list and drawer; absolute time.
 - Tokens: shared `formatTokens` in list; `TokenSummary` uses browser-locale grouping for each exact count in detail.
-  Formatting tests: `src/foundation/lib/unit.test.ts`.
+  Formatting tests: `src/foundation/role/unit.test.ts`.
 - Duration: `list.tsx:formatDuration` divides milliseconds by 1000, two decimals and ` s`; missing uses `EmptyValue`.
 - Throughput: `formatThroughput` divides completion tokens by total request seconds, one decimal; header owns tok/s.
   Missing completion tokens or zero/missing duration uses `EmptyValue`; zero tokens with nonzero duration shows 0.0.

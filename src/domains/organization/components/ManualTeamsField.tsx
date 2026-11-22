@@ -17,9 +17,9 @@ import {
 import { ProjectBadge } from "@/domains/organization/components/ProjectBadge";
 import { useTeamsByName } from "@/domains/organization/hooks/use-organization";
 import { isManualTeam, isProjectTeam } from "@/domains/organization/lib/team";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { displayName } from "@/foundation/role/display-name";
 
 type ManualTeamsFieldProps = {
   /** metadata.name of each selected Team. */

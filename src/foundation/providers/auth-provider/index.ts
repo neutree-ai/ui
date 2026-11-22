@@ -6,7 +6,7 @@ import {
   authUserDisplayName,
   authUserEmail,
   isExternalUser,
-} from "@/foundation/lib/user-identity";
+} from "@/foundation/role/user-identity";
 
 const GOTRUE_URL = `${REST_URL}/auth`;
 

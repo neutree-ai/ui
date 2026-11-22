@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Metadata } from "@/foundation/types/basic-types";
 import { MetadataTimestampMeta } from "./MetadataTimestampMeta";
 
-vi.mock("./ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Meta: ({ label, children }: { label: ReactNode; children: ReactNode }) => (
       <div>

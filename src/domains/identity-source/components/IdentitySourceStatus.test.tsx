@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
 

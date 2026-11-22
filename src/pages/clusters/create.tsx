@@ -1,7 +1,7 @@
 import { useClusterForm } from "@/domains/cluster/hooks/use-cluster-form";
-import { FormSectionStack } from "@/foundation/components/FormSectionStack";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { FormSectionStack } from "@/foundation/scene/FormSectionStack";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const ClustersCreate = () => {
   const { t } = useTranslation();

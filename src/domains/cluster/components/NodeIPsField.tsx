@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 import { useNodeIps } from "../hooks/use-node-ips";
 
 type NodeIPsFieldProps<T extends FieldValues> = {

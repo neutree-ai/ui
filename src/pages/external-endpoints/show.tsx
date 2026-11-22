@@ -20,16 +20,16 @@ import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
 import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
+import { Loader } from "@/foundation/components/Loader";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { resolveExternalModelSource } from "@/foundation/lib/model-source";
+import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
-} from "@/foundation/components/detail-tabs";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { resolveExternalModelSource } from "@/foundation/lib/model-source";
+} from "@/foundation/scene/detail-tabs";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export const ExternalEndpointsShow = () => {
   const { t } = useTranslation();

@@ -19,10 +19,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { formatToDecimal } from "@/foundation/role/unit";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import {
   type CacheEndpointCandidate,
   cacheEndpointRefs,

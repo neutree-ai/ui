@@ -8,10 +8,10 @@ import {
 import type { ReactNode } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
-import type { Schema } from "@/foundation/hooks/use-variables-input";
+import type { Schema } from "@/foundation/type/use-variables-input";
+import { VariablesInput } from "@/foundation/type/VariablesInput";
 import { FormFieldGroup } from "./FormFieldGroup";
 import { ResourceForm } from "./ResourceForm";
-import { VariablesInput } from "./VariablesInput";
 
 vi.mock("@refinedev/core", () => ({
   useBack: () => vi.fn(),

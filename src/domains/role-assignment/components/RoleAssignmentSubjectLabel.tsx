@@ -5,8 +5,8 @@ import type {
   RoleAssignmentSpec,
   RoleAssignmentSubjectKind,
 } from "@/domains/role-assignment/types";
-import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { GroupKindIcon } from "@/foundation/role/GroupKindIcon";
 
 /** Group renderers, supplied by the page from the organization domain. */
 export type GroupRenderers = {

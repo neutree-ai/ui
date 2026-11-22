@@ -36,7 +36,7 @@ import {
 } from "@/domains/endpoint/lib/chat-helpers";
 import { useStickToBottom } from "@/foundation/hooks/use-stick-to-bottom";
 import { clientPostgrest } from "@/foundation/lib/api";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 type FormValue = {
   model: string;

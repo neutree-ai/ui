@@ -3,7 +3,7 @@ import {
   type ColumnVisibilityState,
   getColumnVisibility,
   setColumnVisibility,
-} from "@/foundation/lib/column-visibility-storage";
+} from "@/foundation/scene/column-visibility-storage";
 
 export function useColumnVisibility(resourceName: string) {
   const [columnVisibility, setColumnVisibilityState] =

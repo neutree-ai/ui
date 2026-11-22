@@ -8,7 +8,7 @@ vi.mock("@/foundation/lib/i18n", () => ({
       values ? `${key} ${JSON.stringify(values)}` : key,
   }),
 }));
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({
       title,

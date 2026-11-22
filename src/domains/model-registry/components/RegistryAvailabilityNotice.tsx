@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/loading";
 import { useRetryRegistryConnection } from "@/domains/model-registry/hooks/use-retry-registry-connection";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   registryIsDisabled,
   registryIsUnreachable,
 } from "@/foundation/lib/model-registry-availability";
+import { formatTimestamp } from "@/foundation/role/Timestamp";
 
 /**
  * Why a registry is not answering, and the one control that does something

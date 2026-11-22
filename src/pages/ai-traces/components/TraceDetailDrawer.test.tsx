@@ -38,11 +38,11 @@ vi.mock("@/domains/api-key/components/ApiKeyLabel", () => ({
   ApiKeyLabel: () => <span>api-key</span>,
 }));
 
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: () => <span>timestamp</span>,
 }));
 
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: () => <button type="button">show</button>,
 }));
 

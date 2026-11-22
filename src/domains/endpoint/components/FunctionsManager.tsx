@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 import type { ChatFunction } from "@/foundation/types/chat-types";
 import { FunctionDialog } from "./FunctionDialog";
 

@@ -11,8 +11,8 @@ import {
   msToDisplayValue,
   type TimeoutUnit,
 } from "@/domains/external-endpoint/lib/convert-timeout";
-import { NumberInput } from "@/foundation/components/NumberInput";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { NumberInput } from "@/foundation/type/NumberInput";
 
 interface TimeoutInputProps {
   value?: number;

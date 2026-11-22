@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { chartCategoryMark } from "@/foundation/lib/chart-palette";
+import { chartCategoryMark } from "@/foundation/role/chart-palette";
 import {
   DayTooltip,
   formatTick,

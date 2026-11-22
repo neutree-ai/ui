@@ -1,8 +1,8 @@
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { registryContentsAreMeasured } from "@/foundation/lib/model-registry-visibility";
-import { formatBytes } from "@/foundation/lib/unit";
+import { formatTimestamp } from "@/foundation/role/Timestamp";
+import { formatBytes } from "@/foundation/role/unit";
 
 /**
  * The cached counters on a registry: how many models it holds and how much

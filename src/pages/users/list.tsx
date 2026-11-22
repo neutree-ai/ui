@@ -6,18 +6,18 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import type { OrgUnit } from "@/domains/organization/types";
 import type { UserProfile } from "@/domains/user/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
 import {
   profileDisplayName,
   profileEmail,
   profileIdentitySourceName,
-} from "@/foundation/lib/user-identity";
+} from "@/foundation/role/user-identity";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { UserSourceFilter } from "./components/UserSourceFilter";
 
 const NO_UNITS: OrgUnit[] = [];

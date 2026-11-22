@@ -13,7 +13,7 @@ vi.mock("@refinedev/core", () => ({
   useInvalidate: () => mocks.invalidate,
 }));
 
-vi.mock("@/foundation/components/Table", () => ({
+vi.mock("@/foundation/scene/Table", () => ({
   RowAction: ({ onClick, title }: { onClick: () => void; title: string }) => (
     <button type="button" onClick={onClick}>
       {title}

@@ -27,13 +27,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import Timestamp from "@/foundation/components/Timestamp";
 import { type AITrace, fetchAITrace } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import Timestamp from "@/foundation/role/Timestamp";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { StatusBadge } from "../status";
 
 type Props = {

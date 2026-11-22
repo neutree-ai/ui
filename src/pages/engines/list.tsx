@@ -3,11 +3,11 @@ import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import type { Engine } from "@/domains/engine/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ListPage } from "@/foundation/scene/ListPage";
 import { EngineCard } from "./components/EngineCard";
 
 /** Non-steady phases first, so a broken engine is never buried in the grid. */

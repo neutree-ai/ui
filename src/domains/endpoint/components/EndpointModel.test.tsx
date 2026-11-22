@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ModelSpec } from "@/domains/endpoint/types";
 import EndpointModel from "./EndpointModel";
 
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({
     children,
     recordItemId,

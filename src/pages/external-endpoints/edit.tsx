@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useExternalEndpointForm } from "@/domains/external-endpoint/hooks/use-external-endpoint-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const ExternalEndpointsEdit = () => {
   const [searchParams] = useSearchParams();

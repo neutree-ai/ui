@@ -1,8 +1,5 @@
-import {
-  MetricBar,
-  type MetricBarSeries,
-} from "@/foundation/components/MetricBar";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
+import { formatToDecimal } from "@/foundation/role/unit";
 
 interface ResourceProgressBarProps {
   label: string;

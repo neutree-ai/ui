@@ -1,4 +1,4 @@
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 /**
  * The application error code of a failed API call, if it carries one.

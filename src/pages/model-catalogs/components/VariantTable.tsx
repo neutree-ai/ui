@@ -7,11 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { DEFAULT_VARIANT } from "@/foundation/recipe/normalize";
 import type { RecipeVariant } from "@/foundation/recipe/types";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type Props = {
   variants: Record<string, RecipeVariant>;

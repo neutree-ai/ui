@@ -1,10 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import type {
   ExportOptions,
   ResourceEntity,
-} from "@/foundation/lib/yaml-transform";
-import { ALL_WORKSPACES } from "./use-workspace";
+} from "@/foundation/scene/yaml-transform";
 import { EXPORTABLE_RESOURCES } from "./use-yaml-export";
 
 // --- Module mocks ---
@@ -16,7 +16,7 @@ const mockTransformEntityForExport =
 const mockSerializeToYaml =
   vi.fn<(entities: Record<string, unknown>[]) => string>();
 
-vi.mock("@/foundation/lib/yaml-transform", () => ({
+vi.mock("@/foundation/scene/yaml-transform", () => ({
   transformEntityForExport: (...args: unknown[]) =>
     mockTransformEntityForExport(...(args as [ResourceEntity, ExportOptions])),
   serializeToYaml: (...args: unknown[]) =>
@@ -46,7 +46,7 @@ vi.mock("@refinedev/core", () => ({
 
 let mockCurrentWorkspace = "test-ws";
 
-vi.mock("./use-workspace", () => ({
+vi.mock("@/foundation/hooks/use-workspace", () => ({
   ALL_WORKSPACES: "_all_",
   useWorkspace: () => ({ current: mockCurrentWorkspace }),
 }));

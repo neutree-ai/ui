@@ -1,6 +1,6 @@
+import { formatToDecimal } from "@/foundation/role/unit";
 import type { EndpointResourceStatus } from "@/foundation/types/resource-types";
 import type { AcceleratorExtraField } from "./accelerator-extra-info";
-import { formatToDecimal } from "./unit";
 
 export type AcceleratorSample = {
   metric: string;

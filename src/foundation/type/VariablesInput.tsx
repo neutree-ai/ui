@@ -33,14 +33,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { ResourceFormSubmitContext } from "@/foundation/scene/resource-form-submit-context";
 import {
   type EditingRow,
   INVALID_JSON_ERROR,
   INVALID_PATTERN_ERROR,
   type Schema,
   useVariablesInput,
-} from "@/foundation/hooks/use-variables-input";
-import { ResourceFormSubmitContext } from "./resource-form-submit-context";
+} from "@/foundation/type/use-variables-input";
 
 /** What an overriding input is handed: the current value and a way to replace it. */
 interface VariableValueInputProps {

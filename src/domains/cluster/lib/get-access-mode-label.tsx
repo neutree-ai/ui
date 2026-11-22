@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 const ACCESS_MODE_KEYS = ["LoadBalancer", "NodePort", "Ingress"] as const;
 type AccessMode = (typeof ACCESS_MODE_KEYS)[number];

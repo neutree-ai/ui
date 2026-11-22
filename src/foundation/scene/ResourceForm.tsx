@@ -12,12 +12,12 @@ import {
 import type { FieldErrors, FieldValues } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form as FormUI } from "@/components/ui/form";
-import { SaveButton } from "@/foundation/components/SaveButton";
-import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
-import { useOnBack } from "@/foundation/hooks/use-on-back";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { InfoHint } from "./InfoHint";
+import { InfoHint } from "@/foundation/role/InfoHint";
+import { SaveButton } from "@/foundation/scene/SaveButton";
+import { useFormEnterSubmitGuard } from "@/foundation/scene/use-form-enter-submit-guard";
+import { useOnBack } from "@/foundation/scene/use-on-back";
 import { ResourceFormSubmitContext } from "./resource-form-submit-context";
 
 type NativeFormProps = Omit<

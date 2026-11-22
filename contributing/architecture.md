@@ -28,12 +28,29 @@ Enforced by `dependency-cruiser` — run `yarn dep-check`. CI will catch violati
 
 ```
 foundation/
-├── components/    Layout, form containers, table, shared UI
-├── hooks/         Workspace, delete, column-visibility…
-├── lib/           Utils, API client, i18n, constants
+├── type/          Value-level building blocks: EmptyValue, NumberInput, middle-truncate, plural
+├── role/          What a field means across resources: BaseStatus, Timestamp, WorkspaceField, unit, validate
+├── scene/         Page-level flows: ListPage, ShowPage, ResourceForm, Table, YAML import/export, delete
+├── components/    App shell (layouts, sidebar) and components tied to one resource kind
+├── hooks/         Workspace, permission, license and other app or kind-specific hooks
+├── lib/           Utils, API client, i18n, constants, kind-specific helpers
 ├── providers/     Auth, data, theme, notification
 └── types/         Metadata, BaseStatus, shared serving types
 ```
+
+`type/`, `role/` and `scene/` are the shared layers, named by what a module means rather than by
+its file kind, so each is flat and holds components, hooks and helpers side by side with their
+tests:
+
+- `type/` — how one kind of value is shown or entered, with no knowledge of any resource.
+- `role/` — the part a field plays in every resource: status, timestamps, workspace, display name,
+  units, validation.
+- `scene/` — a whole interaction on a page: list, detail, form, table, batch delete, YAML
+  import/export.
+
+`components/`, `hooks/` and `lib/` keep what is not a shared layer: the app shell (`BaseLayout`,
+`AppSidebar`, `lib/utils`, `lib/i18n`, the API client) and modules that serve a single resource
+kind.
 
 ### L2 `domains/<resource>/`
 
@@ -62,8 +79,10 @@ Pages are thin composition layers — they call an L2 form hook and pass the res
 | Task | Layer | Location |
 |------|-------|----------|
 | New shadcn/ui primitive | L0 | `components/ui/` |
-| Shared form/table component | L1 | `foundation/components/` |
-| Shared hook (e.g. workspace) | L1 | `foundation/hooks/` |
+| Shared value display or input | L1 | `foundation/type/` |
+| Shared field semantics (status, unit, validation) | L1 | `foundation/role/` |
+| Shared list/detail/form/table building block | L1 | `foundation/scene/` |
+| App shell or kind-specific shared module (e.g. workspace hook) | L1 | `foundation/components/`, `hooks/`, `lib/` |
 | Resource type definition | L2 | `domains/<name>/types.ts` |
 | Resource-specific component | L2 | `domains/<name>/components/` |
 | Resource-specific hook | L2 | `domains/<name>/hooks/` |

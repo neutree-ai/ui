@@ -9,9 +9,7 @@ import { RegistryVisibility } from "@/domains/model-registry/components/Registry
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import RegistryStatus from "@/foundation/components/RegistryStatus";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { MODEL_REGISTRY_SELECT } from "@/foundation/lib/model-registry-visibility";
 import {
@@ -19,6 +17,8 @@ import {
   readRegistryModelSelection,
   writeRegistryModelSelection,
 } from "@/foundation/lib/registry-model-link";
+import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const ModelRegistriesShow = () => {
   const { t } = useTranslation();

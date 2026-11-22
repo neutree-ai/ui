@@ -1,5 +1,5 @@
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export function ApiKeyLabel({
   name,

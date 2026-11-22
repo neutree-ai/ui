@@ -8,16 +8,16 @@ import {
   Tooltip,
   XAxis,
 } from "recharts";
-import type { DateRange } from "@/foundation/components/DateRangePicker";
 import {
   type AITraceDayCount,
   fetchAITraceStats,
 } from "@/foundation/lib/api/ai-traces";
+import { useTranslation } from "@/foundation/lib/i18n";
 import {
   CHART_BRAND,
   CHART_SERIES_SEPARATOR,
-} from "@/foundation/lib/chart-palette";
-import { useTranslation } from "@/foundation/lib/i18n";
+} from "@/foundation/role/chart-palette";
+import type { DateRange } from "@/foundation/role/DateRangePicker";
 
 export const TraceStatsChart = ({
   workspace,

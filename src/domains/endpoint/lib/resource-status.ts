@@ -1,8 +1,8 @@
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import {
   compareDevicesByOrderThenUuid,
   getDeviceOrder,
 } from "@/foundation/lib/device-resource-utils";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 import type {
   ClusterResourceInfo,
   DeviceAllocation,

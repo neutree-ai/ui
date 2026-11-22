@@ -1,4 +1,4 @@
-import { translateApiError } from "@/foundation/lib/api-error-code";
+import { translateApiError } from "@/foundation/scene/api-error-code";
 
 /**
  * Identity source write and sync-request errors → i18n keys. 10260 belongs to

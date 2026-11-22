@@ -78,27 +78,15 @@ import type {
   ModelSpec,
   ResourceSpec,
 } from "@/domains/endpoint/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { InfoHint } from "@/foundation/components/InfoHint";
-import { NumberInput } from "@/foundation/components/NumberInput";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import { VariablesInput } from "@/foundation/components/VariablesInput";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
 import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
-import type { Schema } from "@/foundation/hooks/use-variables-input";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
-import { nestFieldErrors } from "@/foundation/lib/form-errors";
 import {
   addBackEndpointDeviceAllocationsToNodeResources,
   calculateGpuPlacementCapacity,
@@ -117,10 +105,6 @@ import {
 import { registryModelLabel } from "@/foundation/lib/registry-model-display";
 import { cn } from "@/foundation/lib/utils";
 import {
-  newestVersion,
-  sortVersionsNewestFirst,
-} from "@/foundation/lib/version-order";
-import {
   composeEndpointSpec,
   defaultFeatureSelections,
 } from "@/foundation/recipe/compose";
@@ -132,6 +116,22 @@ import type {
   RecipeInputSpec,
 } from "@/foundation/recipe/types";
 import { formatGb, matchesAcceleratorName } from "@/foundation/recipe/vram";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { InfoHint } from "@/foundation/role/InfoHint";
+import {
+  newestVersion,
+  sortVersionsNewestFirst,
+} from "@/foundation/role/version-order";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { nestFieldErrors } from "@/foundation/scene/form-errors";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
+import { NumberInput } from "@/foundation/type/NumberInput";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
+import type { Schema } from "@/foundation/type/use-variables-input";
+import { VariablesInput } from "@/foundation/type/VariablesInput";
 
 // Reads the query string off the current URL. The app uses a HashRouter so
 // the query lives in location.hash ("#/ws/endpoints/create?model_catalog=1").

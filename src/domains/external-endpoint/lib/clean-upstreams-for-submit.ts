@@ -2,7 +2,7 @@ import type { UpstreamSpec } from "@/domains/external-endpoint/types";
 import {
   omitEmptyUntouched,
   type TouchedFields,
-} from "@/foundation/lib/touched-fields";
+} from "@/foundation/role/touched-fields";
 
 /**
  * Strips the fields of the unused upstream kind (endpoint_ref vs upstream/auth).

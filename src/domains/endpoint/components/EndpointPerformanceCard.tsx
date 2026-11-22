@@ -9,10 +9,10 @@ import {
   performanceRangeDisplayWindow,
   performanceTrendLatestRow,
 } from "@/domains/endpoint/lib/performance-trends";
-import { ObservationStatus } from "@/foundation/components/ObservationStatus";
-import { Section } from "@/foundation/components/Section";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { cn } from "@/foundation/lib/utils";
+import { ObservationStatus } from "@/foundation/role/ObservationStatus";
+import { Section } from "@/foundation/scene/Section";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import {
   formatBandwidth,
   formatLatency,

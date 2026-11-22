@@ -9,7 +9,7 @@ import type {
   TeamFormValues,
   TeamMember,
 } from "@/domains/organization/types";
-import { useRowWrite } from "@/foundation/hooks/use-row-write";
+import { useRowWrite } from "@/foundation/scene/use-row-write";
 
 // The page builds the tree locally, so it needs every row at once.
 const ALL = { mode: "off" } as const;

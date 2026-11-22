@@ -18,8 +18,8 @@ import {
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
 
 type TeamTab = "members" | "applications" | "usage";
 

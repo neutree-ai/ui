@@ -10,8 +10,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List, type ListOnScrollProps } from "react-window";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 import { filterByTimestamp } from "../lib/log-helpers";
 import "./LogViewer.css";
 

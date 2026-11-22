@@ -6,7 +6,7 @@ import type {
   LogSinkConnectionTest,
   LogSinkSpec,
 } from "@/domains/log-sink/types";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 export type TestConnectionResult = LogSinkConnectionTest;
 

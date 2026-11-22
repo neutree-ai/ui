@@ -12,12 +12,12 @@ import type {
 } from "@/domains/endpoint/lib/engine-cache-args";
 import { perReplicaRequiredGb } from "@/domains/endpoint/lib/estimate-weights";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { InfoHint } from "@/foundation/components/InfoHint";
-import { METRIC_BAR_SERIES_FILL_CLASSES } from "@/foundation/components/MetricBar";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
+import { InfoHint } from "@/foundation/role/InfoHint";
+import { METRIC_BAR_SERIES_FILL_CLASSES } from "@/foundation/role/MetricBar";
 
 type EndpointDeclaredWeights = {
   /** Weights per replica, from the catalog, the model version's size, or the

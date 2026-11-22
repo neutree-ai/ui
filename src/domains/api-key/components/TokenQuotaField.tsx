@@ -1,13 +1,13 @@
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { ThousandsInput } from "@/foundation/components/ThousandsInput";
 import {
   isValidTokenQuota,
   QUOTA_PERIODS,
   TOKEN_QUOTA_UNITS,
 } from "@/foundation/lib/token-quota";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 // Token quota editor: amount + unit (Tokens/K/M/B) + reset period. The token
 // count written to the backend is amount × unit; leaving the amount empty means

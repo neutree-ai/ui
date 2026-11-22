@@ -3,13 +3,13 @@ import {
   getAcceleratorProductResourceRows,
 } from "@/domains/cluster/lib/accelerator-virtualization";
 import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   METRIC_BAR_SERIES_FILL_CLASSES,
   MetricBar,
   type MetricBarSeries,
-} from "@/foundation/components/MetricBar";
-import { formatToDecimal } from "@/foundation/lib/unit";
+} from "@/foundation/role/MetricBar";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 import type { ClusterResourceInfo } from "@/foundation/types/resource-types";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;

@@ -11,19 +11,19 @@ import {
 } from "@/domains/organization/components/UserOrganization";
 import { UserEffectiveRoleAssignments } from "@/domains/role-assignment/components/UserEffectiveRoleAssignments";
 import type { UserProfile } from "@/domains/user/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
 import {
   profileDisplayName,
   profileEmail,
   profileIdentitySourceName,
-} from "@/foundation/lib/user-identity";
+} from "@/foundation/role/user-identity";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { Table } from "@/foundation/scene/Table";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export const UsersShow = () => {
   const { t } = useTranslation();

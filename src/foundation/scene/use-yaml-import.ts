@@ -1,14 +1,14 @@
 import { useCreate, useDataProvider, useResource } from "@refinedev/core";
 import { useCallback, useState } from "react";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 import {
   isValidYamlResource,
   kindToResourceType,
   parseYamlDocuments,
   transformResourceForImport,
-} from "@/foundation/lib/yaml-transform";
-import { useWorkspace } from "./use-workspace";
+} from "@/foundation/scene/yaml-transform";
 
 interface ImportResult {
   resourceName: string;

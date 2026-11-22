@@ -1,7 +1,7 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 import { Card } from "@/components/ui/card";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { cn } from "@/foundation/lib/utils";
+import { InfoHint } from "@/foundation/role/InfoHint";
 
 /**
  * The one heading treatment for a section of a detail page. Kept module-private

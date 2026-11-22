@@ -10,11 +10,11 @@ import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { EngineVersionSummary } from "@/domains/engine/components/EngineVersionSummary";
 import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
 import type { Engine } from "@/domains/engine/types";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { Link } from "@/foundation/components/Link";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { newestVersion } from "@/foundation/lib/version-order";
+import { newestVersion } from "@/foundation/role/version-order";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
 type EngineCardProps = {
   engine: Engine;

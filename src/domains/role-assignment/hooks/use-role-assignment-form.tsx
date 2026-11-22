@@ -19,18 +19,18 @@ import type {
   RoleAssignment,
   RoleAssignmentSubjectKind,
 } from "@/domains/role-assignment/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
 import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { profileOptionLabel } from "@/foundation/lib/user-identity";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { profileOptionLabel } from "@/foundation/role/user-identity";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 const SCOPE_OPTION_KEYS: Record<RoleAssignmentScope, string> = {

@@ -18,14 +18,10 @@ import {
 } from "@/domains/endpoint/lib/resource-status";
 import { otherGpuReservation } from "@/domains/endpoint/lib/shared-gpu";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   CopyUuidButton,
   GpuDetailsSheet,
 } from "@/foundation/components/GpuObservationCard";
-import { MetricBar } from "@/foundation/components/MetricBar";
-import { ObservationStatus } from "@/foundation/components/ObservationStatus";
-import { Section } from "@/foundation/components/Section";
 import {
   type AcceleratorSample,
   allocationComposition,
@@ -35,24 +31,28 @@ import {
 } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import {
-  CHART_CATEGORY_COUNT,
-  CHART_SERIES_SEPARATOR,
-  chartCategoryMark,
-  chartMarkStyle,
-  chartMoreMark,
-} from "@/foundation/lib/chart-palette";
-import {
   l0Pattern,
   OWNER_SECONDARY_TONE,
   OWNER_WEIGHTS_TONE,
   ownerTone,
 } from "@/foundation/lib/gpu-ownership";
+import { cn } from "@/foundation/lib/utils";
+import {
+  CHART_CATEGORY_COUNT,
+  CHART_SERIES_SEPARATOR,
+  chartCategoryMark,
+  chartMarkStyle,
+  chartMoreMark,
+} from "@/foundation/role/chart-palette";
+import { MetricBar } from "@/foundation/role/MetricBar";
+import { ObservationStatus } from "@/foundation/role/ObservationStatus";
 import {
   formatMiBAsGiB,
   formatMiBAsGiBValue,
   formatToDecimal,
-} from "@/foundation/lib/unit";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/role/unit";
+import { Section } from "@/foundation/scene/Section";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type {
   ClusterResourceInfo,
   EndpointResourceStatus,

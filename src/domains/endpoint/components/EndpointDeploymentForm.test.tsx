@@ -99,7 +99,7 @@ vi.mock("./EndpointDeploymentWizard", () => ({
   ),
 }));
 
-vi.mock("@/foundation/components/ResourceForm", () => ({
+vi.mock("@/foundation/scene/ResourceForm", () => ({
   ResourceForm: ({
     children,
     footerLeadingActions,

@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { LIST_POLL_QUERY_OPTIONS } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ListPage } from "@/foundation/scene/ListPage";
 import { ImportDialog } from "./components/ImportDialog";
 import { ModelCatalogCard } from "./components/ModelCatalogCard";
 

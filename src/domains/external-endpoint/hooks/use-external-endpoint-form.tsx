@@ -29,15 +29,7 @@ import type {
   ModelRoute,
   UpstreamSpec,
 } from "@/domains/external-endpoint/types";
-import { Disclosure } from "@/foundation/components/Disclosure";
-import FormCardGrid, {
-  FORM_GRID_CLASS,
-} from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
-import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import {
   isValidWorkspace,
   useWorkspace,
@@ -49,6 +41,12 @@ import {
   parseStoredModelSource,
 } from "@/foundation/lib/model-source";
 import { cn } from "@/foundation/lib/utils";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import { Disclosure } from "@/foundation/scene/Disclosure";
+import FormCardGrid, { FORM_GRID_CLASS } from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { useRefineFieldArray } from "@/foundation/scene/use-refine-field-array";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
 import { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 

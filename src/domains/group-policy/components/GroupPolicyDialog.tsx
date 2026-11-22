@@ -22,8 +22,8 @@ import type {
   GroupPolicyModel,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
-import { LabelWithHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { LabelWithHint } from "@/foundation/role/InfoHint";
 
 /** Edits the lists and the token pool of a group's policy. Mount it when opening. */
 export function GroupPolicyDialog({

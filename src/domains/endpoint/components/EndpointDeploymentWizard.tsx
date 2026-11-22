@@ -33,11 +33,11 @@ import {
   capacityExceeded as isCapacityExceeded,
 } from "@/domains/endpoint/lib/review-context";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { FormSectionStack } from "@/foundation/components/FormSectionStack";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
+import { FormSectionStack } from "@/foundation/scene/FormSectionStack";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 const STEP_KEYS = {
   [EndpointStep.model]: "endpoints.wizard.steps.model",

@@ -4,8 +4,8 @@ import { type FieldValues, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { FormCombobox } from "./FormCombobox";
-import { FormFieldGroup } from "./FormFieldGroup";
 
 const OPTIONS = [
   { label: "Text Generation", value: "text-generation" },

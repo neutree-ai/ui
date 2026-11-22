@@ -34,19 +34,11 @@ import {
 import type { Endpoint } from "@/domains/endpoint/types";
 import { resolvePlayground } from "@/domains/engine/lib/resolve-capabilities";
 import type { Engine } from "@/domains/engine/types";
-import {
-  detailTabsListClassName,
-  detailTabTriggerClassName,
-} from "@/foundation/components/detail-tabs";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
 import { Loader } from "@/foundation/components/Loader";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useAcceleratorObservations } from "@/foundation/hooks/use-accelerator-observations";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { gpuAllocations as collectGpuAllocations } from "@/foundation/lib/accelerator-observations";
@@ -56,6 +48,14 @@ import {
 } from "@/foundation/lib/accelerator-tflops";
 import { getEndpointSplitDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
+import Timestamp from "@/foundation/role/Timestamp";
+import {
+  detailTabsListClassName,
+  detailTabTriggerClassName,
+} from "@/foundation/scene/detail-tabs";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 
 const EndpointLogTabs = lazy(() =>
   import("@/domains/endpoint/components/EndpointLogTabs").then((m) => ({

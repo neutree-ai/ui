@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
-import { ShowPage } from "@/foundation/components/ShowPage";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type {
   DeploymentOptions,
   ReplicaSpec,

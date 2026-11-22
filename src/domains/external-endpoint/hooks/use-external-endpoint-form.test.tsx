@@ -79,12 +79,12 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
-vi.mock("@/foundation/components/WorkspaceField", () => ({
+vi.mock("@/foundation/role/WorkspaceField", () => ({
   default: React.forwardRef(() => <div />),
 }));
 
 // Needs a TooltipProvider the form does not render.
-vi.mock("@/foundation/components/BaseStatus", () => ({
+vi.mock("@/foundation/role/BaseStatus", () => ({
   default: ({ translatedPhase }: { translatedPhase: string }) => (
     <span>{translatedPhase}</span>
   ),
@@ -100,7 +100,7 @@ vi.mock("@/domains/external-endpoint/hooks/use-test-connectivity", () => ({
 
 // Radix Select and cmdk are replaced by native inputs so the many route
 // selectors can be driven by label with a single change event.
-vi.mock("@/foundation/components/FormSelect", async () => {
+vi.mock("@/foundation/role/FormSelect", async () => {
   const { FormControl } = await import("@/components/ui/form");
   return {
     FormSelect: React.forwardRef(
@@ -133,7 +133,7 @@ vi.mock("@/foundation/components/FormSelect", async () => {
   };
 });
 
-vi.mock("@/foundation/components/FormCombobox", () => ({
+vi.mock("@/foundation/role/FormCombobox", () => ({
   // The model-source combobox is the only one accepting a typed value.
   FormCombobox: ({
     onChange,

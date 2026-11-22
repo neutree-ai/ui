@@ -6,7 +6,7 @@ vi.mock("@/domains/group-policy/hooks/use-group-policies", () => ({
 }));
 // TokenPoolSummary's module renders a ShowPage, which pulls refine's table
 // package; it does not load under vitest.
-vi.mock("@/foundation/components/ShowPage", () => ({ ShowPage: {} }));
+vi.mock("@/foundation/scene/ShowPage", () => ({ ShowPage: {} }));
 vi.mock("@/domains/group-policy/components/ModelEntryPicker", () => ({
   ModelEntryPicker: () => null,
 }));

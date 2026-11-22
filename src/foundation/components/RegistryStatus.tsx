@@ -1,6 +1,6 @@
-import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { STATUS_TONE } from "@/foundation/lib/status-tone";
+import BaseStatus from "@/foundation/role/BaseStatus";
+import { STATUS_TONE } from "@/foundation/role/status-tone";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
 export default function RegistryStatus(status: BaseStatusType) {
   const { t } = useTranslation();

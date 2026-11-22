@@ -1,7 +1,7 @@
 import { OrgUnitField } from "@/domains/organization/components/OrgUnitField";
 import { TeamField } from "@/domains/organization/components/TeamField";
 import { useRoleAssignmentForm } from "@/domains/role-assignment/hooks/use-role-assignment-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const RoleAssignmentsEdit = () => {
   const { form, metadataFields, specFields } = useRoleAssignmentForm({

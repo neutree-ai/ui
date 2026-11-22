@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { cn } from "@/foundation/lib/utils";
+import { InfoHint } from "@/foundation/role/InfoHint";
 
 type PageHeaderProps = {
   title?: ReactNode;

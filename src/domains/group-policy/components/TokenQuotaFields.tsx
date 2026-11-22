@@ -7,13 +7,13 @@ import {
 } from "@/components/ui/select";
 import type { TokenQuotaInput } from "@/domains/group-policy/hooks/use-token-quota-input";
 import type { GroupTokenPoolPeriod } from "@/domains/group-policy/types";
-import { ThousandsInput } from "@/foundation/components/ThousandsInput";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   QUOTA_PERIODS,
   TOKEN_QUOTA_UNITS,
   type TokenQuotaUnit,
 } from "@/foundation/lib/token-quota";
+import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 /** Amount, unit and period of a token quota; `testId` prefixes each control. */
 export function TokenQuotaFields({

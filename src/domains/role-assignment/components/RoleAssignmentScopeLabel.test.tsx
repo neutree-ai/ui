@@ -6,7 +6,7 @@ vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => (
     <span>{children}</span>
   ),

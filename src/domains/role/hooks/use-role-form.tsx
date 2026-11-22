@@ -3,8 +3,8 @@ import { useForm } from "@refinedev/react-hook-form";
 import { Input } from "@/components/ui/input";
 import PermissionsTreeField from "@/domains/role/components/PermissionsTreeField";
 import type { Role } from "@/domains/role/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 export const useRoleForm = ({ action }: { action: "create" | "edit" }) => {
   const { translate } = useTranslation();

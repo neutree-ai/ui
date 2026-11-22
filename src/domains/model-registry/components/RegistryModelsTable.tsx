@@ -11,10 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import Timestamp, { formatTimestamp } from "@/foundation/components/Timestamp";
 import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -22,6 +19,9 @@ import {
   registryIsUnreachable,
 } from "@/foundation/lib/model-registry-availability";
 import { registryPagesFromOffset } from "@/foundation/lib/model-registry-visibility";
+import Timestamp, { formatTimestamp } from "@/foundation/role/Timestamp";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { RegistryModelVersion } from "@/foundation/types/model-types";
 
 /**

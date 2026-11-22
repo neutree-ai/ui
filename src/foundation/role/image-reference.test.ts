@@ -3,7 +3,7 @@ import {
   imageRegistryPrefix,
   qualifyReference,
   relativeRepository,
-} from "@/foundation/lib/image-reference";
+} from "@/foundation/role/image-reference";
 
 describe("imageRegistryPrefix", () => {
   it("composes the host and the project the registry is scoped to", () => {

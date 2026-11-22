@@ -3,7 +3,7 @@ import {
   isTouchedField,
   omitEmptyUntouched,
   type TouchedFields,
-} from "@/foundation/lib/touched-fields";
+} from "@/foundation/role/touched-fields";
 import { zcacheSpec } from "../types";
 import { isAcceleratorVirtualizationSupported } from "./accelerator-virtualization";
 

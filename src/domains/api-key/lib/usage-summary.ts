@@ -1,5 +1,5 @@
 import type { GroupUsageRecord } from "@/domains/api-key/types";
-import { displayName } from "@/foundation/lib/display-name";
+import { displayName } from "@/foundation/role/display-name";
 
 export type UsageTotal = {
   key: string;

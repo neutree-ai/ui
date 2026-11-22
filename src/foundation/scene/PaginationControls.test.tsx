@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { PaginationControls } from "@/foundation/components/PaginationControls";
+import { PaginationControls } from "@/foundation/scene/PaginationControls";
 import { openMenu } from "@/foundation/testing/interactions";
 
 const openSelect = (index: number) =>

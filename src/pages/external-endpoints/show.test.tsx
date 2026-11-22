@@ -25,7 +25,7 @@ vi.mock("@/components/ui/tabs", () => ({
   ),
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>
   );
@@ -134,7 +134,7 @@ vi.mock(
   }),
 );
 
-vi.mock("@/foundation/components/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/role/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span data-testid="timestamp" />,
 }));
 

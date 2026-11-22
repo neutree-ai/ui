@@ -30,11 +30,11 @@ import type {
   PolicySubject,
   ScopeSubjectPolicy,
 } from "@/domains/group-policy/types";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
-import { LabelWithHint } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
+import { LabelWithHint } from "@/foundation/role/InfoHint";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 
 /**

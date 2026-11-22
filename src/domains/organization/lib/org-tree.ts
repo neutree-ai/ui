@@ -1,5 +1,5 @@
 import type { OrgUnit, Team } from "@/domains/organization/types";
-import { displayName } from "@/foundation/lib/display-name";
+import { displayName } from "@/foundation/role/display-name";
 
 export type OrgTreeNode = {
   unit: OrgUnit;

@@ -5,12 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => (
     <span>{children}</span>
   ),
 }));
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({ title, children, ...props }: Record<string, ReactNode>) => (
       <section data-testid={props["data-testid"] as string}>

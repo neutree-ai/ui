@@ -2,9 +2,9 @@ import type {
   UpstreamStatus,
   UpstreamStatusPhase,
 } from "@/domains/external-endpoint/types";
-import BaseStatus from "@/foundation/components/BaseStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { STATUS_TONE } from "@/foundation/lib/status-tone";
+import BaseStatus from "@/foundation/role/BaseStatus";
+import { STATUS_TONE } from "@/foundation/role/status-tone";
 
 const classMapping: Record<UpstreamStatusPhase, string> = {
   Ready: STATUS_TONE.positive,

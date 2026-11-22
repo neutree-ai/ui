@@ -2,11 +2,11 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
 
-vi.mock("@/foundation/components/metadata-columns", () => ({
+vi.mock("@/foundation/scene/metadata-columns", () => ({
   useMetadataColumns: () => ({
     name: null,
     workspace: null,
@@ -21,7 +21,7 @@ vi.mock("@/foundation/components/metadata-columns", () => ({
 // `getValue()`), so the column definition under test is the page's own.
 const state = vi.hoisted(() => ({ spec: null as unknown }));
 
-vi.mock("@/foundation/components/Table", () => {
+vi.mock("@/foundation/scene/Table", () => {
   const Table = ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   );

@@ -4,7 +4,7 @@ import { describe, it, vi } from "vitest";
 import type { Metadata } from "@/foundation/types/basic-types";
 import EndpointEngine from "./EndpointEngine";
 
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => (
     <span>{children}</span>
   ),

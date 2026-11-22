@@ -10,7 +10,7 @@ vi.mock("@/foundation/hooks/use-copy-to-clipboard", () => ({
   useCopyToClipboard: () => ({ copy: copyMock, copied: false }),
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({
       title,

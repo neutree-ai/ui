@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { transformResourceForImport } from "@/foundation/lib/yaml-transform";
 import type { RecipeVariant } from "@/foundation/recipe/types";
+import { transformResourceForImport } from "@/foundation/scene/yaml-transform";
 import type { Metadata } from "@/foundation/types/basic-types";
 import {
   buildCatalogUpdateValues,

@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Section } from "@/foundation/scene/Section";
 import { InfoHint } from "./InfoHint";
-import { Section } from "./Section";
 
 describe("InfoHint", () => {
   it("puts a section's hint behind a button beside the title", () => {

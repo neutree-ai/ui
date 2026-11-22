@@ -13,7 +13,7 @@ vi.mock("react-router-dom", () => ({
   useSearchParams: () => [searchParamsMock()],
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>
   );
@@ -66,7 +66,7 @@ vi.mock("@/foundation/components/ShowPage", () => {
   return { ShowPage };
 });
 
-vi.mock("@/foundation/components/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/role/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span data-testid="created-at" />,
 }));
 

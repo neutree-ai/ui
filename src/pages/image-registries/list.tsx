@@ -1,8 +1,8 @@
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import RegistryStatus from "@/foundation/components/RegistryStatus";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ImageRegistriesList = () => {

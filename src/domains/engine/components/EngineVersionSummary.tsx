@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/hover-card";
 import type { EngineVersion } from "@/domains/engine/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { sortVersionsNewestFirst } from "@/foundation/lib/version-order";
+import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
 
 type EngineVersionSummaryProps = {
   versions: EngineVersion[];

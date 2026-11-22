@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useLicense } from "@/foundation/hooks/use-license";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 import { MAX_UNLIMITED } from "@/foundation/types/license";
 
 const formatDate = (timestamp: number) => {

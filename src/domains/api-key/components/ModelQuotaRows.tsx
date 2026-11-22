@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
 import type { PolicyModelRow } from "@/domains/api-key/hooks/use-api-key-policy";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { ThousandsInput } from "@/foundation/components/ThousandsInput";
 import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
@@ -13,6 +12,7 @@ import {
   type TokenQuotaUnit,
 } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
+import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 // The allowed-model rows of an API key, one per allowlist entry, each with the
 // optional per-model token limit hanging off it. This is the "pick the models

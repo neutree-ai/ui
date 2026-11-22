@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { TableListFilterOption } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { TableListFilterOption } from "@/foundation/scene/Table";
 
 interface ModelTaskFilterProps {
   filters: CrudFilter[];

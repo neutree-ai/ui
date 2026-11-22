@@ -2,9 +2,9 @@ import { useUpdate } from "@refinedev/core";
 import { Power, PowerOff } from "lucide-react";
 import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
-import { RowAction, type RowActionProps } from "@/foundation/components/Table";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { RowAction, type RowActionProps } from "@/foundation/scene/Table";
 
 type Props = RowActionProps & { sink: LogSink };
 

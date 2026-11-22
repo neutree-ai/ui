@@ -33,7 +33,7 @@ requires nonblank lowercase DNS-style names allowing dots, at most 63 characters
 
 ## Roles
 
-- Identity presentation: `src/foundation/lib/user-identity.ts`, tested in `user-identity.test.ts`.
+- Identity presentation: `src/foundation/role/user-identity.ts`, tested in `user-identity.test.ts`.
   `profileDisplayName` trims the human name and falls back to the technical name; `profileEmail` hides placeholders.
 - `profileIdentitySource` reads `neutree.ai/identity-source`; `profileIdentitySourceName` prefers the source-name label,
   falling back to the type. Missing source displays `user_profiles.values.local`.

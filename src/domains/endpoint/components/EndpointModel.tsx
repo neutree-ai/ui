@@ -1,7 +1,7 @@
 import type { EndpointSpec } from "@/domains/endpoint/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ShowButton } from "@/foundation/components/ShowButton";
 import { registryModelQuery } from "@/foundation/lib/registry-model-link";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export default function EndpointModel({
   model,

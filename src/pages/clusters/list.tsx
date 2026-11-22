@@ -8,12 +8,12 @@ import {
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import type { Cluster } from "@/domains/cluster/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ClustersList = () => {

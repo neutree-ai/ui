@@ -14,13 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
-import type { DeleteConfirmation } from "@/foundation/components/DeleteConfirmDialog";
-import { PageHeader } from "@/foundation/components/PageHeader";
-import { Section } from "@/foundation/components/Section";
-import { DeleteAction, EditAction } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { DeleteProvider } from "@/foundation/providers/delete-provider";
+import type { DeleteConfirmation } from "@/foundation/scene/DeleteConfirmDialog";
+import { PageHeader } from "@/foundation/scene/PageHeader";
+import { Section } from "@/foundation/scene/Section";
+import { DeleteAction, EditAction } from "@/foundation/scene/Table";
 
 const Row = ({
   title,

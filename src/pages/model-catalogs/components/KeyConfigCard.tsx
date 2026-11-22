@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 // Curated set of engine arguments highlighted in the catalog detail view —
 // these are the levers operators most often care about (parallelism, context,

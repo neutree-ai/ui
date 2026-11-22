@@ -61,7 +61,7 @@ vi.mock("@/domains/user/hooks/use-user-form", () => ({
     return { form: {}, registerFields: null };
   },
 }));
-vi.mock("@/foundation/components/ResourceForm", () => ({
+vi.mock("@/foundation/scene/ResourceForm", () => ({
   ResourceForm: () => null,
 }));
 

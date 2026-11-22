@@ -26,15 +26,15 @@ import {
 } from "@/domains/organization/hooks/use-organization";
 import { buildMemberTree } from "@/domains/organization/lib/member-tree";
 import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   profileDisplayName,
   profileIdentitySourceName,
-} from "@/foundation/lib/user-identity";
+} from "@/foundation/role/user-identity";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 
 const ALL_UNITS = "__all__";
 

@@ -1,9 +1,9 @@
 import { useResource, useUserFriendlyName } from "@refinedev/core";
 import { type FC, isValidElement } from "react";
-import { CreateButton } from "@/foundation/components/CreateButton";
-import { PageHeader } from "@/foundation/components/PageHeader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { CreateButton } from "@/foundation/scene/CreateButton";
+import { PageHeader } from "@/foundation/scene/PageHeader";
 
 type ListProps = {
   title?: React.ReactNode;

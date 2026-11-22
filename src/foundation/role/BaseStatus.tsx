@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { BaseStatus as BaseStatusType } from "@/foundation/types/basic-types";
-import { EmptyValue } from "./EmptyValue";
 import Timestamp from "./Timestamp";
 
 type BaseStatusProps = BaseStatusType & {

@@ -7,7 +7,7 @@ import type {
   PrincipalKind,
   UserGroupPolicy,
 } from "@/domains/group-policy/types";
-import { displayName } from "@/foundation/lib/display-name";
+import { displayName } from "@/foundation/role/display-name";
 import {
   type GroupKind,
   isGroupKind,

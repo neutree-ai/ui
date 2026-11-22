@@ -32,12 +32,12 @@ import {
   toIdentitySourcePayload,
 } from "@/domains/identity-source/lib/identity-source-values";
 import type { IdentitySource } from "@/domains/identity-source/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
 import { REST_URL } from "@/foundation/lib/api";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 const required = (message: string) => ({
   validate: (value: unknown) =>

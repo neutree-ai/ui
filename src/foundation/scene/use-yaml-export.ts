@@ -1,16 +1,16 @@
 import { useDataProvider, useResource } from "@refinedev/core";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type {
   ExportOptions,
   ResourceEntity,
-} from "@/foundation/lib/yaml-transform";
+} from "@/foundation/scene/yaml-transform";
 import {
   serializeToYaml,
   transformEntityForExport,
-} from "@/foundation/lib/yaml-transform";
+} from "@/foundation/scene/yaml-transform";
 import type { Metadata } from "@/foundation/types/basic-types";
-import { ALL_WORKSPACES, useWorkspace } from "./use-workspace";
 
 // Available resource types for export
 export const EXPORTABLE_RESOURCES = [

@@ -81,7 +81,7 @@ vi.mock("recharts", () => {
   };
 });
 
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({
     children,
     extra,
@@ -99,10 +99,10 @@ vi.mock("@/foundation/components/ListPage", () => ({
   ),
 }));
 
-vi.mock("@/foundation/components/DateRangePicker", async () => {
+vi.mock("@/foundation/role/DateRangePicker", async () => {
   const actual = await vi.importActual<
-    typeof import("@/foundation/components/DateRangePicker")
-  >("@/foundation/components/DateRangePicker");
+    typeof import("@/foundation/role/DateRangePicker")
+  >("@/foundation/role/DateRangePicker");
   return { ...actual, DateRangePicker: () => null };
 });
 

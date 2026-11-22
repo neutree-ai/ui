@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import type { ApiUsageRecord } from "@/domains/api-key/types";
-import type { DateRange } from "@/foundation/components/DateRangePicker";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
+import type { DateRange } from "@/foundation/role/DateRangePicker";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
 // One aggregated series — in the multi-day chart a line, in the single-day
 // chart a bar. `prompt`/`completion` are what the stacked day bars need; the

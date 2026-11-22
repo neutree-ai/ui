@@ -46,7 +46,7 @@ vi.mock("@/domains/cluster/components/ClusterCacheSection", () => ({
   ClusterCacheSection: () => <div data-testid="cluster-cache-section" />,
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>
   );
@@ -100,18 +100,18 @@ vi.mock("@/domains/endpoint/components/EndpointModel", () => ({
 vi.mock("@/domains/endpoint/components/EndpointStatus", () => ({
   default: () => null,
 }));
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
-vi.mock("@/foundation/components/Timestamp", () => ({ default: () => null }));
-vi.mock("@/foundation/components/Table", () => {
+vi.mock("@/foundation/role/Timestamp", () => ({ default: () => null }));
+vi.mock("@/foundation/scene/Table", () => {
   const Table = ({ children }: { children: ReactNode }) => (
     <div data-testid="endpoint-table">{children}</div>
   );
   Table.Column = () => null;
   return { Table };
 });
-vi.mock("@/foundation/components/metadata-columns", () => ({
+vi.mock("@/foundation/scene/metadata-columns", () => ({
   useMetadataColumns: () => ({ name: null, creation_timestamp: null }),
 }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({

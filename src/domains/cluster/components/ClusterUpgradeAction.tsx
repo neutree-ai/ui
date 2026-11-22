@@ -25,9 +25,9 @@ import {
   isUpgradeVersion,
 } from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type AvailableVersionsResponse = {
   available_versions: string[];

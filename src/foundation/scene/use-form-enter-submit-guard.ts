@@ -1,6 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCallback } from "react";
-import { decideFormEnterSubmit } from "@/foundation/lib/enter-submit";
+import { decideFormEnterSubmit } from "@/foundation/scene/enter-submit";
 
 /**
  * Keeps Enter inside a complex form from submitting: submission must come from

@@ -10,8 +10,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { PerformanceTimeRange } from "@/domains/endpoint/hooks/use-endpoint-performance-trends";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 
 const MAX_RANGE_SECONDS = 30 * 24 * 60 * 60;
 const MAX_FUTURE_SKEW_SECONDS = 5;

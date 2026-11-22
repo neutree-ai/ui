@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 import { clusterCacheErrorMessage } from "../lib/zcache-errors";
 import { cacheMessage } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";

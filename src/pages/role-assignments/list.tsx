@@ -3,12 +3,12 @@ import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
 
 const useRoleAssignmentColumns = () => {
   const { t } = useTranslation();

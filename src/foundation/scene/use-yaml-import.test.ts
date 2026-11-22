@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { YamlResource } from "@/foundation/lib/yaml-transform";
+import type { YamlResource } from "@/foundation/scene/yaml-transform";
 
 // --- Module mocks ---
 
@@ -10,7 +10,7 @@ const mockKindToResourceType = vi.fn<(kind: string) => string>();
 const mockTransformResourceForImport =
   vi.fn<(resource: YamlResource, ws: string) => Record<string, unknown>>();
 
-vi.mock("@/foundation/lib/yaml-transform", () => ({
+vi.mock("@/foundation/scene/yaml-transform", () => ({
   parseYamlDocuments: (...args: unknown[]) =>
     mockParseYamlDocuments(...(args as [string])),
   isValidYamlResource: (...args: unknown[]) =>
@@ -36,7 +36,7 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("./use-workspace", () => ({
+vi.mock("@/foundation/hooks/use-workspace", () => ({
   useWorkspace: () => ({ current: "test-ws" }),
 }));
 

@@ -9,11 +9,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ModelRoute } from "@/domains/external-endpoint/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelSource } from "@/foundation/lib/model-source";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import CurlExample from "./CurlExample";
 
 type Props = {

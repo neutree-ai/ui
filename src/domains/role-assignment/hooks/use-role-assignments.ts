@@ -3,7 +3,7 @@ import type {
   EffectiveRoleAssignment,
   RoleAssignment,
 } from "@/domains/role-assignment/types";
-import { isPermissionDenied } from "@/foundation/lib/api-error-code";
+import { isPermissionDenied } from "@/foundation/scene/api-error-code";
 
 /** The assignments a Team or an OrgUnit holds, as the caller's RLS allows. */
 export const useGroupRoleAssignments = (

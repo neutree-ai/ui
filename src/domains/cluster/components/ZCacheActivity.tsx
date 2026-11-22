@@ -5,7 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import Timestamp from "@/foundation/components/Timestamp";
+import Timestamp from "@/foundation/role/Timestamp";
 import {
   cacheMessage,
   operationLabel,

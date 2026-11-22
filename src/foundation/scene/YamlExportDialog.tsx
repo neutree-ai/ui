@@ -36,11 +36,11 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 import {
   type ExportableResource,
   useYamlExport,
-} from "@/foundation/hooks/use-yaml-export";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+} from "@/foundation/scene/use-yaml-export";
 
 interface YamlExportDialogProps {
   trigger?: React.ReactNode;

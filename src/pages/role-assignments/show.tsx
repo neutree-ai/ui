@@ -5,10 +5,10 @@ import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/R
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetadataTimestampMeta } from "@/foundation/role/MetadataTimestampMeta";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const RoleAssignmentsShow = () => {
   const { t } = useTranslation();

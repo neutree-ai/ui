@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   BreakableReference,
   referenceSegments,
-} from "@/foundation/components/BreakableReference";
+} from "@/foundation/type/BreakableReference";
 
 describe("referenceSegments", () => {
   it("breaks after a slash and before a colon", () => {

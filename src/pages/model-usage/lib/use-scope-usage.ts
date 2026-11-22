@@ -8,8 +8,8 @@ import {
 } from "@/domains/organization/hooks/use-organization";
 import type { OrgTreeNode } from "@/domains/organization/lib/org-tree";
 import type { Team } from "@/domains/organization/types";
-import type { DateRange } from "@/foundation/components/DateRangePicker";
-import { profileDisplayName } from "@/foundation/lib/user-identity";
+import type { DateRange } from "@/foundation/role/DateRangePicker";
+import { profileDisplayName } from "@/foundation/role/user-identity";
 import {
   appFact,
   type BreakdownFact,

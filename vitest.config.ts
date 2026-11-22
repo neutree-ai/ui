@@ -9,6 +9,7 @@ process.env.TZ = "UTC";
 const DOM_TESTS = [
   "src/**/*.test.tsx",
   "src/**/hooks/**/*.test.ts",
+  "src/foundation/{type,role,scene}/use-*.test.ts",
   "src/foundation/providers/**/*.test.ts",
 ];
 

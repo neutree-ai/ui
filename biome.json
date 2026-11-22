@@ -60,7 +60,7 @@
 							},
 							"react-hook-form": {
 								"importNames": ["useFieldArray"],
-								"message": "Use useRefineFieldArray from @/foundation/hooks/use-refine-field-array instead. Refine's useForm uses setValue() which doesn't sync with useFieldArray."
+								"message": "Use useRefineFieldArray from @/foundation/scene/use-refine-field-array instead. Refine's useForm uses setValue() which doesn't sync with useFieldArray."
 							}
 						}
 					}

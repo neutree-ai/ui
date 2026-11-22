@@ -29,16 +29,16 @@ import {
   tokenPoolSource,
 } from "@/domains/group-policy/lib/subject-policy";
 import type { GroupPolicyModel } from "@/domains/group-policy/types";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
-import { GroupKindIcon } from "@/foundation/components/GroupKindIcon";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useWorkspaceOptions } from "@/foundation/hooks/use-workspace";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { GroupKindIcon } from "@/foundation/role/GroupKindIcon";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
+import { InfoHint } from "@/foundation/role/InfoHint";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
 /** Anchor of the section; the API key page links to it. */
 const USER_MODEL_ACCESS_ANCHOR = "user-model-access";

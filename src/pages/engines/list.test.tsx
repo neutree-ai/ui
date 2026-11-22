@@ -14,7 +14,7 @@ vi.mock("@refinedev/core", () => ({
   useParsed: () => ({ params: { workspace: "design-lab" } }),
 }));
 
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
 
