@@ -57,7 +57,10 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 ## Scenes
 
 - List: search `metadata->>name`, `defaultSorters`, batch delete; row actions edit, delete, `ClusterUpgradeAction`.
-- Show: polls every 10 s unless the monitor tab is open. Cache tab needs kubernetes and `system
+- Show: SSH nodes, router and each model cache are `DetailFields` over `lib/detail-fields.ts` (`clusterSshFields`,
+  `clusterRouterFields`, `modelCacheFields`; Foundation "Detail fields"): worker IPs comma-joined, an unknown access
+  mode (`getAccessModeLabel`) or absent router capacity as the empty marker, a cache's type as plain text and its
+  path from `nfs` or else `host_path`. Polls every 10 s unless the monitor tab is open. Cache tab needs kubernetes and `system
   capabilities.cluster_cache_providers` containing `zcache`. Secrets not shown.
 - Create (`use-cluster-form.tsx`): `mode: "all"`; payload `transformClusterValues(values, false)`. Switching type
   replaces `spec.config` with that type's defaults. Versions come from `/clusters/available_versions` for workspace,

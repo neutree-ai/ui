@@ -16,7 +16,11 @@ import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTi
 import { NodeResourcesTable } from "@/domains/cluster/components/NodeResourcesTable";
 import { useClusterMonitorPanels } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
-import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
+import {
+  clusterRouterFields,
+  clusterSshFields,
+  modelCacheFields,
+} from "@/domains/cluster/lib/detail-fields";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import { getZCacheDashboardProps } from "@/domains/cluster/lib/zcache-dashboard";
@@ -43,11 +47,12 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
 import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { ObservationStatus } from "@/foundation/role/ObservationStatus";
-import Timestamp from "@/foundation/role/Timestamp";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/scene/detail-tabs";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";
@@ -223,12 +228,7 @@ export const ClustersShow = () => {
                       : t("common.options.disabled")}
                   </ShowPage.Meta>
                 )}
-                <ShowPage.Meta label={t("common.fields.createdAt")}>
-                  <Timestamp
-                    timestamp={record.metadata.creation_timestamp}
-                    relative
-                  />
-                </ShowPage.Meta>
+                <MetadataTimestampMeta metadata={record.metadata} />
               </span>
             }
             // No phase, no badge: the identity line reads as "name, dash"
@@ -268,45 +268,18 @@ export const ClustersShow = () => {
           >
             {record.spec.config.ssh_config && (
               <ShowPage.Section>
-                <div className="grid gap-5 md:grid-cols-2">
-                  <ShowPage.Row title={t("clusters.fields.headIp")}>
-                    {record.spec.config.ssh_config.provider.head_ip ?? ""}
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("clusters.fields.workerIps")}>
-                    {(
-                      record.spec.config.ssh_config.provider.worker_ips || []
-                    )?.join(",")}
-                  </ShowPage.Row>
-                </div>
+                <DetailFields
+                  fields={clusterSshFields}
+                  record={record.spec.config.ssh_config}
+                />
               </ShowPage.Section>
             )}
             {record.spec.config.kubernetes_config && (
               <ShowPage.Section title={t("clusters.sections.router")}>
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                  <ShowPage.Row title={t("clusters.fields.accessMode")}>
-                    {getAccessModeLabel(
-                      record.spec.config.kubernetes_config.router?.access_mode,
-                      t,
-                    )}
-                  </ShowPage.Row>
-                  {/* The API requires these three for a Kubernetes cluster
-                      (codes 10024/10025/10026), so a blank is not a state a
-                      real cluster can be in. A placeholder keeps a value-less
-                      record from rendering as an empty cell regardless. */}
-                  <ShowPage.Row title={t("clusters.fields.replicas")}>
-                    {record.spec.config.kubernetes_config.router?.replicas ?? (
-                      <EmptyValue />
-                    )}
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.cpu")}>
-                    {record.spec.config.kubernetes_config.router?.resources
-                      ?.cpu ?? <EmptyValue />}
-                  </ShowPage.Row>
-                  <ShowPage.Row title={t("common.fields.memory")}>
-                    {record.spec.config.kubernetes_config.router?.resources
-                      ?.memory ?? <EmptyValue />}
-                  </ShowPage.Row>
-                </div>
+                <DetailFields
+                  fields={clusterRouterFields}
+                  record={record.spec.config.kubernetes_config}
+                />
               </ShowPage.Section>
             )}
             {record.status?.resource_info && (
@@ -397,88 +370,10 @@ export const ClustersShow = () => {
                               t(`clusters.fields.modelCache.type.${cacheType}`)}
                           </div>
 
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {cache.name && (
-                                <ShowPage.Row title={t("common.fields.name")}>
-                                  {cache.name}
-                                </ShowPage.Row>
-                              )}
-
-                              <ShowPage.Row
-                                title={t(
-                                  "clusters.fields.modelCache.cacheType",
-                                )}
-                              >
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                                  {cacheType === "nfs"
-                                    ? t("clusters.options.nfs")
-                                    : cacheType === "pvc"
-                                      ? t("clusters.options.pvc")
-                                      : t("clusters.options.hostPath")}
-                                </span>
-                              </ShowPage.Row>
-
-                              {cache.nfs && (
-                                <>
-                                  <ShowPage.Row
-                                    title={t(
-                                      "clusters.fields.modelCache.nfsServer",
-                                    )}
-                                  >
-                                    <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                      {cache.nfs.server}
-                                    </code>
-                                  </ShowPage.Row>
-
-                                  <ShowPage.Row
-                                    title={t(
-                                      "clusters.fields.modelCache.cachePath",
-                                    )}
-                                  >
-                                    <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                      {cache.nfs.path}
-                                    </code>
-                                  </ShowPage.Row>
-                                </>
-                              )}
-
-                              {cache.host_path && (
-                                <ShowPage.Row
-                                  title={t(
-                                    "clusters.fields.modelCache.cachePath",
-                                  )}
-                                >
-                                  <code className="text-sm bg-muted text-foreground px-2 py-1 rounded">
-                                    {cache.host_path.path}
-                                  </code>
-                                </ShowPage.Row>
-                              )}
-
-                              {cache.pvc && (
-                                <>
-                                  <ShowPage.Row
-                                    title={t(
-                                      "clusters.fields.modelCache.storage",
-                                    )}
-                                  >
-                                    {cache.pvc.resources?.requests?.storage ??
-                                      ""}
-                                  </ShowPage.Row>
-
-                                  {cache.pvc.storageClassName && (
-                                    <ShowPage.Row
-                                      title={t(
-                                        "clusters.fields.modelCache.storageClassName",
-                                      )}
-                                    >
-                                      {cache.pvc.storageClassName}
-                                    </ShowPage.Row>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </div>
+                          <DetailFields
+                            fields={modelCacheFields(cache)}
+                            record={cache}
+                          />
                         </div>
                       );
                     },
