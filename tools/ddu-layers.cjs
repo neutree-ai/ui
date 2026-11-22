@@ -7,7 +7,8 @@
  * the shared data types) or a form path ("spec.x") declared on a field. Its
  * layer is where the decision about that value is made:
  *   type | role | scene   a shared piece under src/foundation/<layer>/
- *   description           the kind's own lib/, or the kind configuring a scene
+ *   description           the kind's own lib/, a foundation concept directory,
+ *                         or the kind configuring a scene
  *   override              decided inline in a component or page
  * Values only passed along (copied, handed to a library) are "wire" and are
  * not decisions.
@@ -24,6 +25,11 @@
  * fails until that is committed. --rebuild-baseline rewrites it from the
  * current sites; use it only when this tool's rules change, so the diff is
  * reviewed with the rule.
+ *
+ * check also fails on the foundation layout: a directory under
+ * src/foundation/ must be a layer, an app-shell directory or a concept
+ * declared in src/foundation/contract.md, and a module in components/, hooks/
+ * or lib/ must be listed in APP_SHELL.
  */
 
 const fs = require("node:fs");
@@ -36,10 +42,19 @@ const BASELINE_FILE = "tools/ddu-baseline.json";
 const LAYERS = ["type", "role", "scene", "description", "override"];
 const COUNTERS = [...LAYERS, "wire", "marked"];
 const SHARED_LAYER_RE = /^foundation\/(type|role|scene)\//;
+const FOUNDATION_CONTRACT = "src/foundation/contract.md";
+const SHELL_DIRS = [
+  "components",
+  "hooks",
+  "lib",
+  "providers",
+  "types",
+  "testing",
+];
 
 // Foundation modules that run the app itself and decide nothing about a
-// resource field. Any other module outside type/role/scene serves specific
-// kinds and counts as Description.
+// resource field. Any other module outside type/role/scene belongs to a
+// concept directory: data several kinds read, counted as Description.
 const APP_SHELL = [
   "components/AppBreadcrumbs",
   "components/AppSidebar",
@@ -64,6 +79,7 @@ const APP_SHELL = [
   "lib/i18n",
   "lib/utils",
   "lib/constant",
+  "lib/api/",
   "lib/sidebar-active",
   "lib/stick-to-bottom",
   "providers/",
@@ -125,6 +141,58 @@ function foundationLayer(r) {
     e.endsWith("/") ? p.startsWith(e) : p === e,
   );
   return isShell ? "shell" : "description";
+}
+
+// Concept directories are the "- `<name>/`" items of the "## Concepts" section
+// of the foundation contract.
+function declaredConcepts() {
+  const text = fs.readFileSync(path.join(ROOT, FOUNDATION_CONTRACT), "utf8");
+  const section = text.split(/^## Concepts[ \t]*$/m)[1]?.split(/^## /m)[0];
+  return [...(section ?? "").matchAll(/^- `([a-z0-9-]+)\/`/gm)].map(
+    (m) => m[1],
+  );
+}
+
+function layoutErrors(strayModules) {
+  const concepts = declaredConcepts();
+  const allowed = new Set([
+    "type",
+    "role",
+    "scene",
+    ...SHELL_DIRS,
+    ...concepts,
+  ]);
+  const present = fs
+    .readdirSync(path.join(SRC, "foundation"), { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .filter(
+      (name) => fs.readdirSync(path.join(SRC, "foundation", name)).length,
+    );
+  const errors = [];
+  for (const name of present) {
+    if (!allowed.has(name))
+      errors.push({
+        file: `src/foundation/${name}`,
+        line: 1,
+        message: `src/foundation/${name}/ is not a declared concept: name the directory after the data concept it holds and add "- \`${name}/\` — <the data it covers>" under "## Concepts" in ${FOUNDATION_CONTRACT}, or move the code into type/, role/, scene/ or its domain`,
+      });
+  }
+  for (const name of concepts) {
+    if (!present.includes(name))
+      errors.push({
+        file: FOUNDATION_CONTRACT,
+        line: 1,
+        message: `concept \`${name}/\` is declared but src/foundation/${name}/ does not exist: remove it from "## Concepts"`,
+      });
+  }
+  for (const file of strayModules)
+    errors.push({
+      file,
+      line: 1,
+      message: `${file} is not app shell: move it into a concept directory (several kinds use it) or its domain (one kind uses it), or list it in APP_SHELL in tools/ddu-layers.cjs`,
+    });
+  return errors;
 }
 
 function kindOf(r) {
@@ -290,20 +358,52 @@ function measure() {
     return null;
   };
 
+  // Who imports each module. A foundation test does not make a module used.
+  const importers = new Map();
+  const collectImports = (sf, r) => {
+    if (r.startsWith("foundation/") && /\.test\.tsx?$/.test(r)) return;
+    const add = (specifier) => {
+      const target = checker
+        .getSymbolAtLocation(specifier)
+        ?.declarations?.[0]?.getSourceFile();
+      const t = target ? rel(target.fileName) : "..";
+      if (t.startsWith("..") || t === r) return;
+      if (!importers.has(t)) importers.set(t, new Set());
+      importers.get(t).add(r);
+    };
+    const visit = (node) => {
+      if (
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+        node.moduleSpecifier
+      )
+        add(node.moduleSpecifier);
+      else if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length === 1
+      )
+        add(node.arguments[0]);
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+  };
+
   const sites = [];
   const markErrors = [];
-  const kindSpecific = new Map();
+  const conceptModules = new Map();
 
   for (const sf of program.getSourceFiles()) {
     const r = rel(sf.fileName);
-    if (r.startsWith("..") || !isMeasured(r)) continue;
+    if (r.startsWith("..")) continue;
+    collectImports(sf, r);
+    if (!isMeasured(r)) continue;
     const fileLayer = foundationLayer(r);
     if (fileLayer === "shell") continue;
     const kind = kindOf(r);
     const file = `src/${r}`;
     const inLib = KIND_LIB_RE.test(r);
     const firstSite = sites.length;
-    if (fileLayer === "description") kindSpecific.set(file, 0);
+    if (fileLayer === "description") conceptModules.set(file, 0);
 
     const push = (node, layer, how, text, field, why) => {
       const { line } = sf.getLineAndCharacterOfPosition(node.getStart());
@@ -408,11 +508,40 @@ function measure() {
     visit(sf);
 
     const fileSites = sites.slice(firstSite);
-    if (kindSpecific.has(file)) kindSpecific.set(file, fileSites.length);
+    if (conceptModules.has(file)) conceptModules.set(file, fileSites.length);
     applyMarks(file, sf.getFullText(), fileSites, markErrors);
   }
 
-  return { sites, markErrors, kindSpecific };
+  return {
+    sites,
+    markErrors,
+    conceptModules,
+    singleKind: singleKindModules(conceptModules, importers),
+  };
+}
+
+// The kinds that reach each concept module, following imports through other
+// concept modules. A module reached by one kind and by nothing else (shared
+// layers, app shell, app root) belongs in that kind's domain.
+function singleKindModules(conceptModules, importers) {
+  const usersOf = (r, seen) => {
+    const users = new Set();
+    if (seen.has(r)) return users;
+    seen.add(r);
+    for (const importer of importers.get(r) ?? []) {
+      if (conceptModules.has(`src/${importer}`))
+        for (const u of usersOf(importer, seen)) users.add(u);
+      else users.add(kindOf(importer));
+    }
+    return users;
+  };
+  const found = [];
+  for (const file of [...conceptModules.keys()].sort()) {
+    const users = [...usersOf(file.slice("src/".length), new Set())];
+    if (users.length === 1 && !users[0].startsWith("("))
+      found.push({ file, kind: users[0] });
+  }
+  return found;
 }
 
 function applyMarks(file, text, fileSites, markErrors) {
@@ -471,13 +600,19 @@ function summarize(sites) {
 }
 
 function report(result, options) {
-  const { sites, kindSpecific } = result;
+  const { sites, conceptModules, singleKind } = result;
   const { perKind, total } = summarize(sites);
   const decided = LAYERS.reduce((sum, l) => sum + total[l], 0);
   const overrideFiles = new Set(
     sites.filter((s) => s.layer === "override").map((s) => s.file),
   ).size;
-  const foundationKindSpecific = [...kindSpecific.keys()].sort();
+  const foundationConcepts = {};
+  for (const [file, count] of conceptModules) {
+    const concept = file.split("/")[2];
+    foundationConcepts[concept] ??= { modules: 0, sites: 0 };
+    foundationConcepts[concept].modules++;
+    foundationConcepts[concept].sites += count;
+  }
 
   if (options.json) {
     const out = {
@@ -486,7 +621,8 @@ function report(result, options) {
       decisions: decided,
       sites: sites.length,
       overrideFiles,
-      foundationKindSpecific,
+      foundationConcepts,
+      singleKind,
     };
     fs.writeFileSync(options.json, `${JSON.stringify(out, null, 2)}\n`);
   }
@@ -528,10 +664,16 @@ function report(result, options) {
     `\n${decided} decisions in ${sites.length} sites (${total.wire} only pass the value along); overrides sit in ${overrideFiles} files, ${total.marked} marked.`,
   );
   console.log(
-    `\nKind-specific code in foundation (${foundationKindSpecific.length} modules counted as description; candidates to move into their domain), with sites:`,
+    `\nConcepts in foundation (${conceptModules.size} modules counted as description), with modules and sites:`,
   );
-  for (const file of foundationKindSpecific)
-    console.log(`  ${file}  ${kindSpecific.get(file)}`);
+  for (const concept of Object.keys(foundationConcepts).sort()) {
+    const { modules, sites: count } = foundationConcepts[concept];
+    console.log(`  ${concept}/  ${modules}  ${count}`);
+  }
+  console.log(
+    `\nConcept modules used by exactly one kind (${singleKind.length}; each belongs in that kind's domain):`,
+  );
+  for (const { file, kind } of singleKind) console.log(`  ${file}  ${kind}`);
 }
 
 function unmarkedOverrides(sites) {
@@ -646,6 +788,7 @@ const FOOTER = {
   mark: [
     "Mark error: give the mark its reason after the colon, move it directly above the override it excuses, or delete it once the override is gone.",
   ],
+  layout: ["Layout error: follow the message on the directory or module."],
   stale: [
     `Baseline out of date: run \`yarn ddu:check --update-baseline\` and commit ${BASELINE_FILE}.`,
     "It only shrinks or follows moved files; it never accepts a new override.",
@@ -654,6 +797,10 @@ const FOOTER = {
 
 function check(result, options) {
   const { sites, markErrors } = result;
+  const strayModules = [...result.conceptModules.keys()].filter((file) =>
+    SHELL_DIRS.includes(file.split("/")[2]),
+  );
+  const layout = layoutErrors(strayModules);
   const github = process.env.GITHUB_ACTIONS === "true";
   const problem = (title, { file, line }, body = []) => {
     if (github) {
@@ -680,7 +827,7 @@ function check(result, options) {
     : compareBaseline(byFile, baseline);
   const { added } = compared;
 
-  for (const error of markErrors) problem(error.message, error);
+  for (const error of [...layout, ...markErrors]) problem(error.message, error);
   added.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
   for (const site of added) {
     const [fix, ...rest] = fixesFor(site);
@@ -703,8 +850,9 @@ function check(result, options) {
   const counts = [
     plural(added.length, "new override"),
     plural(markErrors.length, "mark error"),
+    plural(layout.length, "layout error"),
   ];
-  const failed = added.length || markErrors.length || stale;
+  const failed = added.length || markErrors.length || layout.length || stale;
   if (!failed) {
     console.log(
       `✅ ddu:check: ${counts.join(", ")} (baseline ${countEntries(compared.kept)}, marked ${marked}).`,
@@ -718,6 +866,7 @@ function check(result, options) {
   const steps = [
     ...(added.length ? FOOTER.override : []),
     ...(markErrors.length ? FOOTER.mark : []),
+    ...(layout.length ? FOOTER.layout : []),
     ...(stale ? FOOTER.stale : []),
   ];
   console.log(`

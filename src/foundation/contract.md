@@ -114,13 +114,25 @@ Running is positive, Failed serious, Pending / Degraded / Deleting / Paused noti
 ModelDownloading retain their local outstanding string with a thin fill. An absent phase renders `EmptyValue`
 for `BaseStatus` callers.
 
-## Domain code in foundation
+## Concepts
 
-Image repository listing (`domains/endpoint/lib/image-registry-content.ts`,
-`domains/endpoint/hooks/use-image-repositories.ts`) is consumed only by `domains/endpoint`
-(`ImageRegistryExplorerDialog`), not by `domains/image-registry`. It stays in foundation because
-`.dependency-cruiser.cjs` (`no-L2-cross-domain`) forbids the endpoint domain importing it from
-another domain. The same holds for `model-registry-visibility` / `model-registry-availability`.
+Besides the layers (`type/`, `role/`, `scene/`) and the app shell, `src/foundation/` holds one directory per data
+concept that two or more kinds read. Domains may not import each other (`no-L2-cross-domain`), so such data lives
+here, named after the data rather than after a file kind. `yarn ddu:check` reads this list and fails on a foundation
+directory it does not name; a module only one kind uses belongs in that kind's domain.
+
+- `accelerator/` — accelerator observations, device allocation and placement capacity (see Accelerator resources).
+- `ai-traces/` — AI gateway trace rows and their queries (AI Traces, API Key).
+- `cache-version/` — cache runtime versions and the engine versions each supports (Cluster, Endpoint).
+- `grafana/` — Grafana dashboard configuration, URLs and embeds (Dashboard, Cluster, Endpoint, External Endpoint).
+- `license/` — the installed license and its usage limits (License, Workspace Policy).
+- `model-reference/` — a model as other kinds refer to it: registry models and versions, the workspace's invocable
+  models, model source, and the option groups and badge that show them.
+- `oem-config/` — the OEM branding record (OEM Config, login, app shell).
+- `recipe/` — model catalog recipes: types, composition, VRAM estimate (Model Catalog, Endpoint).
+- `service-account/` — application (ServiceAccount) error codes (Service Account, API Key).
+- `sso/` — the SSO login result returned in the URL fragment (app start, login).
+- `token-quota/` — token quota amounts, units and periods (see Token quotas).
 
 ## Token quotas
 
