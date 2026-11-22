@@ -26,13 +26,12 @@ export function DetailFields<T>({
       (source.render(record) ?? null)
     );
 
-  if (inline) {
+  if (inline)
     return fields.map((item) => (
       <ShowPage.Meta key={item.label} label={t(item.label)}>
         {content(item)}
       </ShowPage.Meta>
     ));
-  }
 
   return (
     <div className={cn("grid grid-cols-1 gap-5 lg:grid-cols-4", className)}>

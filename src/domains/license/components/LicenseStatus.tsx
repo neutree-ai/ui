@@ -15,9 +15,7 @@ export function LicenseStatus({ status }: { status: LicenseStatusType }) {
 
   return (
     <BaseStatus
-      phase={status.phase}
-      error_message={status.error_message}
-      last_transition_time={status.last_transition_time}
+      {...status}
       className={classMapping[status.phase] ?? STATUS_TONE.neutral}
       translatedPhase={t(`license.phase.${status.phase.toLowerCase()}`)}
     />

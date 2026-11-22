@@ -10,9 +10,8 @@ const asText = (value: unknown) =>
   typeof value === "object" ? JSON.stringify(value) : String(value);
 
 /**
- * One value of a resource, shown by its runtime type. A field whose meaning
- * needs more than its type (a time, a status, a unit) is rendered by a role
- * piece instead.
+ * One resource value, shown by its runtime type. Meaning beyond the type
+ * (a time, a status, a unit) belongs to a role piece.
  */
 export function FieldValue({ value }: { value: unknown }) {
   const { t, i18n } = useTranslation();

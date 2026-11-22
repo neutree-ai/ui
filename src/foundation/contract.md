@@ -124,7 +124,7 @@ items with `inline`. `foundation/type/FieldValue` alone decides how a value is s
 undefined, `""`, empty array and empty object are `EmptyValue`; a boolean is `common.values.yes|no`; a number is
 formatted for the resolved language; a string is shown as is, keeps its line breaks and may wrap anywhere; an array
 is joined with `, `; a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role
-piece (`Timestamp`, the kind's status component). Used by License, Log Sink and Identity Source.
+piece (`Timestamp`, the kind's status component). Used by License, Log Sink, Identity Source, Cluster and API Key.
 Tests: `type/FieldValue.test.tsx` (per-type rules), `scene/DetailFields.test.tsx` (wiring).
 
 `foundation/role/ConnectionTestResult` shows a last connection test (`{ok, time}`): `common.connectionTest.ok`
