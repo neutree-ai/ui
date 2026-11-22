@@ -74,7 +74,7 @@
   "src/components/ui/tooltip.tsx": "2b88acea3e6c62b11a82708e6f450de3",
   "src/pages/oem-config/show.tsx": "856b7a55226360f895eaa0c40116f2ff",
   "src/pages/oem-config/use-oem-config-form.tsx": "84cff779ee7e010279ab5514236ccb25",
-  "src/pages/license/show.tsx": "24b8e84974c8a8dfe37a4910c1a44df4",
+  "src/pages/license/show.tsx": "91c3af23232aabc85e8cda6072a1c635",
   "vitest.config.ts": "9c43ee0f616f425ae188e2a4046bcc33",
   "playwright.config.ts": "1e624a5e7453327ec44105e414fc39d7",
   "src/pages/auth/AuthPage.tsx": "d24f5cfff735e761566cd2ff24dc36ed",
@@ -641,5 +641,8 @@
   "src/domains/api-key/testing/visual-fixtures.ts": "4c3dd79aaa8a4c5d22ac25e76e4471ae",
   "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01",
   "src/foundation/scene/DetailFields.tsx": "0d30de91296566dc62a97def5617732b",
-  "src/foundation/type/FieldValue.tsx": "fe1536d71cd116ac37d5488ecbd036bc"
+  "src/foundation/type/FieldValue.tsx": "fe1536d71cd116ac37d5488ecbd036bc",
+  "src/domains/license/components/LicenseSerial.tsx": "bba0de11f100b4b2165f22eaeacdbc88",
+  "src/domains/license/components/LicenseStatus.tsx": "2af3b2947491a1800b3745e899f226b8",
+  "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9"
 }
