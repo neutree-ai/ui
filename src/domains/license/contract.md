@@ -50,7 +50,7 @@ Version, usage details and metadata are hidden; the status message and transitio
   unlimited GPU maximum and usage limits use `license.unlimited`. A limited GPU maximum is a number, formatted by
   `FieldValue` for the locale; usage is the text `used / limit`.
 - Status: `LicenseStatus` (`src/domains/license/components/LicenseStatus.tsx`) renders `role/BaseStatus` with
-  `STATUS_TONE`: Active positive, Expired and Invalid serious, Pending notice, anything else neutral.
+  the tone and label key from `lib/phase.ts`: Active positive, Expired and Invalid serious, Pending notice, anything else neutral.
   Labels use `license.phase.<lowercase phase>`. The chip's tooltip shows `status.error_message` and
   `status.last_transition_time`.
 - Edition and license type use lowercased translation keys; vendor is raw text. Serial is raw text with a copy
