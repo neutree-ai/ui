@@ -116,15 +116,20 @@ for `BaseStatus` callers.
 
 ## Detail fields
 
-A kind describes its show-page fields once in `domains/<kind>/lib/detail-fields.tsx` as `DetailField` descriptors
-(`key`, `label` i18n key, optional `span`, and either `value(record, t)` or `render(record)`).
+A kind describes its show-page fields once in `domains/<kind>/lib/detail-fields.tsx`, one
+`field(label, source, { span }?)` call each (`foundation/scene/detail-field.ts`): `label` is an i18n key, verified by
+`tools/check-i18n-keys.cjs` like a `t("…")` call; `source` is `(record, t) => value` or `{ render: (record) => node }`.
 `foundation/scene/DetailFields` lays them out as `ShowPage.Row` cells in the four-column grid, or as `ShowPage.Meta`
-items with `inline`. `foundation/type/FieldValue` alone decides how a `value` is shown, by runtime type: null,
+items with `inline`. `foundation/type/FieldValue` alone decides how a value is shown, by runtime type: null,
 undefined, `""`, empty array and empty object are `EmptyValue`; a boolean is `common.values.yes|no`; a number is
-formatted for the resolved language; a string is shown as is, keeps its line breaks and may wrap anywhere; an array is joined with `, `;
-a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role piece (`Timestamp`,
-the kind's status component). Used by License, Log Sink and Identity Source. Tests: `type/FieldValue.test.tsx` (per-type rules),
-`scene/DetailFields.test.tsx` (wiring).
+formatted for the resolved language; a string is shown as is, keeps its line breaks and may wrap anywhere; an array
+is joined with `, `; a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role
+piece (`Timestamp`, the kind's status component). Used by License, Log Sink and Identity Source.
+Tests: `type/FieldValue.test.tsx` (per-type rules), `scene/DetailFields.test.tsx` (wiring).
+
+`foundation/role/ConnectionTestResult` shows a last connection test (`{ok, time}`): `common.connectionTest.ok`
+(positive text) or `.failed` (serious text) with the relative time, `.never` when there is no test or no time.
+Used by Log Sink and Identity Source. Tests: `role/ConnectionTestResult.test.tsx`.
 
 ## Concepts
 

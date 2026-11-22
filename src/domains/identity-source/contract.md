@@ -58,7 +58,7 @@ GET/POST/PATCH. RPCs: `request_identity_source_sync`, `list_login_identity_sourc
 - List (`IdentitySourcesList`): name/display name/type/enabled/status/last sync/created/actions; name search,
   created descending (`defaultSorters`), filters/sorting, edit/delete, no batch actions; poll 10s.
 - Show (`IdentitySourcesShow`): `DetailFields` over `lib/detail-fields.tsx` (header name/type; state: enable
-  switch, connection result, message = `status.error_message` or else the test message; LDAP or OIDC settings),
+  switch, connection result via `role/ConnectionTestResult`, message = `status.error_message` or else the test message; LDAP or OIDC settings),
   plus LDAP sync; no secrets or attribute/claim mappings. Values go through `FieldValue` (Foundation "Detail
   fields"): TLS switches yes / no (unset = no), scopes and allowed redirects comma-joined, absent values the empty
   marker; CA is `caConfigured` or `systemTrust`. Tests: `lib/detail-fields.test.ts`. Pending poll 3s, else 10s.

@@ -11,15 +11,18 @@ import {
 const t = ((key: string, values?: Record<string, unknown>) =>
   values ? `${key}:${Object.values(values).join(",")}` : key) as TFunction;
 
-const keys = (fields: { key: string }[]) => fields.map((field) => field.key);
+const keys = (fields: { label: string }[]) =>
+  fields.map((item) => item.label.split(".").pop());
 
 const shown = (
   fields: ReturnType<typeof logSinkDestinationFields>,
   sink: LogSink,
 ) =>
   Object.fromEntries(
-    fields.flatMap((field) =>
-      "value" in field ? [[field.key, field.value(sink, t)]] : [],
+    fields.flatMap(({ label, source }) =>
+      typeof source === "function"
+        ? [[label.split(".").pop(), source(sink, t)]]
+        : [],
     ),
   );
 
@@ -61,7 +64,7 @@ describe("logSinkDestinationFields", () => {
       insecureSkipVerify: false,
       caCert: "log_sinks.values.notSet",
       timeout: "log_sinks.values.timeoutDefault",
-      buffer: "log_sinks.values.bufferDefault",
+      bufferSizeShort: "log_sinks.values.bufferDefault",
       extraFields: undefined,
     });
   });
@@ -78,7 +81,7 @@ describe("logSinkDestinationFields", () => {
       addressing: "log_sinks.values.defaultSuffix:log_sinks.values.pathStyle",
       compression: "log_sinks.values.defaultSuffix:log_sinks.compressions.gzip",
       flushInterval: "log_sinks.values.flushIntervalDefault",
-      buffer: "log_sinks.values.bufferDefault",
+      bufferSizeShort: "log_sinks.values.bufferDefault",
     });
   });
 
@@ -98,7 +101,7 @@ describe("logSinkDestinationFields", () => {
       addressing: "log_sinks.values.virtualHosted",
       compression: "log_sinks.compressions.zstd",
       flushInterval: "log_sinks.values.timeoutSeconds:60",
-      buffer: "log_sinks.values.bufferGib:2",
+      bufferSizeShort: "log_sinks.values.bufferGib:2",
     });
   });
 });
@@ -109,7 +112,7 @@ describe("logSinkDeliveryFields", () => {
     const fields = logSinkDeliveryFields(sink);
 
     expect(shown(fields, sink)).toEqual({ sentEvents: 0, droppedEvents: 0 });
-    expect(keys(fields)).not.toContain("lastTestMessage");
+    expect(keys(fields)).not.toContain("message");
   });
 
   it("adds the last test message when there is one", () => {
@@ -118,6 +121,6 @@ describe("logSinkDeliveryFields", () => {
       sink.status.last_connection_test = { ok: false, message: "refused" };
     }
 
-    expect(keys(logSinkDeliveryFields(sink))).toContain("lastTestMessage");
+    expect(keys(logSinkDeliveryFields(sink))).toContain("message");
   });
 });

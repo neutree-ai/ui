@@ -640,12 +640,14 @@
   "src/domains/cluster/testing/visual-fixtures.ts": "3d9aa71cbc82273107b5179a4449b3ec",
   "src/domains/api-key/testing/visual-fixtures.ts": "4c3dd79aaa8a4c5d22ac25e76e4471ae",
   "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01",
-  "src/foundation/scene/DetailFields.tsx": "0d30de91296566dc62a97def5617732b",
-  "src/foundation/type/FieldValue.tsx": "e00dd85a2d2c396c74806013a8422b88",
+  "src/foundation/scene/DetailFields.tsx": "d57461c4cd690d8ac4c097848976b0d2",
+  "src/foundation/type/FieldValue.tsx": "a40ba5ae4057ec31d1d733d7c56c4772",
   "src/domains/license/components/LicenseSerial.tsx": "bba0de11f100b4b2165f22eaeacdbc88",
-  "src/domains/license/components/LicenseStatus.tsx": "7e9ad9a55feaac0704c522f87282bd00",
-  "src/domains/license/lib/detail-fields.tsx": "999a24f8d0c5931ad452b2715dbfb9b9",
-  "src/domains/log-sink/lib/detail-fields.tsx": "72f30bbc6ede1ca728c01013de3bba4e",
-  "src/domains/identity-source/lib/detail-fields.tsx": "680bb2b69686113a1eaa2bbff1ed1a00",
-  "src/domains/license/lib/phase.ts": "a6384077b05daf9c49f658df82be5827"
+  "src/domains/license/components/LicenseStatus.tsx": "2af3b2947491a1800b3745e899f226b8",
+  "src/domains/license/lib/detail-fields.tsx": "919df2eefd6d2612d26936492e366632",
+  "src/domains/log-sink/lib/detail-fields.tsx": "cdec7a1ac524cb096c94c3d1dfba85f0",
+  "src/domains/identity-source/lib/detail-fields.tsx": "5608a0d1bdde26125c1cb34fd499a604",
+  "src/domains/license/lib/phase.ts": "a6384077b05daf9c49f658df82be5827",
+  "src/foundation/role/ConnectionTestResult.tsx": "2849c3bad397bd8f83ba8384ffd82b11",
+  "src/foundation/scene/detail-field.ts": "8c6d2221d74460acd93ee383480597f7"
 }

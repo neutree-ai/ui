@@ -6,23 +6,18 @@ vi.mock("./Table", () => ({
   EditAction: () => null,
 }));
 
-import { type DetailField, DetailFields } from "./DetailFields";
+import { DetailFields } from "./DetailFields";
+import { type DetailField, field } from "./detail-field";
 
 type Sink = { url: string; enabled: boolean; kind: string };
 
 const fields: DetailField<Sink>[] = [
-  { key: "url", label: "sinks.fields.url", value: (sink) => sink.url },
-  { key: "enabled", label: "sinks.fields.enabled", value: (s) => s.enabled },
-  {
-    key: "kind",
-    label: "sinks.fields.kind",
-    value: (sink, t) => t(`sinks.kinds.${sink.kind}`),
-  },
-  {
-    key: "link",
-    label: "sinks.fields.link",
+  field("common.fields.name", (sink) => sink.url),
+  field("common.fields.status", (sink) => sink.enabled),
+  field("common.fields.type", (sink, t) => t(`sinks.kinds.${sink.kind}`)),
+  field("common.fields.message", {
     render: (sink) => <a href={sink.url}>open</a>,
-  },
+  }),
 ];
 const record: Sink = { url: "https://logs.test", enabled: true, kind: "s3" };
 
@@ -33,7 +28,7 @@ describe("DetailFields", () => {
   ])("shows each field's label and value ($layout)", ({ inline }) => {
     render(<DetailFields fields={fields} record={record} inline={inline} />);
 
-    screen.getByText("sinks.fields.url");
+    screen.getByText("common.fields.name");
     screen.getByText("https://logs.test");
     screen.getByText("common.values.yes");
     screen.getByText("sinks.kinds.s3");

@@ -4,7 +4,7 @@ import type {
   IdentitySource,
   IdentitySourceLDAPSpec,
 } from "@/domains/identity-source/types";
-import type { DetailField } from "@/foundation/scene/DetailFields";
+import type { DetailField } from "@/foundation/scene/detail-field";
 import {
   identitySourceLdapFields,
   identitySourceStateFields,
@@ -13,9 +13,9 @@ import {
 const t = ((key: string) => key) as TFunction;
 
 const shown = <T>(fields: DetailField<T>[], key: string, record: T) => {
-  const field = fields.find((candidate) => candidate.key === key);
-  if (!field || !("value" in field)) throw new Error(`no value field ${key}`);
-  return field.value(record, t);
+  const found = fields.find((candidate) => candidate.label.endsWith(`.${key}`));
+  if (typeof found?.source !== "function") throw new Error(`no value ${key}`);
+  return found.source(record, t);
 };
 
 const withStatus = (status: IdentitySource["status"]) =>

@@ -57,7 +57,7 @@ array carries a `mergekey`; `extra_fields` is a map without masked values.
   (`lib/detail-fields.tsx`, tested in `lib/detail-fields.test.ts`) describe every show-page field, rendered by
   `DetailFields` / `FieldValue` (Foundation "Detail fields"): enabled and skip-TLS as yes / no, counters as locale
   numbers (absent = 0, the API omits zero counters), extra fields as `key=value` chips, an absent username as the
-  empty marker. Omitted settings show their default with `log_sinks.values.defaultSuffix` or a `*Default` text.
+  empty marker, the last test through `role/ConnectionTestResult`. Omitted settings show their default with `log_sinks.values.defaultSuffix` or a `*Default` text.
 - Local formatters (not shared roles): `formatEventCount` (list columns; `en-US` grouping, absent = 0);
   `bytesToGib` / `gibToBytes` (GiB in the form, bytes on the wire; show `log_sinks.values.bufferGib`, absent
   `bufferDefault`); `isLogSinkEnabled` (only explicit `false` is off); `formatLogSinkDestination`; `toAuthType`

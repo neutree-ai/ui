@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import type { DetailField } from "@/foundation/scene/DetailFields";
+import type { DetailField } from "@/foundation/scene/detail-field";
 import type { LicenseStatus } from "@/foundation/types/license";
 import {
   licenseInfoFields,
@@ -26,9 +26,9 @@ const makeInfo = (
 });
 
 const fieldValue = <T>(fields: DetailField<T>[], key: string, record: T) => {
-  const field = fields.find((candidate) => candidate.key === key);
-  if (!field || !("value" in field)) throw new Error(`no value field ${key}`);
-  return field.value(record, t);
+  const found = fields.find((candidate) => candidate.label.endsWith(`.${key}`));
+  if (typeof found?.source !== "function") throw new Error(`no value ${key}`);
+  return found.source(record, t);
 };
 
 describe("remainingDays", () => {
@@ -90,8 +90,10 @@ describe("licenseUsageFields", () => {
     const usage = { Workspace: { used: 2, limit: -1 } };
     const fields = licenseUsageFields(usage);
 
-    expect(fields.map((field) => field.key)).toEqual(["Workspace"]);
-    expect(fieldValue(fields, "Workspace", usage)).toBe(
+    expect(fields.map((item) => item.label)).toEqual([
+      "common.fields.workspace",
+    ]);
+    expect(fieldValue(fields, "workspace", usage)).toBe(
       "2 / license.unlimited",
     );
   });
@@ -99,6 +101,6 @@ describe("licenseUsageFields", () => {
   it("reads a missing used count as zero", () => {
     const usage = { GPU: { limit: 4 } } as LicenseStatus["usage"] & object;
 
-    expect(fieldValue(licenseUsageFields(usage), "GPU", usage)).toBe("0 / 4");
+    expect(fieldValue(licenseUsageFields(usage), "gpu", usage)).toBe("0 / 4");
   });
 });
