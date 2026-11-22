@@ -88,6 +88,13 @@ const APP_SHELL = [
   "testing/",
 ];
 
+// Concept modules that stay with their concept although one kind uses them,
+// each with the reason. Remove an entry once another kind uses the module.
+const KEPT_IN_CONCEPT = {
+  "recipe/compose":
+    "recipe/ is kept 1:1 with the backend recipe package (internal/recipe)",
+};
+
 const PAGE_KIND = {
   "api-keys": "api-key",
   clusters: "cluster",
@@ -539,7 +546,12 @@ function singleKindModules(conceptModules, importers) {
   const found = [];
   for (const file of [...conceptModules.keys()].sort()) {
     const users = [...usersOf(file.slice("src/".length), new Set())];
-    if (users.length === 1 && !users[0].startsWith("("))
+    const kept = file.slice("src/foundation/".length).replace(/\.tsx?$/, "");
+    if (
+      users.length === 1 &&
+      !users[0].startsWith("(") &&
+      !(kept in KEPT_IN_CONCEPT)
+    )
       found.push({ file, kind: users[0] });
   }
   return found;

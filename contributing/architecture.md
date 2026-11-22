@@ -62,7 +62,8 @@ domain because domains do not import each other. A concept directory is named af
 like the shared layers, and is declared with one line in the "Concepts" section of
 `src/foundation/contract.md`. `yarn ddu:check` fails on a foundation directory that is not declared
 there and on a non-shell module in `components/`, `hooks/` or `lib/`. Code that only one kind uses
-belongs in that kind's domain.
+belongs in that kind's domain. A module that stays with its concept anyway is listed with its reason
+in `KEPT_IN_CONCEPT` in the tool.
 
 #### Layer check
 
