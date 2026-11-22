@@ -4,6 +4,12 @@
 
 Follow the architecture guide: [contributing/architecture.md](contributing/architecture.md)
 
+## Data contracts
+
+Before changing a resource kind, read its contract: `src/domains/<kind>/contract.md`.
+When a change alters what the kind stores, sends, shows, validates or locks, update that contract in
+the same PR. Facts that span kinds go to `src/foundation/contract.md`.
+
 ## Unit Tests
 
 Follow the unit testing guide: [contributing/unit-test.md](contributing/unit-test.md)

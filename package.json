@@ -112,6 +112,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"dep-check": "depcruise src --config .dependency-cruiser.cjs",
 		"knip": "knip",
+		"check:contracts": "node tools/check-contract-touch.cjs",
 		"cpd": "jscpd src"
 	},
 	"browserslist": {
