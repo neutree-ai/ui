@@ -8,7 +8,10 @@ the person who made the change says what to look at, and the reviewer sees it at
 Both sides are rendered from the same mock data on the same machine, so no backend is needed, and
 no image is stored in the repository.
 
-## For agents: when a pull request changes what a page looks like
+The report is an on-demand local tool, not a gate: nothing in CI runs it or requires it. Make one
+when asked, or when a visible change is easier to check by eye than to describe.
+
+## For agents: making a report
 
 1. **List the changes.** Put one bullet per change in the pull request description under "User-visible
    changes". A change is something a user can see: a label, a format, a color, a layout, an empty
@@ -35,8 +38,8 @@ no image is stored in the repository.
    both sides.
 6. **Check the reverse.** Look through the head screens for changes the description does not list. Add
    a bullet and an entry for each, or fix the side effect.
-7. **Attach the report.** Paste `visual-out/report.md` into the description and attach or link
-   `report.html` (it is one self-contained file).
+7. **Hand it over.** `report.html` is self-contained (images inlined), so it can be opened or
+   shared as one file. Do not commit it; `visual-out/` is ignored.
 
 ## The change spec
 
@@ -44,11 +47,11 @@ no image is stored in the repository.
 {
   "changes": [
     {
-      "id": "cluster-cache-both-sources",
-      "title": "A cache with both nfs and host_path shows one path row",
+      "id": "cluster-cache-plain-text",
+      "title": "Model cache type, server and path are plain text",
       "screen": "cluster-ssh",
-      "highlight": ["text=\"#3\" >> xpath=../.."],
-      "note": "The base shows a second Cache Path row for host_path."
+      "highlight": ["text=\"#1\" >> xpath=../.."],
+      "note": "The base shows them as a badge and code chips."
     },
     {
       "id": "license-status-tooltip",
