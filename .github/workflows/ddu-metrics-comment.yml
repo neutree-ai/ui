@@ -36,6 +36,8 @@ jobs:
           script: |
             const fs = require("node:fs");
             const marker = "<!-- ddu-metrics -->";
+            // A pull request without a DDU change gets no new comment; an
+            // existing one is still updated so it never shows stale numbers.
             const maxLength = 60000;
 
             const raw = fs.readFileSync("ddu-metrics/pr-number", "utf8").trim();
@@ -81,7 +83,7 @@ jobs:
                 comment_id: existing.id,
                 body,
               });
-            } else {
+            } else if (!body.includes("No DDU layer change.")) {
               await github.rest.issues.createComment({
                 owner,
                 repo,

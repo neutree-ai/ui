@@ -13,6 +13,8 @@
 const fs = require("node:fs");
 
 const MARKER = "<!-- ddu-metrics -->";
+// Kept in sync with ddu-metrics-comment.yml, which posts no new comment for it.
+const NO_CHANGE = "No DDU layer change.";
 const LAYERS = ["type", "role", "scene", "description", "override"];
 const FILE_ROWS = 30;
 
@@ -125,7 +127,7 @@ function render(base, head, options = {}) {
     goneSingle.length;
 
   if (!changed) {
-    out.push("No DDU layer change.");
+    out.push(NO_CHANGE);
     return `${out.join("\n")}\n`;
   }
 
@@ -170,7 +172,7 @@ function render(base, head, options = {}) {
     out.push(`<details><summary>${title} (${list.length})</summary>`, "");
     for (const m of list)
       out.push(
-        `- ${code(m.file)} ${code(m.text)}: ${m.reason.replace(/\s+/g, " ")}`,
+        `- ${code(m.file)} ${code(m.text)}: ${m.reason.replace(/\s+/g, " ").replace(/@/g, "&#64;")}`,
       );
     out.push("", "</details>", "");
   };
