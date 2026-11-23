@@ -94,6 +94,16 @@ check fails until `yarn ddu:check --update-baseline` is run and the file committ
 drops gone entries, moves entries with a renamed file, and never adds a new override.
 `--rebuild-baseline` rewrites it from scratch and is only for changes to the tool's own rules.
 
+Every pull request also gets a sticky comment with the DDU layer change, like a coverage report. The
+`Test` workflow measures the merge-base and the head with the head's `tools/ddu-layers.cjs`
+(`--root <dir>` points the tool at the base checkout, so the delta is code only; a PR that edits
+the tool is flagged in the comment), renders it with `tools/ddu-metrics-diff.cjs`, writes it to the
+job summary and uploads it as the `ddu-metrics` artifact. `.github/workflows/ddu-metrics-comment.yml`
+then posts or updates the comment from that artifact without checking out PR code, which keeps it
+working for fork PRs. The comment is report-only and never fails a PR; the gate stays `yarn
+ddu:check`. `workflow_run` workflows only run from the default branch, so the comment appears only
+after that workflow is merged, while the job summary works on any PR.
+
 ### L2 `domains/<resource>/`
 
 ```

@@ -61,6 +61,39 @@ jobs:
       - name: Check DDU layer overrides
         run: node tools/ddu-layers.cjs check
 
+      - name: Measure DDU layer change
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          out="$RUNNER_TEMP/ddu-metrics"
+          mkdir -p "$out"
+          base_sha=$(git merge-base "origin/$BASE_REF" HEAD)
+          git worktree add --detach "$RUNNER_TEMP/ddu-base" "$base_sha"
+          ln -s "$PWD/node_modules" "$RUNNER_TEMP/ddu-base/node_modules"
+          node tools/ddu-layers.cjs --root "$RUNNER_TEMP/ddu-base" --json "$out/base.json" > /dev/null
+          node tools/ddu-layers.cjs --json "$out/head.json" > /dev/null
+          flags=()
+          if ! git diff --quiet "$base_sha" HEAD -- tools/ddu-layers.cjs; then
+            flags+=(--rules-changed)
+          fi
+          node tools/ddu-metrics-diff.cjs "$out/base.json" "$out/head.json" "${flags[@]}" --out "$out/comment.md"
+          cat "$out/comment.md" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s' "$PR_NUMBER" > "$out/pr-number"
+          rm "$out/base.json" "$out/head.json"
+
+      - name: Upload DDU layer change
+        if: github.event_name == 'pull_request' && !cancelled()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddu-metrics
+          path: ${{ runner.temp }}/ddu-metrics
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run tests
         run: yarn test:coverage
 

@@ -1,0 +1,93 @@
+name: DDU metrics comment
+
+# Posts the DDU layer change that the Test workflow measured. It runs in the
+# base repository with a write token, so it never checks out or executes pull
+# request code: it only reads the markdown artifact and a pull request number.
+# workflow_run workflows are taken from the default branch.
+on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+
+permissions:
+  actions: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download measurement
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ddu-metrics
+          path: ddu-metrics
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Create or update comment
+        if: steps.download.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- ddu-metrics -->";
+            // A pull request without a DDU change gets no new comment; an
+            // existing one is still updated so it never shows stale numbers.
+            const maxLength = 60000;
+
+            const raw = fs.readFileSync("ddu-metrics/pr-number", "utf8").trim();
+            if (!/^[1-9][0-9]{0,8}$/.test(raw)) {
+              core.warning("pr-number is not an integer; skipping");
+              return;
+            }
+            const issue_number = Number(raw);
+            const { owner, repo } = context.repo;
+
+            // The number comes from an artifact a pull request produced, so
+            // only accept it for the pull request whose head built this run.
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: issue_number,
+            });
+            if (pr.head.sha !== context.payload.workflow_run.head_sha) {
+              core.info("pull request head moved on; skipping stale run");
+              return;
+            }
+
+            let body = fs.readFileSync("ddu-metrics/comment.md", "utf8");
+            if (!body.startsWith(marker)) {
+              core.warning("comment.md does not start with the marker; skipping");
+              return;
+            }
+            if (body.length > maxLength)
+              body = `${body.slice(0, maxLength)}\n\n(truncated)\n`;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number, per_page: 100 },
+            );
+            const existing = comments.find(
+              (c) => c.user?.type === "Bot" && c.body?.startsWith(marker),
+            );
+            if (existing) {
+              if (existing.body === body) return;
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else if (!body.includes("No DDU layer change.")) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
