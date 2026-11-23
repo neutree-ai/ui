@@ -12,7 +12,7 @@ const dataUri = (png) => `data:image/png;base64,${png.toString("base64")}`;
 function presence(change, capture) {
   if (!capture) return "not captured";
   const missing = change.highlight.filter((_, i) => capture.matches[i] === 0);
-  if (missing.length === 0) return "all highlights found";
+  if (missing.length === 0) return "";
   if (missing.length === change.highlight.length) return "not present";
   return `not present: ${missing.join(", ")}`;
 }
@@ -30,7 +30,6 @@ const STYLE = `
   figcaption { font-weight: 600; margin-bottom: 4px; }
   figure img { max-width: 100%; height: auto; border: 1px solid #d8dce2; display: block; }
   .absent { color: #b42318; font-weight: 600; }
-  details { margin-top: 6px; }
   @media (max-width: 900px) { .panes { grid-template-columns: 1fr; } }
 `;
 
@@ -38,16 +37,13 @@ function pane(label, change, capture, png) {
   const status = presence(change, capture);
   const absent = status.startsWith("not present") || status === "not captured";
   return `<figure>
-    <figcaption>${label} <span class="${absent ? "absent" : "muted"}">(${escapeHtml(status)})</span></figcaption>
+    <figcaption>${label}${status ? ` <span class="${absent ? "absent" : "muted"}">(${escapeHtml(status)})</span>` : ""}</figcaption>
     ${png ? `<img alt="${escapeHtml(change.id)} on ${label.toLowerCase()}" src="${dataUri(png)}">` : ""}
   </figure>`;
 }
 
 function section(entry) {
   const { change, base, head } = entry;
-  const selectors = change.highlight
-    .map((s, i) => `<li>${i + 1}. <code>${escapeHtml(s)}</code></li>`)
-    .join("");
   const setup = change.setup
     ? ` Setup: <code>${escapeHtml(JSON.stringify(change.setup))}</code>.`
     : "";
@@ -59,11 +55,6 @@ function section(entry) {
     ${pane("Base", change, base.capture, base.png)}
     ${pane("Head", change, head.capture, head.png)}
   </div>
-  <details><summary>Highlights (the numbered badges)</summary><ul>${selectors}</ul>${
-    change.region
-      ? `<p>Region: <code>${escapeHtml(change.region)}</code></p>`
-      : ""
-  }</details>
 </section>`;
 }
 
