@@ -73,7 +73,7 @@ function renderHtml({ results, baseRef, headRef, unmocked }) {
   <h1>Visual diff</h1>
   <p class="meta">Base <code>${escapeHtml(baseRef)}</code> against head <code>${escapeHtml(headRef)}</code>.
   Both builds are rendered from the same mock data. ${changed.length} changed, ${failed.length} failed, ${same.length} unchanged.</p>
-  ${changed.length ? `<h2>Changed (${changed.length})</h2>${changed.map(screenSection).join("\n")}` : '<h2>No screen changed</h2>'}
+  ${changed.length ? `<h2>Changed (${changed.length})</h2>${changed.map(screenSection).join("\n")}` : "<h2>No screen changed</h2>"}
   ${failed.length ? `<h2>Failed to render (${failed.length})</h2>${failed.map(screenSection).join("\n")}` : ""}
   <h2>Unchanged (${same.length})</h2>
   <details><summary>List unchanged screens</summary><ul class="plain">${same.map((r) => `<li>${escapeHtml(r.id)}</li>`).join("")}</ul></details>

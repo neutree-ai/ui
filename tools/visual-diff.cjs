@@ -53,21 +53,29 @@ function run(command, args, options) {
 const bin = (name) => path.join(root, "node_modules", ".bin", name);
 
 function build(cwd, outDir) {
-  return run(bin("vite"), ["build", "--outDir", outDir, "--emptyOutDir", "--logLevel", "warn"], { cwd });
+  return run(
+    bin("vite"),
+    ["build", "--outDir", outDir, "--emptyOutDir", "--logLevel", "warn"],
+    { cwd },
+  );
 }
 
 async function screenshot(distDir, outDir) {
   const server = await serve(distDir);
   try {
-    await run(bin("playwright"), ["test", "-c", "playwright.visual.config.ts", "--reporter", "dot"], {
-      cwd: root,
-      allowFailure: true,
-      env: {
-        ...process.env,
-        VISUAL_BASE_URL: `http://127.0.0.1:${server.address().port}`,
-        VISUAL_OUT_DIR: outDir,
+    await run(
+      bin("playwright"),
+      ["test", "-c", "playwright.visual.config.ts", "--reporter", "dot"],
+      {
+        cwd: root,
+        allowFailure: true,
+        env: {
+          ...process.env,
+          VISUAL_BASE_URL: `http://127.0.0.1:${server.address().port}`,
+          VISUAL_OUT_DIR: outDir,
+        },
       },
-    });
+    );
   } finally {
     server.close();
   }
@@ -98,7 +106,10 @@ async function main() {
   fs.mkdirSync(out, { recursive: true });
   git("worktree", "add", "--detach", baseTree, baseSha);
   try {
-    fs.symlinkSync(path.join(root, "node_modules"), path.join(baseTree, "node_modules"));
+    fs.symlinkSync(
+      path.join(root, "node_modules"),
+      path.join(baseTree, "node_modules"),
+    );
     const distBase = path.join(work, "dist-base");
     const distHead = path.join(work, "dist-head");
     await Promise.all([build(baseTree, distBase), build(root, distHead)]);
@@ -108,22 +119,44 @@ async function main() {
     await screenshot(distBase, baseDir);
     await screenshot(distHead, headDir);
 
-    const ids = [...new Set([...screenIds(headDir), ...screenIds(baseDir)])].sort();
+    const ids = [
+      ...new Set([...screenIds(headDir), ...screenIds(baseDir)]),
+    ].sort();
     const results = ids.map((id) => {
       const basePng = readPng(baseDir, id);
       const headPng = readPng(headDir, id);
       if (!basePng || !headPng) {
-        return { id, status: "failed", headPng, problem: basePng ? "missing on head" : "missing on base" };
+        return {
+          id,
+          status: "failed",
+          headPng,
+          problem: basePng ? "missing on head" : "missing on base",
+        };
       }
       const result = compare(basePng, headPng);
-      return { id, basePng, headPng, ...result, status: result.changed > 0 ? "changed" : "same" };
+      return {
+        id,
+        basePng,
+        headPng,
+        ...result,
+        status: result.changed > 0 ? "changed" : "same",
+      };
     });
     const unmocked = {};
-    for (const file of fs.readdirSync(headDir).filter((f) => f.endsWith(".unmocked.json"))) {
-      unmocked[file.replace(".unmocked.json", "")] = JSON.parse(fs.readFileSync(path.join(headDir, file), "utf8"));
+    for (const file of fs
+      .readdirSync(headDir)
+      .filter((f) => f.endsWith(".unmocked.json"))) {
+      unmocked[file.replace(".unmocked.json", "")] = JSON.parse(
+        fs.readFileSync(path.join(headDir, file), "utf8"),
+      );
     }
 
-    const input = { results, baseRef: baseSha.slice(0, 10), headRef: "working tree", unmocked };
+    const input = {
+      results,
+      baseRef: baseSha.slice(0, 10),
+      headRef: "working tree",
+      unmocked,
+    };
     fs.writeFileSync(path.join(out, "report.html"), renderHtml(input));
     fs.writeFileSync(path.join(out, "comment.md"), renderMarkdown(input));
     const changed = results.filter((r) => r.status !== "same");

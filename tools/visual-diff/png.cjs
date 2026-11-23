@@ -57,7 +57,9 @@ function decode(buffer) {
       height = body.readUInt32BE(4);
       colorType = body[9];
       if (body[8] !== 8 || body[12] !== 0 || !CHANNELS[colorType]) {
-        throw new Error("only 8-bit non-interlaced RGB/RGBA PNGs are supported");
+        throw new Error(
+          "only 8-bit non-interlaced RGB/RGBA PNGs are supported",
+        );
       }
     } else if (type === "IDAT") {
       data.push(body);
@@ -65,7 +67,12 @@ function decode(buffer) {
     pos += 12 + length;
   }
   const bpp = CHANNELS[colorType];
-  const pixels = unfilter(zlib.inflateSync(Buffer.concat(data)), width, height, bpp);
+  const pixels = unfilter(
+    zlib.inflateSync(Buffer.concat(data)),
+    width,
+    height,
+    bpp,
+  );
   if (bpp === 4) return { width, height, data: pixels };
   const rgba = Buffer.alloc(width * height * 4, 255);
   for (let i = 0; i < width * height; i++) {
