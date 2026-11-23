@@ -53,3 +53,6 @@ e2e/profiles/*
 skills-lock.json
 CLAUDE.local.md
 build-preview.sh
+
+# Visual report output
+visual-out/

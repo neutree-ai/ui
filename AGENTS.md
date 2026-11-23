@@ -28,6 +28,10 @@ assert what the user sees rather than class names or layout, and do not re-decla
 
 Follow the E2E guide: [contributing/e2e.md](contributing/e2e.md)
 
+## Visual Report
+
+Follow the visual report guide: [contributing/visual-report.md](contributing/visual-report.md) (a PR with user-visible changes lists each in its description and attaches a before/after report)
+
 ## I18n
 
 Follow the i18n guide: [contributing/i18n-guide.md](contributing/i18n-guide.md)

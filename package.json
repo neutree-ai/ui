@@ -115,7 +115,8 @@
 		"check:contracts": "node tools/check-contract-touch.cjs",
 		"ddu:layers": "node tools/ddu-layers.cjs",
 		"ddu:check": "node tools/ddu-layers.cjs check",
-		"cpd": "jscpd src"
+		"cpd": "jscpd src",
+		"visual:report": "node tools/visual-report.cjs"
 	},
 	"browserslist": {
 		"production": [

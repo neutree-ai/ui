@@ -5,6 +5,7 @@
 	},
 	"ignoreDependencies": ["@tanstack/react-table", "@tanstack/react-query"],
 	"ignoreExportsUsedInFile": false,
+	"entry": ["e2e/visual/*.ts", "playwright.visual.config.ts"],
 	"project": ["src/**/*.{ts,tsx}"],
 	"ignoreIssues": {
 		"src/components/ui/**": ["exports", "types"],

@@ -1,0 +1,111 @@
+import {
+  unusedApiKey,
+  usedApiKey,
+} from "../../src/domains/api-key/testing/visual-fixtures";
+import {
+  bareKubernetesCluster,
+  emptySshCluster,
+  kubernetesCluster,
+  sshCluster,
+} from "../../src/domains/cluster/testing/visual-fixtures";
+import {
+  ldapSource,
+  oidcSource,
+  untestedOidcSource,
+} from "../../src/domains/identity-source/testing/visual-fixtures";
+import {
+  activeLicense,
+  expiredLicense,
+  unlimitedLicense,
+} from "../../src/domains/license/testing/visual-fixtures";
+import {
+  failingSink,
+  healthySink,
+  s3Sink,
+} from "../../src/domains/log-sink/testing/visual-fixtures";
+import { VISUAL_WORKSPACE } from "../../src/foundation/testing/visual-fixtures";
+import type { MockData } from "./mock-backend";
+
+export type Screen = {
+  /** File-safe name; the report matches base and head screens by it. */
+  id: string;
+  /** The hash route to open. */
+  route: string;
+  /** What the page reads from the API. */
+  data: MockData;
+  /** Exact text that is on screen once the page has rendered its data, on base and head alike. */
+  ready: string;
+};
+
+const record = (table: string, row: { metadata: { name: string } }) => ({
+  tables: { [table]: [row] },
+});
+
+const license = (id: string, body: unknown, ready: string): Screen => ({
+  id: `license-${id}`,
+  route: "/license",
+  data: { custom: { license: body } },
+  ready,
+});
+
+const logSink = (
+  id: string,
+  row: typeof healthySink,
+  ready = row.metadata.name,
+): Screen => ({
+  id: `log-sink-${id}`,
+  route: `/log-forwarding/show/${row.metadata.name}`,
+  data: record("log_sinks", row),
+  ready,
+});
+
+const identitySource = (
+  id: string,
+  row: typeof oidcSource,
+  ready: string,
+): Screen => ({
+  id: `identity-source-${id}`,
+  route: `/identity-sources/show/${row.metadata.name}`,
+  data: record("identity_sources", row),
+  ready,
+});
+
+const cluster = (id: string, row: typeof sshCluster): Screen => ({
+  id: `cluster-${id}`,
+  route: `/${VISUAL_WORKSPACE}/clusters/show/${row.metadata.name}`,
+  data: record("clusters", row),
+  ready: row.metadata.name,
+});
+
+const apiKey = (id: string, row: typeof usedApiKey, ready: string): Screen => ({
+  id: `api-key-${id}`,
+  route: `/${VISUAL_WORKSPACE}/api-keys/show/${row.metadata.name}`,
+  data: {
+    ...record("api_keys", row),
+    rpc: { list_api_key_projects: [], list_invokable_models: [] },
+  },
+  ready,
+});
+
+/** Every page the visual diff screenshots; add one entry per screen. */
+export const screens: Screen[] = [
+  license("active", activeLicense, "Example Corp"),
+  license("unlimited", unlimitedLicense, "Perpetual"),
+  license("expired", expiredLicense, "Trial"),
+
+  logSink("healthy", healthySink),
+  logSink("failing", failingSink),
+  logSink("s3", s3Sink),
+
+  identitySource("oidc", oidcSource, "Corporate SSO"),
+  identitySource("ldap", ldapSource, "office-ldap"),
+  identitySource("untested", untestedOidcSource, "staging-sso"),
+
+  cluster("ssh", sshCluster),
+  cluster("ssh-empty", emptySshCluster),
+  cluster("kubernetes", kubernetesCluster),
+  cluster("kubernetes-bare", bareKubernetesCluster),
+
+  apiKey("used", usedApiKey, "CI pipeline"),
+  apiKey("unused", unusedApiKey, "Total Tokens"),
+];
