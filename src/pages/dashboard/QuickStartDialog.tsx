@@ -13,13 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useQuickStart } from "@/foundation/hooks/use-quick-start";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { isValidIPAddress } from "@/foundation/role/validate";
 import {
   type ResourceResultItem,
   ResourceResultList,
-} from "@/foundation/components/ResourceResultList";
-import { useQuickStart } from "@/foundation/hooks/use-quick-start";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { isValidIPAddress } from "@/foundation/lib/validate";
+} from "@/foundation/scene/ResourceResultList";
 
 interface QuickStartDialogProps {
   open: boolean;

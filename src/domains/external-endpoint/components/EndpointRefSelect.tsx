@@ -1,8 +1,8 @@
 import type { BaseOption } from "@refinedev/core";
 import { type ComponentProps, type ElementRef, forwardRef } from "react";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export type EndpointOption = BaseOption & { status?: BaseStatus };

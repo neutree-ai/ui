@@ -21,19 +21,19 @@ import {
   type CatalogImportCandidate,
   runCatalogImport,
 } from "@/domains/model-catalog/lib/catalog-import";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { RecipeVariant } from "@/foundation/recipe/types";
 import {
   getErrorMessage,
   isDuplicateNameError,
-} from "@/foundation/lib/error-message";
-import { useTranslation } from "@/foundation/lib/i18n";
+} from "@/foundation/scene/error-message";
 import {
   isValidYamlResource,
   parseYamlDocuments,
   transformResourceForImport,
-} from "@/foundation/lib/yaml-transform";
-import type { RecipeVariant } from "@/foundation/recipe/types";
+} from "@/foundation/scene/yaml-transform";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type Source = "yaml" | "url" | "file";
 

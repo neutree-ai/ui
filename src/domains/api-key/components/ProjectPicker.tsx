@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import type { ApiKeyProject } from "@/domains/api-key/types";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 // PostgREST surfaces the raised SQLSTATE as the error code. Matching on that
 // rather than on the message text keeps this working when the backend wording

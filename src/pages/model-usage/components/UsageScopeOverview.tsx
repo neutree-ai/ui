@@ -1,11 +1,8 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import {
-  MetricBar,
-  type MetricBarSeries,
-} from "@/foundation/components/MetricBar";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokens } from "@/foundation/lib/unit";
+import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
+import { formatTokens } from "@/foundation/role/unit";
 import type { UsageScope } from "@/pages/model-usage/lib/usage-scope";
 import {
   formatShare,

@@ -20,7 +20,7 @@ import {
   type RankedDocument,
 } from "@/domains/endpoint/lib/rerank-helpers";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 
 const INITIAL_DOCUMENTS = [
   { id: 1, text: "Paris is the capital and largest city of France." },

@@ -2,9 +2,9 @@ import { useShow } from "@refinedev/core";
 import PermissionsTree from "@/domains/role/components/PermissionsTree";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const RolesShow = () => {
   const { t } = useTranslation();

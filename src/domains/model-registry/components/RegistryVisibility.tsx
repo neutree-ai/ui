@@ -1,7 +1,7 @@
 import { Globe, Lock } from "lucide-react";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
 import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 /**
  * Whether a registry holds its own models or browses somebody else's.

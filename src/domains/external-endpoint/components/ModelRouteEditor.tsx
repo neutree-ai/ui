@@ -9,9 +9,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ConfirmDialog } from "@/foundation/components/ConfirmDialog";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormSelect } from "@/foundation/components/FormSelect";
 import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -19,6 +16,9 @@ import {
   type ModelSourceMap,
   parseStoredModelSource,
 } from "@/foundation/lib/model-source";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { ConfirmDialog } from "@/foundation/scene/ConfirmDialog";
 import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 import {
   changeRouteStrategy,

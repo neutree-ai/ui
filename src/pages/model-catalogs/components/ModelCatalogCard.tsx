@@ -18,8 +18,8 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { ModelInfoBadges } from "@/domains/model-catalog/components/ModelInfoBadges";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
-import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useDeleteHelper } from "@/foundation/scene/use-delete-helper";
 import type { ModelSpec } from "@/foundation/types/serving-types";
 
 // pickRepresentativeModel returns the model a card uses for its headline fields.

@@ -8,7 +8,7 @@ import {
 } from "@/domains/organization/lib/member-tree";
 import type { MemberProfile } from "@/domains/organization/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { profileDisplayName } from "@/foundation/lib/user-identity";
+import { profileDisplayName } from "@/foundation/role/user-identity";
 
 type AddTeamMembersTreeProps = {
   roots: MemberTreeNode<MemberProfile>[];

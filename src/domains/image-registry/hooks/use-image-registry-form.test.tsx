@@ -9,7 +9,7 @@ vi.mock("@/foundation/hooks/use-workspace", async (importActual) => ({
   useWorkspace: () => ({ current: "default" }),
 }));
 
-vi.mock("@/foundation/components/WorkspaceField", () => ({
+vi.mock("@/foundation/role/WorkspaceField", () => ({
   default: () => <div />,
 }));
 

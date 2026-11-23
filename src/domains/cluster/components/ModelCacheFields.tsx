@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
 import { cn } from "@/foundation/lib/utils";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import {
   type CacheType,
   useModelCacheFields,

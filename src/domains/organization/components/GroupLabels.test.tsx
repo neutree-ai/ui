@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type FieldValues, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Form } from "@/components/ui/form";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),

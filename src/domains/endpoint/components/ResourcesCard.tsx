@@ -6,9 +6,9 @@ import {
   getVgpuVirtualization,
   hasVgpuResources,
 } from "@/domains/endpoint/lib/vgpu";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 interface ResourcesCardProps {

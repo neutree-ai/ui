@@ -14,12 +14,12 @@ import {
   toAuthType,
 } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import Timestamp from "@/foundation/role/Timestamp";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export const LogSinksShow = () => {
   const { t } = useTranslation();

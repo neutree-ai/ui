@@ -17,7 +17,7 @@ vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
   ProjectPicker: () => <div>Project picker</div>,
 }));
 
-vi.mock("@/foundation/components/FormCombobox", () => ({
+vi.mock("@/foundation/role/FormCombobox", () => ({
   FormCombobox: () => <div>Workspace picker</div>,
 }));
 

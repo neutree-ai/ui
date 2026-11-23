@@ -1,6 +1,6 @@
 import { useLogSinkForm } from "@/domains/log-sink/hooks/use-log-sink-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const LogSinksCreate = () => {
   const { t } = useTranslation();

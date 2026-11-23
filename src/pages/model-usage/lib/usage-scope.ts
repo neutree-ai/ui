@@ -5,7 +5,7 @@ import {
   type OrgTreeNode,
   orgUnitAncestors,
 } from "@/domains/organization/lib/org-tree";
-import { displayName } from "@/foundation/lib/display-name";
+import { displayName } from "@/foundation/role/display-name";
 import {
   aggregateSeries,
   modelOf,

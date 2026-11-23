@@ -2,10 +2,10 @@ import { IdentitySourceEnabledSwitch } from "@/domains/identity-source/component
 import { IdentitySourceStatus } from "@/domains/identity-source/components/IdentitySourceStatus";
 import { IdentitySourceLastSync } from "@/domains/identity-source/components/IdentitySourceSyncResult";
 import type { IdentitySource } from "@/domains/identity-source/types";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
 
 export const IdentitySourcesList = () => {
   const { t } = useTranslation();

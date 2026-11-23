@@ -25,9 +25,9 @@ import { PlaygroundLayout } from "@/domains/endpoint/components/PlaygroundLayout
 import { useDocumentList } from "@/domains/endpoint/hooks/use-document-list";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { clientPostgrest } from "@/foundation/lib/api";
-import { CHART_BRAND } from "@/foundation/lib/chart-palette";
+import { CHART_BRAND } from "@/foundation/role/chart-palette";
+import { EmptyState } from "@/foundation/scene/EmptyState";
 
 const INITIAL_DOCUMENTS = [
   {

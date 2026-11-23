@@ -47,7 +47,7 @@ Paths: `src/domains/engine/` unless prefixed.
 - Status: `components/EngineStatus.tsx` → `BaseStatus` / `STATUS_TONE`: Created positive, Failed serious, Pending
   notice, Deleted neutral; unknown has no tone, absent uses `EmptyValue`.
 - Time: shared `MetadataTimestampMeta` on show only; no card version uses `EMPTY_VALUE` (`-`).
-- Versions: `newestVersion` / `sortVersionsNewestFirst`; tests: `foundation/lib/version-order.test.ts`.
+- Versions: `newestVersion` / `sortVersionsNewestFirst`; tests: `foundation/role/version-order.test.ts`.
 - Schema: `buildValueSchemaRows`; tests: `lib/value-schema-rows.test.ts`.
 - Defaults/descriptions: `formatDefaultValue`, `splitDescriptionJson` (`lib/value-schema-rows.ts`); tests beside them.
   The schema detail dialog preserves complete nested JSON objects/arrays, including brackets in strings, as examples.

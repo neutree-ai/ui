@@ -18,9 +18,9 @@ import {
   indexNodes,
   type OrgTreeNode,
 } from "@/domains/organization/lib/org-tree";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type AssignOrgUnitDialogProps = {
   open: boolean;

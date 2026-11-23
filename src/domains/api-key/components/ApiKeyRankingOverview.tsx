@@ -8,16 +8,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { formatTokenQuota } from "@/foundation/lib/token-quota";
+import { cn } from "@/foundation/lib/utils";
 import {
   CHART_MORE_COLOR,
   CHART_SERIES_SEPARATOR,
   chartCategoryMark,
-} from "@/foundation/lib/chart-palette";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/role/chart-palette";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 
 // Per-key reference (id + display name) for attributing ranking entries.
 type RankingKeyRef = { id: string; name: string; description?: string | null };

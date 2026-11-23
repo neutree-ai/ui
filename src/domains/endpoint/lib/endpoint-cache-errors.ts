@@ -1,4 +1,4 @@
-import { translateApiError } from "@/foundation/lib/api-error-code";
+import { translateApiError } from "@/foundation/scene/api-error-code";
 
 /** Endpoint KV cache admission errors → i18n keys. */
 const ENDPOINT_CACHE_ERROR_KEYS: Readonly<Record<string, string>> = {

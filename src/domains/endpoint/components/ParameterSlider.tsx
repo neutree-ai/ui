@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { NumberInput } from "@/foundation/components/NumberInput";
+import { NumberInput } from "@/foundation/type/NumberInput";
 
 interface ParameterSliderProps {
   id: string;

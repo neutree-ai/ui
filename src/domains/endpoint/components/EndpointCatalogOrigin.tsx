@@ -9,8 +9,8 @@ import {
   formatCatalogFeature,
   readCatalogOrigin,
 } from "@/domains/endpoint/lib/catalog-origin";
-import { ShowButton } from "@/foundation/components/ShowButton";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ShowButton } from "@/foundation/scene/ShowButton";
 
 /**
  * What an endpoint was deployed from, read back off the endpoint itself.

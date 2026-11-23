@@ -33,7 +33,7 @@ source of that type; the UI always names it. `LdapLoginParams.method` is the UI-
 
 ## Roles
 
-- Identity: `authUserDisplayName`, `authUserEmail`, `isExternalUser` (`foundation/lib/user-identity.ts`);
+- Identity: `authUserDisplayName`, `authUserEmail`, `isExternalUser` (`foundation/role/user-identity.ts`);
   tests beside helpers. `getIdentity` adds name, displayEmail and external to the GoTrue user.
 - `fetchOwnProfile` reads metadata by UUID. Name prefers profile display name/technical name, then GoTrue
   name, username, preferred_username and display email. Failed reads use the GoTrue fallbacks.
@@ -157,7 +157,7 @@ Resource error transport: `src/foundation/contract.md`, “Error toast path”.
    When GoTrue honors that return address, a signed-out user can lose the recovery session before reaching the form.
    This is a code trace, not a live mail-link test. Ticket: TBD
 2. Unrecognized identity-source markers disable password change locally.
-   UI: `foundation/lib/user-identity.ts:isExternalUser` treats any trimmed nonempty marker as external;
+   UI: `foundation/role/user-identity.ts:isExternalUser` treats any trimmed nonempty marker as external;
    `src/pages/auth/UpdatePasswordPage.tsx:UpdatePasswordPage` hides the form.
    API: `internal/auth/identity_source.go:ExternallyManagedFields` protects only ldap and oidc;
    `handleUpdateUser` proxies other sources unchanged. Users with another marker cannot use a password-change

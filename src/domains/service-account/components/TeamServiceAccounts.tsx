@@ -29,14 +29,14 @@ import {
 } from "@/domains/service-account/hooks/use-service-accounts";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { ServiceAccount } from "@/domains/service-account/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { isValidResourceName } from "@/foundation/lib/validate";
+import { displayName } from "@/foundation/role/display-name";
+import Timestamp from "@/foundation/role/Timestamp";
+import { isValidResourceName } from "@/foundation/role/validate";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 type ServiceAccountPermissions = {

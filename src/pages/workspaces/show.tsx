@@ -4,12 +4,12 @@ import { TeamLabel } from "@/domains/organization/components/TeamField";
 import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { Workspace } from "@/domains/workspace/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { Table } from "@/foundation/scene/Table";
 
 export const WorkspacesShow = () => {
   const {

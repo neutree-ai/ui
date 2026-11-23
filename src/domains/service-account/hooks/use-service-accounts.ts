@@ -4,7 +4,7 @@ import type {
   ServiceAccount,
   TeamApplicationPermissions,
 } from "@/domains/service-account/types";
-import { useRowWrite } from "@/foundation/hooks/use-row-write";
+import { useRowWrite } from "@/foundation/scene/use-row-write";
 
 /** The applications of one Team the caller may read. */
 export const useServiceAccounts = (teamId: number | undefined) => {

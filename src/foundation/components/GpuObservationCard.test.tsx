@@ -2,10 +2,10 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import type { GpuAllocation } from "@/foundation/lib/accelerator-observations";
 import { makeAcceleratorSample as sample } from "@/foundation/testing/resource-builders";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 import {
   GpuObservationCard,
   GpuObservationTableHeader,

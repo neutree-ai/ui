@@ -62,20 +62,20 @@ import type {
   ApiKey,
   ApiKeyProject,
 } from "@/domains/api-key/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { PaginationControls } from "@/foundation/components/PaginationControls";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
-import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
+import Timestamp from "@/foundation/role/Timestamp";
+import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { PaginationControls } from "@/foundation/scene/PaginationControls";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 const endpointPhaseClass = (phase: string | null | undefined) =>
   ({

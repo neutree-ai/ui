@@ -21,8 +21,8 @@ import {
 import { isManagementRole } from "@/domains/service-account/lib/application-permissions";
 import { serviceAccountErrorMessage } from "@/domains/service-account/lib/errors";
 import type { TeamApplicationPermissions } from "@/domains/service-account/types";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 /**

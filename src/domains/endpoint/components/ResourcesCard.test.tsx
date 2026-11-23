@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import ResourcesCard from "./ResourcesCard";
 
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Row: ({ title, children }: { title: string; children: ReactNode }) => (
       <div>

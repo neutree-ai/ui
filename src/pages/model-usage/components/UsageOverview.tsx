@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { MetricBar } from "@/foundation/role/MetricBar";
+import { formatTokens } from "@/foundation/role/unit";
 import type { UsageTotals } from "@/pages/model-usage/lib/usage-scope";
 import {
   changeOf,

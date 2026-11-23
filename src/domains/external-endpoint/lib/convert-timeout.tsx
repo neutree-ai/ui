@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export type TimeoutUnit = "s" | "min";
 

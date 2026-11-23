@@ -8,9 +8,9 @@ import {
 import {
   type DeleteConfirmation,
   DeleteConfirmDialog,
-} from "@/foundation/components/DeleteConfirmDialog";
-import { useDeleteHelper } from "@/foundation/hooks/use-delete-helper";
-import { useOnBack } from "@/foundation/hooks/use-on-back";
+} from "@/foundation/scene/DeleteConfirmDialog";
+import { useDeleteHelper } from "@/foundation/scene/use-delete-helper";
+import { useOnBack } from "@/foundation/scene/use-on-back";
 
 type DeleteDataType = {
   toogle: boolean;

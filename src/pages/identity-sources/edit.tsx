@@ -1,5 +1,5 @@
 import { useIdentitySourceForm } from "@/domains/identity-source/hooks/use-identity-source-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const IdentitySourcesEdit = () => {
   const { form, metadataFields, specFields, adminNote } = useIdentitySourceForm(

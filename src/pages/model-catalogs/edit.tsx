@@ -19,17 +19,17 @@ import {
   parseCatalogSpecYaml,
 } from "@/domains/model-catalog/lib/parse-catalog-spec-yaml";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import { PageHeader } from "@/foundation/components/PageHeader";
 import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { PageHeader } from "@/foundation/scene/PageHeader";
 import {
   type ResourceEntity,
   serializeToYaml,
   transformEntityForExport,
-} from "@/foundation/lib/yaml-transform";
+} from "@/foundation/scene/yaml-transform";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 // Lazy load the YAML editor: it pulls in lowlight/highlight.js for syntax
 // highlighting, which this page shouldn't pay for until it actually renders.

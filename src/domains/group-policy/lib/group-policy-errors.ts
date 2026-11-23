@@ -1,7 +1,7 @@
 import {
   isPermissionDenied,
   translateApiErrorOr,
-} from "@/foundation/lib/api-error-code";
+} from "@/foundation/scene/api-error-code";
 
 /** Group policy write errors → i18n keys. */
 export const GROUP_POLICY_ERROR_KEYS: Readonly<Record<string, string>> = {

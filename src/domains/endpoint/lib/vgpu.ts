@@ -1,4 +1,4 @@
-import { formatMiBAsGiB } from "@/foundation/lib/unit";
+import { formatMiBAsGiB } from "@/foundation/role/unit";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 
 type VgpuVirtualization = NonNullable<

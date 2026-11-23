@@ -15,7 +15,6 @@ import {
   imageReferencesFrom,
   namespaceSuggestions,
 } from "@/domains/endpoint/lib/image-namespaces";
-import { BreakableReference } from "@/foundation/components/BreakableReference";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
 import { useImageRepositories } from "@/foundation/hooks/use-image-repositories";
 import type { ListRepositoriesCapability } from "@/foundation/lib/api/image-registry-content";
@@ -24,7 +23,8 @@ import {
   imageRegistryPrefix,
   qualifyReference,
   relativeRepository,
-} from "@/foundation/lib/image-reference";
+} from "@/foundation/role/image-reference";
+import { BreakableReference } from "@/foundation/type/BreakableReference";
 
 const REPOSITORY_PAGE_SIZE = 50;
 

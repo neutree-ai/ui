@@ -26,13 +26,13 @@ import {
   validateTimeoutSeconds,
 } from "@/domains/log-sink/lib/log-sink-form";
 import { LOG_SINK_TYPES, type LogSink } from "@/domains/log-sink/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
-import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { RESOURCE_NAME_PATTERN } from "@/foundation/lib/validate";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { RESOURCE_NAME_PATTERN } from "@/foundation/role/validate";
+import { getApiErrorCode } from "@/foundation/scene/api-error-code";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { useRefineFieldArray } from "@/foundation/scene/use-refine-field-array";
 
 /**
  * A `validate` rule that fails with `message` on a blank value. `when: false`

@@ -7,9 +7,9 @@ import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
 import { userModelAccessHref } from "@/domains/group-policy/components/UserGroupModelAccess";
 import { ServiceAccountLabel } from "@/domains/service-account/components/ServiceAccountLabel";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowPage } from "@/foundation/components/ShowPage";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 export const ApiKeysShow = () => {

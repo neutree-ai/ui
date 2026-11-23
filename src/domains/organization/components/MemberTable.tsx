@@ -8,12 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { MemberProfile } from "@/domains/organization/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import Timestamp from "@/foundation/components/Timestamp";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
+import Timestamp from "@/foundation/role/Timestamp";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { ExtraColumn } from "@/foundation/types/extra-column";
 
 export type MemberRow = {

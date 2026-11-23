@@ -1,7 +1,7 @@
 import { type ElementRef, forwardRef } from "react";
 import { Slider } from "@/components/ui/slider";
-import { NumberInput } from "@/foundation/components/NumberInput";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { NumberInput } from "@/foundation/type/NumberInput";
 
 interface SliderWithInputProps {
   value: number;

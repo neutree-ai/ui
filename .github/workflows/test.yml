@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -50,6 +52,14 @@ jobs:
 
       - name: Check chart colours
         run: node tools/check-chart-colors.cjs
+
+      - name: Check data contracts were updated
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: node tools/check-contract-touch.cjs "origin/$GITHUB_BASE_REF"
+
+      - name: Check DDU layer overrides
+        run: node tools/ddu-layers.cjs check
 
       - name: Run tests
         run: yarn test:coverage

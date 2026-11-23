@@ -9,11 +9,11 @@ import {
 } from "@/domains/organization/hooks/use-organization";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
 import { useUserForm } from "@/domains/user/hooks/use-user-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
-import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
+import { translateApiErrorOr } from "@/foundation/scene/api-error-code";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const UsersCreate = () => {
   const { t } = useTranslation();

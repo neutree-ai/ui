@@ -46,7 +46,7 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 
 - Status: `ClusterStatus` over `BaseStatus` / `STATUS_TONE` (Foundation "Status tone"), label
   `status.phases.cluster.<phase>`.
-- Secret input: `omitEmptyUntouched` (`foundation/lib/touched-fields.ts`), edit hint
+- Secret input: `omitEmptyUntouched` (`foundation/role/touched-fields.ts`), edit hint
   `common.messages.leaveEmptyToKeepValue`.
 - Columns `useMetadataColumns`; time `Timestamp`; empty marker `EmptyValue`; type label `ClusterType` (other values as
   is); `getAccessModeLabel`; `isAcceleratorVirtualizationEnabled` (`lib/accelerator-virtualization.ts`).

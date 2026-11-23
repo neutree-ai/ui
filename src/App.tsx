@@ -43,15 +43,15 @@ import {
 import { lazy, Suspense } from "react";
 import { Loader } from "@/foundation/components/Loader";
 import { Logo } from "@/foundation/components/Logo";
-import { PermissionGate } from "@/foundation/components/PermissionGate";
 import { UserDropdown } from "@/foundation/components/UserDropdown";
-import WorkspaceSelect from "@/foundation/components/WorkspaceSelect";
-import { YamlExportButton } from "@/foundation/components/YamlExportButton";
-import { YamlImportButton } from "@/foundation/components/YamlImportButton";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { SSO_CALLBACK_ROUTE } from "@/foundation/lib/sso-callback";
 import { authProvider } from "@/foundation/providers/auth-provider";
+import WorkspaceSelect from "@/foundation/role/WorkspaceSelect";
+import { PermissionGate } from "@/foundation/scene/PermissionGate";
+import { YamlExportButton } from "@/foundation/scene/YamlExportButton";
+import { YamlImportButton } from "@/foundation/scene/YamlImportButton";
 
 const AuthPage = lazy(() =>
   import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),

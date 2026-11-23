@@ -118,8 +118,8 @@ Possible SQL failures include 10001/10003/10004 name, 23505 singleton collision 
    default; `useOemConfigForm` creates default when none is returned. API: `api.validate_metadata_name`
    accepts other names and `oem_configs_global_unique_idx` (`009_oem_config`) reserves the sole slot for any row.
    Users see fallback branding and a blank creation form whose save fails with a singleton collision. Ticket: TBD
-3. Canonical YAML kind targets the wrong route. UI: `src/foundation/lib/yaml-transform.ts:kindToResourceType`
-   maps OEMConfig to o_e_m_configs; `src/foundation/hooks/use-yaml-import.ts:importFromYaml` uses that resource.
+3. Canonical YAML kind targets the wrong route. UI: `src/foundation/scene/yaml-transform.ts:kindToResourceType`
+   maps OEMConfig to o_e_m_configs; `src/foundation/scene/use-yaml-import.ts:importFromYaml` uses that resource.
    API: `RegisterOEMConfigRoutes` serves oem_configs, matching `api/v1/register.go:init`.
    Users importing canonical OEMConfig YAML receive an import failure instead of saving branding. Ticket: TBD
 4. Write controls do not require admin rights. UI: `show.tsx:OemConfigShow` always offers the form;

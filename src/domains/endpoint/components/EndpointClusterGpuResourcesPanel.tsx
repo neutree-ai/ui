@@ -17,13 +17,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Disclosure } from "@/foundation/components/Disclosure";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
-import {
-  MetricBar,
-  type MetricBarSeries,
-} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
@@ -40,6 +33,10 @@ import {
   type GpuDeviceResourceRow,
 } from "@/foundation/lib/gpu-device-resources";
 import { cn } from "@/foundation/lib/utils";
+import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
+import { Disclosure } from "@/foundation/scene/Disclosure";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 import type {
   ClusterResourceInfo,
   NodeResourceStatus,

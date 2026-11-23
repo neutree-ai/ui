@@ -1,13 +1,13 @@
 import type { GroupRenderers } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import { RoleAssignmentTable } from "@/domains/role-assignment/components/RoleAssignmentTable";
 import { useGroupRoleAssignments } from "@/domains/role-assignment/hooks/use-role-assignments";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 /**
  * The role assignments a Team or an OrgUnit holds. A Team's are readable with

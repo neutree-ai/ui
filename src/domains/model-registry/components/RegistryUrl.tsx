@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { middleTruncate } from "@/foundation/lib/middle-truncate";
 import { cn } from "@/foundation/lib/utils";
+import { middleTruncate } from "@/foundation/type/middle-truncate";
 
 /**
  * How much of a registry address the detail header shows before it is

@@ -10,11 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
 import type { ModelSpec } from "@/domains/endpoint/types";
-import { FORM_GRID_GAP_CLASS } from "@/foundation/components/FormCardGrid";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FORM_GRID_GAP_CLASS } from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { ModelOptionalFields } from "./ModelOptionalFields";
 
 type ModelValue = Pick<ModelSpec, "registry" | "name" | "version" | "file">;

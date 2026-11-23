@@ -5,10 +5,10 @@ import {
 import { RoleAssignmentTable } from "@/domains/role-assignment/components/RoleAssignmentTable";
 import { useUserEffectiveRoleAssignments } from "@/domains/role-assignment/hooks/use-role-assignments";
 import type { EffectiveRoleAssignment } from "@/domains/role-assignment/types";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 /**
  * Every role assignment that applies to the user, with where it comes from:

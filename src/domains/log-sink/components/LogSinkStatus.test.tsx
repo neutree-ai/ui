@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-vi.mock("@/foundation/components/Timestamp", () => ({ default: () => null }));
+vi.mock("@/foundation/role/Timestamp", () => ({ default: () => null }));
 
 import LogSinkStatus from "./LogSinkStatus";
 

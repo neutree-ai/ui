@@ -1,11 +1,11 @@
 import type { UseFormReturnType } from "@refinedev/react-hook-form";
-import { useRefineFieldArray } from "@/foundation/hooks/use-refine-field-array";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   isValidIPAddress,
   isValidPath,
   isValidStorageQuantity,
-} from "@/foundation/lib/validate";
+} from "@/foundation/role/validate";
+import { useRefineFieldArray } from "@/foundation/scene/use-refine-field-array";
 import { getCacheType as getCacheTypeFromObj } from "../lib/get-cache-type";
 import type { Cluster, ModelCache } from "../types";
 

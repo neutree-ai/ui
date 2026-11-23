@@ -1,6 +1,6 @@
 import { useList } from "@refinedev/core";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { profileDisplayName } from "@/foundation/lib/user-identity";
+import { profileDisplayName } from "@/foundation/role/user-identity";
+import { ShowButton } from "@/foundation/scene/ShowButton";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 const UserCell = ({ id }: { id: string }) => {

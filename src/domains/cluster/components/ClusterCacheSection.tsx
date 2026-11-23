@@ -5,16 +5,16 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
 import { Link } from "@/foundation/components/Link";
-import { MetricBar } from "@/foundation/components/MetricBar";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import type { NodeL1CacheUsage } from "@/foundation/lib/accelerator-observations";
 import { endpointHref } from "@/foundation/lib/accelerator-observations";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { MetricBar } from "@/foundation/role/MetricBar";
+import Timestamp from "@/foundation/role/Timestamp";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import {
   type CacheEndpointCandidate,
   cacheEndpointRefs,

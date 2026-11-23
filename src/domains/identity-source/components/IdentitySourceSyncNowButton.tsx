@@ -14,9 +14,9 @@ import {
 } from "@/domains/identity-source/lib/identity-source-sync";
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
-import { displayName } from "@/foundation/lib/display-name";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 /**
  * Asks neutree-core to sync the source now. The request is an update of the

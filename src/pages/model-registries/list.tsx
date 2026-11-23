@@ -7,15 +7,15 @@ import { ModelRegistryWriteActions } from "@/domains/model-registry/components/M
 import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
 import RegistryStatus from "@/foundation/components/RegistryStatus";
-import { defaultSorters, Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   MODEL_REGISTRY_SELECT,
   MODEL_REGISTRY_VISIBILITY_FIELD,
 } from "@/foundation/lib/model-registry-visibility";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { defaultSorters, Table } from "@/foundation/scene/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ModelRegistriesList = () => {

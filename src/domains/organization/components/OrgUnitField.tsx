@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { AssignOrgUnitDialog } from "@/domains/organization/components/AssignOrgUnitDialog";
 import { LabelPlaceholder } from "@/domains/organization/components/LabelPlaceholder";
 import { useOrgTree } from "@/domains/organization/hooks/use-organization";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
 
 type OrgUnitFieldProps = {
   /** metadata.name of the selected OrgUnit. */

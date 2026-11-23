@@ -69,7 +69,7 @@ vi.mock("@/domains/endpoint/components/EndpointSaveAsCatalogAction", () => ({
   ),
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => <>{children}</>;
   ShowPage.ObjectHeader = ({
     title,
@@ -158,13 +158,13 @@ vi.mock("@/foundation/components/GrafanaDashboard", () => ({
 vi.mock("@/foundation/components/Loader", () => ({
   Loader: () => null,
 }));
-vi.mock("@/foundation/components/SegmentedControl", () => ({
+vi.mock("@/foundation/type/SegmentedControl", () => ({
   SegmentedControl: () => null,
 }));
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
-vi.mock("@/foundation/components/Timestamp", () => ({ default: () => null }));
+vi.mock("@/foundation/role/Timestamp", () => ({ default: () => null }));
 vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => ({
     grafanaUrl: null,

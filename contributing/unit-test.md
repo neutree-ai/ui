@@ -5,7 +5,7 @@
 ```bash
 yarn test                                      # all tests
 yarn test --watch                              # watch mode
-yarn test src/foundation/lib/validate.test.ts  # specific file
+yarn test src/foundation/role/validate.test.ts  # specific file
 ```
 
 ## Principles
@@ -109,7 +109,7 @@ reproduces the bug.
 | jsdom layout APIs | `ResizeObserver`, `scrollIntoView`, pointer capture — what Radix and cmdk need to open. |
 | `@/foundation/hooks/use-is-truncated` | Returns `false` (jsdom has no layout). A test that needs a clipped element: `vi.mocked(useIsTruncated).mockReturnValue(true)`. Reset before each test. |
 | Time zone | `TZ=UTC` |
-| Environment | `*.test.tsx`, `hooks/**` and `providers/**` tests run in jsdom; every other `*.test.ts` runs in node, which skips jsdom setup. A `.ts` test that needs the DOM or browser storage starts with `// @vitest-environment jsdom`. |
+| Environment | `*.test.tsx`, `hooks/**`, `providers/**` and the `use-*` tests in `foundation/{type,role,scene}/` run in jsdom; every other `*.test.ts` runs in node, which skips jsdom setup. A `.ts` test that needs the DOM or browser storage starts with `// @vitest-environment jsdom`. |
 
 **Do not** re-declare any of these in a test file. Assert on translation keys:
 

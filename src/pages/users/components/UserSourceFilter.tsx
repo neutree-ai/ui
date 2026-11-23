@@ -12,7 +12,7 @@ import {
 import type { IdentitySource } from "@/domains/identity-source/types";
 import { useHasPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { IDENTITY_SOURCE_NAME_LABEL } from "@/foundation/lib/user-identity";
+import { IDENTITY_SOURCE_NAME_LABEL } from "@/foundation/role/user-identity";
 
 // PostgREST needs the key quoted: it contains dots.
 const SOURCE_FILTER_FIELD = `metadata->labels->>"${IDENTITY_SOURCE_NAME_LABEL}"`;

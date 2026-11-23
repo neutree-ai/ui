@@ -19,16 +19,16 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
 import {
   ALL_WORKSPACES,
   useWorkspace,
   useWorkspaceOptions,
 } from "@/foundation/hooks/use-workspace";
-import { getErrorMessage } from "@/foundation/lib/error-message";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { getErrorMessage } from "@/foundation/scene/error-message";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { useFormEnterSubmitGuard } from "@/foundation/scene/use-form-enter-submit-guard";
 
 type FormValues = {
   name: string;

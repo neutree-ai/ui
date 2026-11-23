@@ -16,7 +16,7 @@ Cross-kind facts shared by more than one resource kind. Kind-specific facts live
   missing or `isEmptyValue` (nil, empty string, empty map). Recursion enters maps present in both
   body and stored row.
 - UI rule: an empty untouched secret input is omitted from the edit payload; a touched-then-emptied
-  one is sent as `""`. Shared helper `omitEmptyUntouched` (`foundation/lib/touched-fields.ts`), used
+  one is sent as `""`. Shared helper `omitEmptyUntouched` (`foundation/role/touched-fields.ts`), used
   by `transformImageRegistryValues`, `transformModelRegistryValues` and `transformClusterValues`
   (secrets `spec.config.ssh_config.auth.ssh_private_key`, `spec.config.kubernetes_config.kubeconfig`) and
   `cleanUpstreamsForSubmit` (external endpoint, `spec.upstreams.<i>.auth.credential`, path indexed per upstream).
@@ -76,8 +76,8 @@ are listed in its contract.
 
 ## YAML import and export
 
-Import (`foundation/hooks/use-yaml-import.ts`) creates a record only when `getOne` finds none; an existing name is
-skipped, never updated. Export (`foundation/hooks/use-yaml-export.ts`) offers `EXPORTABLE_RESOURCES`; options default
+Import (`foundation/scene/use-yaml-import.ts`) creates a record only when `getOne` finds none; an existing name is
+skipped, never updated. Export (`foundation/scene/use-yaml-export.ts`) offers `EXPORTABLE_RESOURCES`; options default
 to removing status, ids and timestamps. Only `CREDENTIAL_RESOURCES` (clusters, image registries, model registries) are
 fetched through `/credentials/<type>` (needs `<kind>:read-credentials`) so their secrets are included. External
 endpoints are exportable but carry no credential (the credentials route does not serve them); log sinks are not in
@@ -85,20 +85,20 @@ the exportable set. Tests: `use-yaml-import.test.ts`, `use-yaml-export.test.ts`.
 
 `serializeToYaml` drops null/undefined values recursively for every exported kind; explicit null entries in JSON maps
 therefore disappear. Model Catalog also seeds its editor through this serializer (see its contract).
-Tests: `foundation/lib/yaml-transform.test.ts`.
+Tests: `foundation/scene/yaml-transform.test.ts`.
 
 ## Table batch delete
 
-`foundation/components/Table.tsx` sets `enableRowSelection: enableBatchDelete`, a table-wide flag.
+`foundation/scene/Table.tsx` sets `enableRowSelection: enableBatchDelete`, a table-wide flag.
 A kind that withholds per-row delete (Model Registry: `registryIsProvisioned`) still lets those rows
 be selected and batch-deleted; the backend then refuses per row (`builtinModelRegistryGuard`, 10132).
 See Model Registry deviation 2.
 
 ## Status tone
 
-`foundation/components/BaseStatus` renders the chip; callers pass `className` (tone) and
+`foundation/role/BaseStatus` renders the chip; callers pass `className` (tone) and
 `translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
-tokens of `variables.css`) live in `foundation/lib/status-tone.ts` (`STATUS_TONE`), used by
+tokens of `variables.css`) live in `foundation/role/status-tone.ts` (`STATUS_TONE`), used by
 `RegistryStatus`, `domains/cluster/components/ClusterStatus`,
 `domains/external-endpoint/components/ExternalEndpointStatus`,
 `UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral),
@@ -132,10 +132,10 @@ as unset and require a positive safe integer after unit conversion. Backend vali
 
 ## Row writes
 
-Organization, Service Account and Group Policy use `foundation/hooks/use-row-write.ts:useRowWrite` for custom
+Organization, Service Account and Group Policy use `foundation/scene/use-row-write.ts:useRowWrite` for custom
 PostgREST writes with `Prefer: return=representation` and automatic notifications disabled. An optional `onNoRow`
 turns empty PATCH/DELETE representations into an error; it does not distinguish RLS refusal from concurrent removal.
-Resource list invalidation and extra invalidation are caller options. Tests: `hooks/use-row-write.test.ts`.
+Resource list invalidation and extra invalidation are caller options. Tests: `scene/use-row-write.test.ts`.
 
 ## Workspace selection
 

@@ -13,7 +13,7 @@ import {
   makeReviewContext,
 } from "@/domains/endpoint/testing/builders";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { EndpointDeploymentWizard } from "./EndpointDeploymentWizard";
 
 vi.mock("./EndpointAdvancedParameters", () => ({

@@ -7,17 +7,17 @@ import {
 } from "@/domains/model-registry/components/ModelRegistryType";
 import { transformModelRegistryValues } from "@/domains/model-registry/lib/transform-model-registry-values";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
 import { PRIVATE_MODEL_REGISTRY_TYPE } from "@/foundation/lib/constant";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { isNfsProtocol } from "@/foundation/lib/validate";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import { isNfsProtocol } from "@/foundation/role/validate";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 export const useModelRegistryForm = ({
   action,

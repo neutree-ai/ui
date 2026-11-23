@@ -18,20 +18,20 @@ import {
 } from "@/domains/organization/hooks/use-organization";
 import { isProjectTeam } from "@/domains/organization/lib/team";
 import {
+  useHasGlobalPermission,
+  useHasPermission,
+} from "@/foundation/hooks/use-has-permission";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import {
   type DateRange,
   DateRangePicker,
   formatRangeLabel,
   trailingRange,
-} from "@/foundation/components/DateRangePicker";
-import { ListPage } from "@/foundation/components/ListPage";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
-import {
-  useHasGlobalPermission,
-  useHasPermission,
-} from "@/foundation/hooks/use-has-permission";
-import { displayName } from "@/foundation/lib/display-name";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/role/DateRangePicker";
+import { displayName } from "@/foundation/role/display-name";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import { ScopeBreadcrumb } from "@/pages/model-usage/components/ScopeBreadcrumb";
 import { UsageChart } from "@/pages/model-usage/components/UsageChart";
 import {

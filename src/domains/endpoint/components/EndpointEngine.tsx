@@ -1,5 +1,5 @@
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ShowButton } from "@/foundation/components/ShowButton";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";
 import type { EndpointEngineSpec } from "@/foundation/types/serving-types";
 

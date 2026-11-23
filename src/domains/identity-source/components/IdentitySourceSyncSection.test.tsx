@@ -17,11 +17,11 @@ vi.mock("@/foundation/lib/i18n", () => ({
   }),
 }));
 
-vi.mock("@/foundation/components/Timestamp", () => ({
+vi.mock("@/foundation/role/Timestamp", () => ({
   default: ({ timestamp }: { timestamp: string }) => <span>{timestamp}</span>,
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const Slot = ({
     title,
     label,

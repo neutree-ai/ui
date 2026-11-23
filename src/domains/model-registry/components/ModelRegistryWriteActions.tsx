@@ -1,8 +1,8 @@
 import { Edit, Trash2 } from "lucide-react";
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { Table } from "@/foundation/scene/Table";
 
 /**
  * The edit and delete controls on a registry row, or nothing at all for a

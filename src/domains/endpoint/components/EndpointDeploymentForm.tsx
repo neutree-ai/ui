@@ -17,10 +17,10 @@ import {
   LAST_ENDPOINT_STEP,
 } from "@/domains/endpoint/lib/endpoint-wizard";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 const NO_MODIFIED_STEPS = new Set<number>();
 

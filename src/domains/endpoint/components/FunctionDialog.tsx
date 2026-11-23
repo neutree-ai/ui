@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useFormEnterSubmitGuard } from "@/foundation/hooks/use-form-enter-submit-guard";
+import { useFormEnterSubmitGuard } from "@/foundation/scene/use-form-enter-submit-guard";
 import type { ChatFunction } from "@/foundation/types/chat-types";
 
 interface FunctionDialogProps {

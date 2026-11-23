@@ -17,14 +17,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { BreakableReference } from "@/foundation/components/BreakableReference";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import type {
   FeatureSelection,
   RecipeFeature,
 } from "@/foundation/recipe/types";
+import { InfoHint } from "@/foundation/scene/InfoHint";
+import { BreakableReference } from "@/foundation/type/BreakableReference";
 
 type Props = {
   /** Ordered feature list; list position is the display order and items are

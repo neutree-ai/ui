@@ -2,9 +2,9 @@ import { useUpdate } from "@refinedev/core";
 import { Switch } from "@/components/ui/switch";
 import { identitySourceErrorMessage } from "@/domains/identity-source/lib/identity-source-errors";
 import type { IdentitySource } from "@/domains/identity-source/types";
-import { displayName } from "@/foundation/lib/display-name";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 
 /**
  * Turns a source on or off for login. The whole spec is sent back because

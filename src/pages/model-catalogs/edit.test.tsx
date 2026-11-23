@@ -15,7 +15,7 @@ vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),
   useParams: () => ({ workspace: "team-a" }),
 }));
-vi.mock("@/foundation/components/PageHeader", () => ({
+vi.mock("@/foundation/scene/PageHeader", () => ({
   PageHeader: () => null,
 }));
 vi.mock("@/domains/model-catalog/components/CatalogModelSlots", () => ({

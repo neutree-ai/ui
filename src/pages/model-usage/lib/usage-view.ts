@@ -1,4 +1,4 @@
-import type { DateRange } from "@/foundation/components/DateRangePicker";
+import type { DateRange } from "@/foundation/role/DateRangePicker";
 import {
   isOwnerScope,
   type OwnerScope,

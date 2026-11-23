@@ -1,7 +1,7 @@
 import {
   isPermissionDenied,
   translateApiError,
-} from "@/foundation/lib/api-error-code";
+} from "@/foundation/scene/api-error-code";
 
 /** Cluster cache admission errors → i18n keys. */
 const CLUSTER_CACHE_ERROR_KEYS: Readonly<Record<string, string>> = {

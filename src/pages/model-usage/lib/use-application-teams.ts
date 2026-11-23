@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useTeams } from "@/domains/organization/hooks/use-organization";
 import { isProjectTeam } from "@/domains/organization/lib/team";
 import { useAllServiceAccounts } from "@/domains/service-account/hooks/use-service-accounts";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { displayName } from "@/foundation/role/display-name";
 
 /**
  * What each application belongs to, by application id: "Team · name" or

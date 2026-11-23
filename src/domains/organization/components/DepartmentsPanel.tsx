@@ -25,12 +25,12 @@ import {
   groupByIdentitySource,
 } from "@/domains/organization/lib/org-tree";
 import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization-errors";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import { translateApiErrorOr } from "@/foundation/lib/api-error-code";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
+import { translateApiErrorOr } from "@/foundation/scene/api-error-code";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type { ExtraColumn } from "@/foundation/types/extra-column";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 

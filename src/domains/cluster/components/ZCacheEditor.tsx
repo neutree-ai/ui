@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getErrorMessage } from "@/foundation/lib/error-message";
 import { cn } from "@/foundation/lib/utils";
+import { getErrorMessage } from "@/foundation/scene/error-message";
 import { useCacheCapacityConfirmation } from "../hooks/use-cache-capacity-confirmation";
 import {
   activeCacheChange,

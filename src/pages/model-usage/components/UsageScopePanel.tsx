@@ -11,12 +11,12 @@ import {
 } from "@/domains/organization/lib/org-tree";
 import { isProjectTeam } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { displayName } from "@/foundation/role/display-name";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import { groupOf, type UsageScope } from "@/pages/model-usage/lib/usage-scope";
 
 const ScopeButton = ({

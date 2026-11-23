@@ -1,5 +1,5 @@
 import type { OrgUnitMember } from "@/domains/organization/types";
-import { profileIdentitySource } from "@/foundation/lib/user-identity";
+import { profileIdentitySource } from "@/foundation/role/user-identity";
 
 type ProfileLike = {
   metadata: { labels?: Record<string, string> | null };

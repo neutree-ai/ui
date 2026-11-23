@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { LocalStorageAdapter } from "@/foundation/lib/column-visibility-storage";
+import { LocalStorageAdapter } from "@/foundation/scene/column-visibility-storage";
 
 const STORAGE_KEY = "neutree_model_usage_scope_collapsed";
 const storage = new LocalStorageAdapter();

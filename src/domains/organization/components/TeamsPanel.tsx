@@ -43,23 +43,23 @@ import {
   teamSource,
 } from "@/domains/organization/lib/team";
 import type { Team, TeamDeleteCheck } from "@/domains/organization/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import {
   useHasGlobalPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import { displayName } from "@/foundation/role/display-name";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
 import {
   isPermissionDenied,
   translateApiErrorOr,
-} from "@/foundation/lib/api-error-code";
-import { displayName } from "@/foundation/lib/display-name";
-import { isDuplicateNameError } from "@/foundation/lib/error-message";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/scene/api-error-code";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { isDuplicateNameError } from "@/foundation/scene/error-message";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type { ExtraColumn } from "@/foundation/types/extra-column";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 

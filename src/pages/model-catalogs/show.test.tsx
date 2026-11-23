@@ -25,7 +25,7 @@ vi.mock("@refinedev/core", () => ({
 }));
 
 // ShowPage reads Refine's router context; render its slots as plain markup.
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const Slot = ({
     title,
     children,

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { badgeVariants } from "@/components/ui/badge";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
-import { Section } from "@/foundation/components/Section";
+import { Section } from "@/foundation/scene/Section";
 import type { Endpoint, EndpointClusterRef } from "../types";
 
 export function EndpointKVCacheSummary({

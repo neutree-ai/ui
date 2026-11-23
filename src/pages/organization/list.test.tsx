@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/foundation/lib/i18n", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock("@/domains/organization/components/DepartmentsPanel", () => ({

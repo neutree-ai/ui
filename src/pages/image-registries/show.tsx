@@ -1,10 +1,10 @@
 import { useShow } from "@refinedev/core";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
 import RegistryStatus from "@/foundation/components/RegistryStatus";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const ImageRegistriesShow = () => {
   const { t } = useTranslation();

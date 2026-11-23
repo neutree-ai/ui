@@ -21,11 +21,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { KvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import type { EndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { InfoHint } from "@/foundation/scene/InfoHint";
 import type { EndpointClusterRef } from "../types";
 
 const CACHE_MANAGER_DISPLAY: Record<

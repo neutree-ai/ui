@@ -29,7 +29,7 @@ vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
   useRegistryModelVersion: vi.fn(),
 }));
 
-vi.mock("@/foundation/components/WorkspaceField", () => ({
+vi.mock("@/foundation/role/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 
@@ -38,7 +38,7 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
   isValidWorkspace: (v: string | undefined | null) => !!v && v !== "_all_",
 }));
 
-vi.mock("@/foundation/components/VariablesInput", () => ({
+vi.mock("@/foundation/scene/VariablesInput", () => ({
   VariablesInput: React.forwardRef(
     (_props: unknown, ref: React.Ref<HTMLDivElement>) => (
       <div data-testid="variables-input-mock" ref={ref} />

@@ -152,7 +152,7 @@ bodies or `ok:false` results shown inline.
      characters, and AWS naming without an endpoint, only on INSERT or when bucket or endpoint changed.
    - Effect: the message appears only as the generic notification, not on the field (notification inferred). Ticket: TBD
 2. Name rule gaps: length and server codes.
-   - UI: `RESOURCE_NAME_PATTERN` has no 63-character limit (`foundation/lib/validate.ts`); no mapping for 10001 / 10003
+   - UI: `RESOURCE_NAME_PATTERN` has no 63-character limit (`foundation/role/validate.ts`); no mapping for 10001 / 10003
      / 10004.
    - API: `validate_metadata_name` raises 10004 above 63 characters.
    - Effect: a 64+ character name passes the form and fails on submit without a field error. Ticket: TBD

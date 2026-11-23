@@ -18,7 +18,7 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/components/WorkspaceField", () => ({
+vi.mock("@/foundation/role/WorkspaceField", () => ({
   default: React.forwardRef(() => <div data-testid="workspace-field-mock" />),
 }));
 

@@ -1,4 +1,4 @@
-import { isValidIPAddress } from "@/foundation/lib/validate";
+import { isValidIPAddress } from "@/foundation/role/validate";
 
 export type IpsValue = {
   head_ip: string;

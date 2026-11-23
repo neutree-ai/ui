@@ -24,16 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import {
-  type DateRange,
-  DateRangePicker,
-  trailingRange,
-} from "@/foundation/components/DateRangePicker";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { ListPage } from "@/foundation/components/ListPage";
 import { Loader } from "@/foundation/components/Loader";
-import Timestamp from "@/foundation/components/Timestamp";
 import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
@@ -43,8 +34,17 @@ import {
   isAITraceForbidden,
 } from "@/foundation/lib/api/ai-traces";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokens } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import {
+  type DateRange,
+  DateRangePicker,
+  trailingRange,
+} from "@/foundation/role/DateRangePicker";
+import Timestamp from "@/foundation/role/Timestamp";
+import { formatTokens } from "@/foundation/role/unit";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { LogForwardingButton } from "./components/LogForwardingButton";
 import { StatusCodeFilter } from "./components/StatusCodeFilter";
 import { TraceDetailDrawer } from "./components/TraceDetailDrawer";

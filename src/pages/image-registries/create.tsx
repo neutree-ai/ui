@@ -1,6 +1,6 @@
 import { useImageRegistryForm } from "@/domains/image-registry/hooks/use-image-registry-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const ImageRegistriesCreate = () => {
   const { t } = useTranslation();

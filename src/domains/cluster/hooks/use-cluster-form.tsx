@@ -11,15 +11,15 @@ import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/acce
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import { clusterCacheErrorMessage } from "@/domains/cluster/lib/zcache-errors";
 import type { Cluster } from "@/domains/cluster/types";
-import FormCardGrid from "@/foundation/components/FormCardGrid";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { FormSelect } from "@/foundation/components/FormSelect";
-import WorkspaceField from "@/foundation/components/WorkspaceField";
 import {
   isValidWorkspace,
   useWorkspace,
 } from "@/foundation/hooks/use-workspace";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { FormSelect } from "@/foundation/role/FormSelect";
+import WorkspaceField from "@/foundation/role/WorkspaceField";
+import FormCardGrid from "@/foundation/scene/FormCardGrid";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 
 export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
   const { t } = useTranslation();

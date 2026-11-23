@@ -9,13 +9,13 @@ import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
 import EndpointStatus from "@/foundation/components/EndpointStatus";
-import { ListPage } from "@/foundation/components/ListPage";
 import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { ShowButton } from "@/foundation/components/ShowButton";
-import { Table } from "@/foundation/components/Table";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { Table } from "@/foundation/scene/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const EndpointsList = () => {

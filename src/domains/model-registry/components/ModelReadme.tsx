@@ -9,11 +9,11 @@ import { Card } from "@/components/ui/card";
 import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-registry-model-readme";
 import { splitModelCard } from "@/domains/model-registry/lib/model-card";
 import { modelCardSanitizeSchema } from "@/domains/model-registry/lib/model-card-html";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 /**
  * A model's card, rendered from the markdown the registry stores.

@@ -11,16 +11,13 @@ import {
 } from "@/components/ui/table";
 import { formatDisplayValue } from "@/domains/endpoint/lib/display-value";
 import { parseStructuredArgument } from "@/domains/endpoint/lib/endpoint-form-helpers";
-import { Disclosure } from "@/foundation/components/Disclosure";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import {
-  ExpandableCell,
-  ExpandPanel,
-} from "@/foundation/components/ExpandableCell";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { Disclosure } from "@/foundation/scene/Disclosure";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
+import { ExpandableCell, ExpandPanel } from "@/foundation/type/ExpandableCell";
 
 type ParameterEntries = Record<string, unknown> | null | undefined;
 

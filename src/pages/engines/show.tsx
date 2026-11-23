@@ -8,10 +8,10 @@ import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
 import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
-import { MetadataTimestampMeta } from "@/foundation/components/MetadataTimestampMeta";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { cn } from "@/foundation/lib/utils";
-import { sortVersionsNewestFirst } from "@/foundation/lib/version-order";
+import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const EnginesShow = () => {
   const { t } = useTranslation();

@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EndpointsList } from "@/pages/endpoints/list";
 
-vi.mock("@/foundation/components/ListPage", () => ({
+vi.mock("@/foundation/scene/ListPage", () => ({
   ListPage: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
 
-vi.mock("@/foundation/components/metadata-columns", () => ({
+vi.mock("@/foundation/scene/metadata-columns", () => ({
   useMetadataColumns: () => ({
     name: null,
     workspace: null,
@@ -23,7 +23,7 @@ vi.mock("@/foundation/components/metadata-columns", () => ({
 // `{ row: { original } }`), so the column definition under test is the page's.
 const state = vi.hoisted(() => ({ row: null as unknown }));
 
-vi.mock("@/foundation/components/Table", () => {
+vi.mock("@/foundation/scene/Table", () => {
   const Table = ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   );
@@ -67,7 +67,7 @@ vi.mock("@/domains/endpoint/components/EndpointSaveAsCatalogAction", () => ({
 vi.mock("@/domains/endpoint/components/ModelTaskFilter", () => ({
   ModelTaskFilter: () => null,
 }));
-vi.mock("@/foundation/components/ShowButton", () => ({
+vi.mock("@/foundation/scene/ShowButton", () => ({
   ShowButton: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 

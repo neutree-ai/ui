@@ -4,8 +4,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 // Status codes with a maintained, gateway-accurate description (includes the
 // non-standard 499 "client closed request" and 504 "gateway timeout" seen from

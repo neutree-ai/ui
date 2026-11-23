@@ -91,7 +91,7 @@ departments return no rows, unknown Teams can fail permission. `get_usage_by_dim
 
 ## Roles
 
-- Tokens: `formatTokens` (`src/foundation/lib/unit.ts`, tests beside it). Requests: `toLocaleString`.
+- Tokens: `formatTokens` (`src/foundation/role/unit.ts`, tests beside it). Requests: `toLocaleString`.
   No throughput, per-second rate or pricing calculation.
 - Shares/change: `formatShare`, `changeOf`, `previousRange`; tests in `lib/usage-series.test.ts`.
   Shares use one decimal or 0% without a denominator; nonpositive previous usage shows no comparison.

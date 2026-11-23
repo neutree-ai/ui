@@ -19,8 +19,8 @@ import {
   getLogUrls,
 } from "@/domains/endpoint/lib/log-helpers";
 import type { Endpoint, EndpointEngineRef } from "@/domains/endpoint/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import { LogViewer } from "./LogViewer";
 
 interface EndpointLogTabsProps {

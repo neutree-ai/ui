@@ -33,7 +33,7 @@ backend (`041_remove_image_registry_ca`).
 
 ## Roles
 
-- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/lib/status-tone.ts`); label key
+- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/role/status-tone.ts`); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `Timestamp` (relative) in the list, `MetadataTimestampMeta` in the show header.
 - Name / workspace / created / actions columns: `useMetadataColumns`.
@@ -67,7 +67,7 @@ backend (`041_remove_image_registry_ca`).
   middleware does not look at the force annotation, so force delete does not bypass it. The UI has
   no 10127-specific handling.
 - YAML import/export: kind `ImageRegistry` <-> `image_registries`; export includes the resource in
-  the credentials-capable set (`CREDENTIAL_RESOURCES` in `foundation/hooks/use-yaml-export.ts`).
+  the credentials-capable set (`CREDENTIAL_RESOURCES` in `foundation/scene/use-yaml-export.ts`).
 - Quick start (`foundation/hooks/use-quick-start.ts`, `buildImageRegistryValues`) creates
   `public-docker` at `https://docker.io` with empty credentials.
 

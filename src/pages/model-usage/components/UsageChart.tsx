@@ -15,9 +15,8 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { SegmentedControl } from "@/foundation/components/SegmentedControl";
+import { useTranslation } from "@/foundation/lib/i18n";
 import {
   CHART_CATEGORY_COUNT,
   CHART_CATEGORY_TOKENS,
@@ -26,9 +25,10 @@ import {
   chartCategoryMark,
   chartMarkStyle,
   chartMoreMark,
-} from "@/foundation/lib/chart-palette";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokens } from "@/foundation/lib/unit";
+} from "@/foundation/role/chart-palette";
+import { formatTokens } from "@/foundation/role/unit";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import {
   isOtherSeries,
   OTHER_SERIES_KEY,

@@ -1,5 +1,5 @@
-import { EMPTY_VALUE } from "@/foundation/components/EmptyValue";
-import { formatToDecimal } from "@/foundation/lib/unit";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
 /**
  * Calculate resource usage from allocatable and available values.

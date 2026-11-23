@@ -1,4 +1,4 @@
-import { translateApiError } from "@/foundation/lib/api-error-code";
+import { translateApiError } from "@/foundation/scene/api-error-code";
 
 /** Role assignment write and delegated-grant errors → i18n keys. */
 const ROLE_ASSIGNMENT_ERROR_KEYS: Readonly<Record<string, string>> = {

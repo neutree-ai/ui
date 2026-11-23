@@ -1,6 +1,6 @@
 import { useExternalEndpointForm } from "@/domains/external-endpoint/hooks/use-external-endpoint-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const ExternalEndpointsCreate = () => {
   const { t } = useTranslation();

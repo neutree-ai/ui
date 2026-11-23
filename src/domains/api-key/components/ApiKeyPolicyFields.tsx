@@ -14,12 +14,12 @@ import {
   resolveQuotaPeriod,
   useInvokableModels,
 } from "@/domains/api-key/hooks/use-api-key-policy";
-import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
-import { LabelWithHint } from "@/foundation/components/InfoHint";
 import {
   DEFAULT_TOKEN_QUOTA_UNIT,
   isValidTokenQuota,
 } from "@/foundation/lib/token-quota";
+import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
+import { LabelWithHint } from "@/foundation/scene/InfoHint";
 
 type ApiKeyPolicyFieldsProps = {
   // The react-hook-form instance whose values include the policy fields.

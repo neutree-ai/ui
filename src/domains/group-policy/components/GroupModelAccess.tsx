@@ -19,12 +19,12 @@ import type {
   GroupTokenPool,
   GroupTokenQuota,
 } from "@/domains/group-policy/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 import type { GroupKind } from "@/foundation/types/group-scope";
 
 /** Limit, period and, when read, the usage of the current period. */

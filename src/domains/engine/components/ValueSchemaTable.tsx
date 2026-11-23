@@ -37,16 +37,13 @@ import {
   type ValueSchemaRow,
   valueSchemaTypeOptions,
 } from "@/domains/engine/lib/value-schema-rows";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import {
-  ExpandableCell,
-  ExpandPanel,
-} from "@/foundation/components/ExpandableCell";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
+import { ExpandableCell, ExpandPanel } from "@/foundation/type/ExpandableCell";
 import { SchemaTypeIcon } from "./SchemaTypeIcon";
 
 type ValueSchemaTableProps = {

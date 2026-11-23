@@ -32,15 +32,15 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/components/EmptyValue";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
-import { buildBatchDeleteVariables } from "@/foundation/lib/batch-delete";
-import { displayName } from "@/foundation/lib/display-name";
 import { formatTokenQuota } from "@/foundation/lib/token-quota";
+import { displayName } from "@/foundation/role/display-name";
+import Timestamp from "@/foundation/role/Timestamp";
+import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
 
 type ServiceAccountApiKeysProps = {
   serviceAccountId: string;

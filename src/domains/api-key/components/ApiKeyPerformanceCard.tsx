@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAllApiKeyTraffic } from "@/domains/api-key/hooks/use-api-key-policy";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { InfoHint } from "@/foundation/components/InfoHint";
 import { Link } from "@/foundation/components/Link";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { InfoHint } from "@/foundation/scene/InfoHint";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 // Format an average latency given in milliseconds as a human value: seconds when
 // ≥1s (e.g. "8.65 s"), otherwise milliseconds ("420 ms").

@@ -9,8 +9,8 @@ import {
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import { getRoundedVgpuMemoryGiBValue } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { KeyValueList } from "./KeyValueList";
 
 type Props = {

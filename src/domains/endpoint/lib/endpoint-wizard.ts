@@ -1,10 +1,10 @@
 import type { FieldErrors, FieldPath } from "react-hook-form";
 import type { Endpoint } from "@/domains/endpoint/types";
-import { getApiErrorCode } from "@/foundation/lib/api-error-code";
+import { getApiErrorCode } from "@/foundation/scene/api-error-code";
 import {
   getErrorMessage,
   isDuplicateNameError,
-} from "@/foundation/lib/error-message";
+} from "@/foundation/scene/error-message";
 
 /** The wizard's steps, in order. */
 export const EndpointStep = {

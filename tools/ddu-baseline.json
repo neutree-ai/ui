@@ -1,0 +1,842 @@
+{
+	"src/domains/api-key/components/ApiKeyLimitsCard.tsx": {
+		"entry.endpoint_name": 3,
+		"entry.model": 2,
+		"entry.remaining": 2,
+		"entry.token_limit": 1,
+		"entry.type": 2,
+		"entry.used": 1,
+		"limits.disabled": 1,
+		"limits.quota_granularity": 1,
+		"limits.quota_period": 1,
+		"limits.token_quota?.period": 1,
+		"m.token_limit": 1,
+		"quota.limit": 1,
+		"quota.remaining": 1,
+		"quota?.limit": 2,
+		"quota?.remaining": 1,
+		"quota?.used": 1
+	},
+	"src/domains/api-key/components/CreateApiKeyForm.tsx": {
+		"apiKey.status.sk_value": 1,
+		"apiKey.status?.sk_value": 1,
+		"apiKey?.status?.sk_value": 1
+	},
+	"src/domains/api-key/components/ProjectPicker.tsx": {
+		"p.metadata.name": 2,
+		"p.spec.description": 3,
+		"projects.find((p) => p.id === value)?.metadata.name": 1
+	},
+	"src/domains/api-key/components/ServiceAccountApiKeys.tsx": {
+		"a.metadata.creation_timestamp": 1,
+		"b.metadata.creation_timestamp": 1,
+		"key.metadata.workspace": 2,
+		"key.metadata?.deletion_timestamp": 1,
+		"key.spec.description": 2,
+		"key.spec.limits?.disabled": 1,
+		"quota.period": 1,
+		"quota?.limit": 1
+	},
+	"src/domains/api-key/hooks/use-api-key-policy.ts": {
+		"e.token_limit": 1,
+		"entry.endpoint_name": 2,
+		"entry.token_limit": 1,
+		"entry.type": 2,
+		"l.quota_granularity": 1,
+		"l.quota_period": 1,
+		"l.quota_period_start": 1,
+		"l.quota_resets_at": 1,
+		"limits.concurrency": 5,
+		"limits.disabled": 1,
+		"limits.quota_period": 2,
+		"limits.rpm": 5,
+		"limits.rps": 5,
+		"limits.token_quota.limit": 1,
+		"limits.token_quota.period": 1,
+		"limits.token_quota?.limit": 1,
+		"m.endpoint_name": 2,
+		"m.remaining": 2,
+		"m.token_limit": 2,
+		"m.type": 2,
+		"m.used": 2,
+		"next.disabled": 2
+	},
+	"src/domains/cluster/components/ClusterCacheSection.tsx": {
+		"cluster.metadata?.workspace": 1,
+		"cp.ready": 1,
+		"cp?.health_message": 1,
+		"desired.l1_size_gib": 1,
+		"desired?.enabled": 3,
+		"n.name": 2,
+		"n.runtime": 1,
+		"node.capacity_bytes": 3,
+		"node.runtime": 2,
+		"node?.reason": 1,
+		"request.lmcache.l1SizeGb": 1,
+		"request.lmcache?.l1SizeGb": 1,
+		"request?.operation?.kind": 1,
+		"status?.observed_at": 1
+	},
+	"src/domains/cluster/components/ClusterResourceSummary.tsx": {
+		"group.quantity": 3
+	},
+	"src/domains/cluster/components/ClusterStatus.tsx": {
+		"status.phase": 2
+	},
+	"src/domains/cluster/components/ClusterUpgradeAction.tsx": {
+		"cluster.metadata.workspace": 1,
+		"cluster.spec.type": 2,
+		"cluster.spec.version": 1,
+		"cluster.status.accelerator_type": 1,
+		"cluster.status?.accelerator_type": 1,
+		"cluster.status?.version": 1
+	},
+	"src/domains/cluster/components/ClusterUpgradeTip.tsx": {
+		"cluster.metadata.workspace": 2,
+		"cluster.spec.image_registry": 1,
+		"cluster.spec.type": 1,
+		"cluster.spec.version": 1,
+		"cluster.status?.phase": 1,
+		"cluster.status?.version": 1
+	},
+	"src/domains/cluster/components/NodeResourcesTable.tsx": {
+		"accGroup?.quantity": 1,
+		"device.health": 1,
+		"device.product": 1,
+		"group.quantity": 2,
+		"nodeStatus.allocatable?.cpu": 2,
+		"nodeStatus.allocatable?.memory": 2
+	},
+	"src/domains/cluster/components/ZCacheActivity.tsx": {
+		"n.name": 1,
+		"n.reason": 1,
+		"op.created_at": 1,
+		"op.phase": 1,
+		"status.change.operation_id": 1,
+		"status?.observation_error": 2,
+		"summary?.error_message": 1
+	},
+	"src/domains/cluster/components/ZCacheEditor.tsx": {
+		"cluster.status?.cache?.phase": 3,
+		"spec.config.kubernetes_config.kubeconfig": 2
+	},
+	"src/domains/cluster/components/ZCacheFields.tsx": {
+		"candidate?.reason": 2,
+		"candidate?.selectable": 3,
+		"node.capacity_bytes": 2,
+		"node.name": 3,
+		"node.runtime": 1,
+		"node?.reason": 1,
+		"node?.runtime": 1,
+		"spec.cache.options": 2,
+		"spec.cache.options.enabled": 3,
+		"spec.cache.options.target_nodes": 4,
+		"spec.cache.provider": 1,
+		"status?.observation_error": 2,
+		"summary?.phase": 1
+	},
+	"src/domains/cluster/components/ZCacheUpgrade.tsx": {
+		"cluster.metadata.workspace": 1,
+		"ep.message": 2,
+		"ep.name": 2,
+		"ep.phase": 1,
+		"spec.version": 1,
+		"spec?.enabled": 1,
+		"spec?.version": 1,
+		"upgrade.phase": 2
+	},
+	"src/domains/cluster/hooks/use-cluster-form.tsx": {
+		"spec.accelerator_virtualization.enabled": 2,
+		"spec.version": 2
+	},
+	"src/domains/cluster/hooks/use-cluster-monitor-panels.ts": {
+		"cluster?.spec.type": 1
+	},
+	"src/domains/cluster/hooks/use-model-cache-fields.ts": {
+		"spec.config.model_caches": 1,
+		"spec.type": 1
+	},
+	"src/domains/endpoint/components/ChatPlayground.tsx": {
+		"endpoint.metadata.name": 1,
+		"endpoint.metadata.workspace": 1
+	},
+	"src/domains/endpoint/components/DeploymentConfigCard.tsx": {
+		"replicas?.num": 1
+	},
+	"src/domains/endpoint/components/EmbeddingPlayground.tsx": {
+		"endpoint.metadata.name": 1,
+		"endpoint.metadata.workspace": 1
+	},
+	"src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": {
+		"nodeStatus?.allocatable?.cpu": 1,
+		"nodeStatus?.allocatable?.memory": 1,
+		"nodeStatus?.available?.cpu": 1,
+		"nodeStatus?.available?.memory": 1,
+		"resourceInfo.allocatable?.cpu": 1,
+		"resourceInfo.allocatable?.memory": 1,
+		"resourceInfo.available?.cpu": 1,
+		"resourceInfo.available?.memory": 1
+	},
+	"src/domains/endpoint/components/EndpointConfigurationSummary.tsx": {
+		"accelerator?.product": 1,
+		"accelerator?.type": 1,
+		"engine?.engine": 1,
+		"engine?.version": 1,
+		"model?.file": 1,
+		"model?.name": 1,
+		"model?.registry": 1,
+		"model?.task": 1,
+		"model?.version": 1,
+		"resources?.cpu": 1,
+		"resources?.gpu": 1,
+		"resources?.memory": 1,
+		"spec.cluster": 1,
+		"spec.kv_cache?.options?.timeout_seconds": 1,
+		"spec.replicas?.num": 1,
+		"virtualization?.core_percent": 1
+	},
+	"src/domains/endpoint/components/EndpointDeploymentSummary.tsx": {
+		"values.spec.replicas?.num": 1
+	},
+	"src/domains/endpoint/components/EndpointDeploymentWizard.tsx": {
+		"cache.options?.timeout_seconds": 1,
+		"engine?.engine": 2,
+		"engine?.version": 2,
+		"resources?.cpu": 1,
+		"resources?.gpu": 1,
+		"resources?.memory": 1,
+		"values.metadata?.name": 1,
+		"values.metadata?.workspace": 1,
+		"values.spec.cluster": 1,
+		"values.spec.model?.name": 2,
+		"values.spec.replicas?.num": 2
+	},
+	"src/domains/endpoint/components/EndpointEngine.tsx": {
+		"engine.engine": 1,
+		"engine.version": 1,
+		"engine?.engine": 1
+	},
+	"src/domains/endpoint/components/EndpointKVCacheFields.tsx": {
+		"cluster?.metadata.name": 1,
+		"spec.kv_cache": 1,
+		"spec.kv_cache.options.timeout_seconds": 2
+	},
+	"src/domains/endpoint/components/EndpointKVCacheSummary.tsx": {
+		"cluster.metadata.name": 2,
+		"endpoint.metadata.workspace": 1,
+		"endpoint.spec.kv_cache?.options?.timeout_seconds": 1,
+		"endpoint.spec.kv_cache?.provider": 1
+	},
+	"src/domains/endpoint/components/EndpointLogTabs.tsx": {
+		"endpoint.spec.engine.engine": 1,
+		"engine.metadata.name": 1
+	},
+	"src/domains/endpoint/components/EndpointModel.tsx": {
+		"model.name": 2,
+		"model.registry": 2,
+		"model.version": 2,
+		"model?.name": 1
+	},
+	"src/domains/endpoint/components/EndpointResolvedModelEditor.tsx": {
+		"values.file": 1,
+		"values.name": 1,
+		"values.registry": 1,
+		"values.version": 1
+	},
+	"src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": {
+		"candidate.uuid": 1,
+		"getVgpuVirtualization(requestedResources?.accelerator)?.core_percent": 1
+	},
+	"src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": {
+		"endpoint.metadata.workspace": 1
+	},
+	"src/domains/endpoint/components/KVCacheEstimate.tsx": {
+		"info.max_position_embeddings": 1,
+		"info.mtp_num_layers": 1,
+		"info.num_hidden_layers": 1
+	},
+	"src/domains/endpoint/components/ModelOptionalFields.tsx": {
+		"values.file": 1,
+		"values.version": 1
+	},
+	"src/domains/endpoint/components/RerankPlayground.tsx": {
+		"endpoint.metadata.name": 1,
+		"endpoint.metadata.workspace": 1
+	},
+	"src/domains/endpoint/components/ResourcesCard.tsx": {
+		"displayResources.accelerator.product": 1,
+		"displayResources.accelerator.type": 1,
+		"displayResources.gpu": 1,
+		"displayResources?.accelerator?.product": 1,
+		"displayResources?.accelerator?.type": 1,
+		"displayResources?.gpu": 1,
+		"vgpuVirtualization?.core_percent": 1
+	},
+	"src/domains/endpoint/components/VariantPicker.tsx": {
+		"v.model.registry": 1,
+		"v.model?.registry": 1
+	},
+	"src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": {
+		"cluster.metadata.name": 1,
+		"selectedCluster?.spec?.type": 1
+	},
+	"src/domains/endpoint/hooks/use-endpoint-engine-options.ts": {
+		"engine.metadata.name": 3,
+		"v.version": 1
+	},
+	"src/domains/endpoint/hooks/use-endpoint-form.tsx": {
+		"activeVariant?.vram_minimum_gb": 1,
+		"candidate.metadata.name": 1,
+		"currentDeploymentValues.spec.cluster": 1,
+		"currentDeploymentValues.spec.engine?.engine": 1,
+		"currentDeploymentValues.spec.model?.name": 1,
+		"m.name": 1,
+		"model?.file": 1,
+		"model?.name": 1,
+		"model?.registry": 1,
+		"model?.task": 1,
+		"model?.version": 1,
+		"newest?.version": 1,
+		"nextVirtualization.core_percent": 2,
+		"normalizedQueryResources?.cpu": 1,
+		"normalizedQueryResources?.memory": 1,
+		"normalizedResources?.cpu": 7,
+		"normalizedResources?.gpu": 1,
+		"normalizedResources?.memory": 7,
+		"queryEndpoint.spec?.cluster": 1,
+		"queryEndpoint.spec?.replicas?.num": 1,
+		"queryEndpoint?.spec?.cluster": 1,
+		"queryEndpoint?.status?.phase": 1,
+		"registry.metadata.name": 1,
+		"selectedAccelerator.product": 8,
+		"selectedAccelerator.type": 2,
+		"selectedAccelerator?.product": 6,
+		"selectedAccelerator?.type": 7,
+		"selectedCluster.spec.accelerator_virtualization?.enabled": 1,
+		"selectedCluster?.spec.type": 1,
+		"selectedCluster?.spec?.type": 2,
+		"selectedCluster?.status?.ready_nodes": 2,
+		"selectedProductResources?.virtualization?.core_units": 1,
+		"selectedProductResources?.virtualization?.memory_mib": 1,
+		"selectedVirtualization?.core_percent": 2,
+		"selectedVirtualization?.memory_mib": 2,
+		"spec.engine": 1,
+		"spec.engine.engine": 3,
+		"spec.kv_cache.provider": 1,
+		"spec.model.file": 2,
+		"spec.model.info": 5,
+		"spec.model.name": 4,
+		"spec.model.registry": 2,
+		"spec.model.task": 4,
+		"spec.model.version": 4,
+		"spec.resources": 4,
+		"spec.resources.accelerator": 2,
+		"spec.resources.accelerator.virtualization": 11,
+		"spec.resources.gpu": 1,
+		"spec.variables.engine_args": 1,
+		"virtualization?.memory_mib": 1
+	},
+	"src/domains/endpoint/hooks/use-kv-cache-availability.ts": {
+		"cluster?.spec.type": 1
+	},
+	"src/domains/endpoint/hooks/use-playground-models.ts": {
+		"endpoint.metadata.name": 1,
+		"endpoint.metadata.workspace": 1,
+		"endpoint?.metadata?.name": 1
+	},
+	"src/domains/engine/components/EngineStatus.tsx": {
+		"status.phase": 2
+	},
+	"src/domains/engine/components/EngineVersionSummary.tsx": {
+		"item.version": 1
+	},
+	"src/domains/external-endpoint/components/EndpointRefSelect.tsx": {
+		"endpoint.status?.phase": 1
+	},
+	"src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": {
+		"record.metadata.workspace": 1
+	},
+	"src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": {
+		"status.phase": 2
+	},
+	"src/domains/external-endpoint/components/ModelRouteDetails.tsx": {
+		"route.model": 3,
+		"route.strategy": 1,
+		"target.max_inflight_requests": 1,
+		"target.priority": 3,
+		"target.upstream": 2,
+		"target.upstream_model": 2,
+		"target.weight": 2
+	},
+	"src/domains/external-endpoint/components/ModelRouteEditor.tsx": {
+		"route.model": 5,
+		"route.strategy": 1,
+		"target.max_inflight_requests": 1,
+		"target.priority": 3,
+		"target.upstream": 1,
+		"target.weight": 2
+	},
+	"src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": {
+		"upstream.endpoint_ref": 1
+	},
+	"src/domains/external-endpoint/components/UpstreamStatusBadge.tsx": {
+		"status.phase": 3
+	},
+	"src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": {
+		"initial.name": 1,
+		"initial.upstream?.url": 1,
+		"invalid.model": 1,
+		"route.model": 4,
+		"route.strategy": 5,
+		"spec.model_routes": 3,
+		"spec.model_sources": 2,
+		"target.priority": 3,
+		"target.upstream": 5,
+		"target.upstream_model": 1,
+		"target.weight": 2,
+		"upstream.name": 5,
+		"upstreams?.[index]?.name": 2
+	},
+	"src/domains/group-policy/components/ApiKeyGroupPolicyHint.tsx": {
+		"own.in_scope": 1
+	},
+	"src/domains/group-policy/components/GroupModelAccess.tsx": {
+		"pool.remaining": 2,
+		"quota.period": 1
+	},
+	"src/domains/group-policy/components/ModelEntryList.tsx": {
+		"entry.model": 1,
+		"entry.workspace": 1
+	},
+	"src/domains/group-policy/components/SubjectPolicyDialog.tsx": {
+		"policy?.policy_name": 1,
+		"pool.kind": 1,
+		"pool.name": 1,
+		"pool.scope_kind": 1,
+		"pool.scope_name": 1,
+		"subject.kind": 2
+	},
+	"src/domains/group-policy/components/SubjectQuotaCell.tsx": {
+		"entry.model": 1,
+		"row?.effective_remaining": 1
+	},
+	"src/domains/group-policy/components/UserGroupModelAccess.tsx": {
+		"entry.workspace": 2,
+		"group.active": 1,
+		"group.kind": 4,
+		"group.name": 2,
+		"policy.in_scope": 1,
+		"policy.name": 1,
+		"pool.kind": 2,
+		"pool.name": 2,
+		"pool.scope_kind": 1,
+		"pool.scope_name": 2
+	},
+	"src/domains/group-policy/hooks/use-group-policies.ts": {
+		"row.subject_kind": 1,
+		"row.subject_name": 1,
+		"target.scope_kind": 1,
+		"target.subject_kind": 2
+	},
+	"src/domains/group-policy/hooks/use-subject-quota-column.tsx": {
+		"subject.kind": 1
+	},
+	"src/domains/identity-source/components/IdentitySourceEnabledSwitch.tsx": {
+		"record.metadata.deletion_timestamp": 1,
+		"record.metadata.name": 1,
+		"record.spec?.enabled": 1
+	},
+	"src/domains/identity-source/components/IdentitySourceStatus.tsx": {
+		"status?.error_message": 1,
+		"test.ok": 1,
+		"test?.message": 1,
+		"test?.time": 1
+	},
+	"src/domains/identity-source/components/IdentitySourceSyncNowButton.tsx": {
+		"record.metadata.deletion_timestamp": 1
+	},
+	"src/domains/identity-source/components/IdentitySourceSyncResult.tsx": {
+		"last.ok": 1,
+		"last?.finished_at": 1
+	},
+	"src/domains/identity-source/components/IdentitySourceSyncSection.tsx": {
+		"last.finished_at": 1,
+		"last.message": 1,
+		"last.started_at": 1,
+		"last?.last_success_time": 1,
+		"last?.started_at": 1,
+		"record.spec.sync?.requested_at": 1
+	},
+	"src/domains/identity-source/hooks/use-identity-source-form.tsx": {
+		"spec.enabled": 1,
+		"spec.ldap.insecure_skip_verify": 1,
+		"spec.ldap.start_tls": 1,
+		"spec.ldap.user_filter": 1,
+		"spec.sync.enabled": 1
+	},
+	"src/domains/log-sink/components/LogSinkStatus.tsx": {
+		"status.phase": 2
+	},
+	"src/domains/log-sink/components/TestConnectionButton.tsx": {
+		"result.message": 1,
+		"result.ok": 2,
+		"result?.ok": 1
+	},
+	"src/domains/model-catalog/components/CatalogModelSlots.tsx": {
+		"row.metadata.name": 2,
+		"slot.model.name": 1,
+		"slot.model.registry": 1,
+		"slot.model?.name": 1,
+		"slot.model?.registry": 1
+	},
+	"src/domains/model-catalog/components/ModelCatalogStatus.tsx": {
+		"status.phase": 2
+	},
+	"src/domains/model-catalog/components/ModelInfoBadges.tsx": {
+		"info.context_length": 1,
+		"info.parameter_count": 1,
+		"info.quantization": 1
+	},
+	"src/domains/model-registry/components/ModelDeleteDialog.tsx": {
+		"reference.kind": 2,
+		"reference.name": 2,
+		"reference.phase": 4,
+		"reference.variant": 2,
+		"reference.workspace": 2
+	},
+	"src/domains/model-registry/components/ModelDetailDrawer.tsx": {
+		"model.alias": 1,
+		"model.creation_time": 1,
+		"model.name": 1,
+		"model.size": 2,
+		"registry.metadata.name": 1,
+		"registry.visibility": 3
+	},
+	"src/domains/model-registry/components/ModelEditDialog.tsx": {
+		"info.is_moe": 2,
+		"info?.is_moe": 1,
+		"value.version": 1
+	},
+	"src/domains/model-registry/components/ModelRegistryStats.tsx": {
+		"stats.model_count": 1
+	},
+	"src/domains/model-registry/components/RegistryAvailabilityNotice.tsx": {
+		"registry.status.error_message": 1,
+		"registry.status?.error_message": 1
+	},
+	"src/domains/model-registry/components/RegistryModelsTable.tsx": {
+		"row.version.alias": 1,
+		"row.version.creation_time": 1,
+		"row.version.name": 2,
+		"row.version.size": 1
+	},
+	"src/domains/organization/components/AddTeamMembersDialog.tsx": {
+		"row.org_unit_id": 1,
+		"row.user_id": 1,
+		"unitOfUser.get(user.id)?.unit.path": 1,
+		"user.metadata.display_name": 1,
+		"user.metadata.name": 2,
+		"user.spec?.email": 2
+	},
+	"src/domains/organization/components/AddTeamMembersTree.tsx": {
+		"user.metadata.name": 1
+	},
+	"src/domains/organization/components/DepartmentsPanel.tsx": {
+		"m.identity_source": 1,
+		"m.org_unit_id": 1,
+		"m.org_units?.metadata.display_name": 1,
+		"nodesById.get(nodeId)?.unit.metadata.name": 1,
+		"selectedUnit.path": 1
+	},
+	"src/domains/organization/components/ManualTeamsField.tsx": {
+		"team.metadata.name": 4
+	},
+	"src/domains/organization/components/MemberTable.tsx": {
+		"row.profile.metadata.display_name": 1,
+		"row.profile.metadata.name": 1,
+		"row.profile?.spec?.email": 1
+	},
+	"src/domains/organization/components/TeamField.tsx": {
+		"team.metadata.name": 1
+	},
+	"src/domains/organization/components/TeamFormDialog.tsx": {
+		"team.metadata.display_name": 1
+	},
+	"src/domains/organization/components/TeamsPanel.tsx": {
+		"created.metadata.name": 1,
+		"deleteCheck?.hasPolicy": 1,
+		"deleteCheck?.isLoading": 2,
+		"deleteCheck?.roleAssignments": 1,
+		"m.user_id": 1,
+		"team.metadata.name": 2
+	},
+	"src/domains/organization/components/UserOrganization.tsx": {
+		"membership.identity_source": 1
+	},
+	"src/domains/role-assignment/components/RoleAssignmentScopeLabel.tsx": {
+		"spec.workspace": 2
+	},
+	"src/domains/role-assignment/components/RoleAssignmentSubjectLabel.tsx": {
+		"spec.subject_name": 1,
+		"spec.user_id": 1
+	},
+	"src/domains/role-assignment/components/RoleAssignmentTable.tsx": {
+		"row.spec.role": 1
+	},
+	"src/domains/role-assignment/components/UserEffectiveRoleAssignments.tsx": {
+		"row.via_kind": 2
+	},
+	"src/domains/role-assignment/hooks/use-role-assignment-form.tsx": {
+		"role.metadata.name": 1,
+		"spec.global": 1,
+		"spec.org_unit": 1,
+		"spec.subject_kind": 1,
+		"spec.subject_name": 1,
+		"spec.team": 2,
+		"spec.user_id": 1,
+		"spec.workspace": 1
+	},
+	"src/domains/service-account/components/TeamApplicationPermissionsCard.tsx": {
+		"appPermissions.is_default": 2,
+		"role.metadata.name": 1,
+		"workspace.metadata.deletion_timestamp": 1,
+		"workspace.metadata.name": 1
+	},
+	"src/domains/service-account/components/TeamServiceAccounts.tsx": {
+		"account.metadata.name": 3,
+		"account.spec.description": 1,
+		"account.spec?.description": 1,
+		"account.spec?.disabled": 2,
+		"selected.spec.description": 1,
+		"selected.spec?.description": 1,
+		"selected.spec?.disabled": 1
+	},
+	"src/domains/service-account/hooks/use-service-accounts.ts": {
+		"account.spec?.description": 1,
+		"current.is_default": 1
+	},
+	"src/pages/api-keys/list.tsx": {
+		"key.metadata.display_name": 2,
+		"key.metadata.name": 2,
+		"key.metadata.workspace": 5,
+		"key.metadata?.deletion_timestamp": 1,
+		"key.metadata?.display_name": 1,
+		"key.metadata?.name": 1,
+		"key.metadata?.workspace": 1,
+		"key.spec.description": 2,
+		"key.spec.project_id": 3,
+		"limits.disabled": 5,
+		"model.endpoint_name": 4,
+		"model.model": 3,
+		"model.type": 4,
+		"project.is_ungrouped": 3,
+		"project.metadata.name": 1,
+		"project.spec.description": 2,
+		"project?.is_ungrouped": 1,
+		"project?.metadata.workspace": 1
+	},
+	"src/pages/api-keys/show.tsx": {
+		"project?.metadata.name": 1,
+		"record.metadata.display_name": 2,
+		"record.metadata.name": 2,
+		"record.metadata.workspace": 5,
+		"record.spec.description": 3,
+		"record.spec.project_id": 2,
+		"record.status?.usage": 1,
+		"record.user_id": 2,
+		"record?.metadata.workspace": 1,
+		"record?.service_account_id": 1,
+		"record?.spec.project_id": 1,
+		"record?.user_id": 1
+	},
+	"src/pages/clusters/list.tsx": {
+		"cluster.spec.version": 2,
+		"cluster.status?.phase": 1
+	},
+	"src/pages/clusters/show.tsx": {
+		"cache.host_path.path": 1,
+		"cache.name": 3,
+		"cache.nfs.path": 1,
+		"cache.nfs.server": 1,
+		"cache.pvc.resources?.requests?.storage": 1,
+		"cache.pvc.storageClassName": 2,
+		"record.metadata.name": 1,
+		"record.metadata.workspace": 1,
+		"record.spec.config.kubernetes_config.router?.replicas": 1,
+		"record.spec.config.ssh_config.provider.head_ip": 1,
+		"record.spec.image_registry": 1,
+		"record.spec.type": 4,
+		"record.spec.version": 2,
+		"record.status?.phase": 2,
+		"record.status?.version": 1,
+		"record?.metadata.name": 2
+	},
+	"src/pages/endpoints/list.tsx": {
+		"model?.name": 1
+	},
+	"src/pages/endpoints/show.tsx": {
+		"record.metadata.name": 1,
+		"record.metadata.workspace": 2,
+		"record.spec.cluster": 1,
+		"record.spec.engine.version": 1,
+		"record.spec.model?.name": 1,
+		"record.spec.replicas?.num": 1,
+		"record.status?.kv_cache?.provider": 1,
+		"record.status?.phase": 1,
+		"record?.metadata.workspace": 1,
+		"record?.spec.cluster": 4,
+		"record?.spec.engine.engine": 1,
+		"record?.status?.phase": 2,
+		"record?.status?.service_url": 1,
+		"v.version": 1
+	},
+	"src/pages/engines/components/EngineCard.tsx": {
+		"engine.metadata.workspace": 1,
+		"newest?.version": 1
+	},
+	"src/pages/engines/list.tsx": {
+		"a.metadata.name": 1,
+		"a.status?.phase": 1,
+		"b.metadata.name": 1,
+		"b.status?.phase": 1,
+		"engine.metadata.name": 2
+	},
+	"src/pages/engines/show.tsx": {
+		"item.version": 4,
+		"record.metadata.name": 1,
+		"record.metadata.workspace": 1,
+		"selected.version": 1,
+		"selected?.version": 2,
+		"version.version": 1
+	},
+	"src/pages/external-endpoints/show.tsx": {
+		"record.status?.phase": 1,
+		"record.status?.service_url": 3,
+		"route.model": 1,
+		"upstream.endpoint_ref": 3,
+		"upstream.upstream?.url": 1,
+		"upstreamStatus?.phase": 1,
+		"upstreams[index]?.name": 1
+	},
+	"src/pages/identity-sources/show.tsx": {
+		"ldap.bind_dn": 1,
+		"ldap.ca_cert": 1,
+		"ldap.insecure_skip_verify": 1,
+		"ldap.start_tls": 1,
+		"ldap.timeout": 1,
+		"ldap.url": 1,
+		"ldap.user_base_dn": 1,
+		"ldap.user_filter": 1,
+		"oidc.ca_cert": 1,
+		"oidc.client_id": 1,
+		"oidc.issuer": 1,
+		"oidc.redirect_url": 1,
+		"record.metadata.display_name": 1,
+		"record.metadata.name": 2,
+		"record.status?.error_message": 1,
+		"test.ok": 1,
+		"test?.message": 1,
+		"test?.time": 1
+	},
+	"src/pages/image-registries/show.tsx": {
+		"record.spec.repository": 1,
+		"record.spec.url": 2
+	},
+	"src/pages/license/show.tsx": {
+		"license.status.info.edition": 1,
+		"license.status.info.license_type": 1,
+		"license.status.info.max_gpus": 2,
+		"license.status.info.period": 5,
+		"license.status.info.serial": 1,
+		"license.status.info.sign_date": 3,
+		"license.status.info.vendor": 1,
+		"license.status.phase": 2,
+		"license.status.usage.GPU.limit": 2,
+		"license.status.usage.GPU.used": 1,
+		"license.status.usage.Workspace.limit": 2,
+		"license.status.usage.Workspace.used": 1,
+		"license.status?.info.serial": 1
+	},
+	"src/pages/log-sinks/list.tsx": {
+		"(original as LogSink).metadata.name": 1,
+		"(row.original as LogSink).spec?.type": 1
+	},
+	"src/pages/log-sinks/show.tsx": {
+		"lastTest.message": 1,
+		"lastTest.ok": 2,
+		"lastTest?.message": 1,
+		"record.metadata.name": 1,
+		"record.spec?.type": 2,
+		"s3?.bucket": 1,
+		"s3?.compression": 2,
+		"s3?.endpoint": 1,
+		"s3?.flush_interval_seconds": 1,
+		"s3?.force_path_style": 2,
+		"s3?.key_prefix": 1,
+		"s3?.region": 1,
+		"vl?.auth?.username": 1,
+		"vl?.ca_cert": 1,
+		"vl?.insecure_skip_verify": 1,
+		"vl?.timeout_seconds": 1,
+		"vl?.url": 1
+	},
+	"src/pages/model-catalogs/components/ModelCatalogCard.tsx": {
+		"catalog.metadata.workspace": 1,
+		"model.name": 1,
+		"model?.task": 1,
+		"spec.model?.name": 1
+	},
+	"src/pages/model-catalogs/components/VariantTable.tsx": {
+		"r.cpu": 2,
+		"r.gpu": 2,
+		"r.memory": 2
+	},
+	"src/pages/model-catalogs/edit.tsx": {
+		"record.metadata.name": 1,
+		"record.metadata.workspace": 2,
+		"record?.metadata.name": 1
+	},
+	"src/pages/model-catalogs/list.tsx": {
+		"Object.values(c.spec.variants ?? {})[0]?.model?.name": 1,
+		"c.metadata.name": 1,
+		"c.spec.model?.name": 1
+	},
+	"src/pages/model-catalogs/show.tsx": {
+		"heroModel.file": 1,
+		"heroModel?.file": 1,
+		"heroModel?.task": 2
+	},
+	"src/pages/model-usage/components/UsageScopePanel.tsx": {
+		"team.metadata.name": 1
+	},
+	"src/pages/model-usage/components/UsageTables.tsx": {
+		"r.date": 2,
+		"r.endpoint_name": 2,
+		"r.model_name": 2
+	},
+	"src/pages/model-usage/list.tsx": {
+		"a.date": 1,
+		"a.usage": 1,
+		"b.date": 1,
+		"b.usage": 1
+	},
+	"src/pages/organization/team-detail-tabs.tsx": {
+		"account.spec?.disabled": 1
+	},
+	"src/pages/organization/use-team-delete-check.ts": {
+		"ra.metadata.deletion_timestamp": 1
+	},
+	"src/pages/role-assignments/show.tsx": {
+		"record.metadata.name": 1,
+		"record.spec.role": 2
+	},
+	"src/pages/roles/show.tsx": {
+		"record.spec.preset_key": 1
+	},
+	"src/pages/users/show.tsx": {
+		"record.metadata.name": 1
+	},
+	"src/pages/workspaces/show.tsx": {
+		"record.metadata.name": 1
+	}
+}

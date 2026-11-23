@@ -10,13 +10,11 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
 import {
   GpuObservationCard,
   type GpuObservationDisplay,
   GpuObservationTableHeader,
 } from "@/foundation/components/GpuObservationCard";
-import { MetricBar } from "@/foundation/components/MetricBar";
 import type {
   AcceleratorSample,
   GpuAllocation,
@@ -25,8 +23,10 @@ import type {
 import { formatL1CacheUsage } from "@/foundation/lib/accelerator-observations";
 import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
 import { compareDevicesByOrderThenUuid } from "@/foundation/lib/device-resource-utils";
-import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { MetricBar } from "@/foundation/role/MetricBar";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type {
   ClusterResourceInfo,
   NodeResourceStatus,

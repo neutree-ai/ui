@@ -8,7 +8,7 @@ vi.mock("@refinedev/core", () => ({
   useUpdate: () => ({ mutate, isLoading: false }),
 }));
 
-vi.mock("@/foundation/components/Table", () => ({
+vi.mock("@/foundation/scene/Table", () => ({
   RowAction: ({ title, onClick }: { title: string; onClick: () => void }) => (
     <button type="button" onClick={onClick}>
       {title}

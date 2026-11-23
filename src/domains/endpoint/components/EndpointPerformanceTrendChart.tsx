@@ -22,7 +22,7 @@ import {
   performanceTrendTicks,
 } from "@/domains/endpoint/lib/performance-trends";
 import { Loader } from "@/foundation/components/Loader";
-import { chartCategoryColor } from "@/foundation/lib/chart-palette";
+import { chartCategoryColor } from "@/foundation/role/chart-palette";
 
 export type PerformanceTrendLine = {
   metric: PerformanceTrendMetric;

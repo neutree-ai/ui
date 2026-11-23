@@ -7,11 +7,11 @@ import type {
   IdentitySource,
   IdentitySourceSyncStatus,
 } from "@/domains/identity-source/types";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import { InfoHint } from "@/foundation/components/InfoHint";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import Timestamp from "@/foundation/role/Timestamp";
+import { InfoHint } from "@/foundation/scene/InfoHint";
+import { ShowPage } from "@/foundation/scene/ShowPage";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { IdentitySourceSyncNowButton } from "./IdentitySourceSyncNowButton";
 import { SyncResultPill, syncResultOf } from "./IdentitySourceSyncResult";
 

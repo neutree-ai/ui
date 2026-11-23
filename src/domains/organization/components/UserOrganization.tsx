@@ -14,23 +14,23 @@ import { ORGANIZATION_ERROR_KEYS } from "@/domains/organization/lib/organization
 import { teamSource } from "@/domains/organization/lib/team";
 import { orgUnitAssignmentMode } from "@/domains/organization/lib/user-org-unit";
 import type { MemberProfile } from "@/domains/organization/types";
-import { DeleteConfirmDialog } from "@/foundation/components/DeleteConfirmDialog";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowPage } from "@/foundation/components/ShowPage";
-import Timestamp from "@/foundation/components/Timestamp";
 import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
+import { useTranslation } from "@/foundation/lib/i18n";
+import { cn } from "@/foundation/lib/utils";
+import { displayName } from "@/foundation/role/display-name";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
+import Timestamp from "@/foundation/role/Timestamp";
 import {
   isPermissionDenied,
   translateApiErrorOr,
-} from "@/foundation/lib/api-error-code";
-import { displayName } from "@/foundation/lib/display-name";
-import { useTranslation } from "@/foundation/lib/i18n";
-import { cn } from "@/foundation/lib/utils";
+} from "@/foundation/scene/api-error-code";
+import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowPage } from "@/foundation/scene/ShowPage";
 
 /**
  * `deniedKey` translates an RLS refusal (42501). The department writes here

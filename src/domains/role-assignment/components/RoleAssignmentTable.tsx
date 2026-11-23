@@ -10,10 +10,10 @@ import {
 import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
 import type { GroupRenderers } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
 import type { RoleAssignmentSpec } from "@/domains/role-assignment/types";
-import { EmptyState } from "@/foundation/components/EmptyState";
 import { Loader } from "@/foundation/components/Loader";
-import { ShowButton } from "@/foundation/components/ShowButton";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { ShowButton } from "@/foundation/scene/ShowButton";
 
 type RoleAssignmentRow = {
   key: string;

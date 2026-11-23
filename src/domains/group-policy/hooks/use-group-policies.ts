@@ -18,8 +18,8 @@ import {
   useHasOrgUnitPermission,
   useHasTeamPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { useRowWrite } from "@/foundation/hooks/use-row-write";
-import { isPermissionDenied } from "@/foundation/lib/api-error-code";
+import { isPermissionDenied } from "@/foundation/scene/api-error-code";
+import { useRowWrite } from "@/foundation/scene/use-row-write";
 import {
   type GroupKind,
   isGroupKind,

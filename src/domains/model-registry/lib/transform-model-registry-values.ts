@@ -2,7 +2,7 @@ import type { ModelRegistry } from "@/domains/model-registry/types";
 import {
   omitEmptyUntouched,
   type TouchedFields,
-} from "@/foundation/lib/touched-fields";
+} from "@/foundation/role/touched-fields";
 
 export function transformModelRegistryValues(
   values: ModelRegistry,

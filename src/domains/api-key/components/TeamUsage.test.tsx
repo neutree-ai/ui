@@ -5,7 +5,7 @@ import type { GroupUsageRecord } from "@/domains/api-key/types";
 vi.mock("@/domains/api-key/hooks/use-group-usage", () => ({
   useGroupUsage: vi.fn(),
 }));
-vi.mock("@/foundation/components/ShowPage", () => ({
+vi.mock("@/foundation/scene/ShowPage", () => ({
   ShowPage: {
     Section: ({ children }: { children: React.ReactNode }) => (
       <section>{children}</section>

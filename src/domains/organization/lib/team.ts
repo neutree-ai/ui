@@ -1,6 +1,6 @@
 import type { Team } from "@/domains/organization/types";
-import { displayName } from "@/foundation/lib/display-name";
-import { isValidResourceName } from "@/foundation/lib/validate";
+import { displayName } from "@/foundation/role/display-name";
+import { isValidResourceName } from "@/foundation/role/validate";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 
 /** The identity source a Team was synced from; "" for a manual Team. */

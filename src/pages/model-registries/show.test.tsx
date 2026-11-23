@@ -18,7 +18,7 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/components/ShowPage", () => {
+vi.mock("@/foundation/scene/ShowPage", () => {
   const ShowPage = ({ children }: { children: ReactNode }) => (
     <main>{children}</main>
   );
@@ -97,7 +97,7 @@ vi.mock(
 vi.mock("@/domains/model-registry/components/RegistryVisibility", () => ({
   RegistryVisibility: () => <span>Public</span>,
 }));
-vi.mock("@/foundation/components/MetadataTimestampMeta", () => ({
+vi.mock("@/foundation/scene/MetadataTimestampMeta", () => ({
   MetadataTimestampMeta: () => <span>Created:3 days ago</span>,
 }));
 

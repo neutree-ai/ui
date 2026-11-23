@@ -6,11 +6,11 @@ import { useTeamsByName } from "@/domains/organization/hooks/use-organization";
 import { isInactive } from "@/domains/organization/lib/org-tree";
 import { isProjectTeam } from "@/domains/organization/lib/team";
 import type { Team } from "@/domains/organization/types";
-import { FormCombobox } from "@/foundation/components/FormCombobox";
-import { InactiveBadge } from "@/foundation/components/InactiveBadge";
-import { displayName } from "@/foundation/lib/display-name";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
+import { displayName } from "@/foundation/role/display-name";
+import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { InactiveBadge } from "@/foundation/role/InactiveBadge";
 
 type TeamFieldProps = {
   /** metadata.name of the selected Team. */

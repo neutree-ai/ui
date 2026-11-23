@@ -9,11 +9,11 @@ import {
 import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
-import { ListPage } from "@/foundation/components/ListPage";
-import { useMetadataColumns } from "@/foundation/components/metadata-columns";
-import { Table } from "@/foundation/components/Table";
-import Timestamp from "@/foundation/components/Timestamp";
 import { useTranslation } from "@/foundation/lib/i18n";
+import Timestamp from "@/foundation/role/Timestamp";
+import { ListPage } from "@/foundation/scene/ListPage";
+import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
+import { Table } from "@/foundation/scene/Table";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const LogSinksList = () => {

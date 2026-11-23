@@ -1,6 +1,6 @@
 import { useUserForm } from "@/domains/user/hooks/use-user-form";
-import { ResourceForm } from "@/foundation/components/ResourceForm";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { ResourceForm } from "@/foundation/scene/ResourceForm";
 
 export const UsersEdit = () => {
   const { t } = useTranslation();

@@ -24,12 +24,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { EmptyState } from "@/foundation/components/EmptyState";
-import { EmptyValue } from "@/foundation/components/EmptyValue";
-import {
-  MetricBar,
-  type MetricBarSeries,
-} from "@/foundation/components/MetricBar";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
@@ -46,8 +40,11 @@ import {
   type GpuDeviceResourceRow,
   getGpuDeviceResourceFilterOptions,
 } from "@/foundation/lib/gpu-device-resources";
-import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
+import { formatToDecimal } from "@/foundation/role/unit";
+import { EmptyState } from "@/foundation/scene/EmptyState";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 
 type GpuDeviceResourcesViewLabels = {

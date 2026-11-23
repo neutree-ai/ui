@@ -43,7 +43,7 @@ Live indexes constrain subject/role/scope (`131`). UI type omits status.
   Missing/null/empty kind displays User; switching subject clears the other kind's identity.
 - `RoleAssignmentScopeLabel` / `RoleAssignmentSubjectLabel`: organization renderers.
   `UserCell`: UUID lookup in user_profiles, `profileDisplayName`, blank when unavailable.
-- Users: `profileOptionLabel`; tests: `src/foundation/lib/user-identity.test.ts`. Roles: technical names.
+- Users: `profileOptionLabel`; tests: `src/foundation/role/user-identity.test.ts`. Roles: technical names.
   Time: `useMetadataColumns`, `MetadataTimestampMeta`.
 
 ## Scenes
