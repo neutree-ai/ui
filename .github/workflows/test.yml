@@ -101,3 +101,85 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Report-only: renders the screens that change against the merge base from
+  # mock data and publishes a before/after page. It never fails the pull request.
+  visual-diff:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find the base and whether the UI changed
+        id: scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          base_sha=$(git merge-base "origin/$BASE_REF" HEAD)
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          if git diff --quiet "$base_sha" HEAD -- src index.html e2e/visual playwright.visual.config.ts tools/visual-diff tools/visual-diff.cjs package.json yarn.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.scope.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        if: steps.scope.outputs.changed == 'true'
+        run: yarn install --frozen-lockfile
+
+      - name: Install browser
+        if: steps.scope.outputs.changed == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Render and compare screens
+        id: diff
+        if: steps.scope.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ steps.scope.outputs.base_sha }}
+        run: |
+          node tools/visual-diff.cjs --base "$BASE_SHA" --out "$RUNNER_TEMP/visual-diff"
+          mkdir -p "$RUNNER_TEMP/visual-html"
+          cp "$RUNNER_TEMP/visual-diff/report.html" "$RUNNER_TEMP/visual-html/visual-diff.html"
+
+      - name: Upload report page
+        id: report
+        if: steps.diff.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/visual-html/visual-diff.html
+          archive: false
+          retention-days: 7
+
+      - name: Prepare comment
+        if: steps.diff.outcome == 'success'
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ARTIFACT_ID: ${{ steps.report.outputs.artifact-id }}
+        run: |
+          out="$RUNNER_TEMP/visual-diff-comment"
+          mkdir -p "$out"
+          cp "$RUNNER_TEMP/visual-diff/comment.md" "$out/comment.md"
+          printf '%s' "$PR_NUMBER" > "$out/pr-number"
+          printf '%s' "$ARTIFACT_ID" > "$out/artifact-id"
+
+      - name: Upload comment
+        if: steps.diff.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff-comment
+          path: ${{ runner.temp }}/visual-diff-comment
+          retention-days: 7
