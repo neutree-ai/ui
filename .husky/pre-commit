@@ -7,3 +7,4 @@ node tools/check-i18n-keys.cjs
 node tools/check-shadow-utilities.cjs
 node tools/check-chart-colors.cjs
 node tools/check-test-patterns.cjs
+node tools/ddu-layers.cjs check

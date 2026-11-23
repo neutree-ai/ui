@@ -65,8 +65,9 @@ have to repeat. Passing a field on unchanged is not a decision.
 
 - `yarn ddu:layers` — the per-kind layer table, plus the kind-specific modules still living in
   `foundation/`. `--json <file>` and `--sites <file>` write the details.
-- `yarn ddu:check` — reports overrides that are new. Move the rule into the kind's `lib/` or a
-  `type/`/`role/` piece, or, when it cannot live lower, mark it on the line above with the reason.
+- `yarn ddu:check` — fails on overrides that are new, and prints under each one why it was
+  flagged and how to fix it: move the rule into the kind's `lib/` or a `type/`/`role/` piece, or,
+  when it cannot live lower, mark it on the line above with the reason. It runs in pre-commit and CI.
 
 ```tsx
 // ddu-override: the upgrade tip follows the raw phase, not the displayed status
@@ -77,8 +78,10 @@ Between JSX children the mark is `{/* ddu-override: <reason> */}`. A mark withou
 no override on the next line, fails the check.
 
 Existing overrides are listed in `tools/ddu-baseline.json` (per file, by expression, not by line),
-so only new ones are reported: as warnings in CI, as failures with `--strict`. After removing
-overrides, shrink the baseline with `yarn ddu:check --update-baseline`.
+so only new ones fail. The baseline only shrinks: after removing overrides or renaming a file, the
+check fails until `yarn ddu:check --update-baseline` is run and the file committed; that command
+drops gone entries, moves entries with a renamed file, and never adds a new override.
+`--rebuild-baseline` rewrites it from scratch and is only for changes to the tool's own rules.
 
 ### L2 `domains/<resource>/`
 

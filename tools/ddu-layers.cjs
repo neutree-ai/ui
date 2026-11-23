@@ -14,12 +14,16 @@
  *
  * Usage:
  *   node tools/ddu-layers.cjs [--json <file>] [--sites <file>]
- *   node tools/ddu-layers.cjs check [--strict] [--update-baseline]
+ *   node tools/ddu-layers.cjs check [--update-baseline]
  *
- * check compares the unmarked override sites with tools/ddu-baseline.json.
- * New ones are warnings (errors with --strict). A site is marked by a
- * `// ddu-override: <reason>` comment on the line above it; a mark without a
- * reason, or with no override site on the next line, always fails.
+ * check fails on unmarked override sites that tools/ddu-baseline.json does not
+ * list. A site is marked by a `// ddu-override: <reason>` comment on the line
+ * above it; a mark without a reason, or with no override site on the next
+ * line, fails too. The baseline only shrinks: --update-baseline drops entries
+ * whose override is gone and moves entries with a renamed file, and check
+ * fails until that is committed. --rebuild-baseline rewrites it from the
+ * current sites; use it only when this tool's rules change, so the diff is
+ * reviewed with the rule.
  */
 
 const fs = require("node:fs");
@@ -301,13 +305,16 @@ function measure() {
     const firstSite = sites.length;
     if (fileLayer === "description") kindSpecific.set(file, 0);
 
-    const push = (node, layer, how, text, field) => {
+    const push = (node, layer, how, text, field, why) => {
       const { line } = sf.getLineAndCharacterOfPosition(node.getStart());
-      sites.push({ kind, layer, file, line: line + 1, how, text, field });
+      const site = { kind, layer, file, line: line + 1, how, text, field };
+      if (layer === "override") site.why = why;
+      sites.push(site);
     };
 
     const record = (node, how) => {
       let layer;
+      let why = "computed inline (a comparison, fallback, format or branch)";
       const c = directConsumer(node);
       if (c?.kind === "copy") layer = "wire";
       else if (fileLayer) layer = fileLayer;
@@ -318,12 +325,16 @@ function measure() {
         // block (Description). Rendered as a child of a scene block, or with
         // a fallback, the raw value has no type/role deciding its display.
         const l = c?.target ? layerOfTarget(c.target) : null;
-        if (l === "scene")
+        if (l === "scene") {
           layer =
             c.kind === "child" || c.kind === "jsx-fallback"
               ? "override"
               : "description";
-        else if (l) layer = l;
+          why =
+            c.kind === "child"
+              ? `rendered raw as a child of <${c.target.getText()}>, so no type/role piece decides how it shows`
+              : `handed to <${c.target.getText()}> with an inline fallback`;
+        } else if (l) layer = l;
         else if (c?.kind === "jsx") layer = "wire";
         else if (
           c?.kind === "call" &&
@@ -332,7 +343,7 @@ function measure() {
           layer = "wire";
         else layer = "override";
       }
-      push(node, layer, how, node.getText(), node.name.text);
+      push(node, layer, how, node.getText(), node.name.text, why);
     };
 
     const visit = (node) => {
@@ -382,7 +393,14 @@ function measure() {
             .replace(/\[[^\]]*\]/g, "")
             .split(".")
             .pop();
-          push(node, layer, "path", node.text, field);
+          push(
+            node,
+            layer,
+            "path",
+            node.text,
+            field,
+            "a form field declared in a component, outside a shared form piece",
+          );
         }
       }
       ts.forEachChild(node, visit);
@@ -409,7 +427,7 @@ function applyMarks(file, text, fileSites, markErrors) {
         file,
         line,
         message:
-          "ddu-override mark has no reason: say why the rule cannot live lower",
+          'ddu-override mark has no reason: write why the rule cannot live lower after the colon, as in "// ddu-override: <reason>"',
       });
       return;
     }
@@ -426,7 +444,7 @@ function applyMarks(file, text, fileSites, markErrors) {
       markErrors.push({
         file,
         line,
-        message: "unused ddu-override mark: the next line has no override site",
+        message: `unused ddu-override mark: line ${next + 1}, the next code line, has no override; move the mark directly above the override it excuses, or delete it`,
       });
       return;
     }
@@ -529,19 +547,67 @@ function unmarkedOverrides(sites) {
   return byFile;
 }
 
-function writeBaseline(byFile) {
-  const baseline = {};
-  for (const file of [...byFile.keys()].sort()) {
-    const keys = byFile.get(file);
-    baseline[file] = {};
-    for (const key of [...keys.keys()].sort())
-      baseline[file][key] = keys.get(key).length;
+// Baseline entries kept for the current code: never more than were recorded,
+// so a new override cannot enter the baseline. Entries of a file that no
+// longer exists follow their expression into the file it moved to.
+function compareBaseline(byFile, baseline) {
+  const pool = new Map();
+  for (const [file, keys] of Object.entries(baseline)) {
+    if (fs.existsSync(path.join(ROOT, file))) continue;
+    for (const [key, n] of Object.entries(keys))
+      pool.set(key, (pool.get(key) ?? 0) + n);
   }
+  const kept = {};
+  const added = [];
+  let moved = 0;
+  for (const [file, keys] of byFile) {
+    for (const [key, found] of keys) {
+      const allowed = Math.min(found.length, baseline[file]?.[key] ?? 0);
+      const extra = found.slice(allowed);
+      const carried = Math.min(extra.length, pool.get(key) ?? 0);
+      pool.set(key, (pool.get(key) ?? 0) - carried);
+      moved += carried;
+      added.push(...extra.slice(carried));
+      if (allowed + carried) {
+        kept[file] ??= {};
+        kept[file][key] = allowed + carried;
+      }
+    }
+  }
+  const sorted = sortBaseline(kept);
+  return {
+    kept: sorted,
+    added,
+    moved,
+    gone: countEntries(baseline) - countEntries(sorted),
+    stale: JSON.stringify(sorted) !== JSON.stringify(sortBaseline(baseline)),
+  };
+}
+
+function sortBaseline(baseline) {
+  const out = {};
+  for (const file of Object.keys(baseline).sort()) {
+    out[file] = {};
+    for (const key of Object.keys(baseline[file]).sort())
+      out[file][key] = baseline[file][key];
+  }
+  return out;
+}
+
+function fromSites(byFile) {
+  const out = {};
+  for (const [file, keys] of byFile) {
+    out[file] = {};
+    for (const [key, found] of keys) out[file][key] = found.length;
+  }
+  return sortBaseline(out);
+}
+
+function writeBaseline(baseline) {
   fs.writeFileSync(
     path.join(ROOT, BASELINE_FILE),
     `${JSON.stringify(baseline, null, "\t")}\n`,
   );
-  return baseline;
 }
 
 function readBaseline() {
@@ -555,7 +621,9 @@ const countEntries = (baseline) =>
     0,
   );
 
-function hintFor(site) {
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+function fixesFor(site) {
   const lib =
     site.kind.startsWith("(") ||
     !fs.existsSync(path.join(SRC, "domains", site.kind))
@@ -563,66 +631,104 @@ function hintFor(site) {
       : `src/domains/${site.kind}/lib/`;
   const field = FIELD_HINTS.find(([re]) => re.test(site.field ?? ""));
   return [
-    field ? `${field[1]}; otherwise ` : "",
-    `move the rule to ${lib} (or a foundation/type|role piece), or mark it with \`// ddu-override: <why it cannot live lower>\``,
-  ].join("");
+    ...(field ? [field[1]] : []),
+    site.how === "path"
+      ? `declare the field through the kind's form hook or a shared form piece in ${lib}`
+      : `move the rule into ${lib} (or a foundation/type|role piece several kinds can use) and call it here`,
+    `if it must stay here, add on the line above line ${site.line}: \`// ddu-override: <why it cannot live lower>\` (between JSX children: \`{/* ddu-override: <why> */}\`)`,
+  ];
 }
+
+const FOOTER = {
+  override: [
+    "New override (a component or page decides on a resource field inline, so the next page has to repeat it): apply one of the fixes listed under it; prefer moving the rule over marking it.",
+  ],
+  mark: [
+    "Mark error: give the mark its reason after the colon, move it directly above the override it excuses, or delete it once the override is gone.",
+  ],
+  stale: [
+    `Baseline out of date: run \`yarn ddu:check --update-baseline\` and commit ${BASELINE_FILE}.`,
+    "It only shrinks or follows moved files; it never accepts a new override.",
+  ],
+};
 
 function check(result, options) {
   const { sites, markErrors } = result;
   const github = process.env.GITHUB_ACTIONS === "true";
-  const annotate = (level, { file, line }, message) =>
-    console.log(
-      github
-        ? `::${level} file=${file},line=${line}::${message}`
-        : `${level}: ${file}:${line} ${message}`,
-    );
+  const problem = (title, { file, line }, body = []) => {
+    if (github) {
+      const text = [title, ...body].join("\n").replace(/%/g, "%25");
+      console.log(
+        `::error file=${file},line=${line}::${text.replace(/\r/g, "%0D").replace(/\n/g, "%0A")}`,
+      );
+    } else {
+      console.log(`${file}:${line}  ${title}`);
+      for (const b of body) console.log(`    ${b}`);
+    }
+  };
   const byFile = unmarkedOverrides(sites);
   const marked = sites.filter((s) => s.marked).length;
-
-  for (const error of markErrors) annotate("error", error, error.message);
-
-  if (options.updateBaseline) {
-    const baseline = writeBaseline(byFile);
-    console.log(
-      `ddu:check: wrote ${BASELINE_FILE} (${countEntries(baseline)} unmarked overrides in ${Object.keys(baseline).length} files).`,
-    );
-    return markErrors.length ? 1 : 0;
-  }
-
   const baseline = readBaseline();
-  const added = [];
-  let removed = 0;
-  for (const [file, keys] of byFile) {
-    for (const [key, found] of keys) {
-      const allowed = baseline[file]?.[key] ?? 0;
-      added.push(...found.slice(allowed));
-    }
-  }
-  for (const [file, keys] of Object.entries(baseline)) {
-    for (const [key, allowed] of Object.entries(keys)) {
-      const found = byFile.get(file)?.get(key)?.length ?? 0;
-      removed += Math.max(0, allowed - found);
-    }
-  }
+  const compared = options.rebuildBaseline
+    ? {
+        kept: fromSites(byFile),
+        added: [],
+        moved: 0,
+        gone: 0,
+        stale: false,
+      }
+    : compareBaseline(byFile, baseline);
+  const { added } = compared;
 
-  const level = options.strict ? "error" : "warning";
+  for (const error of markErrors) problem(error.message, error);
   added.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
-  for (const site of added)
-    annotate(
-      level,
-      site,
-      `new override \`${display(site)}\` decides on a resource field inline: ${hintFor(site)}`,
-    );
+  for (const site of added) {
+    const [fix, ...rest] = fixesFor(site);
+    problem(`new override \`${display(site)}\``, site, [
+      `why: ${site.why}`,
+      `fix: ${fix}`,
+      ...rest.map((r) => ` or: ${r}`),
+    ]);
+  }
 
-  console.log(
-    `ddu:check: ${added.length} new unmarked override${added.length === 1 ? "" : "s"}, ${markErrors.length} mark error${markErrors.length === 1 ? "" : "s"} (baseline ${countEntries(baseline)}, marked ${marked}).`,
-  );
-  if (removed > 0)
+  let stale = compared.stale;
+  if (options.updateBaseline || options.rebuildBaseline) {
+    if (stale || options.rebuildBaseline) writeBaseline(compared.kept);
     console.log(
-      `ddu:check: ${removed} baseline override${removed === 1 ? " is" : "s are"} gone; record it with \`yarn ddu:check --update-baseline\`.`,
+      `ddu:check: ${BASELINE_FILE} records ${plural(countEntries(compared.kept), "override")} (${compared.gone} gone, ${compared.moved} moved with their file).`,
     );
-  return markErrors.length || (options.strict && added.length) ? 1 : 0;
+    stale = false;
+  }
+
+  const counts = [
+    plural(added.length, "new override"),
+    plural(markErrors.length, "mark error"),
+  ];
+  const failed = added.length || markErrors.length || stale;
+  if (!failed) {
+    console.log(
+      `✅ ddu:check: ${counts.join(", ")} (baseline ${countEntries(compared.kept)}, marked ${marked}).`,
+    );
+    return 0;
+  }
+  if (stale)
+    counts.push(
+      `baseline out of date (${compared.gone} gone, ${compared.moved} moved with their file)`,
+    );
+  const steps = [
+    ...(added.length ? FOOTER.override : []),
+    ...(markErrors.length ? FOOTER.mark : []),
+    ...(stale ? FOOTER.stale : []),
+  ];
+  console.log(`
+❌ ddu:check: ${counts.join(", ")}.
+
+How to fix:
+${steps.map((s) => `  - ${s}`).join("\n")}
+  Then rerun \`yarn ddu:check\` until it passes.
+
+See: contributing/architecture.md, "Layer check"`);
+  return 1;
 }
 
 function main() {
@@ -635,8 +741,8 @@ function main() {
   if (args[0] === "check") {
     process.exit(
       check(result, {
-        strict: args.includes("--strict"),
         updateBaseline: args.includes("--update-baseline"),
+        rebuildBaseline: args.includes("--rebuild-baseline"),
       }),
     );
   }
