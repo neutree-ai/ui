@@ -116,7 +116,7 @@
 		"ddu:layers": "node tools/ddu-layers.cjs",
 		"ddu:check": "node tools/ddu-layers.cjs check",
 		"cpd": "jscpd src",
-		"visual:diff": "node tools/visual-diff.cjs"
+		"visual:report": "node tools/visual-report.cjs"
 	},
 	"browserslist": {
 		"production": [

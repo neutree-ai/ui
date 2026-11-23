@@ -28,9 +28,9 @@ assert what the user sees rather than class names or layout, and do not re-decla
 
 Follow the E2E guide: [contributing/e2e.md](contributing/e2e.md)
 
-## Visual Diff
+## Visual Report
 
-Follow the visual diff guide: [contributing/visual-diff.md](contributing/visual-diff.md) (every user-visible change a PR lists should appear in its report, and vice versa)
+Follow the visual report guide: [contributing/visual-report.md](contributing/visual-report.md) (a PR with user-visible changes lists each in its description and attaches a before/after report)
 
 ## I18n
 

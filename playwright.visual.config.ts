@@ -1,8 +1,7 @@
 import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-// Screenshots of pages rendered from mock data; `yarn visual:diff` runs this
-// against a base and a head build and compares the images.
+// Captures of pages rendered from mock data, for `yarn visual:report`.
 export default defineConfig({
   testDir: "./e2e/visual",
   testMatch: /.*\.spec\.ts/,

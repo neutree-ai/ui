@@ -632,7 +632,7 @@
   "src/foundation/model-reference/use-registry-model-version.ts": "5166578ccf6dc1d0226f4a276b5af7fa",
   "src/foundation/role/RegistryStatus.tsx": "1994ed2f2513f50c1fa0c7751fd99207",
   "src/foundation/lib/sso-callback.ts": "d49593617282f7519710600b0b8426dc",
-  "playwright.visual.config.ts": "ba46a1efd70bf8ce9ec37c6cef7c14cb",
+  "playwright.visual.config.ts": "da3112e410385808ad82a2c61315f730",
   "src/foundation/testing/visual-fixtures.ts": "e1fa5f74c9eb848722a17efdc2c7371e",
   "src/domains/log-sink/testing/visual-fixtures.ts": "509c35535b0fa0634f5eae5040c515c9",
   "src/domains/license/testing/visual-fixtures.ts": "5ea2ed09a6ffbb7731bda564ca5ac567",
