@@ -46,11 +46,6 @@ const modelCaches: ModelCache[] = [
     host_path: { path: "/data/models", type: "Directory" },
   },
   {
-    name: "both-sources",
-    nfs: { server: "10.0.0.21", path: "/exports/nfs-path" },
-    host_path: { path: "/data/host-path" },
-  },
-  {
     name: "claimed",
     pvc: {
       storageClassName: "fast-ssd",

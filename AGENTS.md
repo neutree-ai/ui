@@ -30,7 +30,7 @@ Follow the E2E guide: [contributing/e2e.md](contributing/e2e.md)
 
 ## Visual Report
 
-Follow the visual report guide: [contributing/visual-report.md](contributing/visual-report.md) (a PR with user-visible changes lists each in its description and attaches a before/after report)
+Follow the visual report guide: [contributing/visual-report.md](contributing/visual-report.md) (an on-demand local before/after report of user-visible changes; not run in CI)
 
 ## I18n
 
