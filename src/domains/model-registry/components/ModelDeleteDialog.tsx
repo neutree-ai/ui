@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { LoadingIcon } from "@/components/ui/loading";
 import { useDeleteRegistryModelVersion } from "@/domains/model-registry/hooks/use-registry-model-version";
-import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
+import { useTranslation } from "@/foundation/lib/i18n";
+import type { RegistryModelRef } from "@/foundation/model-reference/registry-models";
 import {
   MODEL_REFERENCED_CODE,
   RegistryModelError,
-} from "@/foundation/lib/api/registry-models";
-import { useTranslation } from "@/foundation/lib/i18n";
+} from "@/foundation/model-reference/registry-models";
 import type { ModelReference } from "@/foundation/types/model-types";
 
 /**

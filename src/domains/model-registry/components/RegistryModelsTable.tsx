@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/table";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   registryIsDisabled,
   registryIsUnreachable,
-} from "@/foundation/lib/model-registry-availability";
-import { registryPagesFromOffset } from "@/foundation/lib/model-registry-visibility";
+} from "@/foundation/model-reference/model-registry-availability";
+import { registryPagesFromOffset } from "@/foundation/model-reference/model-registry-visibility";
+import { useRegistryModels } from "@/foundation/model-reference/use-registry-models";
 import Timestamp, { formatTimestamp } from "@/foundation/role/Timestamp";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import { EmptyValue } from "@/foundation/type/EmptyValue";

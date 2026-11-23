@@ -8,7 +8,7 @@ const { mutate, invalidate } = vi.hoisted(() => ({
   mutate: vi.fn(),
   invalidate: vi.fn(),
 }));
-vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+vi.mock("@/foundation/cache-version/use-cache-versions", () => ({
   useCacheVersions: () => ({
     data: {
       data: [

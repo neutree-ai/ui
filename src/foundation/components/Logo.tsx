@@ -1,4 +1,4 @@
-import { useOemConfig } from "@/foundation/hooks/use-oem-config";
+import { useOemConfig } from "@/foundation/oem-config/use-oem-config";
 
 interface LogoProps {
   collapsed?: boolean;

@@ -34,10 +34,12 @@ foundation/
 ├── type/          Value-level building blocks: EmptyValue, NumberInput, middle-truncate, plural
 ├── role/          What a field means across resources: BaseStatus, Timestamp, WorkspaceField, unit, validate
 ├── scene/         Page-level flows: ListPage, ShowPage, ResourceForm, Table, YAML import/export, delete
-├── components/    App shell (layouts, sidebar) and components tied to one resource kind
-├── hooks/         Workspace, permission, license and other app or kind-specific hooks
-├── lib/           Utils, API client, i18n, constants, kind-specific helpers
+├── <concept>/     Data several kinds read: accelerator/, model-reference/, grafana/, token-quota/…
+├── components/    App shell: layouts, sidebar, logo
+├── hooks/         App shell: workspace, permission, clipboard
+├── lib/           App shell: utils, API client, i18n, constants
 ├── providers/     Auth, data, theme, notification
+├── testing/       Test setup and shared test helpers
 └── types/         Metadata, BaseStatus, shared serving types
 ```
 
@@ -51,9 +53,17 @@ tests:
 - `scene/` — a whole interaction on a page: list, detail, form, table, batch delete, YAML
   import/export.
 
-`components/`, `hooks/` and `lib/` keep what is not a shared layer: the app shell (`BaseLayout`,
-`AppSidebar`, `lib/utils`, `lib/i18n`, the API client) and modules that serve a single resource
-kind.
+`components/`, `hooks/` and `lib/` hold the app shell only (`BaseLayout`, `AppSidebar`, `lib/utils`,
+`lib/i18n`, the API client); the layer tool lists its modules in `APP_SHELL`.
+
+Everything else is a concept directory: data that two or more kinds read, which cannot live in one
+domain because domains do not import each other. A concept directory is named after that data
+(`accelerator/`, `model-reference/`, `token-quota/`), never after a file kind or a catch-all, is flat
+like the shared layers, and is declared with one line in the "Concepts" section of
+`src/foundation/contract.md`. `yarn ddu:check` fails on a foundation directory that is not declared
+there and on a non-shell module in `components/`, `hooks/` or `lib/`. Code that only one kind uses
+belongs in that kind's domain. A module that stays with its concept anyway is listed with its reason
+in `KEPT_IN_CONCEPT` in the tool.
 
 #### Layer check
 
@@ -63,8 +73,9 @@ kind's own `lib/` (description), or the component or page itself. The last is an
 comparison, fallback, format or raw render of a field written inline, which the next page will
 have to repeat. Passing a field on unchanged is not a decision.
 
-- `yarn ddu:layers` — the per-kind layer table, plus the kind-specific modules still living in
-  `foundation/`. `--json <file>` and `--sites <file>` write the details.
+- `yarn ddu:layers` — the per-kind layer table, the concept directories, and any concept module
+  that only one kind uses (move it into that domain). `--json <file>` and `--sites <file>` write
+  the details.
 - `yarn ddu:check` — fails on overrides that are new, and prints under each one why it was
   flagged and how to fix it: move the rule into the kind's `lib/` or a `type/`/`role/` piece, or,
   when it cannot live lower, mark it on the line above with the reason. It runs in pre-commit and CI.
@@ -113,7 +124,8 @@ Pages are thin composition layers — they call an L2 form hook and pass the res
 | Shared value display or input | L1 | `foundation/type/` |
 | Shared field semantics (status, unit, validation) | L1 | `foundation/role/` |
 | Shared list/detail/form/table building block | L1 | `foundation/scene/` |
-| App shell or kind-specific shared module (e.g. workspace hook) | L1 | `foundation/components/`, `hooks/`, `lib/` |
+| Data read by 2+ kinds (helpers, hooks, components) | L1 | `foundation/<concept>/` |
+| App shell (layout, workspace hook, API client) | L1 | `foundation/components/`, `hooks/`, `lib/` |
 | Resource type definition | L2 | `domains/<name>/types.ts` |
 | Resource-specific component | L2 | `domains/<name>/components/` |
 | Resource-specific hook | L2 | `domains/<name>/hooks/` |

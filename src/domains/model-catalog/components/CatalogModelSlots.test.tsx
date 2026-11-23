@@ -27,7 +27,7 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/hooks/use-registry-models", () => ({
+vi.mock("@/foundation/model-reference/use-registry-models", () => ({
   useRegistryModels: () => ({
     page: null,
     models: mocks.models,
@@ -39,7 +39,7 @@ vi.mock("@/foundation/hooks/use-registry-models", () => ({
   }),
 }));
 
-vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
+vi.mock("@/foundation/model-reference/use-registry-model-version", () => ({
   useRegistryModelVersion: (ref: { registry?: string; model?: string }) => {
     if (ref.model) mocks.versionRefs.push(ref);
 

@@ -24,7 +24,7 @@ Refine resource `image_registries`: workspaced, `idColumnName: "metadata->name"`
 | `spec.authconfig.identitytoken`, `.registrytoken` | string | no | - | user | yes | no UI | present in Go `ImageRegistryAuthConfig`, absent from UI type |
 | `status.phase` | `Pending` / `Connected` / `Failed` / `Deleted` | - | - | server | no | no | controller `sync`: reachable and pull permission -> Connected, else Failed |
 | `status.error_message`, `status.last_transition_time` | string | - | - | server | no | no | controller `updateStatus` |
-| `status.capabilities.list_repositories` | `harbor-projects` / `namespace-required` / `unauthorized` / `unsupported` | - | - | server | no | no | `094_image_registry_capabilities`; consumed by `foundation/lib/api/image-registry-content.ts`, not by this domain's types |
+| `status.capabilities.list_repositories` | `harbor-projects` / `namespace-required` / `unauthorized` / `unsupported` | - | - | server | no | no | `094_image_registry_capabilities`; consumed by `domains/endpoint/lib/image-registry-content.ts`, not by this domain's types |
 
 `spec.authconfig` is tagged `api:"-"`: the proxy removes the whole object from every response
 (`filterObject` with excluded path `spec.authconfig`), including list, show and write
@@ -33,7 +33,7 @@ backend (`041_remove_image_registry_ca`).
 
 ## Roles
 
-- Status tone: shared `RegistryStatus` (`foundation/components/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/role/status-tone.ts`); label key
+- Status tone: shared `RegistryStatus` (`foundation/role/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/role/status-tone.ts`); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `Timestamp` (relative) in the list, `MetadataTimestampMeta` in the show header.
 - Name / workspace / created / actions columns: `useMetadataColumns`.
@@ -68,7 +68,7 @@ backend (`041_remove_image_registry_ca`).
   no 10127-specific handling.
 - YAML import/export: kind `ImageRegistry` <-> `image_registries`; export includes the resource in
   the credentials-capable set (`CREDENTIAL_RESOURCES` in `foundation/scene/use-yaml-export.ts`).
-- Quick start (`foundation/hooks/use-quick-start.ts`, `buildImageRegistryValues`) creates
+- Quick start (`domains/dashboard/hooks/use-quick-start.ts`, `buildImageRegistryValues`) creates
   `public-docker` at `https://docker.io` with empty credentials.
 
 ## Descriptions

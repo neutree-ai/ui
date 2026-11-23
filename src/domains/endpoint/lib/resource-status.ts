@@ -1,7 +1,7 @@
 import {
   compareDevicesByOrderThenUuid,
   getDeviceOrder,
-} from "@/foundation/lib/device-resource-utils";
+} from "@/foundation/accelerator/device-resource-utils";
 import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 import type {
   ClusterResourceInfo,

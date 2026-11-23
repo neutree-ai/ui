@@ -4,8 +4,8 @@
  * Kept in the domain rather than in foundation because only this domain asks:
  * the answer decides which controls a registry's row and detail page offer, and
  * nothing outside model-registry renders those. The rules that `domains/endpoint`
- * needs too are the ones that moved out, to `@/foundation/lib/model-registry-availability`
- * and `@/foundation/lib/model-registry-visibility`.
+ * needs too are the ones that moved out, to `@/foundation/model-reference/model-registry-availability`
+ * and `@/foundation/model-reference/model-registry-visibility`.
  *
  * Like those, this reads something the server said. It is never derived from the
  * registry's type, which a user's own registry shares, nor from a list of

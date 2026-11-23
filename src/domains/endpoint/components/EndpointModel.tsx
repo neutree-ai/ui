@@ -1,5 +1,5 @@
 import type { EndpointSpec } from "@/domains/endpoint/types";
-import { registryModelQuery } from "@/foundation/lib/registry-model-link";
+import { registryModelQuery } from "@/foundation/model-reference/registry-model-link";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 

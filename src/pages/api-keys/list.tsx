@@ -62,12 +62,11 @@ import type {
   ApiKey,
   ApiKeyProject,
 } from "@/domains/api-key/types";
-import { ModelSourceBadge } from "@/foundation/components/ModelSourceBadge";
 import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { modelSourceOfEndpointKind } from "@/foundation/lib/model-source";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { cn } from "@/foundation/lib/utils";
+import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
+import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";
 import Timestamp from "@/foundation/role/Timestamp";
 import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
 import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
@@ -75,6 +74,7 @@ import { getErrorMessage } from "@/foundation/scene/error-message";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { PaginationControls } from "@/foundation/scene/PaginationControls";
 import { ShowButton } from "@/foundation/scene/ShowButton";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 const endpointPhaseClass = (phase: string | null | undefined) =>

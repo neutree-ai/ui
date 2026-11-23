@@ -10,8 +10,8 @@ import { useRegistryModelReadme } from "@/domains/model-registry/hooks/use-regis
 import { splitModelCard } from "@/domains/model-registry/lib/model-card";
 import { modelCardSanitizeSchema } from "@/domains/model-registry/lib/model-card-html";
 import { Loader } from "@/foundation/components/Loader";
-import type { RegistryModelRef } from "@/foundation/lib/api/registry-models";
 import { useTranslation } from "@/foundation/lib/i18n";
+import type { RegistryModelRef } from "@/foundation/model-reference/registry-models";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 

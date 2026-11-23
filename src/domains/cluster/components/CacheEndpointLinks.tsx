@@ -4,8 +4,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { endpointHref } from "@/foundation/accelerator/accelerator-observations";
 import { Link } from "@/foundation/components/Link";
-import { endpointHref } from "@/foundation/lib/accelerator-observations";
 import { cn } from "@/foundation/lib/utils";
 import type { CacheEndpointRef } from "../lib/cache-endpoints";
 

@@ -130,7 +130,7 @@ Other errors use `translateApiErrorOr`; read/delete errors are inline, failed sa
    cannot remove its denies there, although saves preserve them. Ticket: TBD
 2. Large API quotas cannot be saved untouched through the dialog.
    UI: `hooks/use-token-quota-input.ts:useTokenQuotaInput` uses `toTokenCount`
-   (`src/foundation/lib/token-quota.ts`), which requires a safe JavaScript integer; `TokenQuotaFields` disables save.
+   (`src/foundation/token-quota/token-quota.ts`), which requires a safe JavaScript integer; `TokenQuotaFields` disables save.
    API: `api.group_policy_normalize_token_quota` (`133_group_policies`) accepts positive int64 values.
    Users reopening a quota above 9007199254740991 see invalid input and must reduce it before saving. Ticket: TBD
 

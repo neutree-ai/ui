@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useOemConfig } from "@/foundation/hooks/use-oem-config";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useOemConfig } from "@/foundation/oem-config/use-oem-config";
 import { ResourceForm } from "@/foundation/scene/ResourceForm";
 import { useOemConfigForm } from "@/pages/oem-config/use-oem-config-form";
 

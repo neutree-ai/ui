@@ -1,4 +1,4 @@
-import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+import type { ModelRegistryVisibility } from "@/foundation/model-reference/model-registry-visibility";
 import type { BaseStatus, Metadata } from "@/foundation/types/basic-types";
 
 export type ModelRegistry = {
@@ -13,7 +13,7 @@ export type ModelRegistry = {
    *
    * Stated by the server as a computed field, and optional here because it only
    * arrives when a request asks for it — see MODEL_REGISTRY_SELECT in
-   * `@/foundation/lib/model-registry-visibility`, which is also where the rules
+   * `@/foundation/model-reference/model-registry-visibility`, which is also where the rules
    * that read this value live.
    */
   visibility?: ModelRegistryVisibility;
@@ -55,5 +55,5 @@ export type ModelRegistryStatus = BaseStatus<ModelRegistryPhase> & {
 
 /** Every phase the control plane reports for a registry. Not exported: it exists
  * to type `status.phase`, and the two phases the UI branches on are compared as
- * literals in `@/foundation/lib/model-registry-availability` so that a typo is a type error there. */
+ * literals in `@/foundation/model-reference/model-registry-availability` so that a typo is a type error there. */
 type ModelRegistryPhase = "Pending" | "Connected" | "Failed" | "Deleted";

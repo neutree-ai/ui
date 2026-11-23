@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/lib/model-source";
-import { DEFAULT_TOKEN_QUOTA_UNIT } from "@/foundation/lib/token-quota";
+import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
+import { DEFAULT_TOKEN_QUOTA_UNIT } from "@/foundation/token-quota/token-quota";
 import {
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,

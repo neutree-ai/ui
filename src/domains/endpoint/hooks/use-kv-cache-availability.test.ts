@@ -1,12 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
-import { useCacheVersions } from "@/foundation/hooks/use-cache-versions";
+import { useCacheVersions } from "@/foundation/cache-version/use-cache-versions";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { useKvCacheAvailability } from "./use-kv-cache-availability";
 
 vi.mock("@/foundation/hooks/use-system-api", () => ({ useSystemApi: vi.fn() }));
-vi.mock("@/foundation/hooks/use-cache-versions", () => ({
+vi.mock("@/foundation/cache-version/use-cache-versions", () => ({
   useCacheVersions: vi.fn(() => ({ isLoading: false, isError: false })),
 }));
 

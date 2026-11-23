@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
+import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
+import { getOverviewDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getOverviewDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { QuickStartDialog } from "./QuickStartDialog";
 

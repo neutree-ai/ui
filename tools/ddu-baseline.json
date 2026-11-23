@@ -156,6 +156,9 @@
 		"spec.config.model_caches": 1,
 		"spec.type": 1
 	},
+	"src/domains/dashboard/hooks/use-quick-start.ts": {
+		"e.metadata.name": 1
+	},
 	"src/domains/endpoint/components/ChatPlayground.tsx": {
 		"endpoint.metadata.name": 1,
 		"endpoint.metadata.workspace": 1

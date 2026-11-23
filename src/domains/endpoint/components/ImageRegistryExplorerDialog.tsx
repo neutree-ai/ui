@@ -10,14 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useImageRepositories } from "@/domains/endpoint/hooks/use-image-repositories";
 import {
   DOCKER_HUB_OFFICIAL_NAMESPACE,
   imageReferencesFrom,
   namespaceSuggestions,
 } from "@/domains/endpoint/lib/image-namespaces";
+import type { ListRepositoriesCapability } from "@/domains/endpoint/lib/image-registry-content";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
-import { useImageRepositories } from "@/foundation/hooks/use-image-repositories";
-import type { ListRepositoriesCapability } from "@/foundation/lib/api/image-registry-content";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   imageRegistryPrefix,

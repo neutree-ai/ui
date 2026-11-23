@@ -8,7 +8,7 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import {
   registryIsDisabled,
   registryIsUnreachable,
-} from "@/foundation/lib/model-registry-availability";
+} from "@/foundation/model-reference/model-registry-availability";
 import { formatTimestamp } from "@/foundation/role/Timestamp";
 
 /**

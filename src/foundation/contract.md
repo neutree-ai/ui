@@ -114,17 +114,28 @@ Running is positive, Failed serious, Pending / Degraded / Deleting / Paused noti
 ModelDownloading retain their local outstanding string with a thin fill. An absent phase renders `EmptyValue`
 for `BaseStatus` callers.
 
-## Domain code in foundation
+## Concepts
 
-Image repository listing (`foundation/lib/api/image-registry-content.ts`,
-`foundation/hooks/use-image-repositories.ts`) is consumed only by `domains/endpoint`
-(`ImageRegistryExplorerDialog`), not by `domains/image-registry`. It stays in foundation because
-`.dependency-cruiser.cjs` (`no-L2-cross-domain`) forbids the endpoint domain importing it from
-another domain. The same holds for `model-registry-visibility` / `model-registry-availability`.
+Besides the layers (`type/`, `role/`, `scene/`) and the app shell, `src/foundation/` holds one directory per data
+concept that two or more kinds read. Domains may not import each other (`no-L2-cross-domain`), so such data lives
+here, named after the data rather than after a file kind. `yarn ddu:check` reads this list and fails on a foundation
+directory it does not name; a module only one kind uses belongs in that kind's domain.
+
+- `accelerator/` — accelerator observations, device allocation and placement capacity (see Accelerator resources).
+- `ai-traces/` — AI gateway trace rows and their queries (AI Traces, API Key).
+- `cache-version/` — cache runtime versions and the engine versions each supports (Cluster, Endpoint).
+- `grafana/` — Grafana dashboard configuration, URLs and embeds (Dashboard, Cluster, Endpoint, External Endpoint).
+- `license/` — the installed license and its usage limits (License, Workspace Policy).
+- `model-reference/` — a model as other kinds refer to it: registry models and versions, the workspace's invocable
+  models, model source, and the option groups and badge that show them.
+- `oem-config/` — the OEM branding record (OEM Config, login, app shell).
+- `recipe/` — model catalog recipes: types, composition, VRAM estimate (Model Catalog, Endpoint).
+- `service-account/` — application (ServiceAccount) error codes (Service Account, API Key).
+- `token-quota/` — token quota amounts, units and periods (see Token quotas).
 
 ## Token quotas
 
-API Key and Group Policy use `foundation/lib/token-quota.ts` for amount/unit conversion, periods and display.
+API Key and Group Policy use `foundation/token-quota/token-quota.ts` for amount/unit conversion, periods and display.
 `splitTokenQuota`, `toTokenCount` and `formatTokenQuota` are tested in `token-quota.test.ts`; forms permit blank
 as unset and require a positive safe integer after unit conversion. Backend validators accept positive int64 limits
 (`api.validate_api_key_limits` in `099_apikey_per_model_quota`,
@@ -169,10 +180,10 @@ Comparisons tolerate 1e-6 drift; vGPU memory also accepts the one-decimal GiB di
 capacity estimates; CPU-only capacity uses resource bounds directly. `maxCpuPerReplica` / `maxMemoryPerReplica` are
 maxima among GPU-eligible nodes. `addBackEndpointDeviceAllocationsToNodeResources` credits observed ownership, capped at
 allocatable values; unknown nodes/devices gain nothing. Full-card availability uses the same shared check. Tests:
-`foundation/lib/gpu-device-resources.test.ts`; callers retain their own validation policy.
+`foundation/accelerator/gpu-device-resources.test.ts`; callers retain their own validation policy.
 
 `actualUsageMarkerState` hides zero/negative actual VRAM, marks known reservation excess serious and otherwise uses the
 neutral marker. Missing readings stay empty; zero remains a numeric reading. The GPU details sheet labels the live
 reading as actual usage (observed VRAM / physical) and keeps the allocation reading (allocated / physical) separate.
 Tests:
-`foundation/lib/accelerator-observations.test.ts`, `foundation/components/GpuObservationCard.test.tsx`.
+`foundation/accelerator/accelerator-observations.test.ts`, `foundation/accelerator/GpuObservationCard.test.tsx`.

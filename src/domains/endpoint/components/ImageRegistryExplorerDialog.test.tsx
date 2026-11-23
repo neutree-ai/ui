@@ -11,7 +11,7 @@ vi.mock("@refinedev/core", () => ({
 
 const useImageRepositories = vi.fn();
 
-vi.mock("@/foundation/hooks/use-image-repositories", () => ({
+vi.mock("@/domains/endpoint/hooks/use-image-repositories", () => ({
   useImageRepositories: (args: unknown) => useImageRepositories(args),
 }));
 

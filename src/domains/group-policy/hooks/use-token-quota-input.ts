@@ -10,7 +10,7 @@ import {
   splitTokenQuota,
   type TokenQuotaUnit,
   toTokenCount,
-} from "@/foundation/lib/token-quota";
+} from "@/foundation/token-quota/token-quota";
 
 /** The amount, unit and period of a token quota being edited; empty amount: none. */
 export const useTokenQuotaInput = (

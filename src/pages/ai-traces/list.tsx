@@ -24,15 +24,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
-import { Loader } from "@/foundation/components/Loader";
-import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import {
   type AITrace,
   type AITraceFilterParams,
   fetchAITraceFilterOptions,
   fetchAITraces,
   isAITraceForbidden,
-} from "@/foundation/lib/api/ai-traces";
+} from "@/foundation/ai-traces/ai-traces";
+import { Loader } from "@/foundation/components/Loader";
+import { ALL_WORKSPACES } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import {

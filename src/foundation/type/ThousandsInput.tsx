@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Input } from "@/components/ui/input";
-import { formatThousands } from "@/foundation/lib/token-quota";
+import { formatThousands } from "@/foundation/token-quota/token-quota";
 
 // Amount input that re-groups digits with thousands separators as you type
 // (10000 → 10,000). Shared by the key's overall token quota and by the

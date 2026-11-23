@@ -9,13 +9,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useModelSourceLabel } from "@/foundation/components/ModelSourceBadge";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { useModelSourceLabel } from "@/foundation/model-reference/ModelSourceBadge";
 import {
   type ModelSource,
   type ModelSourceMap,
   parseStoredModelSource,
-} from "@/foundation/lib/model-source";
+} from "@/foundation/model-reference/model-source";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
 import { FormSelect } from "@/foundation/role/FormSelect";
 import { ConfirmDialog } from "@/foundation/scene/ConfirmDialog";

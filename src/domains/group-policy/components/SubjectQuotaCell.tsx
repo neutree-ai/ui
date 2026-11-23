@@ -16,8 +16,8 @@ import type {
   ScopeSubjectPolicy,
 } from "@/domains/group-policy/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import { formatTokenQuota } from "@/foundation/lib/token-quota";
 import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
+import { formatTokenQuota } from "@/foundation/token-quota/token-quota";
 import type { LabeledScope } from "@/foundation/types/group-scope";
 
 type ScopePolicyAccess = {

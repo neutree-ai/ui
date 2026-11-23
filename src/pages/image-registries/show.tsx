@@ -1,8 +1,8 @@
 import { useShow } from "@refinedev/core";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
-import RegistryStatus from "@/foundation/components/RegistryStatus";
 import { useTranslation } from "@/foundation/lib/i18n";
+import RegistryStatus from "@/foundation/role/RegistryStatus";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 

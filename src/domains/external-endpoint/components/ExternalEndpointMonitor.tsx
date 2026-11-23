@@ -2,10 +2,10 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { readMonitoringState } from "@/domains/external-endpoint/lib/monitoring-state";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
-import GrafanaDashboard from "@/foundation/components/GrafanaDashboard";
-import { GrafanaDashboardLink } from "@/foundation/components/GrafanaDashboardLink";
+import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
+import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
+import { getModelRoutingDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { getModelRoutingDashboardProps } from "@/foundation/lib/grafana-dashboard-configs";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**

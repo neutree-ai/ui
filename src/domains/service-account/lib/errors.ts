@@ -1,6 +1,6 @@
-import { SERVICE_ACCOUNT_ERROR_KEYS } from "@/foundation/lib/service-account-errors";
 import { translateApiError } from "@/foundation/scene/api-error-code";
 import { getErrorMessage } from "@/foundation/scene/error-message";
+import { SERVICE_ACCOUNT_ERROR_KEYS } from "@/foundation/service-account/service-account-errors";
 
 /** Server errors of applications (ServiceAccounts), their keys and permissions. */
 const ERROR_KEYS: Readonly<Record<string, string>> = {

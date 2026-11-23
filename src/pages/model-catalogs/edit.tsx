@@ -20,8 +20,8 @@ import {
 } from "@/domains/model-catalog/lib/parse-catalog-spec-yaml";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
-import { engineNeedsModelSpec } from "@/foundation/lib/engine-model-spec";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { engineNeedsModelSpec } from "@/foundation/model-reference/engine-model-spec";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 import { PageHeader } from "@/foundation/scene/PageHeader";
 import {

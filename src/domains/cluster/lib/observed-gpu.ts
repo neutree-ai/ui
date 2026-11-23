@@ -1,4 +1,4 @@
-import type { ObservedGpu } from "@/foundation/lib/accelerator-observations";
+import type { ObservedGpu } from "@/foundation/accelerator/accelerator-observations";
 import type { DeviceResource } from "@/foundation/types/resource-types";
 
 /**

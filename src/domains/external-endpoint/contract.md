@@ -56,7 +56,7 @@ deviations 1, 2).
   `EmptyValue`.
 - Timeout: `formatTimeout` (whole minutes `Nmin`, else `Ns`); `TimeoutInput` converts s / min to ms.
 - Model source: shared `ModelSourceBadge`, `resolveExternalModelSource`, `modelSourceSuggestions`
-  (`foundation/lib/model-source`).
+  (`foundation/model-reference/model-source`).
 - Upstream kind: `getEndpointType` (external / endpoint_ref / mixed; truthiness) for list and show, `deriveUpstreamType`
   (form, `endpoint_ref != null`).
 

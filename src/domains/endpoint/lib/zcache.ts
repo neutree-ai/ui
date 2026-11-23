@@ -1,4 +1,4 @@
-import type { EndpointCacheDashboard } from "@/foundation/lib/grafana-dashboard-configs";
+import type { EndpointCacheDashboard } from "@/foundation/grafana/grafana-dashboard-configs";
 import type { EndpointClusterRef } from "../types";
 import type { EndpointCacheManagerStatus } from "./cache-manager-status";
 

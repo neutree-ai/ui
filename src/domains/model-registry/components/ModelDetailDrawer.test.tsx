@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ModelDetailDrawer } from "@/domains/model-registry/components/ModelDetailDrawer";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { useRegistryModelVersion } from "@/foundation/hooks/use-registry-model-version";
+import { useRegistryModelVersion } from "@/foundation/model-reference/use-registry-model-version";
 import { openMenu } from "@/foundation/testing/interactions";
 
 const go = vi.fn();
 
 vi.mock("@refinedev/core", () => ({ useGo: () => go }));
-vi.mock("@/foundation/hooks/use-registry-model-version", () => ({
+vi.mock("@/foundation/model-reference/use-registry-model-version", () => ({
   useRegistryModelVersion: vi.fn(),
 }));
 vi.mock("@/domains/model-registry/components/ModelReadme", () => ({

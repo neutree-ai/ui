@@ -1,7 +1,7 @@
 # License contract
 
 UI source: `License`, `LicenseSpec`, `LicenseStatus` (`src/foundation/types/license.ts`),
-`useLicense` (`src/foundation/hooks/use-license.ts`), `LicenseShow` (`src/pages/license/show.tsx`).
+`useLicense` (`src/foundation/license/use-license.ts`), `LicenseShow` (`src/pages/license/show.tsx`).
 The page reads GET `/api/v1/license` and updates through PATCH on the same route; no RPC is called.
 Backend: `origin/main@062192f6` in neutree-be contains no License Go type, table, migration, route or controller.
 Permissions, validation, masking and activation semantics of a licensed server are therefore unverified.
@@ -94,7 +94,7 @@ missing license/status/usage/entry/limit disables it. Phase, expiration, edition
 `src/domains/role-assignment/lib/scope.ts:availableScopes`. Nondelegated callers gain Workspace scope when true;
 delegated callers receive department scope only. The form also retains the currently loaded scope even if unavailable.
 Its initial global scope ignores asynchronous license loading, as its kept comment explains.
-Tests: `scope.test.ts`, `use-role-assignment-form.test.tsx`, `foundation/hooks/use-license.test.ts`.
+Tests: `scope.test.ts`, `use-role-assignment-form.test.tsx`, `foundation/license/use-license.test.ts`.
 
 Workspace pages do not consult the flag. No other production hook consumers or field readers were found.
 `cacheUpgradeErrorMessage` translates server error 21001 as license-required; it is not a license-derived gate.

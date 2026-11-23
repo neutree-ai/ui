@@ -5,7 +5,7 @@ import {
   ModelRegistryStorage,
 } from "@/domains/model-registry/components/ModelRegistryStats";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+import type { ModelRegistryVisibility } from "@/foundation/model-reference/model-registry-visibility";
 
 const registry = (
   visibility: ModelRegistryVisibility | undefined,

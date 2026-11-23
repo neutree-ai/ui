@@ -4,7 +4,7 @@ import {
   type RegistryModelError,
   type RegistryModelReadme,
   type RegistryModelRef,
-} from "@/foundation/lib/api/registry-models";
+} from "@/foundation/model-reference/registry-models";
 
 /**
  * Reads a model's card.

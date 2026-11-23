@@ -22,15 +22,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ModelOptionGroups,
-  useModelOptionMatcher,
-} from "@/foundation/components/ModelOptionGroups";
-import {
   ALL_WORKSPACES,
   useWorkspaceOptions,
 } from "@/foundation/hooks/use-workspace";
-import { useWorkspaceModels } from "@/foundation/hooks/use-workspace-models";
 import { useTranslation } from "@/foundation/lib/i18n";
+import {
+  ModelOptionGroups,
+  useModelOptionMatcher,
+} from "@/foundation/model-reference/ModelOptionGroups";
+import { useWorkspaceModels } from "@/foundation/model-reference/use-workspace-models";
 
 const ALL = "__all__";
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
   AcceleratorSample,
   GpuAllocation,
-} from "@/foundation/lib/accelerator-observations";
+} from "@/foundation/accelerator/accelerator-observations";
 import { makeAcceleratorSample } from "@/foundation/testing/resource-builders";
 import { replicaGroupUsage } from "./replica-usage";
 

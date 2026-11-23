@@ -19,23 +19,23 @@ import {
 import { otherGpuReservation } from "@/domains/endpoint/lib/shared-gpu";
 import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import {
-  CopyUuidButton,
-  GpuDetailsSheet,
-} from "@/foundation/components/GpuObservationCard";
-import {
   type AcceleratorSample,
   allocationComposition,
   allocationFallbackReadings,
   type GpuAllocation,
   reading,
-} from "@/foundation/lib/accelerator-observations";
-import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
+} from "@/foundation/accelerator/accelerator-observations";
+import { productPeakTflops } from "@/foundation/accelerator/accelerator-tflops";
+import {
+  CopyUuidButton,
+  GpuDetailsSheet,
+} from "@/foundation/accelerator/GpuObservationCard";
 import {
   l0Pattern,
   OWNER_SECONDARY_TONE,
   OWNER_WEIGHTS_TONE,
   ownerTone,
-} from "@/foundation/lib/gpu-ownership";
+} from "@/foundation/accelerator/gpu-ownership";
 import { cn } from "@/foundation/lib/utils";
 import {
   CHART_CATEGORY_COUNT,

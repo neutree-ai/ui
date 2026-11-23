@@ -11,9 +11,9 @@ import type {
   EngineCacheArgs,
 } from "@/domains/endpoint/lib/engine-cache-args";
 import { perReplicaRequiredGb } from "@/domains/endpoint/lib/estimate-weights";
+import type { ModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
-import type { ModelInfoRead } from "@/foundation/lib/model-info-read";
 import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
 import { METRIC_BAR_SERIES_FILL_CLASSES } from "@/foundation/role/MetricBar";

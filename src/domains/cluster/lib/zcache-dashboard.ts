@@ -1,8 +1,8 @@
-import type { GrafanaDashboardProps } from "@/foundation/components/GrafanaDashboard";
+import type { GrafanaDashboardProps } from "@/foundation/grafana/GrafanaDashboard";
 import {
   getBaseDashboardConfig,
   getCommonVariables,
-} from "@/foundation/lib/grafana-dashboard-configs";
+} from "@/foundation/grafana/grafana-dashboard-configs";
 import type { ZCacheStatus } from "../types";
 
 type CacheNode = NonNullable<ZCacheStatus["nodes"]>[number];

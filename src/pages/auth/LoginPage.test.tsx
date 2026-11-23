@@ -17,7 +17,7 @@ vi.mock("@refinedev/core", () => ({
 
 vi.mock("./ThemedTitle", () => ({ ThemedTitle: () => null }));
 
-vi.mock("@/foundation/hooks/use-login-identity-sources", () => ({
+vi.mock("@/domains/auth/hooks/use-login-identity-sources", () => ({
   useLoginIdentitySources: vi.fn(() => ({
     isLoading: false,
     ldapSources: [],
@@ -28,7 +28,7 @@ vi.mock("@/foundation/hooks/use-login-identity-sources", () => ({
 vi.mock("@/foundation/lib/api", () => ({ REST_URL: "http://h/api/v1" }));
 
 import { useParsed } from "@refinedev/core";
-import { useLoginIdentitySources } from "@/foundation/hooks/use-login-identity-sources";
+import { useLoginIdentitySources } from "@/domains/auth/hooks/use-login-identity-sources";
 import { takePostLoginPath } from "@/foundation/lib/sso-callback";
 import { LoginPage } from "./LoginPage";
 

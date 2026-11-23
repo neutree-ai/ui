@@ -10,19 +10,19 @@ import {
   TableRow,
   Table as UITable,
 } from "@/components/ui/table";
-import {
-  GpuObservationCard,
-  type GpuObservationDisplay,
-  GpuObservationTableHeader,
-} from "@/foundation/components/GpuObservationCard";
 import type {
   AcceleratorSample,
   GpuAllocation,
   NodeL1CacheUsage,
-} from "@/foundation/lib/accelerator-observations";
-import { formatL1CacheUsage } from "@/foundation/lib/accelerator-observations";
-import { productPeakTflops } from "@/foundation/lib/accelerator-tflops";
-import { compareDevicesByOrderThenUuid } from "@/foundation/lib/device-resource-utils";
+} from "@/foundation/accelerator/accelerator-observations";
+import { formatL1CacheUsage } from "@/foundation/accelerator/accelerator-observations";
+import { productPeakTflops } from "@/foundation/accelerator/accelerator-tflops";
+import { compareDevicesByOrderThenUuid } from "@/foundation/accelerator/device-resource-utils";
+import {
+  GpuObservationCard,
+  type GpuObservationDisplay,
+  GpuObservationTableHeader,
+} from "@/foundation/accelerator/GpuObservationCard";
 import { cn } from "@/foundation/lib/utils";
 import { MetricBar } from "@/foundation/role/MetricBar";
 import { formatToDecimal } from "@/foundation/role/unit";

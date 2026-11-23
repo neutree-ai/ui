@@ -36,7 +36,7 @@ add no brand-name length, MIME, image-size, base64 or URL check.
 
 ## Roles
 
-- Brand reads: `src/foundation/hooks/use-oem-config.ts:useOemConfig`; fallback behavior is pinned in its tests.
+- Brand reads: `src/foundation/oem-config/use-oem-config.ts:useOemConfig`; fallback behavior is pinned in its tests.
   Nullish brand uses `VITE_BRAND_NAME`, then Neutree. An empty string remains blank; whitespace is preserved.
 - Image reads: `src/foundation/components/Logo.tsx:Logo` uses a truthy collapsed logo only when collapsed,
   otherwise the main logo or `BASE_URL` plus logo.svg. Expanded branding adds the brand text.
@@ -114,7 +114,7 @@ Possible SQL failures include 10001/10003/10004 name, 23505 singleton collision 
    calls `Scheme.New` and `gvkToType`, which reject OemConfig with “unregistered type: OemConfig”.
    Users can save branding through REST, but a client decoding that stored kind through the scheme cannot load it.
    `ResolveKind` is case-insensitive, but this decoder does not call it. Ticket: TBD
-2. A valid non-default singleton is invisible. UI: `src/foundation/hooks/use-oem-config.ts:useOemConfig` filters
+2. A valid non-default singleton is invisible. UI: `src/foundation/oem-config/use-oem-config.ts:useOemConfig` filters
    default; `useOemConfigForm` creates default when none is returned. API: `api.validate_metadata_name`
    accepts other names and `oem_configs_global_unique_idx` (`009_oem_config`) reserves the sole slot for any row.
    Users see fallback branding and a blank creation form whose save fails with a singleton collision. Ticket: TBD

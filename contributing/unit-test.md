@@ -181,11 +181,11 @@ cover: the arithmetic behind a derived value (test that in `lib/`), or how the f
 **Per-test mock values** — use `vi.mocked()`, not mutable module-level variables:
 
 ```ts
-vi.mock("@/foundation/hooks/use-license", () => ({
+vi.mock("@/foundation/license/use-license", () => ({
   useLicense: vi.fn(() => ({ supportMultiWorkspace: true })),
 }));
 
-import { useLicense } from "@/foundation/hooks/use-license";
+import { useLicense } from "@/foundation/license/use-license";
 
 // In the test that needs a different value:
 vi.mocked(useLicense).mockReturnValue({ supportMultiWorkspace: false });

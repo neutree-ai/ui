@@ -1,7 +1,7 @@
 import {
   countFullCardAvailableDevicesByProduct,
   countPhysicalDevicesByProduct,
-} from "@/foundation/lib/gpu-device-resources";
+} from "@/foundation/accelerator/gpu-device-resources";
 import type {
   AcceleratorProductResources,
   ClusterResourceInfo,

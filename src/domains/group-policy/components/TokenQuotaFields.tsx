@@ -12,7 +12,7 @@ import {
   QUOTA_PERIODS,
   TOKEN_QUOTA_UNITS,
   type TokenQuotaUnit,
-} from "@/foundation/lib/token-quota";
+} from "@/foundation/token-quota/token-quota";
 import { ThousandsInput } from "@/foundation/type/ThousandsInput";
 
 /** Amount, unit and period of a token quota; `testId` prefixes each control. */

@@ -17,7 +17,7 @@ vi.mock("@refinedev/core", () => ({
   useCustom: () => ({ data: undefined, isLoading: false }),
 }));
 
-vi.mock("@/foundation/hooks/use-license", () => ({
+vi.mock("@/foundation/license/use-license", () => ({
   useLicense: vi.fn(),
 }));
 
@@ -35,7 +35,7 @@ import {
   useHasGlobalPermission,
   useHasPermission,
 } from "@/foundation/hooks/use-has-permission";
-import { useLicense } from "@/foundation/hooks/use-license";
+import { useLicense } from "@/foundation/license/use-license";
 import { isHidden } from "@/foundation/testing/interactions";
 import { refineForm } from "@/foundation/testing/refine-form";
 import { useRoleAssignmentForm } from "./use-role-assignment-form";

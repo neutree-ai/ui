@@ -5,15 +5,15 @@ import {
   RegistryModelsTable,
 } from "@/domains/model-registry/components/RegistryModelsTable";
 import type { ModelRegistry } from "@/domains/model-registry/types";
-import { useRegistryModels } from "@/foundation/hooks/use-registry-models";
+import type { ModelRegistryVisibility } from "@/foundation/model-reference/model-registry-visibility";
 import {
   RegistryModelError,
   type RegistryModelPage,
-} from "@/foundation/lib/api/registry-models";
-import type { ModelRegistryVisibility } from "@/foundation/lib/model-registry-visibility";
+} from "@/foundation/model-reference/registry-models";
+import { useRegistryModels } from "@/foundation/model-reference/use-registry-models";
 import type { RegistryModel } from "@/foundation/types/model-types";
 
-vi.mock("@/foundation/hooks/use-registry-models", () => ({
+vi.mock("@/foundation/model-reference/use-registry-models", () => ({
   useRegistryModels: vi.fn(),
 }));
 

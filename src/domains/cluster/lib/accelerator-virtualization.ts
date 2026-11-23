@@ -1,6 +1,6 @@
 import { compareVersions } from "compare-versions";
 import type { Cluster } from "@/domains/cluster/types";
-import { mergePoolTotals } from "@/foundation/lib/device-resource-utils";
+import { mergePoolTotals } from "@/foundation/accelerator/device-resource-utils";
 import type {
   AcceleratorProductResources,
   ClusterResourceInfo,

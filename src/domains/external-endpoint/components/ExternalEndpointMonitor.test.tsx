@@ -13,7 +13,7 @@ vi.mock("@/foundation/hooks/use-system-api", () => ({
   useSystemApi: () => systemApiMock(),
 }));
 
-vi.mock("@/foundation/components/GrafanaDashboard", () => ({
+vi.mock("@/foundation/grafana/GrafanaDashboard", () => ({
   default: (props: { dashboardConfig: { dashboardId: string } }) => (
     <div
       data-testid="grafana-dashboard"

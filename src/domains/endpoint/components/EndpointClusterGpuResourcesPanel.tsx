@@ -17,8 +17,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import {
   buildGpuCardResourceRows,
   buildGpuDeviceResourceRows,
@@ -31,7 +29,9 @@ import {
   GPU_GRID_STYLE,
   GPU_USAGE_TEXT_CLASS,
   type GpuDeviceResourceRow,
-} from "@/foundation/lib/gpu-device-resources";
+} from "@/foundation/accelerator/gpu-device-resources";
+import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
+import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { cn } from "@/foundation/lib/utils";
 import { MetricBar, type MetricBarSeries } from "@/foundation/role/MetricBar";
 import { Disclosure } from "@/foundation/scene/Disclosure";

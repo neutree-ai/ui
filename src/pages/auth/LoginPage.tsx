@@ -15,11 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLoginIdentitySources } from "@/foundation/hooks/use-login-identity-sources";
+import { useLoginIdentitySources } from "@/domains/auth/hooks/use-login-identity-sources";
 import {
   buildOidcAuthorizeUrl,
   type LoginIdentitySource,
-} from "@/foundation/lib/api/identity-sources";
+} from "@/domains/auth/lib/identity-sources";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   rememberPostLoginPath,
