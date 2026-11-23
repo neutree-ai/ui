@@ -18,7 +18,8 @@ const TYPES = {
 };
 
 /** @returns {Promise<http.Server>} listening on a free local port */
-function serve(root) {
+function serve(rootDir) {
+  const root = path.resolve(rootDir);
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname);
     let file = path.join(root, pathname);

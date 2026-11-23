@@ -109,7 +109,12 @@ async function capture(page: Page, baseURL: string, change: Change) {
   if (change.region) {
     const found = await boxesOf(page.locator(change.region));
     regionMatched = found.length > 0;
-    if (regionMatched) around = found;
+    if (regionMatched) around = [...boxes, ...found];
+  }
+  if (around.length === 0) {
+    // Nothing to highlight on this side: show where it would be.
+    const target = setup.hover ?? setup.click;
+    if (target) around = await boxesOf(page.locator(target));
   }
   const viewport = page.viewportSize() ?? { width: 1280, height: 800 };
   const clip =

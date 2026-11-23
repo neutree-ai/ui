@@ -44,13 +44,29 @@ no image is stored in the repository.
 {
   "changes": [
     {
-      "id": "cluster-cache-plain-text",
-      "title": "Model cache type, server and path are plain text",
+      "id": "cluster-cache-both-sources",
+      "title": "A cache with both nfs and host_path shows one path row",
       "screen": "cluster-ssh",
-      "highlight": ["text=NFS Server >> xpath=.. >> text=10.0.0.20"],
-      "region": "text=#1 shared-models >> xpath=../..",
-      "note": "Were a badge and code chips.",
-      "setup": { "viewport": 900, "hover": "[data-testid='status-chip']", "click": "role=tab[name='Cache']" }
+      "highlight": ["text=\"#3\" >> xpath=../.."],
+      "note": "The base shows a second Cache Path row for host_path."
+    },
+    {
+      "id": "license-status-tooltip",
+      "title": "The status chip has a tooltip with the error message",
+      "screen": "license-expired",
+      "highlight": ["role=tooltip"],
+      "region": "xpath=//*[normalize-space(text())='Status:']/..",
+      "setup": { "hover": "text=\"Expired\"" }
+    },
+    {
+      "id": "license-grid-lg",
+      "title": "Two-column grid starts at the lg breakpoint",
+      "screen": "license-active",
+      "highlight": [
+        "*:has(> :text-is(\"Edition\"))",
+        "*:has(> :text-is(\"Vendor\"))"
+      ],
+      "setup": { "viewport": 900 }
     }
   ]
 }
@@ -59,8 +75,10 @@ no image is stored in the repository.
 - `id`, `title`, `screen` (an id from `screens.ts`) and `highlight` are required.
 - `highlight`: Playwright selectors; every match (up to 12) is outlined, numbered in order. Prefer
   `role=`, `text=` and `data-testid` over CSS classes.
-- `region`: what to crop to. By default the highlighted elements plus 24 px, widened to at least 640 px
-  so the context is readable.
+- `region`: extra context to include in the crop, for example the card around the element. The crop
+  is always the highlighted elements plus the region, padded 24 px and widened to at least 640 px so
+  the context is readable. Give a region when an element is missing on one side, so that side still
+  shows where it would be.
 - `note`: one sentence for the reviewer.
 - `setup.viewport`: page width in px (default 1280), for responsive changes such as a breakpoint.
 - `setup.hover`: a selector to hover first, for tooltips; highlight the tooltip itself, for example
