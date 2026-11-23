@@ -28,6 +28,10 @@ assert what the user sees rather than class names or layout, and do not re-decla
 
 Follow the E2E guide: [contributing/e2e.md](contributing/e2e.md)
 
+## Visual Diff
+
+Follow the visual diff guide: [contributing/visual-diff.md](contributing/visual-diff.md) (every user-visible change a PR lists should appear in its report, and vice versa)
+
 ## I18n
 
 Follow the i18n guide: [contributing/i18n-guide.md](contributing/i18n-guide.md)
