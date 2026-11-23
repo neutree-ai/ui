@@ -14,8 +14,11 @@
  * not decisions.
  *
  * Usage:
- *   node tools/ddu-layers.cjs [--json <file>] [--sites <file>]
+ *   node tools/ddu-layers.cjs [--json <file>] [--sites <file>] [--root <dir>]
  *   node tools/ddu-layers.cjs check [--update-baseline]
+ *
+ * --root measures another checkout (its src/, tsconfig.json, foundation
+ * contract and baseline) instead of the repository holding this script.
  *
  * check fails on unmarked override sites that tools/ddu-baseline.json does not
  * list. A site is marked by a `// ddu-override: <reason>` comment on the line
@@ -36,7 +39,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 
-const ROOT = path.resolve(__dirname, "..");
+// --root <dir> measures another checkout with this script's rules.
+const rootArg = process.argv.indexOf("--root");
+const ROOT =
+  rootArg >= 0
+    ? path.resolve(process.argv[rootArg + 1])
+    : path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "src");
 const BASELINE_FILE = "tools/ddu-baseline.json";
 const LAYERS = ["type", "role", "scene", "description", "override"];
@@ -590,7 +598,10 @@ function applyMarks(file, text, fileSites, markErrors) {
       });
       return;
     }
-    for (const s of marked) s.marked = true;
+    for (const s of marked) {
+      s.marked = true;
+      s.reason = mark[1].trim();
+    }
   });
 }
 
@@ -628,12 +639,30 @@ function report(result, options) {
   }
 
   if (options.json) {
+    const overrideByFile = {};
+    const marks = [];
+    for (const s of sites) {
+      if (s.layer !== "override") continue;
+      overrideByFile[s.file] = (overrideByFile[s.file] ?? 0) + 1;
+      if (s.marked)
+        marks.push({ file: s.file, text: display(s), reason: s.reason });
+    }
+    marks.sort(
+      (a, b) =>
+        a.file.localeCompare(b.file) ||
+        a.text.localeCompare(b.text) ||
+        a.reason.localeCompare(b.reason),
+    );
     const out = {
       total,
       perKind,
       decisions: decided,
       sites: sites.length,
       overrideFiles,
+      overrideByFile: Object.fromEntries(
+        Object.entries(overrideByFile).sort(([a], [b]) => a.localeCompare(b)),
+      ),
+      marks,
       foundationConcepts,
       singleKind,
     };
