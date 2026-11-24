@@ -9,16 +9,26 @@ import { useTranslation } from "@/foundation/lib/i18n";
  */
 export default function FailedUpstreamAlert({
   status,
+  unavailableModels,
 }: {
   status: UpstreamStatus;
+  unavailableModels?: Set<string>;
 }) {
   const { t } = useTranslation();
-  const models = status.models ?? [];
+  const allModels = status.models ?? [];
+  const models = unavailableModels
+    ? allModels.filter((model) => unavailableModels.has(model))
+    : allModels;
+  const servedByOther = allModels.length > 0 && models.length === 0;
 
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertDescription>
-        {t("external_endpoints.messages.upstreamUnavailable")}
+        {t(
+          servedByOther
+            ? "external_endpoints.messages.upstreamUnavailableServedByOther"
+            : "external_endpoints.messages.upstreamUnavailable",
+        )}
         {models.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
             <span>{t("external_endpoints.fields.unavailableModels")}</span>

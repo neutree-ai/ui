@@ -221,7 +221,10 @@ export const ExternalEndpointsShow = () => {
                           </div>
                         </div>
                         {upstreamStatus?.phase === "Failed" && (
-                          <FailedUpstreamAlert status={upstreamStatus} />
+                          <FailedUpstreamAlert
+                            status={upstreamStatus}
+                            unavailableModels={unavailableModels}
+                          />
                         )}
                         <p className="mt-2 break-all text-xs text-muted-foreground">
                           <span className="mr-2">
