@@ -2050,6 +2050,7 @@
 			"curlExampleEmbedding": "Embedding",
 			"credentialHidden": "Credential is hidden for security",
 			"upstreamUnavailable": "This upstream is excluded from the gateway configuration. Requests to the models below will fail until it is resolved.",
+			"upstreamUnavailableServedByOther": "This upstream is excluded from the gateway configuration. Its models are still served by other available upstreams.",
 			"testRequiresServing": "Available once the endpoint is serving.",
 			"testConnectivity": "Test Connection",
 			"testConnectivityTesting": "Testing...",

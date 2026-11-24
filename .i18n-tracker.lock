@@ -262,7 +262,7 @@
   "src/pages/ai-traces/components/StatusCodeFilter.tsx": "9f36fc145c432c079c278378ba8cf882",
   "src/foundation/hooks/use-debounced-value.ts": "8aaf7d58884918d88f9685cf15f809b8",
   "src/domains/model-catalog/lib/parse-catalog-spec-yaml.ts": "8c7fce686462aac981db3de837f49e4c",
-  "src/domains/external-endpoint/components/FailedUpstreamAlert.tsx": "c4f1b8e4560bcb91d09dcd989fcf23ba",
+  "src/domains/external-endpoint/components/FailedUpstreamAlert.tsx": "a6776d50294e37f0914fffbb995faab7",
   "src/domains/external-endpoint/lib/is-serving-phase.ts": "5c84904e77f2457c0fd42484a8da5f8a",
   "src/domains/external-endpoint/lib/match-upstream-statuses.ts": "0b9e55ff58264d5c419e466235d303dc",
   "src/domains/external-endpoint/lib/get-unavailable-models.ts": "e75dba909e0ca54c8cb6b4d10d5cbfe9",
