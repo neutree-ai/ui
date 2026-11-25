@@ -897,7 +897,7 @@ const ApiKeyLink = ({ id, workspace }: { id?: string; workspace?: string }) => {
       recordItemId={name}
       meta={{ workspace }}
       variant="link"
-      className="!h-auto !min-h-0 items-start !p-0 font-normal"
+      className="!h-auto !min-h-0 max-w-full items-start !p-0 font-normal"
     >
       <ApiKeyLabel
         name={name}
