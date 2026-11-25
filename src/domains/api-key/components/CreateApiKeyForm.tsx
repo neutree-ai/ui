@@ -11,13 +11,16 @@ import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
+import { CreatedKeySummary } from "@/domains/api-key/components/CreatedKeySummary";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
 } from "@/domains/api-key/hooks/use-api-key-policy";
+import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import { createdKeySummary } from "@/domains/api-key/lib/created-key-summary";
 import type { ApiKey } from "@/domains/api-key/types";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {
@@ -91,6 +94,8 @@ export const CreateApiKeyForm = ({
         ]
       : [];
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  // The picker's own query: a Project it just created is already in it.
+  const { data: projects } = useApiKeyProjects(selectedWorkspace);
   const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
   const onKeyDown = useFormEnterSubmitGuard();
@@ -202,6 +207,13 @@ export const CreateApiKeyForm = ({
             </Button>
           </div>
         </div>
+
+        <CreatedKeySummary
+          summary={createdKeySummary(apiKey, {
+            projects,
+            hasProject: serviceAccountId === undefined,
+          })}
+        />
 
         <DialogFooter>
           <Button onClick={onClose} className="w-full">

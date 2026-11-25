@@ -74,6 +74,10 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
 - Create (`components/CreateApiKeyForm.tsx:onSubmit`): `create_api_key` sends workspace, null technical name,
   display name, Project/null, description, zero legacy quota and `buildApiKeyLimits` result. Expiry is absent.
+- Create success view: the one-time Secret, then a summary read from the RPC response (`createdKeySummary`,
+  `lib/created-key-summary.ts`): Project name (resolved from the workspace Project list the picker shares, so an inline
+  created Project resolves; ungrouped when `spec.project_id` is null; `EmptyValue` if the id is not listed), display name
+  and description (`EmptyValue` when blank). Clipped to a few lines. Application keys omit the Project row.
 - Application create uses `create_service_account_api_key` with account id, workspace, display name, description
   and limits only. `132` requires an enabled account, Active Team and Team create permission.
 - Edit (`components/ApiKeyLimitsCard.tsx:saveConfiguration`): prefill identity from record props and limits from
