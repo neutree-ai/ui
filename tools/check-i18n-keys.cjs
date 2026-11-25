@@ -53,7 +53,7 @@ const T_CALL_RE = /\bt\(\s*["'`]([^"'`]+)["'`]/g;
 
 // A detail-field descriptor names its label key as the first argument of
 // field("…") from foundation/scene/detail-field.
-const FIELD_CALL_RE = /\bfield\(\s*["'`]([^"'`]+)["'`]/g;
+const FIELD_CALL_RE = /\bfield(?:<[^>(]*>)?\(\s*["'`]([^"'`]+)["'`]/g;
 const FIELD_MODULE_RE = /scene\/detail-field["']/;
 
 // A phase table from foundation/role/phases names its label prefix, then one
