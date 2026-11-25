@@ -2423,6 +2423,9 @@
 			"alreadyInProject": "The selected API keys already belong to this Project.",
 			"unknownProject": "Unknown Project"
 		},
+		"label": {
+			"technicalName": "Technical name"
+		},
 		"filters": {
 			"allKeys": "All API keys",
 			"activeKeys": "Active API keys",

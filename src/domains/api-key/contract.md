@@ -50,6 +50,10 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
 
 - Token amounts, units, periods and formatting: `src/foundation/contract.md`, “Token quotas”.
 - Names use `display_name || name`; `ApiKeyLabel` also resolves by UUID and falls back to its supplied text or UUID.
+- Label rule: `apiKeyLabelParts` (`lib/api-key-label.ts`) gives primary name, technical `metadata.name` (only when a
+  display name hides it) and description (null when blank). `ApiKeyLabel` shows them as clipped lines; a clipped line,
+  or the inline variant hiding the technical name or description, carries the full text on a tooltip. Filters and
+  links keep the key UUID.
 - Time: `Timestamp`, `MetadataTimestampMeta`; empty values: `EmptyValue`; rates: `rateSummary`.
 - Enabled badges read limits.disabled independently of lifecycle phase.
 - Models: `ModelSourceBadge`, `useWorkspaceModelMap`, `useModelSourceByValue`; unknown pins show unavailable.

@@ -394,18 +394,23 @@ export const UsageChart = ({
       formatter={(_value, entry) => {
         const key = String(entry?.dataKey ?? "");
         const seriesMeta = meta.get(key);
+        const name = seriesMeta?.name ?? key;
+        const description = seriesMeta?.description;
+        // Capped and clipped so a long description cannot push the other
+        // entries aside; the full text stays on the native title.
         return (
           <span
-            className="inline-flex items-baseline align-middle leading-tight"
+            className="inline-block max-w-[240px] truncate align-middle leading-tight"
+            title={description ? `${name} - ${description}` : name}
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
             }}
           >
-            <span>{seriesMeta?.name ?? key}</span>
-            {seriesMeta?.description ? (
+            {name}
+            {description ? (
               <span className="ml-1 text-[10px] font-normal">
-                - {seriesMeta.description}
+                - {description}
               </span>
             ) : null}
           </span>

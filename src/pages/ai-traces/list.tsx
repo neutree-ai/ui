@@ -302,12 +302,18 @@ export const AITracesList = () => {
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          {/* The list stops growing at the cap, and each item's text may
+              shrink so a long description clips instead of widening it. */}
+          <SelectContent className="max-w-[360px]">
             <SelectItem value="all">
               {t("ai_traces.filters.allApiKeys")}
             </SelectItem>
             {keys.map((k) => (
-              <SelectItem key={k.id} value={k.id}>
+              <SelectItem
+                key={k.id}
+                value={k.id}
+                className="[&>span:last-child]:min-w-0"
+              >
                 <ApiKeyLabel
                   name={k.metadata?.name ?? k.id}
                   displayName={k.metadata?.display_name}

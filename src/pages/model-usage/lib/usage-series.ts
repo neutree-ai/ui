@@ -10,6 +10,8 @@ export type UsageSeries = {
   key: string;
   name: string;
   description: string | null;
+  // An API key's technical name, when `name` is its display name.
+  technicalName?: string | null;
   prompt: number;
   completion: number;
   total: number;
@@ -30,7 +32,11 @@ export const OTHER_TEAMS_SERIES_KEY = "__other_teams";
 export const isOtherSeries = (key: string) =>
   key === OTHER_SERIES_KEY || key === OTHER_TEAMS_SERIES_KEY;
 
-type SeriesMeta = { name: string; description: string | null };
+type SeriesMeta = {
+  name: string;
+  description: string | null;
+  technicalName?: string | null;
+};
 
 type UsageRow = Pick<
   ApiUsageRecord,

@@ -47,7 +47,8 @@ No masked fields or secret writes; bodies return as stored.
   Zero shows `EmptyValue`; other codes remain numeric.
 - Empty strings and missing counts use `EmptyValue` (`-`); missing endpoint type is blank. Stream shows On or Off.
 - App: `userAgentToApp` maps known SDKs/clients, otherwise leading token or first 24 characters.
-- Keys: `ApiKeyLabel`, display name or technical name; unresolved list keys show empty, drawer retains UUID.
+- Keys: `ApiKeyLabel`, display name with technical name and description under it, or technical name alone; the filter
+  select caps its width and clips long labels; unresolved list keys show empty, drawer retains UUID.
 - Bodies: `parseConversation` / `formatBody` in `TraceDetailDrawer`; presentation tests beside the drawer.
 
 ## Scenes

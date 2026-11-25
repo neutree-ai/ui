@@ -95,8 +95,10 @@ departments return no rows, unknown Teams can fail permission. `get_usage_by_dim
   No throughput, per-second rate or pricing calculation.
 - Shares/change: `formatShare`, `changeOf`, `previousRange`; tests in `lib/usage-series.test.ts`.
   Shares use one decimal or 0% without a denominator; nonpositive previous usage shows no comparison.
-- Names: `groupFact` uses `displayName`; `keyFact` prefers display name, then technical name, or a deleted-key
-  label with eight UUID characters; `ApiKeyLabel` displays it.
+- Names: `groupFact` uses `displayName`; `keyFact` uses `apiKeyLabelParts` (display name, else technical name, with the technical
+  name kept as `technicalName`), or a deleted-key label with eight UUID characters; `ApiKeyLabel` displays it in
+  the tables, clipped with the full text on a tooltip. Chart legend entries cap their width and clip, with the full
+  text on the native title.
 - Null model groups use `EMPTY_VALUE` through `modelOf`; detail missing model/endpoint/type uses `EmptyValue`. Null
   splits count as zero; ticks use M/D (`formatTick`), ranges use `formatRangeLabel`.
 - Empty: `model_usage.empty`, zero totals; first load has a loader; comparison failures hide change.
