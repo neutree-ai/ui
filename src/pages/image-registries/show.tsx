@@ -1,9 +1,11 @@
 import { useShow } from "@refinedev/core";
+import { imageRegistryConfigFields } from "@/domains/image-registry/lib/detail-fields";
 import { imageRegistryPhases } from "@/domains/image-registry/lib/phases";
 import type { ImageRegistry } from "@/domains/image-registry/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
@@ -22,11 +24,6 @@ export const ImageRegistriesShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const repository = record.spec.repository?.trim();
-  const repositoryUrl = repository
-    ? `${record.spec.url.replace(/\/$/, "")}/${repository.replace(/^\//, "")}`
-    : record.spec.url;
-
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
@@ -42,11 +39,7 @@ export const ImageRegistriesShow = () => {
       />
       <div className="mt-4 space-y-3">
         <ShowPage.Section title={t("common.sections.configuration")}>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-            <ShowPage.Row title={t("image_registries.fields.repo")}>
-              {repositoryUrl}
-            </ShowPage.Row>
-          </div>
+          <DetailFields fields={imageRegistryConfigFields} record={record} />
         </ShowPage.Section>
       </div>
     </ShowPage>

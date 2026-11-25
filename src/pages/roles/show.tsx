@@ -1,8 +1,13 @@
 import { useShow } from "@refinedev/core";
 import PermissionsTree from "@/domains/role/components/PermissionsTree";
+import {
+  isPresetRole,
+  roleHeaderFields,
+} from "@/domains/role/lib/detail-fields";
 import type { Role } from "@/domains/role/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
@@ -21,7 +26,7 @@ export const RolesShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const isPreset = Boolean(record.spec.preset_key);
+  const isPreset = isPresetRole(record);
 
   return (
     <ShowPage
@@ -34,16 +39,7 @@ export const RolesShow = () => {
         title={record.metadata.name}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.permissions")}>
-              {t("common.fields.permissionsCount", {
-                count: record.spec.permissions.length,
-              })}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.type")}>
-              {isPreset
-                ? t("roles.fields.presetRole")
-                : t("roles.fields.customRole")}
-            </ShowPage.Meta>
+            <DetailFields inline fields={roleHeaderFields} record={record} />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }

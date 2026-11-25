@@ -58,7 +58,8 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 ## Scenes
 
 - List: search `metadata->>name`, `defaultSorters`, batch delete; row actions edit, delete, `ClusterUpgradeAction`.
-- Show: SSH nodes, router and each model cache are `DetailFields` over `lib/detail-fields.ts` (`clusterSshFields`,
+- Show: header (`clusterHeaderFields`: type, version, image registry link, accelerator virtualization on kubernetes
+  only), SSH nodes, router and each model cache are `DetailFields` over `lib/detail-fields.tsx` (`clusterSshFields`,
   `clusterRouterFields`, `modelCacheFields`; Foundation "Detail fields"): worker IPs comma-joined, an unknown access
   mode (`getAccessModeLabel`) or absent router capacity as the empty marker, a cache's type as plain text and its
   path from `nfs` or else `host_path`. Polls every 10 s unless the monitor tab is open. Cache tab needs kubernetes and `system

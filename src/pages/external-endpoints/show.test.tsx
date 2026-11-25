@@ -240,9 +240,13 @@ describe("ExternalEndpointsShow", () => {
       phase: "Running",
       service_url: "https://gateway.example.com",
     });
-    screen.getByText("external_endpoints.sections.modelServices");
-    screen.getByText("primary");
-    screen.getByText("external_endpoints.options.upstreamTypeExternal");
+    const services = screen
+      .getByText("external_endpoints.sections.modelServices")
+      .closest("section") as HTMLElement;
+    within(services).getByText("primary");
+    within(services).getByText(
+      "external_endpoints.options.upstreamTypeExternal",
+    );
     screen.getByText("external_endpoints.actions.viewModelMappings");
     const table = screen.getByRole("table");
     expect(table.textContent).toContain("gpt-6");

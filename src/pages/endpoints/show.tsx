@@ -11,10 +11,7 @@ import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-pr
 import { type Cluster, zcacheStatus } from "@/domains/cluster/types";
 import { EndpointAccessSummary } from "@/domains/endpoint/components/EndpointAccessSummary";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
-import { EndpointCatalogOriginLink } from "@/domains/endpoint/components/EndpointCatalogOrigin";
-import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import { EndpointKVCacheSummary } from "@/domains/endpoint/components/EndpointKVCacheSummary";
-import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import { EndpointPauseAction } from "@/domains/endpoint/components/EndpointPauseAction";
 import { EndpointPerformanceCard } from "@/domains/endpoint/components/EndpointPerformanceCard";
 import EndpointRuntimeResourcesCard from "@/domains/endpoint/components/EndpointRuntimeResourcesCard";
@@ -22,11 +19,11 @@ import {
   EndpointSaveAsCatalogAction,
   EndpointSaveAsCatalogProvider,
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
-import ModelTask from "@/domains/endpoint/components/ModelTask";
-import { ServedModelName } from "@/domains/endpoint/components/ServedModelName";
 import { useEndpointMonitorPanels } from "@/domains/endpoint/hooks/use-endpoint-monitor-panels";
-import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
-import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
+import {
+  endpointIdentityFields,
+  endpointRuntimeFields,
+} from "@/domains/endpoint/lib/detail-fields";
 import {
   endpointCacheDashboard,
   endpointZCacheOptions,
@@ -46,15 +43,13 @@ import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
 import { getEndpointSplitDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
-import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
-import Timestamp from "@/foundation/role/Timestamp";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
 } from "@/foundation/scene/detail-tabs";
-import { ShowButton } from "@/foundation/scene/ShowButton";
+import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 
@@ -260,18 +255,10 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         })
       : null;
 
-  const replicaCount = record.spec.replicas?.num ?? 1;
-  const shouldShowScheduler = replicaCount > 1;
-  const schedulerText =
-    schedulerLabel(record.spec.deployment_options?.scheduler?.type, t) ??
-    t("models.scheduler.unavailable");
   const engineVersion = engineData?.data?.spec.versions.find(
     (v) => v.version === record.spec.engine.version,
   );
   const playground = resolvePlayground(engineVersion, record.spec.model?.task);
-  // Read off the endpoint, never fetched: a record that still reads correctly
-  // after its catalog is gone is the point of keeping it here.
-  const catalogOrigin = readCatalogOrigin(record.metadata.annotations);
   const kvTransferConfig =
     record.status?.kv_cache?.provider === "zcache"
       ? record.status.kv_cache.details?.kv_transfer_config
@@ -299,74 +286,23 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             descriptionClassName="max-w-none"
             description={
               <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                <ShowPage.Meta label={t("common.fields.model")}>
-                  <EndpointModel
-                    model={record.spec.model}
-                    workspace={record.metadata.workspace}
-                  />
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("modelSource.label")}>
-                  {/* Derived, not stored: an endpoint the platform runs is
-                      always self-hosted, so there is nothing to edit here. */}
-                  <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("common.fields.task")}>
-                  <ModelTask task={record.spec.model?.task} />
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("common.fields.engine")}>
-                  <EndpointEngine {...record} />
-                </ShowPage.Meta>
-                {catalogOrigin && (
-                  <ShowPage.Meta label={t("endpoints.fields.modelCatalog")}>
-                    <EndpointCatalogOriginLink
-                      origin={catalogOrigin}
-                      workspace={record.metadata.workspace}
-                    />
-                  </ShowPage.Meta>
-                )}
-                <ShowPage.Meta label={t("common.fields.cluster")}>
-                  <ShowButton
-                    recordItemId={record.spec.cluster}
-                    meta={{
-                      workspace: record.metadata.workspace,
-                    }}
-                    variant="link"
-                    resource="clusters"
-                  >
-                    {record.spec.cluster}
-                  </ShowButton>
-                </ShowPage.Meta>
+                <DetailFields
+                  inline
+                  fields={endpointIdentityFields(record)}
+                  record={record}
+                />
                 {url && (
                   <EndpointAccessSummary
                     serviceUrl={url}
                     className="shrink-0"
                   />
                 )}
-                <ShowPage.Meta label={t("endpoints.fields.servedModels")}>
-                  {record.status?.served_models?.length ? (
-                    <span className="inline-flex flex-wrap gap-1">
-                      {record.status.served_models.map((model) => (
-                        <ServedModelName key={model} name={model} />
-                      ))}
-                    </span>
-                  ) : (
-                    "-"
-                  )}
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("endpoints.fields.replicas")}>
-                  {replicaCount}
-                </ShowPage.Meta>
-                {shouldShowScheduler && (
-                  <ShowPage.Meta label={t("common.fields.scheduler")}>
-                    {schedulerText}
-                  </ShowPage.Meta>
-                )}
-                <ShowPage.Meta label={t("common.fields.createdAt")}>
-                  <Timestamp
-                    timestamp={record.metadata.creation_timestamp}
-                    relative
-                  />
-                </ShowPage.Meta>
+                <DetailFields
+                  inline
+                  fields={endpointRuntimeFields(record)}
+                  record={record}
+                />
+                <MetadataTimestampMeta metadata={record.metadata} />
               </span>
             }
             // No phase, no badge: the identity line reads as "name, dash"

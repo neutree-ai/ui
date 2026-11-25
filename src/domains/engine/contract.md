@@ -58,7 +58,8 @@ Paths: `src/domains/engine/` unless prefixed.
 - List (`src/pages/engines/list.tsx:EnginesList`): workspace required, all records, local trimmed/lowercased name
   search; broken engines first; no batch actions.
 - Card (`components/EngineCard.tsx`): name/status/tasks/newest; links use route workspace and `?version=`.
-- Show (`src/pages/engines/show.tsx:EnginesShow`): name/status, version/task counts, timestamps, tasks/schema. Exact
+- Show (`src/pages/engines/show.tsx:EnginesShow`): name/status, version/task counts (`engineHeaderFields` in
+  `lib/detail-fields.ts`, locale numbers), timestamps, tasks/schema. Exact
   `?version=` wins, else newest; links use record workspace/encoded version; no versions means no schema.
 - Schema: `components/ValueSchemaTable.tsx`; tests: `components/ValueSchemaTable.test.tsx`.
 - Create/Edit/Delete: no UI. `validate_soft_delete` preserves spec/status (`022_soft_delete_permission`);

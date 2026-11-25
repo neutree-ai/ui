@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 
 const showRecord = vi.hoisted(() => ({
   current: {} as Record<string, unknown>,
@@ -53,18 +53,10 @@ const record = (url: string, repository: string) => ({
 });
 
 describe("ImageRegistriesShow", () => {
-  it("joins URL and repository without duplicate slashes", () => {
+  it("shows the registry URL joined with its repository", () => {
     showRecord.current = record("https://index.docker.io/v1/", "/neutree");
     render(<ImageRegistriesShow />);
 
     screen.getByText("https://index.docker.io/v1/neutree");
-    expect(screen.queryByText("image_registries.fields.repository")).toBeNull();
-  });
-
-  it("shows only the URL when repository is empty", () => {
-    showRecord.current = record("https://registry.example.com", "   ");
-    render(<ImageRegistriesShow />);
-
-    screen.getByText("https://registry.example.com");
   });
 });

@@ -6,16 +6,14 @@ import { useLocalStorage } from "react-use";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
-import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   ClusterUpgradeAction,
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
-import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import { NodeResourcesTable } from "@/domains/cluster/components/NodeResourcesTable";
 import { useClusterMonitorPanels } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
-import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import {
+  clusterHeaderFields,
   clusterRouterFields,
   clusterSshFields,
   modelCacheFields,
@@ -55,10 +53,8 @@ import {
 } from "@/foundation/scene/detail-tabs";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
-import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { Table } from "@/foundation/scene/Table";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
@@ -167,8 +163,6 @@ export const ClustersShow = () => {
         );
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
-  const acceleratorVirtualizationEnabled =
-    isAcceleratorVirtualizationEnabled(record);
   const showCacheTab =
     record.spec.type === "kubernetes" &&
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
@@ -194,41 +188,11 @@ export const ClustersShow = () => {
             descriptionClassName="max-w-none"
             description={
               <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                <ShowPage.Meta label={t("common.fields.type")}>
-                  <ClusterType type={record.spec.type} />
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("common.fields.version")}>
-                  <span className="inline-flex min-w-0 items-center">
-                    {record.status?.version ?? <EmptyValue />}
-                    {record.status?.phase === "Upgrading" &&
-                      record.spec.version && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          &rarr; {record.spec.version}
-                        </span>
-                      )}
-                    <ClusterUpgradeTip cluster={record} />
-                  </span>
-                </ShowPage.Meta>
-                <ShowPage.Meta label={t("common.fields.imageRegistry")}>
-                  <ShowButton
-                    recordItemId={record.spec.image_registry}
-                    meta={{ workspace: record.metadata.workspace }}
-                    variant="link"
-                    resource="image_registries"
-                  >
-                    {record.spec.image_registry}
-                  </ShowButton>
-                </ShowPage.Meta>
-                {record.spec.type === "kubernetes" && (
-                  <ShowPage.Meta
-                    label={t("clusters.fields.acceleratorVirtualization")}
-                  >
-                    {acceleratorVirtualizationEnabled
-                      ? t("common.options.enabled")
-                      : t("common.options.disabled")}
-                  </ShowPage.Meta>
-                )}
+                <DetailFields
+                  inline
+                  fields={clusterHeaderFields(record)}
+                  record={record}
+                />
                 <MetadataTimestampMeta metadata={record.metadata} />
               </span>
             }

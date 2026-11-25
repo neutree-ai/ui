@@ -49,7 +49,8 @@ requires nonblank lowercase DNS-style names allowing dots, at most 63 characters
   Select is `*,org_unit_members(org_units(id,metadata,status,path))`; department needs `org_unit:read`.
 - `UserSourceFilter`: all/local/named; named options need `identity_source:read`. Local filters source-name label
   null; named uses equality on `metadata->labels->>"neutree.ai/identity-source-name"`.
-- Show (`UsersShow`): human/technical names, email, source, timestamps; department, teams, effective grants and model
+- Show (`UsersShow`): human/technical names; name, email (empty marker for a placeholder) and source (`local` when
+  unlabelled) are `userHeaderFields` in `lib/detail-fields.ts`; timestamps; department, teams, effective grants and model
   access use their domain components; grant tables separate global, workspace and department assignments.
 - Create (`useUserForm`, `UsersCreate`): flat auth fields; `mode:"all"`, unsaved-change warning. `dataProvider.create`:
   `{email,password,username:name}`.

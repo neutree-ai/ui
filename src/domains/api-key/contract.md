@@ -72,8 +72,8 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
 - Project create/update/delete RPCs (`092`): create trims name/description, edit sends both inputs;
   deletion needs no live keys (23503). `move_api_keys_to_project` (`132`) requires one owner/workspace.
 - Show (`src/pages/api-keys/show.tsx:ApiKeysShow`): name (`displayName`); workspace, description (only when set) and
-  usage (locale number) via `DetailFields` over `lib/detail-fields.ts`; Project/application,
-  timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
+  usage (locale number), then the application (rendered by the page) or else the Project (ungrouped, loading, load
+  failed or its name) via `DetailFields` over `lib/detail-fields.ts`; timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
 - Create (`components/CreateApiKeyForm.tsx:onSubmit`): `create_api_key` sends workspace, null technical name,
   display name, Project/null, description, zero legacy quota and `buildApiKeyLimits` result. Expiry is absent.
 - Create success view: the one-time Secret, then a summary read from the RPC response (`createdKeySummary`,

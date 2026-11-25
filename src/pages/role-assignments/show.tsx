@@ -1,13 +1,12 @@
 import { useShow } from "@refinedev/core";
 import { OrgUnitLabel } from "@/domains/organization/components/OrgUnitField";
 import { TeamLabel } from "@/domains/organization/components/TeamField";
-import { RoleAssignmentScopeLabel } from "@/domains/role-assignment/components/RoleAssignmentScopeLabel";
-import { RoleAssignmentSubjectLabel } from "@/domains/role-assignment/components/RoleAssignmentSubjectLabel";
+import { roleAssignmentFields } from "@/domains/role-assignment/lib/detail-fields";
 import type { RoleAssignment } from "@/domains/role-assignment/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
-import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
 export const RoleAssignmentsShow = () => {
@@ -25,13 +24,10 @@ export const RoleAssignmentsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const subject = (
-    <RoleAssignmentSubjectLabel
-      spec={record.spec}
-      renderTeam={(name) => <TeamLabel name={name} />}
-      renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
-    />
-  );
+  const fields = roleAssignmentFields({
+    renderTeam: (name) => <TeamLabel name={name} />,
+    renderOrgUnit: (name) => <OrgUnitLabel name={name} />,
+  });
 
   const isAdminGlobalAssignment =
     record.metadata.name === "admin-global-role-assignment";
@@ -47,40 +43,14 @@ export const RoleAssignmentsShow = () => {
         title={record.metadata.name}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("role_assignments.fields.scope")}>
-              <RoleAssignmentScopeLabel
-                spec={record.spec}
-                renderOrgUnit={(name) => <OrgUnitLabel name={name} />}
-                renderTeam={(name) => <TeamLabel name={name} />}
-              />
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.role")}>
-              {record.spec.role}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("role_assignments.fields.subject")}>
-              {subject}
-            </ShowPage.Meta>
+            <DetailFields inline fields={fields.header} record={record} />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
       />
       <div className="mt-4 space-y-3">
         <ShowPage.Section title={t("role_assignments.fields.policy")}>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-            <ShowPage.Row title={t("common.fields.role")}>
-              <ShowButton
-                recordItemId={record.spec.role}
-                meta={{}}
-                variant="link"
-                resource="roles"
-              >
-                {record.spec.role}
-              </ShowButton>
-            </ShowPage.Row>
-            <ShowPage.Row title={t("role_assignments.fields.subject")}>
-              {subject}
-            </ShowPage.Row>
-          </div>
+          <DetailFields fields={fields.policy} record={record} />
         </ShowPage.Section>
       </div>
     </ShowPage>

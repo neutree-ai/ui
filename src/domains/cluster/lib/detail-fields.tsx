@@ -1,11 +1,62 @@
+import ClusterType from "@/domains/cluster/components/ClusterType";
+import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
+import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import type { Cluster, ModelCache } from "@/domains/cluster/types";
 import { type DetailField, field } from "@/foundation/scene/detail-field";
+import { ShowButton } from "@/foundation/scene/ShowButton";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type Config = Cluster["spec"]["config"];
 type SshConfig = NonNullable<Config["ssh_config"]>;
 type KubernetesConfig = NonNullable<Config["kubernetes_config"]>;
+
+const acceleratorVirtualization: DetailField<Cluster> = field(
+  "clusters.fields.acceleratorVirtualization",
+  (cluster, t) =>
+    t(
+      isAcceleratorVirtualizationEnabled(cluster)
+        ? "common.options.enabled"
+        : "common.options.disabled",
+    ),
+);
+
+/** The header fields; accelerator virtualization applies to Kubernetes only. */
+export const clusterHeaderFields = (
+  cluster: Cluster,
+): DetailField<Cluster>[] => [
+  field("common.fields.type", {
+    render: (current) => <ClusterType type={current.spec.type} />,
+  }),
+  field("common.fields.version", {
+    render: (current) => (
+      <span className="inline-flex min-w-0 items-center">
+        {current.status?.version ?? <EmptyValue />}
+        {current.status?.phase === "Upgrading" && current.spec.version && (
+          <span className="text-muted-foreground">
+            {" "}
+            &rarr; {current.spec.version}
+          </span>
+        )}
+        <ClusterUpgradeTip cluster={current} />
+      </span>
+    ),
+  }),
+  field("common.fields.imageRegistry", {
+    render: (current) => (
+      <ShowButton
+        recordItemId={current.spec.image_registry}
+        meta={{ workspace: current.metadata.workspace }}
+        variant="link"
+        resource="image_registries"
+      >
+        {current.spec.image_registry}
+      </ShowButton>
+    ),
+  }),
+  ...(cluster.spec.type === "kubernetes" ? [acceleratorVirtualization] : []),
+];
 
 export const clusterSshFields: DetailField<SshConfig>[] = [
   field("clusters.fields.headIp", (ssh) => ssh.provider.head_ip),

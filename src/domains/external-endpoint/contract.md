@@ -64,7 +64,9 @@ deviations 1, 2).
 
 - List: search `metadata->>name`, `defaultSorters`, batch delete. Model chips from `getExposedModels` (route models,
   else legacy `model_mapping` keys).
-- Show: tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
+- Show: header type (`getEndpointType`, empty marker without upstreams), exposed-model count and timeout
+  (`formatTimeout`) are `externalEndpointHeaderFields` in `lib/detail-fields.ts`.
+  Tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
   `routesFromLegacy` for specs without `model_routes`; per-upstream status and mapping (`getUpstreamModelMappings`);
   `CurlExample` when serving and a service URL exists (models minus `getUnavailableModels`). No polling. Credentials
   never shown.

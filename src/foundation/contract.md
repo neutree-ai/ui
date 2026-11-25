@@ -122,8 +122,9 @@ items with `inline`. `foundation/type/FieldValue` alone decides how a value is s
 undefined, `""`, empty array and empty object are `EmptyValue`; a boolean is `common.values.yes|no`; a number is
 formatted for the resolved language; a string is shown as is, keeps its line breaks and may wrap anywhere; an array
 is joined with `, `; a plain object is `key=value` chips. Meaning beyond the type goes through `render` to a role
-piece (`Timestamp`, the kind's status component). Used by License, Log Sink, Identity Source, Cluster and API Key.
-Tests: `type/FieldValue.test.tsx` (per-type rules), `scene/DetailFields.test.tsx` (wiring).
+piece (`Timestamp`, the kind's status component). Show pages use it for their field rows and header metas; a field
+that needs another domain's component takes it as a renderer from the page. Tests: `type/FieldValue.test.tsx` (per-type rules), `scene/DetailFields.test.tsx`
+(wiring); a kind's fields are tested in its `lib/` with `testing/detail-fields.ts` (`fieldKeys`, `fieldValue`).
 
 `foundation/role/ConnectionTestResult` shows a last connection test (`{ok, time}`): `common.connectionTest.ok`
 (positive text) or `.failed` (serious text) with the relative time, `.never` when there is no test or no time.

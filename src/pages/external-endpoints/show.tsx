@@ -9,8 +9,7 @@ import ExternalEndpointMonitor, {
 } from "@/domains/external-endpoint/components/ExternalEndpointMonitor";
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
-import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
-import { getEndpointType } from "@/domains/external-endpoint/lib/get-endpoint-type";
+import { externalEndpointHeaderFields } from "@/domains/external-endpoint/lib/detail-fields";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
@@ -26,6 +25,7 @@ import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
@@ -59,12 +59,6 @@ export const ExternalEndpointsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const endpointType = getEndpointType(record.spec);
-  const endpointTypeLabels = {
-    external: t("external_endpoints.options.upstreamTypeExternal"),
-    endpoint_ref: t("external_endpoints.options.upstreamTypeInternal"),
-    mixed: t("external_endpoints.options.upstreamTypeMixed"),
-  };
   const allModels = getExposedModels(record.spec);
   const upstreamStatuses = matchUpstreamStatuses(
     record.spec,
@@ -104,19 +98,11 @@ export const ExternalEndpointsShow = () => {
           }
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-              <ShowPage.Meta label={t("external_endpoints.fields.type")}>
-                {endpointType ? (
-                  endpointTypeLabels[endpointType]
-                ) : (
-                  <EmptyValue />
-                )}
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("external_endpoints.fields.models")}>
-                {allModels.length}
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("external_endpoints.fields.timeout")}>
-                {formatTimeout(record.spec?.timeout)}
-              </ShowPage.Meta>
+              <DetailFields
+                inline
+                fields={externalEndpointHeaderFields}
+                record={record}
+              />
               {/* The URLs are long and only worth their space when asked for —
                   the same affordance the endpoint detail page uses. */}
               {record.status?.service_url && (

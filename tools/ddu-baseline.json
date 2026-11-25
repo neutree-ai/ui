@@ -621,10 +621,9 @@
 		"project?.metadata.workspace": 1
 	},
 	"src/pages/api-keys/show.tsx": {
-		"project?.metadata.name": 1,
 		"record.metadata.workspace": 4,
 		"record.spec.description": 1,
-		"record.spec.project_id": 2,
+		"record.spec.project_id": 1,
 		"record.user_id": 2,
 		"record?.metadata.workspace": 1,
 		"record?.service_account_id": 1,
@@ -639,11 +638,8 @@
 		"cache.name": 1,
 		"record.metadata.name": 1,
 		"record.metadata.workspace": 1,
-		"record.spec.image_registry": 1,
-		"record.spec.type": 4,
-		"record.spec.version": 2,
-		"record.status?.phase": 2,
-		"record.status?.version": 1,
+		"record.spec.type": 3,
+		"record.status?.phase": 1,
 		"record?.metadata.name": 2
 	},
 	"src/pages/endpoints/list.tsx": {
@@ -652,10 +648,8 @@
 	"src/pages/endpoints/show.tsx": {
 		"record.metadata.name": 1,
 		"record.metadata.workspace": 2,
-		"record.spec.cluster": 1,
 		"record.spec.engine.version": 1,
 		"record.spec.model?.name": 1,
-		"record.spec.replicas?.num": 1,
 		"record.status?.kv_cache?.provider": 1,
 		"record.status?.phase": 1,
 		"record?.metadata.workspace": 1,
@@ -693,10 +687,6 @@
 		"upstreamStatus?.phase": 1,
 		"upstreams[index]?.name": 1
 	},
-	"src/pages/image-registries/show.tsx": {
-		"record.spec.repository": 1,
-		"record.spec.url": 2
-	},
 	"src/pages/log-sinks/list.tsx": {
 		"(original as LogSink).metadata.name": 1,
 		"(row.original as LogSink).spec?.type": 1
@@ -725,11 +715,6 @@
 		"c.metadata.name": 1,
 		"c.spec.model?.name": 1
 	},
-	"src/pages/model-catalogs/show.tsx": {
-		"heroModel.file": 1,
-		"heroModel?.file": 1,
-		"heroModel?.task": 2
-	},
 	"src/pages/model-usage/components/UsageScopePanel.tsx": {
 		"team.metadata.name": 1
 	},
@@ -751,13 +736,6 @@
 		"ra.metadata.deletion_timestamp": 1
 	},
 	"src/pages/role-assignments/show.tsx": {
-		"record.metadata.name": 1,
-		"record.spec.role": 2
-	},
-	"src/pages/roles/show.tsx": {
-		"record.spec.preset_key": 1
-	},
-	"src/pages/users/show.tsx": {
 		"record.metadata.name": 1
 	},
 	"src/pages/workspaces/show.tsx": {

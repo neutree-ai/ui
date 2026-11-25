@@ -12,7 +12,6 @@ import { displayName } from "@/foundation/role/display-name";
 import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";
 
 export const ApiKeysShow = () => {
@@ -59,24 +58,17 @@ export const ApiKeysShow = () => {
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
               <DetailFields
                 inline
-                fields={apiKeyHeaderFields(record)}
+                fields={apiKeyHeaderFields(
+                  record,
+                  {
+                    name: project?.metadata.name,
+                    isLoading: isProjectLoading,
+                    error: projectError,
+                  },
+                  (id) => <ServiceAccountLabel id={id} />,
+                )}
                 record={record}
               />
-              {serviceAccountId !== undefined ? (
-                <ShowPage.Meta label={t("api_keys.fields.application")}>
-                  <ServiceAccountLabel id={serviceAccountId} />
-                </ShowPage.Meta>
-              ) : (
-                <ShowPage.Meta label={t("api_keys.fields.project")}>
-                  {!record.spec.project_id
-                    ? t("api_keys.projects.ungrouped")
-                    : isProjectLoading
-                      ? t("api_keys.messages.loading")
-                      : projectError
-                        ? t("api_keys.projects.loadFailed")
-                        : (project?.metadata.name ?? <EmptyValue />)}
-                </ShowPage.Meta>
-              )}
               <MetadataTimestampMeta metadata={record.metadata} />
             </span>
           }

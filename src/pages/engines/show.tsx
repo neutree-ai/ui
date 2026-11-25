@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ValueSchemaTable } from "@/domains/engine/components/ValueSchemaTable";
+import { engineHeaderFields } from "@/domains/engine/lib/detail-fields";
 import {
   enginePhases,
   isExceptionalEnginePhase,
@@ -13,6 +14,7 @@ import { Loader } from "@/foundation/components/Loader";
 import { cn } from "@/foundation/lib/utils";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
@@ -61,12 +63,7 @@ export const EnginesShow = () => {
         }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.versions")}>
-              {versions.length}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("engines.fields.supportedTasks")}>
-              {record.spec.supported_tasks?.length ?? 0}
-            </ShowPage.Meta>
+            <DetailFields inline fields={engineHeaderFields} record={record} />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
