@@ -1,55 +1,46 @@
-import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import type { createdKeySummary } from "@/domains/api-key/lib/created-key-summary";
+import type { CreatedKeySummary as Summary } from "@/domains/api-key/lib/created-key-summary";
+import { DetailFields } from "@/foundation/scene/DetailFields";
+import { type DetailField, field } from "@/foundation/scene/detail-field";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-3 text-sm">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0">{children}</dd>
-    </div>
-  );
-}
+const projectField = field<Summary>("api_keys.fields.project", (s, t) =>
+  s.project?.kind === "ungrouped"
+    ? t("api_keys.projects.ungrouped")
+    : s.project?.kind === "named"
+      ? s.project.name
+      : null,
+);
 
-/** The created key's Project, name and description, clipped to a few lines. */
-export function CreatedKeySummary({
-  summary,
-}: {
-  summary: ReturnType<typeof createdKeySummary>;
-}) {
-  const { t } = useTranslation();
-  const { project, name, description } = summary;
-  return (
-    <dl className="space-y-2 rounded-md border p-3" data-testid="key-summary">
-      {project && (
-        <Row label={t("api_keys.fields.project")}>
-          <span className="line-clamp-2 break-all" title={project.name ?? ""}>
-            {project.unresolved ? (
-              <EmptyValue />
-            ) : (
-              (project.name ?? t("api_keys.projects.ungrouped"))
-            )}
-          </span>
-        </Row>
-      )}
-      <Row label={t("api_keys.fields.displayName")}>
-        <span className="line-clamp-2 break-all" title={name}>
-          {name || <EmptyValue />}
-        </span>
-      </Row>
-      <Row label={t("api_keys.fields.description")}>
-        {description ? (
+const fields: DetailField<Summary>[] = [
+  field("api_keys.fields.displayName", (s) => s.name),
+  field(
+    "api_keys.fields.description",
+    {
+      render: (s) =>
+        s.description ? (
           <span
-            className="line-clamp-3 whitespace-pre-wrap break-all"
-            title={description}
+            className="line-clamp-3 whitespace-pre-wrap [overflow-wrap:anywhere]"
+            title={s.description}
           >
-            {description}
+            {s.description}
           </span>
         ) : (
           <EmptyValue />
-        )}
-      </Row>
-    </dl>
+        ),
+    },
+    { span: 2 },
+  ),
+];
+
+/** The created key's Project, name and description; a long description is clipped. */
+export function CreatedKeySummary({ summary }: { summary: Summary }) {
+  return (
+    <div data-testid="key-summary">
+      <DetailFields
+        record={summary}
+        fields={summary.project ? [projectField, ...fields] : fields}
+        className="gap-3 rounded-md border p-3 lg:grid-cols-2"
+      />
+    </div>
   );
 }

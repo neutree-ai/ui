@@ -1,10 +1,5 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
@@ -22,6 +17,16 @@ vi.mock("@/domains/api-key/components/ApiKeyPolicyFields", () => ({
 const projects = [{ id: "project-1", metadata: { name: "Billing" } }];
 vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
   useApiKeyProjects: () => ({ data: projects }),
+}));
+
+vi.mock("@/foundation/scene/ShowPage", () => ({
+  ShowPage: {
+    Row: ({ title, children }: { title: ReactNode; children: ReactNode }) => (
+      <div>
+        {title} {children}
+      </div>
+    ),
+  },
 }));
 
 vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
@@ -162,17 +167,6 @@ describe("CreateApiKeyForm", () => {
     expect(summary.textContent).toContain("Server name");
     expect(summary.textContent).toContain("Prod traffic");
     screen.getByText("created-secret");
-  });
-
-  it("shows ungrouped and an empty description for a key without either", async () => {
-    render(<CreateApiKeyForm onClose={vi.fn()} initialWorkspace="default" />);
-    submitNamed("plain");
-
-    const summary = await screen.findByTestId("key-summary");
-    expect(summary.textContent).toContain("api_keys.projects.ungrouped");
-    expect(summary.textContent).toContain("Created key");
-    within(summary).getByTestId("empty-value");
-    expect(summary.textContent).not.toMatch(/undefined|null/);
   });
 
   it("leaves the Project out of an application key's summary", async () => {

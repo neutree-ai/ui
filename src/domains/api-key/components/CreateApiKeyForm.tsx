@@ -94,8 +94,11 @@ export const CreateApiKeyForm = ({
         ]
       : [];
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
-  // The picker's own query: a Project it just created is already in it.
-  const { data: projects } = useApiKeyProjects(selectedWorkspace);
+  // The picker's own query: a Project it just created is already in it. An
+  // application's key has no Project, so it reads none.
+  const { data: projects } = useApiKeyProjects(
+    serviceAccountId === undefined ? selectedWorkspace : undefined,
+  );
   const [submitError, setSubmitError] = useState("");
   const { copy, copied } = useCopyToClipboard();
   const onKeyDown = useFormEnterSubmitGuard();

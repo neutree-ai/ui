@@ -18,7 +18,7 @@ describe("createdKeySummary", () => {
     ).toEqual({
       name: "Support",
       description: "Prod",
-      project: { name: "Billing", unresolved: false },
+      project: { kind: "named", name: "Billing" },
     });
   });
 
@@ -31,7 +31,7 @@ describe("createdKeySummary", () => {
     ).toEqual({
       name: "Support",
       description: null,
-      project: { name: null, unresolved: false },
+      project: { kind: "ungrouped" },
     });
   });
 
@@ -41,7 +41,7 @@ describe("createdKeySummary", () => {
         projects,
         hasProject: true,
       }).project,
-    ).toEqual({ name: null, unresolved: true });
+    ).toEqual({ kind: "unlisted" });
   });
 
   it("has no Project row for an application key", () => {
