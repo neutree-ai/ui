@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateAsync = vi.fn();
@@ -11,6 +12,21 @@ vi.mock("@refinedev/core", () => ({
 
 vi.mock("@/domains/api-key/components/ApiKeyPolicyFields", () => ({
   ApiKeyPolicyFields: () => <div>Policy fields</div>,
+}));
+
+const projects = [{ id: "project-1", metadata: { name: "Billing" } }];
+vi.mock("@/domains/api-key/hooks/use-api-key-projects", () => ({
+  useApiKeyProjects: () => ({ data: projects }),
+}));
+
+vi.mock("@/foundation/scene/ShowPage", () => ({
+  ShowPage: {
+    Row: ({ title, children }: { title: ReactNode; children: ReactNode }) => (
+      <div>
+        {title} {children}
+      </div>
+    ),
+  },
 }));
 
 vi.mock("@/domains/api-key/components/ProjectPicker", () => ({
@@ -33,11 +49,28 @@ vi.mock("@/foundation/hooks/use-workspace", () => ({
 
 import { CreateApiKeyForm } from "./CreateApiKeyForm";
 
+const createdKey = (spec: object = {}, display_name = "Created key") => ({
+  id: "key-1",
+  metadata: { name: "apikey-1", display_name },
+  spec: { project_id: null, description: "", ...spec },
+  status: { sk_value: "created-secret" },
+});
+
+const submitNamed = (name: string) => {
+  fireEvent.change(
+    screen.getByTestId("field-name").querySelector("input") as HTMLInputElement,
+    { target: { value: name } },
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "api_keys.buttons.create" }),
+  );
+};
+
 describe("CreateApiKeyForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mutateAsync.mockResolvedValue({
-      data: { id: "key-1", status: { sk_value: "created-secret" } },
+      data: createdKey(),
     });
     invalidate.mockResolvedValue(undefined);
   });
@@ -117,5 +150,37 @@ describe("CreateApiKeyForm", () => {
         }),
       );
     });
+  });
+
+  it("summarizes the created key from the response, not the form", async () => {
+    mutateAsync.mockResolvedValue({
+      data: createdKey(
+        { project_id: "project-1", description: "Prod traffic" },
+        "Server name",
+      ),
+    });
+    render(<CreateApiKeyForm onClose={vi.fn()} initialWorkspace="default" />);
+    submitNamed("typed");
+
+    const summary = await screen.findByTestId("key-summary");
+    expect(summary.textContent).toContain("Billing");
+    expect(summary.textContent).toContain("Server name");
+    expect(summary.textContent).toContain("Prod traffic");
+    screen.getByText("created-secret");
+  });
+
+  it("leaves the Project out of an application key's summary", async () => {
+    render(
+      <CreateApiKeyForm
+        onClose={vi.fn()}
+        serviceAccountId="sa-7"
+        initialWorkspace="default"
+      />,
+    );
+    submitNamed("app-key");
+
+    const summary = await screen.findByTestId("key-summary");
+    expect(summary.textContent).not.toContain("api_keys.fields.project");
+    expect(summary.textContent).toContain("Created key");
   });
 });
