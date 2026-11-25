@@ -44,8 +44,9 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 
 ## Roles
 
-- Status: `ClusterStatus` over `BaseStatus` / `STATUS_TONE` (Foundation "Status tone"), label
-  `status.phases.cluster.<phase>`.
+- Status: `lib/phases.ts` `clusterPhases` (Foundation "Status tone"), label `status.phases.cluster.<phase>`; Running
+  positive, Failed serious, Pending / Paused / Initializing / Updating notice, Upgrading outstanding, Deleting / Deleted
+  neutral.
 - Secret input: `omitEmptyUntouched` (`foundation/role/touched-fields.ts`), edit hint
   `common.messages.leaveEmptyToKeepValue`.
 - Columns `useMetadataColumns`; time `Timestamp`; empty marker `EmptyValue`; type label `ClusterType` (other values as

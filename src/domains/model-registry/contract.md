@@ -35,7 +35,7 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
 
 ## Roles
 
-- Status: shared `RegistryStatus` (`foundation/role/RegistryStatus`; Foundation "Status tone"), label
+- Status: `lib/phases.ts` `modelRegistryPhases` (Foundation "Status tone"), label
   `status.phases.registry.<phase>`.
 - Columns `useMetadataColumns`; time `metadataColumns.creation_timestamp`, `MetadataTimestampMeta`, `formatTimestamp`
   (`stats_updated_at`, `last_checked_at`); empty marker `EmptyValue` (visibility only).

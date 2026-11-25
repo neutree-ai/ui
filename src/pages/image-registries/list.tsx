@@ -1,5 +1,6 @@
+import { imageRegistryPhases } from "@/domains/image-registry/lib/phases";
 import { useTranslation } from "@/foundation/lib/i18n";
-import RegistryStatus from "@/foundation/role/RegistryStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";
@@ -29,7 +30,10 @@ export const ImageRegistriesList = () => {
           enableHiding
           cell={({ getValue }) => {
             return (
-              <RegistryStatus {...(getValue() as unknown as BaseStatus)} />
+              <PhaseStatus
+                status={getValue() as unknown as BaseStatus}
+                phases={imageRegistryPhases}
+              />
             );
           }}
         />

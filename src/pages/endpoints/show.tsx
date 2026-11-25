@@ -41,13 +41,14 @@ import {
 } from "@/foundation/accelerator/accelerator-tflops";
 import { useAcceleratorObservations } from "@/foundation/accelerator/use-accelerator-observations";
 import { Loader } from "@/foundation/components/Loader";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
 import { getEndpointSplitDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
-import EndpointStatus from "@/foundation/role/EndpointStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import Timestamp from "@/foundation/role/Timestamp";
 import {
   detailTabsListClassName,
@@ -372,7 +373,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             // otherwise, and the dash carries no information there.
             status={
               record.status?.phase ? (
-                <EndpointStatus {...record.status} />
+                <PhaseStatus status={record.status} phases={endpointPhases} />
               ) : undefined
             }
           />

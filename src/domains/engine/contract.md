@@ -44,7 +44,7 @@ schemas; `mergeEngineCapabilities`: replace declared, retain omitted. Not used b
 
 Paths: `src/domains/engine/` unless prefixed.
 
-- Status: `components/EngineStatus.tsx` → `BaseStatus` / `STATUS_TONE`: Created positive, Failed serious, Pending
+- Status: `lib/engine-phase.ts` `enginePhases` (Foundation "Status tone"): Created positive, Failed serious, Pending
   notice, Deleted neutral; unknown has no tone, absent uses `EmptyValue`.
 - Time: shared `MetadataTimestampMeta` on show only; no card version uses `EMPTY_VALUE` (`-`).
 - Versions: `newestVersion` / `sortVersionsNewestFirst`; tests: `foundation/role/version-order.test.ts`.

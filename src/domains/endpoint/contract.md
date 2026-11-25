@@ -52,8 +52,8 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 
 - Shared columns/time/empty: `useMetadataColumns`, `Timestamp`, `MetadataTimestampMeta`, `EmptyValue`.
 - Workspace mechanics: `src/foundation/contract.md`, “Workspace selection”.
-- Status mechanics: `src/foundation/contract.md`, “Status tone”. `EndpointStatus` retains its phase mapping;
-  Deploying/ModelDownloading keep their outstanding tone; unknown has no tone.
+- Status mechanics: `src/foundation/contract.md`, “Status tone”; the table is `foundation/endpoint-phase`
+  (`endpointPhases`), shared with the kinds that show an endpoint; unknown has no tone.
 - Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`.
 - Resource units: `normalizeEndpointResourcesForForm` and submit share `getVgpuVirtualization` decoding.
   Tests: `lib/endpoint-form-helpers.test.ts`, `lib/vgpu.test.ts`.

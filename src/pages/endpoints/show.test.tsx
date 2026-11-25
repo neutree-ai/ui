@@ -149,8 +149,10 @@ vi.mock("@/domains/endpoint/lib/catalog-origin", () => ({
 vi.mock("@/domains/engine/lib/resolve-capabilities", () => ({
   resolvePlayground: () => ({ enabled: false }),
 }));
-vi.mock("@/foundation/role/EndpointStatus", () => ({
-  default: () => <span data-testid="endpoint-status" />,
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: ({ status }: { status?: { phase?: string } | null }) => (
+    <span data-testid="phase-status">{status?.phase}</span>
+  ),
 }));
 vi.mock("@/foundation/grafana/GrafanaDashboard", () => ({
   default: () => null,
@@ -436,7 +438,7 @@ describe("EndpointsShow", () => {
   // the controller has reported a phase.
   it("only renders the status badge once a phase is reported", () => {
     const { unmount } = render(<EndpointsShow />);
-    expect(screen.queryByTestId("endpoint-status")).toBeNull();
+    expect(screen.queryByTestId("phase-status")).toBeNull();
     unmount();
 
     useShowMock.mockReturnValue({
@@ -446,7 +448,7 @@ describe("EndpointsShow", () => {
       },
     });
     render(<EndpointsShow />);
-    screen.getByTestId("endpoint-status");
+    screen.getByTestId("phase-status");
   });
   it("displays observed cache config without changing editable or catalog variables", () => {
     const args = Object.freeze({ max_model_len: 4096 });

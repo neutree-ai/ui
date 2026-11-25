@@ -8,12 +8,13 @@ import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { modelCatalogEngineParameters } from "@/domains/model-catalog/lib/advanced-parameters";
+import { modelCatalogPhases } from "@/domains/model-catalog/lib/phases";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
@@ -87,7 +88,9 @@ export const ModelCatalogsShow = () => {
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<ModelCatalogStatus {...record.status} />}
+        status={
+          <PhaseStatus status={record.status} phases={modelCatalogPhases} />
+        }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
             <ShowPage.Meta label={t("common.fields.engine")}>

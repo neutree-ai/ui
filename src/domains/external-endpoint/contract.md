@@ -45,8 +45,8 @@ deviations 1, 2).
 
 ## Roles
 
-- Status: `ExternalEndpointStatus` over `BaseStatus` / `STATUS_TONE` (Foundation "Status tone"), label
-  `status.phases.externalEndpoint.<phase>`; Degraded and Pending notice (Degraded still serves). `UpstreamStatusBadge`
+- Status: `lib/phases.ts` `externalEndpointPhases` (Foundation "Status tone"), label
+  `status.phases.externalEndpoint.<phase>`; Degraded and Pending notice (Degraded still serves). `upstreamPhases`
   (Ready positive, Failed serious), label `status.phases.externalEndpointUpstream.<phase>`; `matchUpstreamStatuses`
   pairs by position and drops a status whose `ref` does not match (raw URL or textual sanitise mirroring
   `SanitizeUpstreamURL`).

@@ -1,14 +1,15 @@
 import { Badge } from "@/components/ui/badge";
-import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import {
   type ExternalEndpointType,
   getEndpointType,
 } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
+import { externalEndpointPhases } from "@/domains/external-endpoint/lib/phases";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
 import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";
@@ -38,8 +39,9 @@ export const ExternalEndpointsList = () => {
           id="status"
           enableHiding
           cell={({ getValue }) => (
-            <ExternalEndpointStatus
-              {...(getValue() as unknown as BaseStatus)}
+            <PhaseStatus
+              status={getValue() as unknown as BaseStatus}
+              phases={externalEndpointPhases}
             />
           )}
         />

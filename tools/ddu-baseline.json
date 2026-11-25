@@ -80,9 +80,6 @@
 	"src/domains/cluster/components/ClusterResourceSummary.tsx": {
 		"group.quantity": 3
 	},
-	"src/domains/cluster/components/ClusterStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/cluster/components/ClusterUpgradeAction.tsx": {
 		"cluster.metadata.workspace": 1,
 		"cluster.spec.type": 2,
@@ -347,9 +344,6 @@
 		"endpoint.metadata.workspace": 1,
 		"endpoint?.metadata?.name": 1
 	},
-	"src/domains/engine/components/EngineStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/engine/components/EngineVersionSummary.tsx": {
 		"item.version": 1
 	},
@@ -358,9 +352,6 @@
 	},
 	"src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": {
 		"record.metadata.workspace": 1
-	},
-	"src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": {
-		"status.phase": 2
 	},
 	"src/domains/external-endpoint/components/ModelRouteDetails.tsx": {
 		"route.model": 3,
@@ -381,9 +372,6 @@
 	},
 	"src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": {
 		"upstream.endpoint_ref": 1
-	},
-	"src/domains/external-endpoint/components/UpstreamStatusBadge.tsx": {
-		"status.phase": 3
 	},
 	"src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": {
 		"initial.name": 1,
@@ -477,12 +465,6 @@
 		"spec.ldap.user_filter": 1,
 		"spec.sync.enabled": 1
 	},
-	"src/domains/license/components/LicenseStatus.tsx": {
-		"status.phase": 2
-	},
-	"src/domains/log-sink/components/LogSinkStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/log-sink/components/TestConnectionButton.tsx": {
 		"result.message": 1,
 		"result.ok": 2,
@@ -494,9 +476,6 @@
 		"slot.model.registry": 1,
 		"slot.model?.name": 1,
 		"slot.model?.registry": 1
-	},
-	"src/domains/model-catalog/components/ModelCatalogStatus.tsx": {
-		"status.phase": 2
 	},
 	"src/domains/model-catalog/components/ModelInfoBadges.tsx": {
 		"info.context_length": 1,

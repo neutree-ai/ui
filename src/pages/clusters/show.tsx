@@ -6,7 +6,6 @@ import { useLocalStorage } from "react-use";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterCacheSection } from "@/domains/cluster/components/ClusterCacheSection";
 import { ClusterResourceSummary } from "@/domains/cluster/components/ClusterResourceSummary";
-import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   ClusterUpgradeAction,
@@ -23,6 +22,7 @@ import {
 } from "@/domains/cluster/lib/detail-fields";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
+import { clusterPhases } from "@/domains/cluster/lib/phases";
 import { getZCacheDashboardProps } from "@/domains/cluster/lib/zcache-dashboard";
 import type { Cluster } from "@/domains/cluster/types";
 import { zcacheStatus } from "@/domains/cluster/types";
@@ -40,13 +40,14 @@ import {
 import type { GpuObservationDisplay } from "@/foundation/accelerator/GpuObservationCard";
 import { useAcceleratorObservations } from "@/foundation/accelerator/use-accelerator-observations";
 import { Loader } from "@/foundation/components/Loader";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
 import { getClusterSplitDashboardProps } from "@/foundation/grafana/grafana-dashboard-configs";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { useTranslation as useI18nTranslation } from "@/foundation/lib/i18n";
-import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { ObservationStatus } from "@/foundation/role/ObservationStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { DetailFields } from "@/foundation/scene/DetailFields";
 import {
   detailTabsListClassName,
@@ -235,7 +236,7 @@ export const ClustersShow = () => {
             // otherwise, and the dash carries no information there.
             status={
               record.status?.phase ? (
-                <ClusterStatus {...record.status} />
+                <PhaseStatus status={record.status} phases={clusterPhases} />
               ) : undefined
             }
           />
@@ -404,8 +405,9 @@ export const ClustersShow = () => {
                   id="status"
                   enableHiding
                   cell={({ getValue }) => (
-                    <EndpointStatus
-                      {...(getValue() as unknown as BaseStatus)}
+                    <PhaseStatus
+                      status={getValue() as unknown as BaseStatus}
+                      phases={endpointPhases}
                     />
                   )}
                 />

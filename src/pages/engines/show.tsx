@@ -2,13 +2,16 @@ import { useShow } from "@refinedev/core";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { ValueSchemaTable } from "@/domains/engine/components/ValueSchemaTable";
-import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
+import {
+  enginePhases,
+  isExceptionalEnginePhase,
+} from "@/domains/engine/lib/engine-phase";
 import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
 import { Loader } from "@/foundation/components/Loader";
 import { cn } from "@/foundation/lib/utils";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
@@ -53,7 +56,7 @@ export const EnginesShow = () => {
         title={record.metadata.name}
         status={
           isExceptionalEnginePhase(record.status?.phase) ? (
-            <EngineStatus {...record.status} />
+            <PhaseStatus status={record.status} phases={enginePhases} />
           ) : undefined
         }
         description={

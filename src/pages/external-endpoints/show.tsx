@@ -7,10 +7,8 @@ import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointMonitor, {
   ExternalEndpointMonitorLink,
 } from "@/domains/external-endpoint/components/ExternalEndpointMonitor";
-import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
-import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
 import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
 import { getEndpointType } from "@/domains/external-endpoint/lib/get-endpoint-type";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
@@ -18,11 +16,16 @@ import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavai
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
+import {
+  externalEndpointPhases,
+  upstreamPhases,
+} from "@/domains/external-endpoint/lib/phases";
 import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
@@ -93,7 +96,10 @@ export const ExternalEndpointsShow = () => {
           // otherwise, and the dash carries no information there.
           status={
             record.status?.phase ? (
-              <ExternalEndpointStatus {...record.status} />
+              <PhaseStatus
+                status={record.status}
+                phases={externalEndpointPhases}
+              />
             ) : undefined
           }
           description={
@@ -216,7 +222,10 @@ export const ExternalEndpointsShow = () => {
                                   )}
                             </span>
                             {upstreamStatus && (
-                              <UpstreamStatusBadge status={upstreamStatus} />
+                              <PhaseStatus
+                                status={upstreamStatus}
+                                phases={upstreamPhases}
+                              />
                             )}
                           </div>
                         </div>

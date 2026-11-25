@@ -3,18 +3,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { identitySourcePhases } from "@/domains/identity-source/lib/phases";
 import type { IdentitySourceStatus as IdentitySourceStatusType } from "@/domains/identity-source/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
-import { STATUS_TONE } from "@/foundation/role/status-tone";
+import { phaseTone } from "@/foundation/role/phases";
 import Timestamp from "@/foundation/role/Timestamp";
-
-const phaseClassNames: Record<string, string> = {
-  Connected: STATUS_TONE.positive,
-  Failed: STATUS_TONE.serious,
-  Pending: STATUS_TONE.notice,
-  Deleted: STATUS_TONE.neutral,
-};
 
 /**
  * The phase the controller last wrote, with the last connection test (when,
@@ -44,10 +38,10 @@ export function IdentitySourceStatus({
           data-testid="identity-source-status"
           className={cn(
             "inline-flex whitespace-nowrap rounded-lg px-2 py-1 text-xs font-semibold",
-            phaseClassNames[phase],
+            phaseTone(identitySourcePhases, phase),
           )}
         >
-          {t(`identity_sources.phases.${phase}`, phase)}
+          {t(identitySourcePhases.label(phase), phase)}
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-lg">

@@ -96,23 +96,21 @@ See Model Registry deviation 2.
 
 ## Status tone
 
-`foundation/role/BaseStatus` renders the chip; callers pass `className` (tone) and
-`translatedPhase`. The four tone class strings (positive, serious, notice, neutral; `--nt-stroke|fill|text-*`
-tokens of `variables.css`) live in `foundation/role/status-tone.ts` (`STATUS_TONE`), used by
-`RegistryStatus`, `domains/cluster/components/ClusterStatus`,
-`domains/external-endpoint/components/ExternalEndpointStatus`,
-`UpstreamStatusBadge`, `domains/log-sink/components/LogSinkStatus` (Disabled maps to neutral),
-`domains/engine/components/EngineStatus`, `domains/model-catalog/components/ModelCatalogStatus`,
-`domains/identity-source/components/IdentitySourceStatus`,
-`IdentitySourceSyncResult` (ok positive, failed serious, pending notice), and `EndpointStatus`.
-Image Registry and Model Registry share `RegistryStatus`: phases Connected, Failed, Pending and Deleted use
-`status.phases.registry.<phase>`. Cluster maps Running to positive, Failed to serious, Pending / Paused / Initializing /
-Updating to notice, Deleted / Deleting to neutral, and keeps one local class string for Upgrading
-(outstanding tone).
-`EndpointStatus` serves Endpoint, Cluster and External Endpoint surfaces and API Key / Group Policy model pickers.
-Running is positive, Failed serious, Pending / Degraded / Deleting / Paused notice, Deleted neutral; Deploying and
-ModelDownloading retain their local outstanding string with a thin fill. An absent phase renders `EmptyValue`
-for `BaseStatus` callers.
+A kind declares its status phases once, in `domains/<kind>/lib/phases.ts`:
+`phases(prefix, { Phase: tone }, { fallback, lowercase }?)` (`foundation/role/phases.ts`) names the label prefix
+(`<prefix>.<phase>`, or the lowercased phase with `lowercase`) and the tone each phase reads as. `check-i18n-keys`
+verifies every listed phase's label. `foundation/role/PhaseStatus` renders a status with its table: `BaseStatus`
+draws the chip, the error message and last transition time on hover, and `EmptyValue` for an absent phase. A phase
+missing from the table takes `fallback`, or no tone when unset.
+
+Tones are the five class strings of `foundation/role/status-tone.ts` (`STATUS_TONE`: positive, serious, notice,
+outstanding, neutral; `--nt-stroke|fill|text-*` tokens of `variables.css`). Components that draw their own chip
+(`IdentitySourceStatus`, `IdentitySourceSyncResult`, the model pickers' phase badge) take the class from
+`phaseTone(table, phase)` or `STATUS_TONE`.
+
+Endpoint phases are read by Endpoint, Cluster, External Endpoint and the API Key / Group Policy model pickers, so
+their table lives in `foundation/endpoint-phase/endpoint-phases.ts`: Running positive, Failed serious, Pending /
+Degraded / Deleting / Paused notice, Deploying / ModelDownloading outstanding, Deleted neutral.
 
 ## Detail fields
 
@@ -141,6 +139,7 @@ directory it does not name; a module only one kind uses belongs in that kind's d
 - `accelerator/` — accelerator observations, device allocation and placement capacity (see Accelerator resources).
 - `ai-traces/` — AI gateway trace rows and their queries (AI Traces, API Key).
 - `cache-version/` — cache runtime versions and the engine versions each supports (Cluster, Endpoint).
+- `endpoint-phase/` — endpoint status phases and their tones (Endpoint, Cluster, External Endpoint, model pickers).
 - `grafana/` — Grafana dashboard configuration, URLs and embeds (Dashboard, Cluster, Endpoint, External Endpoint).
 - `license/` — the installed license and its usage limits (License, Workspace Policy).
 - `model-reference/` — a model as other kinds refer to it: registry models and versions, the workspace's invocable

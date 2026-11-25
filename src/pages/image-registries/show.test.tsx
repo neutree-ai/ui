@@ -11,8 +11,8 @@ vi.mock("@refinedev/core", () => ({
   }),
 }));
 
-vi.mock("@/foundation/role/RegistryStatus", () => ({
-  default: () => <span>Status</span>,
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: () => <span>Status</span>,
 }));
 
 vi.mock("@/foundation/scene/MetadataTimestampMeta", () => ({
