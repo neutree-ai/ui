@@ -614,7 +614,10 @@ describe("validateEndpointValues", () => {
           availableModelNames: found ? [...found] : null,
         },
       );
-      expect(Boolean(errors["-model-catalog"])).toBe(error);
+      expect(
+        errors["spec.model.name"]?.message ===
+          "endpoints.messages.modelNotFoundInRegistry",
+      ).toBe(error);
     },
   );
 

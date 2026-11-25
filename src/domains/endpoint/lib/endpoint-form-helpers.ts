@@ -739,8 +739,10 @@ export function validateEndpointValues(
     context.currentModelName &&
     context.availableModelNames !== null
   ) {
+    // On the model name field, which both model sources show; the catalog
+    // picker is only on screen for the catalog source.
     if (!context.availableModelNames.includes(context.currentModelName)) {
-      errors["-model-catalog"] = {
+      errors["spec.model.name"] = {
         type: "manual",
         message: t("endpoints.messages.modelNotFoundInRegistry"),
       };

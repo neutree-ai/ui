@@ -1425,7 +1425,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     lastExistenceTriggerKeyRef.current = triggerKey;
     void form.trigger([
       "spec.model.registry",
-      "-model-catalog",
+      "spec.model.name",
     ] as Path<Endpoint>[]);
   }, [action, currentRegistry, currentModelName, modelExistenceKey, form]);
 
