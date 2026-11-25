@@ -383,7 +383,7 @@
   "src/domains/log-sink/types.ts": "d5be37e6d217b2810126502ffe2bb7a6",
   "src/pages/log-sinks/create.tsx": "78a4fc6a8ec4a25c3ce393b4a82ccc5c",
   "src/pages/log-sinks/edit.tsx": "e4ebde0e09827b332838a9f7fc77e76e",
-  "src/pages/log-sinks/list.tsx": "cfc03778f852c1f3b25566dc78c41ace",
+  "src/pages/log-sinks/list.tsx": "9902d302fd661c94c6b46e93bfdb15df",
   "src/pages/log-sinks/show.tsx": "cabf5bb44790b039d77a60c78bb2793d",
   "src/domains/log-sink/components/LogSinkEnableAction.tsx": "61b004945e7c9f738874b9d17cad917e",
   "src/domains/log-sink/lib/forwarding-summary.ts": "ff6fd4b69533161f035d7304722a65ab",

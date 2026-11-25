@@ -9,6 +9,7 @@ import {
 import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
+import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
 import Timestamp from "@/foundation/role/Timestamp";
 import { ListPage } from "@/foundation/scene/ListPage";
@@ -20,10 +21,13 @@ export const LogSinksList = () => {
   const { t } = useTranslation();
   const metadataColumns = useMetadataColumns();
   const deleteConfirmation = useLogSinkDeleteConfirmation();
+  // Log sinks are global, so only a global grant lets the user add one.
+  const { allowed: canCreate } = useHasGlobalPermission("log_sink:create");
 
   return (
     <ListPage
       breadcrumb={<AppBreadcrumbs showCurrent={false} />}
+      canCreate={canCreate === true}
       createButtonProps={{ children: t("log_sinks.buttons.addDestination") }}
     >
       <Table
