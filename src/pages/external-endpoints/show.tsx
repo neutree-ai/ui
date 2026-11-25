@@ -7,22 +7,25 @@ import CurlExample from "@/domains/external-endpoint/components/CurlExample";
 import ExternalEndpointMonitor, {
   ExternalEndpointMonitorLink,
 } from "@/domains/external-endpoint/components/ExternalEndpointMonitor";
-import ExternalEndpointStatus from "@/domains/external-endpoint/components/ExternalEndpointStatus";
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
-import UpstreamStatusBadge from "@/domains/external-endpoint/components/UpstreamStatusBadge";
-import { formatTimeout } from "@/domains/external-endpoint/lib/convert-timeout";
-import { getEndpointType } from "@/domains/external-endpoint/lib/get-endpoint-type";
+import { externalEndpointHeaderFields } from "@/domains/external-endpoint/lib/detail-fields";
 import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
 import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
 import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
 import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
 import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
+import {
+  externalEndpointPhases,
+  upstreamPhases,
+} from "@/domains/external-endpoint/lib/phases";
 import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { resolveExternalModelSource } from "@/foundation/model-reference/model-source";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import {
   detailTabsListClassName,
   detailTabTriggerClassName,
@@ -56,12 +59,6 @@ export const ExternalEndpointsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const endpointType = getEndpointType(record.spec);
-  const endpointTypeLabels = {
-    external: t("external_endpoints.options.upstreamTypeExternal"),
-    endpoint_ref: t("external_endpoints.options.upstreamTypeInternal"),
-    mixed: t("external_endpoints.options.upstreamTypeMixed"),
-  };
   const allModels = getExposedModels(record.spec);
   const upstreamStatuses = matchUpstreamStatuses(
     record.spec,
@@ -93,24 +90,19 @@ export const ExternalEndpointsShow = () => {
           // otherwise, and the dash carries no information there.
           status={
             record.status?.phase ? (
-              <ExternalEndpointStatus {...record.status} />
+              <PhaseStatus
+                status={record.status}
+                phases={externalEndpointPhases}
+              />
             ) : undefined
           }
           description={
             <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-              <ShowPage.Meta label={t("external_endpoints.fields.type")}>
-                {endpointType ? (
-                  endpointTypeLabels[endpointType]
-                ) : (
-                  <EmptyValue />
-                )}
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("external_endpoints.fields.models")}>
-                {allModels.length}
-              </ShowPage.Meta>
-              <ShowPage.Meta label={t("external_endpoints.fields.timeout")}>
-                {formatTimeout(record.spec?.timeout)}
-              </ShowPage.Meta>
+              <DetailFields
+                inline
+                fields={externalEndpointHeaderFields}
+                record={record}
+              />
               {/* The URLs are long and only worth their space when asked for —
                   the same affordance the endpoint detail page uses. */}
               {record.status?.service_url && (
@@ -216,7 +208,10 @@ export const ExternalEndpointsShow = () => {
                                   )}
                             </span>
                             {upstreamStatus && (
-                              <UpstreamStatusBadge status={upstreamStatus} />
+                              <PhaseStatus
+                                status={upstreamStatus}
+                                phases={upstreamPhases}
+                              />
                             )}
                           </div>
                         </div>

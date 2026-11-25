@@ -52,6 +52,7 @@ Live indexes constrain subject/role/scope (`131`). UI type omits status.
   name search, `defaultSorters` newest first, sorting/filters, batch delete; row edit/delete.
   Create needs any-scope `role_assignment:create`.
 - Show (`src/pages/role-assignments/show.tsx:RoleAssignmentsShow`): name, scope, role link, subject, timestamps;
+  header and policy fields are `roleAssignmentFields` in `lib/detail-fields.tsx`, given the page's group renderers;
   no status/polling. Missing record uses `pages.error.notFound`.
 - Create/Edit (`hooks/use-role-assignment-form.tsx:useRoleAssignmentForm`): name, subject, role and scope;
   `mode:"all"`, unsaved warning; no submit transform.

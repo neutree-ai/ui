@@ -1,16 +1,17 @@
 import { Edit, Trash2 } from "lucide-react";
 import { LogSinkEnableAction } from "@/domains/log-sink/components/LogSinkEnableAction";
-import LogSinkStatus from "@/domains/log-sink/components/LogSinkStatus";
 import { useLogSinkDeleteConfirmation } from "@/domains/log-sink/hooks/use-log-sink-delete-confirmation";
 import {
   formatEventCount,
   formatLogSinkDestination,
 } from "@/domains/log-sink/lib/log-sink-display";
 import { isLogSinkEnabled } from "@/domains/log-sink/lib/log-sink-form";
+import { logSinkPhases } from "@/domains/log-sink/lib/phases";
 import type { LogSink } from "@/domains/log-sink/types";
 import { AppBreadcrumbs } from "@/foundation/components/AppBreadcrumbs";
 import { useHasGlobalPermission } from "@/foundation/hooks/use-has-permission";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import Timestamp from "@/foundation/role/Timestamp";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
@@ -78,7 +79,10 @@ export const LogSinksList = () => {
           id="status"
           enableHiding
           cell={({ getValue }) => (
-            <LogSinkStatus {...(getValue() as unknown as BaseStatus)} />
+            <PhaseStatus
+              status={getValue() as unknown as BaseStatus}
+              phases={logSinkPhases}
+            />
           )}
         />
         <Table.Column

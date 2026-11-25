@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LicenseStatus } from "@/domains/license/components/LicenseStatus";
 import {
   licenseInfoFields,
   licenseUsageFields,
 } from "@/domains/license/lib/detail-fields";
+import { licensePhases } from "@/domains/license/lib/phases";
 import { useLicense } from "@/foundation/license/use-license";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { DetailFields } from "@/foundation/scene/DetailFields";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 
@@ -46,7 +47,7 @@ export const LicenseShow: React.FC = () => {
               <EmptyState>{t("license.noLicense")}</EmptyState>
             ) : license?.status ? (
               <>
-                <LicenseStatus status={license.status} />
+                <PhaseStatus status={license.status} phases={licensePhases} />
                 <DetailFields
                   fields={licenseInfoFields}
                   record={license.status.info}

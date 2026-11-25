@@ -15,10 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
-import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { ModelInfoBadges } from "@/domains/model-catalog/components/ModelInfoBadges";
+import { modelCatalogPhases } from "@/domains/model-catalog/lib/phases";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { useDeleteHelper } from "@/foundation/scene/use-delete-helper";
 import type { ModelSpec } from "@/foundation/types/serving-types";
 
@@ -101,7 +102,7 @@ export const ModelCatalogCard = ({ catalog, showWorkspace }: Props) => {
             {name}
           </button>
           <div className="shrink-0 whitespace-nowrap">
-            <ModelCatalogStatus {...catalog.status} />
+            <PhaseStatus status={catalog.status} phases={modelCatalogPhases} />
           </div>
         </div>
 

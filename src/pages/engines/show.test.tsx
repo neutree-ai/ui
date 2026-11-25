@@ -87,9 +87,9 @@ vi.mock("@/foundation/components/Link", () => ({
   ),
 }));
 
-vi.mock("@/domains/engine/components/EngineStatus", () => ({
-  default: ({ phase }: { phase?: string }) => (
-    <span data-testid="engine-status">{phase}</span>
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: ({ status }: { status?: { phase?: string } | null }) => (
+    <span data-testid="phase-status">{status?.phase}</span>
   ),
 }));
 
@@ -220,7 +220,7 @@ describe("EnginesShow", () => {
 
     const { unmount } = render(<EnginesShow />);
 
-    expect(screen.getByTestId("engine-status").textContent).toBe("Failed");
+    expect(screen.getByTestId("phase-status").textContent).toBe("Failed");
     unmount();
 
     showReturns(
@@ -228,7 +228,7 @@ describe("EnginesShow", () => {
     );
     render(<EnginesShow />);
 
-    expect(screen.queryByTestId("engine-status")).toBeNull();
+    expect(screen.queryByTestId("phase-status")).toBeNull();
   });
 
   it("counts versions and supported tasks in the header and lists the tasks", () => {

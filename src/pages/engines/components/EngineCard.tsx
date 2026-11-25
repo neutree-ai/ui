@@ -6,13 +6,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import EngineStatus from "@/domains/engine/components/EngineStatus";
 import { EngineVersionSummary } from "@/domains/engine/components/EngineVersionSummary";
-import { isExceptionalEnginePhase } from "@/domains/engine/lib/engine-phase";
+import {
+  enginePhases,
+  isExceptionalEnginePhase,
+} from "@/domains/engine/lib/engine-phase";
 import type { Engine } from "@/domains/engine/types";
 import { Link } from "@/foundation/components/Link";
 import { useIsTruncated } from "@/foundation/hooks/use-is-truncated";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { newestVersion } from "@/foundation/role/version-order";
 import { EMPTY_VALUE } from "@/foundation/type/EmptyValue";
 
@@ -56,7 +59,7 @@ export function EngineCard({ engine, onSelectVersion }: EngineCardProps) {
           </h3>
           {showsStatus && (
             <div className="shrink-0 whitespace-nowrap">
-              <EngineStatus {...engine.status} />
+              <PhaseStatus status={engine.status} phases={enginePhases} />
             </div>
           )}
         </div>

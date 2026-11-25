@@ -1,8 +1,9 @@
 import type { BaseOption } from "@refinedev/core";
 import { type ComponentProps, type ElementRef, forwardRef } from "react";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import { useTranslation } from "@/foundation/lib/i18n";
-import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export type EndpointOption = BaseOption & { status?: BaseStatus };
@@ -28,7 +29,7 @@ export const EndpointRefSelect = forwardRef<
             <span className="truncate">{endpoint.label}</span>
             {endpoint.status?.phase ? (
               <span className="shrink-0">
-                <EndpointStatus {...endpoint.status} />
+                <PhaseStatus status={endpoint.status} phases={endpointPhases} />
               </span>
             ) : null}
           </span>

@@ -2,18 +2,19 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { CommandGroup, CommandItem } from "@/components/ui/command";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import { cn } from "@/foundation/lib/utils";
 import { useModelSourceLabel } from "@/foundation/model-reference/ModelSourceBadge";
 import type { WorkspaceModelOption } from "@/foundation/model-reference/use-workspace-models";
-import { endpointPhaseClassMapping } from "@/foundation/role/EndpointStatus";
+import { phaseTone } from "@/foundation/role/phases";
 
 export const phaseClass = (phase: string | null) =>
-  endpointPhaseClassMapping[phase ?? ""] ?? endpointPhaseClassMapping.Deleted;
+  phaseTone(endpointPhases, phase) ?? phaseTone(endpointPhases, "Deleted");
 
 export const usePhaseLabel = () => {
   const { t } = useTranslation();
   return (phase: string | null) =>
-    phase ? t(`status.phases.endpoint.${phase}`) : t("api_keys.models.unknown");
+    phase ? t(endpointPhases.label(phase)) : t("api_keys.models.unknown");
 };
 
 /** Whether an option matches a search, on everything the row shows. */

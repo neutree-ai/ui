@@ -8,9 +8,10 @@ import { zcacheSpec, zcacheStatus } from "@/domains/cluster/types";
 import type { NodeL1CacheUsage } from "@/foundation/accelerator/accelerator-observations";
 import { endpointHref } from "@/foundation/accelerator/accelerator-observations";
 import { Link } from "@/foundation/components/Link";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import { useSystemApi } from "@/foundation/hooks/use-system-api";
-import EndpointStatus from "@/foundation/role/EndpointStatus";
 import { MetricBar } from "@/foundation/role/MetricBar";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import Timestamp from "@/foundation/role/Timestamp";
 import { formatToDecimal } from "@/foundation/role/unit";
 import { ShowPage } from "@/foundation/scene/ShowPage";
@@ -356,7 +357,10 @@ function ZCacheDetails({
                                     {endpoint.label}
                                   </span>
                                 )}
-                                <EndpointStatus {...(endpoint.status ?? {})} />
+                                <PhaseStatus
+                                  status={endpoint.status}
+                                  phases={endpointPhases}
+                                />
                               </div>
                             ))}
                           </div>

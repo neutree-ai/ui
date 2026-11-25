@@ -80,9 +80,6 @@
 	"src/domains/cluster/components/ClusterResourceSummary.tsx": {
 		"group.quantity": 3
 	},
-	"src/domains/cluster/components/ClusterStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/cluster/components/ClusterUpgradeAction.tsx": {
 		"cluster.metadata.workspace": 1,
 		"cluster.spec.type": 2,
@@ -347,9 +344,6 @@
 		"endpoint.metadata.workspace": 1,
 		"endpoint?.metadata?.name": 1
 	},
-	"src/domains/engine/components/EngineStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/engine/components/EngineVersionSummary.tsx": {
 		"item.version": 1
 	},
@@ -358,9 +352,6 @@
 	},
 	"src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": {
 		"record.metadata.workspace": 1
-	},
-	"src/domains/external-endpoint/components/ExternalEndpointStatus.tsx": {
-		"status.phase": 2
 	},
 	"src/domains/external-endpoint/components/ModelRouteDetails.tsx": {
 		"route.model": 3,
@@ -381,9 +372,6 @@
 	},
 	"src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": {
 		"upstream.endpoint_ref": 1
-	},
-	"src/domains/external-endpoint/components/UpstreamStatusBadge.tsx": {
-		"status.phase": 3
 	},
 	"src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": {
 		"initial.name": 1,
@@ -477,12 +465,6 @@
 		"spec.ldap.user_filter": 1,
 		"spec.sync.enabled": 1
 	},
-	"src/domains/license/components/LicenseStatus.tsx": {
-		"status.phase": 2
-	},
-	"src/domains/log-sink/components/LogSinkStatus.tsx": {
-		"status.phase": 2
-	},
 	"src/domains/log-sink/components/TestConnectionButton.tsx": {
 		"result.message": 1,
 		"result.ok": 2,
@@ -494,9 +476,6 @@
 		"slot.model.registry": 1,
 		"slot.model?.name": 1,
 		"slot.model?.registry": 1
-	},
-	"src/domains/model-catalog/components/ModelCatalogStatus.tsx": {
-		"status.phase": 2
 	},
 	"src/domains/model-catalog/components/ModelInfoBadges.tsx": {
 		"info.context_length": 1,
@@ -642,10 +621,9 @@
 		"project?.metadata.workspace": 1
 	},
 	"src/pages/api-keys/show.tsx": {
-		"project?.metadata.name": 1,
 		"record.metadata.workspace": 4,
 		"record.spec.description": 1,
-		"record.spec.project_id": 2,
+		"record.spec.project_id": 1,
 		"record.user_id": 2,
 		"record?.metadata.workspace": 1,
 		"record?.service_account_id": 1,
@@ -660,11 +638,8 @@
 		"cache.name": 1,
 		"record.metadata.name": 1,
 		"record.metadata.workspace": 1,
-		"record.spec.image_registry": 1,
-		"record.spec.type": 4,
-		"record.spec.version": 2,
-		"record.status?.phase": 2,
-		"record.status?.version": 1,
+		"record.spec.type": 3,
+		"record.status?.phase": 1,
 		"record?.metadata.name": 2
 	},
 	"src/pages/endpoints/list.tsx": {
@@ -673,10 +648,8 @@
 	"src/pages/endpoints/show.tsx": {
 		"record.metadata.name": 1,
 		"record.metadata.workspace": 2,
-		"record.spec.cluster": 1,
 		"record.spec.engine.version": 1,
 		"record.spec.model?.name": 1,
-		"record.spec.replicas?.num": 1,
 		"record.status?.kv_cache?.provider": 1,
 		"record.status?.phase": 1,
 		"record?.metadata.workspace": 1,
@@ -714,10 +687,6 @@
 		"upstreamStatus?.phase": 1,
 		"upstreams[index]?.name": 1
 	},
-	"src/pages/image-registries/show.tsx": {
-		"record.spec.repository": 1,
-		"record.spec.url": 2
-	},
 	"src/pages/log-sinks/list.tsx": {
 		"(original as LogSink).metadata.name": 1,
 		"(row.original as LogSink).spec?.type": 1
@@ -746,11 +715,6 @@
 		"c.metadata.name": 1,
 		"c.spec.model?.name": 1
 	},
-	"src/pages/model-catalogs/show.tsx": {
-		"heroModel.file": 1,
-		"heroModel?.file": 1,
-		"heroModel?.task": 2
-	},
 	"src/pages/model-usage/components/UsageScopePanel.tsx": {
 		"team.metadata.name": 1
 	},
@@ -772,13 +736,6 @@
 		"ra.metadata.deletion_timestamp": 1
 	},
 	"src/pages/role-assignments/show.tsx": {
-		"record.metadata.name": 1,
-		"record.spec.role": 2
-	},
-	"src/pages/roles/show.tsx": {
-		"record.spec.preset_key": 1
-	},
-	"src/pages/users/show.tsx": {
 		"record.metadata.name": 1
 	},
 	"src/pages/workspaces/show.tsx": {

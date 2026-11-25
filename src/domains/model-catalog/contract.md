@@ -53,7 +53,7 @@ readiness to deploy: `processReadyModelCatalog` performs no validation or depend
 
 Paths are relative to `src/domains/model-catalog/` unless prefixed.
 
-- `ModelCatalogStatus`: `BaseStatus` and `STATUS_TONE`; Ready positive, Failed serious, Pending notice,
+- Status: `lib/phases.ts` `modelCatalogPhases` (Foundation "Status tone"); Ready positive, Failed serious, Pending notice,
   Deleted neutral; `status.phases.catalog.<phase>`. Missing uses `EmptyValue`; unknown has no tone.
 - Time: `MetadataTimestampMeta`. Engine/model/task: `EndpointEngine`, `EndpointModel`, `ModelTask`.
   Model info: `ModelInfoBadges`, `formatModelInfoNumber`; their tests own formatting.
@@ -70,6 +70,9 @@ Paths are relative to `src/domains/model-catalog/` unless prefixed.
 - Card (`ModelCatalogCard`): model prefers named top-level, default variant, then first model; shows task/info,
   engine/status/variant count. Links/delete use record workspace and name; deploy query uses numeric id.
 - Show (`ModelCatalogsShow`): selected variant, default, then first; model/resources fall back to top-level.
+  Engine, model and task (header and serving profile) and the model file (profile, only when set) are
+  `servingProfileFields` in `lib/detail-fields.ts` over `{catalog, model}`; the page supplies the endpoint-domain
+  renderers.
   Profile arguments/env merge base and active variant; features stay separate. Hardware annotation
   `recipe.vllm.ai/hardware-verified` is comma-split. Shared cards show resources/replicas/deployment settings.
 - Create (`ImportDialog`): YAML text, file or browser-fetched URL; missing HTTP scheme gets HTTPS.

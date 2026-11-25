@@ -76,19 +76,14 @@ vi.mock("@/domains/endpoint/components/EndpointAccessSummary", () => ({
   ),
 }));
 
-vi.mock(
-  "@/domains/external-endpoint/components/ExternalEndpointStatus",
-  () => ({
-    default: () => <span data-testid="status-badge" />,
-  }),
-);
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: ({ status }: { status?: { phase?: string } | null }) => (
+    <span data-testid="phase-status">{status?.phase}</span>
+  ),
+}));
 
 vi.mock("@/domains/external-endpoint/components/FailedUpstreamAlert", () => ({
   default: () => <div data-testid="failed-upstream" />,
-}));
-
-vi.mock("@/domains/external-endpoint/components/UpstreamStatusBadge", () => ({
-  default: () => <div data-testid="upstream-status" />,
 }));
 
 vi.mock(
@@ -223,7 +218,7 @@ describe("ExternalEndpointsShow", () => {
       service_url: "https://gateway.example.com",
     });
     screen.getByText("model-lb");
-    screen.getByTestId("status-badge");
+    screen.getByTestId("phase-status");
     screen.getByText("external_endpoints.fields.timeout: 30s");
     expect(screen.getByTestId("access-summary").textContent).toBe(
       "https://gateway.example.com",
@@ -237,7 +232,7 @@ describe("ExternalEndpointsShow", () => {
 
   it("drops the status badge when the controller has reported no phase", () => {
     renderPage({ service_url: "https://gateway.example.com" });
-    expect(screen.queryByTestId("status-badge")).toBeNull();
+    expect(screen.queryByTestId("phase-status")).toBeNull();
   });
 
   it("lists each upstream's model mappings behind the disclosure", () => {
@@ -245,9 +240,13 @@ describe("ExternalEndpointsShow", () => {
       phase: "Running",
       service_url: "https://gateway.example.com",
     });
-    screen.getByText("external_endpoints.sections.modelServices");
-    screen.getByText("primary");
-    screen.getByText("external_endpoints.options.upstreamTypeExternal");
+    const services = screen
+      .getByText("external_endpoints.sections.modelServices")
+      .closest("section") as HTMLElement;
+    within(services).getByText("primary");
+    within(services).getByText(
+      "external_endpoints.options.upstreamTypeExternal",
+    );
     screen.getByText("external_endpoints.actions.viewModelMappings");
     const table = screen.getByRole("table");
     expect(table.textContent).toContain("gpt-6");

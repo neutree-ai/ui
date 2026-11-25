@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import ClusterStatus from "@/domains/cluster/components/ClusterStatus";
 import ClusterType from "@/domains/cluster/components/ClusterType";
 import {
   ClusterUpgradeAction,
@@ -7,8 +6,10 @@ import {
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
+import { clusterPhases } from "@/domains/cluster/lib/phases";
 import type { Cluster } from "@/domains/cluster/types";
 import { useTranslation } from "@/foundation/lib/i18n";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
@@ -43,7 +44,10 @@ export const ClustersList = () => {
             enableHiding
             cell={({ getValue }) => {
               return (
-                <ClusterStatus {...(getValue() as unknown as BaseStatus)} />
+                <PhaseStatus
+                  status={getValue() as unknown as BaseStatus}
+                  phases={clusterPhases}
+                />
               );
             }}
           />

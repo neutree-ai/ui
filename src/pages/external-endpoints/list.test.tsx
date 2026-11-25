@@ -39,12 +39,9 @@ vi.mock("@/foundation/scene/Table", () => {
   return { Table, defaultSorters: { initial: [] } };
 });
 
-vi.mock(
-  "@/domains/external-endpoint/components/ExternalEndpointStatus",
-  () => ({
-    default: () => null,
-  }),
-);
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: () => null,
+}));
 
 import { ExternalEndpointsList } from "./list";
 

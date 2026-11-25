@@ -134,6 +134,7 @@ All in `src/foundation/testing/`.
 | `fillField(fieldName, value)` | Type into the input inside `data-testid="field-<fieldName>"` and blur it. |
 | `openMenu(trigger)` | Open a Radix DropdownMenu or Select. They open on pointer down; a plain `click` leaves them closed and later assertions pass vacuously. |
 | `resource-builders.ts` | `makeGpuDevice`, `makeNodeResources`, `makeResourceInfo`, `vgpuProduct`, `FULL_T4` — node and GPU resource shapes for capacity and placement tests; `makeAcceleratorSample` — one GPU observation sample. |
+| `fieldKeys(fields)`, `fieldValue(fields, key, record)` | A kind's detail fields (`lib/detail-fields`): which fields are listed, and what a value field gives for a record. |
 | `isHidden(element)` | Whether an element is hidden from the user (`hidden` attribute or Tailwind `hidden` class on it or an ancestor). The one sanctioned way to check visibility toggled by a class. |
 
 ## Testing Patterns

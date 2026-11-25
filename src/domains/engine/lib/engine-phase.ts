@@ -1,3 +1,12 @@
+import { phases } from "@/foundation/role/phases";
+
+export const enginePhases = phases("status.phases.engine", {
+  Created: "positive",
+  Failed: "serious",
+  Pending: "notice",
+  Deleted: "neutral",
+});
+
 /**
  * `Created` is the steady phase for an engine — every healthy engine sits there,
  * so showing it adds noise on the engine surfaces. Only the exceptions are worth

@@ -52,8 +52,8 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 
 - Shared columns/time/empty: `useMetadataColumns`, `Timestamp`, `MetadataTimestampMeta`, `EmptyValue`.
 - Workspace mechanics: `src/foundation/contract.md`, “Workspace selection”.
-- Status mechanics: `src/foundation/contract.md`, “Status tone”. `EndpointStatus` retains its phase mapping;
-  Deploying/ModelDownloading keep their outstanding tone; unknown has no tone.
+- Status mechanics: `src/foundation/contract.md`, “Status tone”; the table is `foundation/endpoint-phase`
+  (`endpointPhases`), shared with the kinds that show an endpoint; unknown has no tone.
 - Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`.
 - Resource units: `normalizeEndpointResourcesForForm` and submit share `getVgpuVirtualization` decoding.
   Tests: `lib/endpoint-form-helpers.test.ts`, `lib/vgpu.test.ts`.
@@ -70,7 +70,10 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 - Default ordering: status_sort_priority ascending, created descending. Migration `100` ranks active/unknown 0,
   Paused 1, Deleting/Deleted 2. Rows offer edit/delete, pause/resume and save as catalog.
 - Show (`src/pages/endpoints/show.tsx:EndpointsShow`): model, engine, cluster, configuration, runtime and provenance.
-  Polls basic 15s, cluster 30s.
+  Header fields are `DetailFields inline` over `lib/detail-fields.tsx` (Foundation "Detail fields"):
+  `endpointIdentityFields` (model, source, task, engine, catalog only when annotated, cluster link) before the access
+  summary, `endpointRuntimeFields` (served models or the empty marker, replicas defaulting to 1, scheduler only above
+  one replica) after it. Polls basic 15s, cluster 30s.
 - Create/Edit: `EndpointDeploymentForm` / `useEndpointForm`; on-touch validation and final global validation. Replicas
   belong to the resources step, including review and server-error navigation; no catalog reapplication on edit.
 - Create: manual unless model_catalog hash query; registry-model links prefill identity. Ordinary catalogs merge

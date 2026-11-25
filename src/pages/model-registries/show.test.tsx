@@ -84,8 +84,8 @@ vi.mock("@/domains/model-registry/components/ModelDetailDrawer", () => ({
   ),
 }));
 
-vi.mock("@/foundation/role/RegistryStatus", () => ({
-  default: () => null,
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: () => null,
 }));
 vi.mock("@/domains/model-registry/components/ModelRegistryType", () => ({
   default: () => <span>ModelScope</span>,

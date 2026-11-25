@@ -49,8 +49,8 @@ array carries a `mergekey`; `extra_fields` is a map without masked values.
 
 ## Roles
 
-- Status: `LogSinkStatus` over `BaseStatus` / `STATUS_TONE` (Foundation "Status tone"; Disabled and Deleted neutral;
-  pinned by `LogSinkStatus.test.tsx`), label `status.phases.logSink.<phase>`.
+- Status: `lib/phases.ts` `logSinkPhases` (Foundation "Status tone"; Disabled and Deleted neutral), label
+  `status.phases.logSink.<phase>`.
 - Columns `useMetadataColumns().name`, no workspace column; time `Timestamp` (last sent, last connection test),
   `MetadataTimestampMeta` (show header).
 - Detail fields: `logSinkHeaderFields`, `logSinkDestinationFields`, `logSinkDeliveryFields`

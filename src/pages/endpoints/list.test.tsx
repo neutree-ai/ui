@@ -46,8 +46,8 @@ vi.mock("@/foundation/scene/Table", () => {
   return { Table, defaultSorters: { initial: [] } };
 });
 
-vi.mock("@/foundation/role/EndpointStatus", () => ({
-  default: () => null,
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: () => null,
 }));
 vi.mock("@/domains/endpoint/components/ModelTask", () => ({
   default: () => null,

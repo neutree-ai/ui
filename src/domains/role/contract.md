@@ -41,8 +41,8 @@ Spec and permissions are nullable (`001_rbac`); UI types require both.
 - List (`src/pages/roles/list.tsx:RolesList`, `useRoleColumns`): name, permission count, created, actions;
   `metadata->>name` search, newest-created `defaultSorters`, filters/sorting, batch delete.
   Presets omit row edit/delete; custom rows offer both.
-- Show (`src/pages/roles/show.tsx:RolesShow`): name, count, preset/custom label, timestamps, `PermissionsTree`;
-  presets hide edit/delete. Missing record uses `pages.error.notFound`.
+- Show (`src/pages/roles/show.tsx:RolesShow`): name, count, preset/custom label (`roleHeaderFields` in
+  `lib/detail-fields.ts`), timestamps, `PermissionsTree`; presets (`isPresetRole`) hide edit/delete. Missing record uses `pages.error.notFound`.
 - Create (`hooks/use-role-form.tsx:useRoleForm`): name and `PermissionsTreeField`, `mode:"all"`, unsaved warning.
   Initial payload `{api_version:"v1",kind:"Role",metadata:{name},spec:{preset_key:null,permissions:[]}}`.
 - Edit: name locked; loaded metadata, preset key, headers, id and status retained. Missing dependencies are

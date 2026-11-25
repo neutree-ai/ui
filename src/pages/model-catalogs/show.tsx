@@ -8,12 +8,15 @@ import EndpointEngine from "@/domains/endpoint/components/EndpointEngine";
 import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import ResourcesCard from "@/domains/endpoint/components/ResourcesCard";
-import ModelCatalogStatus from "@/domains/model-catalog/components/ModelCatalogStatus";
 import { modelCatalogEngineParameters } from "@/domains/model-catalog/lib/advanced-parameters";
+import { servingProfileFields } from "@/domains/model-catalog/lib/detail-fields";
+import { modelCatalogPhases } from "@/domains/model-catalog/lib/phases";
 import type { ModelCatalog } from "@/domains/model-catalog/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { DEFAULT_VARIANT, isRecipeShape } from "@/foundation/recipe/normalize";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
@@ -72,6 +75,15 @@ export const ModelCatalogsShow = () => {
       }
     : (record.spec.env ?? null);
   const advancedEngineParameters = modelCatalogEngineParameters(record.spec);
+  const profile = { catalog: record, model: heroModel };
+  const fields = servingProfileFields(profile, {
+    engine: ({ catalog }) => (
+      <EndpointEngine spec={catalog.spec} metadata={catalog.metadata} />
+    ),
+    model: ({ model }) =>
+      model ? <EndpointModel model={model} /> : <EmptyValue />,
+    task: ({ model }) => <ModelTask task={model?.task} />,
+  });
 
   // Verified-hardware list comes via the well-known annotation
   // `recipe.vllm.ai/hardware-verified` as a comma-separated list of
@@ -87,18 +99,12 @@ export const ModelCatalogsShow = () => {
     <ShowPage record={record} showCurrentBreadcrumb={false}>
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<ModelCatalogStatus {...record.status} />}
+        status={
+          <PhaseStatus status={record.status} phases={modelCatalogPhases} />
+        }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.engine")}>
-              <EndpointEngine spec={record.spec} metadata={record.metadata} />
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.model")}>
-              {heroModel ? <EndpointModel model={heroModel} /> : <EmptyValue />}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.task")}>
-              <ModelTask task={heroModel?.task ?? ""} />
-            </ShowPage.Meta>
+            <DetailFields inline fields={fields.header} record={profile} />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
@@ -139,30 +145,7 @@ export const ModelCatalogsShow = () => {
                 onSelect={setSelectedVariant}
               />
             )}
-            <div className="grid grid-cols-4 gap-8">
-              <ShowPage.Row title={t("common.fields.engine")}>
-                <EndpointEngine spec={record.spec} metadata={record.metadata} />
-              </ShowPage.Row>
-              <div className="col-span-2">
-                <ShowPage.Row title={t("common.fields.model")}>
-                  {heroModel ? (
-                    <EndpointModel model={heroModel} />
-                  ) : (
-                    <EmptyValue />
-                  )}
-                </ShowPage.Row>
-              </div>
-              <ShowPage.Row title={t("common.fields.task")}>
-                <ModelTask task={heroModel?.task ?? ""} />
-              </ShowPage.Row>
-            </div>
-            {heroModel?.file && (
-              <div className="grid grid-cols-4 gap-8">
-                <ShowPage.Row title={t("model_catalogs.fields.modelFile")}>
-                  {heroModel.file}
-                </ShowPage.Row>
-              </div>
-            )}
+            <DetailFields fields={fields.profile} record={profile} />
             {isRecipe ? (
               <ResourcesCard
                 resources={heroResources}

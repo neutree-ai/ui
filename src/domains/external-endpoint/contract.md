@@ -45,8 +45,8 @@ deviations 1, 2).
 
 ## Roles
 
-- Status: `ExternalEndpointStatus` over `BaseStatus` / `STATUS_TONE` (Foundation "Status tone"), label
-  `status.phases.externalEndpoint.<phase>`; Degraded and Pending notice (Degraded still serves). `UpstreamStatusBadge`
+- Status: `lib/phases.ts` `externalEndpointPhases` (Foundation "Status tone"), label
+  `status.phases.externalEndpoint.<phase>`; Degraded and Pending notice (Degraded still serves). `upstreamPhases`
   (Ready positive, Failed serious), label `status.phases.externalEndpointUpstream.<phase>`; `matchUpstreamStatuses`
   pairs by position and drops a status whose `ref` does not match (raw URL or textual sanitise mirroring
   `SanitizeUpstreamURL`).
@@ -64,7 +64,9 @@ deviations 1, 2).
 
 - List: search `metadata->>name`, `defaultSorters`, batch delete. Model chips from `getExposedModels` (route models,
   else legacy `model_mapping` keys).
-- Show: tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
+- Show: header type (`getEndpointType`, empty marker without upstreams), exposed-model count and timeout
+  (`formatTimeout`) are `externalEndpointHeaderFields` in `lib/detail-fields.ts`.
+  Tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
   `routesFromLegacy` for specs without `model_routes`; per-upstream status and mapping (`getUpstreamModelMappings`);
   `CurlExample` when serving and a service URL exists (models minus `getUnavailableModels`). No polling. Credentials
   never shown.

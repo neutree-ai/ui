@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Checks that all t("key") calls and detail-field labels (field("key", …))
- * in source code reference keys that actually exist in the locale file.
+ * Checks that all t("key") calls, detail-field labels (field("key", …)) and
+ * status phase labels (phases("prefix", { Phase: tone })) in source code
+ * reference keys that actually exist in the locale file.
  *
  * Usage: node tools/check-i18n-keys.cjs
  */
@@ -52,16 +53,38 @@ const T_CALL_RE = /\bt\(\s*["'`]([^"'`]+)["'`]/g;
 
 // A detail-field descriptor names its label key as the first argument of
 // field("…") from foundation/scene/detail-field.
-const FIELD_CALL_RE = /\bfield\(\s*["'`]([^"'`]+)["'`]/g;
+const FIELD_CALL_RE = /\bfield(?:<[^>(]*>)?\(\s*["'`]([^"'`]+)["'`]/g;
 const FIELD_MODULE_RE = /scene\/detail-field["']/;
+
+// A phase table from foundation/role/phases names its label prefix, then one
+// key per phase; `lowercase: true` in its options lowercases the phase.
+const PHASES_CALL_RE =
+  /\bphases\(\s*["'`]([^"'`]+)["'`],\s*\{([^}]*)\}(?:,\s*\{([^}]*)\})?/g;
+const PHASES_MODULE_RE = /role\/phases["']/;
+
+function phaseKeys(content) {
+  if (!PHASES_MODULE_RE.test(content)) return [];
+  return [...content.matchAll(PHASES_CALL_RE)].flatMap(
+    ([, prefix, tones, options]) => {
+      const lowercase = /\blowercase:\s*true\b/.test(options ?? "");
+      const listed = tones.replace(/\/\/.*$/gm, "");
+      return [...listed.matchAll(/(\w+)\s*:/g)].map(
+        ([, phase]) => `${prefix}.${lowercase ? phase.toLowerCase() : phase}`,
+      );
+    },
+  );
+}
 
 function extractKeys(content) {
   const patterns = FIELD_MODULE_RE.test(content)
     ? [T_CALL_RE, FIELD_CALL_RE]
     : [T_CALL_RE];
-  return patterns.flatMap((re) =>
-    [...content.matchAll(re)].map((match) => match[1]),
-  );
+  return [
+    ...patterns.flatMap((re) =>
+      [...content.matchAll(re)].map((match) => match[1]),
+    ),
+    ...phaseKeys(content),
+  ];
 }
 
 /* ---------- main ---------- */

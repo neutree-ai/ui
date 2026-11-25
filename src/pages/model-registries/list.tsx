@@ -6,13 +6,14 @@ import ModelRegistryType from "@/domains/model-registry/components/ModelRegistry
 import { ModelRegistryWriteActions } from "@/domains/model-registry/components/ModelRegistryWriteActions";
 import { RegistryTypeFilter } from "@/domains/model-registry/components/RegistryTypeFilter";
 import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
+import { modelRegistryPhases } from "@/domains/model-registry/lib/phases";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
   MODEL_REGISTRY_SELECT,
   MODEL_REGISTRY_VISIBILITY_FIELD,
 } from "@/foundation/model-reference/model-registry-visibility";
-import RegistryStatus from "@/foundation/role/RegistryStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { defaultSorters, Table } from "@/foundation/scene/Table";
@@ -49,7 +50,10 @@ export const ModelRegistriesList = () => {
           enableHiding
           cell={({ getValue }) => {
             return (
-              <RegistryStatus {...(getValue() as unknown as BaseStatus)} />
+              <PhaseStatus
+                status={getValue() as unknown as BaseStatus}
+                phases={modelRegistryPhases}
+              />
             );
           }}
         />

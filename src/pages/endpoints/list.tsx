@@ -8,10 +8,11 @@ import {
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
 import type { Endpoint } from "@/domains/endpoint/types";
+import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
 import { SELF_HOSTED_MODEL_SOURCE } from "@/foundation/model-reference/model-source";
-import EndpointStatus from "@/foundation/role/EndpointStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
@@ -63,7 +64,10 @@ export const EndpointsList = () => {
             enableHiding
             cell={({ getValue }) => {
               return (
-                <EndpointStatus {...(getValue() as unknown as BaseStatus)} />
+                <PhaseStatus
+                  status={getValue() as unknown as BaseStatus}
+                  phases={endpointPhases}
+                />
               );
             }}
           />

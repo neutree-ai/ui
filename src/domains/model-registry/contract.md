@@ -35,7 +35,7 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
 
 ## Roles
 
-- Status: shared `RegistryStatus` (`foundation/role/RegistryStatus`; Foundation "Status tone"), label
+- Status: `lib/phases.ts` `modelRegistryPhases` (Foundation "Status tone"), label
   `status.phases.registry.<phase>`.
 - Columns `useMetadataColumns`; time `metadataColumns.creation_timestamp`, `MetadataTimestampMeta`, `formatTimestamp`
   (`stats_updated_at`, `last_checked_at`); empty marker `EmptyValue` (visibility only).
@@ -55,7 +55,8 @@ Masked: `spec.credentials`, one flat string inside the `spec` composite (Foundat
 - List: request selects `MODEL_REGISTRY_SELECT` (`*,visibility`); type filter `RegistryTypeFilter` sends
   `spec->>type=eq.<kind>`; search `metadata->>name`, `defaultSorters`. Row actions (`ModelRegistryWriteActions`) omitted
   for a provisioned registry. Batch delete is on and not limited to non-provisioned rows (deviation 2).
-- Show: `ShowPage canEdit/canDelete = !registryIsProvisioned`; selects `MODEL_REGISTRY_SELECT`;
+- Show: `ShowPage canEdit/canDelete = !registryIsProvisioned`; selects `MODEL_REGISTRY_SELECT`; header type,
+  visibility and URL are `modelRegistryHeaderFields` in `lib/detail-fields.tsx`;
   `RegistryAvailabilityNotice` (disabled / unreachable, last-checked time, retry via the connection check route); models
   table and drawer (`model`, `version` params). Workspace comes from the route, not the record. A provisioned registry's
   edit route is not linked but not blocked.

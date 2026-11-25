@@ -46,7 +46,7 @@ GET/POST/PATCH. RPCs: `request_identity_source_sync`, `list_login_identity_sourc
 
 ## Roles
 
-- `IdentitySourceStatus` → `STATUS_TONE`: Connected positive, Failed serious, Pending notice, Deleted neutral;
+- `IdentitySourceStatus` (own chip, tone from `lib/phases.ts` `identitySourcePhases`): Connected positive, Failed serious, Pending notice, Deleted neutral;
   `identity_sources.phases.<phase>`, missing `-`, unknown no tone.
 - `IdentitySourceSyncResult` → `STATUS_TONE`: ok positive, failed serious, pending notice; `syncResultOf` prefers
   pending request, else finished outcome. `IdentitySourceLastSync` adds relative finish time.

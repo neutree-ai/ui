@@ -1,11 +1,10 @@
 import { useParsed, useShow } from "@refinedev/core";
 import { useSearchParams } from "react-router-dom";
 import { ModelDetailDrawer } from "@/domains/model-registry/components/ModelDetailDrawer";
-import ModelRegistryType from "@/domains/model-registry/components/ModelRegistryType";
 import { RegistryAvailabilityNotice } from "@/domains/model-registry/components/RegistryAvailabilityNotice";
 import { RegistryModelsTable } from "@/domains/model-registry/components/RegistryModelsTable";
-import { RegistryUrl } from "@/domains/model-registry/components/RegistryUrl";
-import { RegistryVisibility } from "@/domains/model-registry/components/RegistryVisibility";
+import { modelRegistryHeaderFields } from "@/domains/model-registry/lib/detail-fields";
+import { modelRegistryPhases } from "@/domains/model-registry/lib/phases";
 import { registryIsProvisioned } from "@/domains/model-registry/lib/provisioning";
 import type { ModelRegistry } from "@/domains/model-registry/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -16,7 +15,8 @@ import {
   readRegistryModelSelection,
   writeRegistryModelSelection,
 } from "@/foundation/model-reference/registry-model-link";
-import RegistryStatus from "@/foundation/role/RegistryStatus";
+import { PhaseStatus } from "@/foundation/role/PhaseStatus";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 
@@ -65,18 +65,16 @@ export const ModelRegistriesShow = () => {
     >
       <ShowPage.ObjectHeader
         title={record.metadata.name}
-        status={<RegistryStatus {...record.status} />}
+        status={
+          <PhaseStatus status={record.status} phases={modelRegistryPhases} />
+        }
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.type")}>
-              <ModelRegistryType type={record.spec.type} />
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("model_registries.fields.visibility")}>
-              <RegistryVisibility visibility={record.visibility} />
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("model_registries.fields.url")}>
-              <RegistryUrl url={record.spec.url} />
-            </ShowPage.Meta>
+            <DetailFields
+              inline
+              fields={modelRegistryHeaderFields}
+              record={record}
+            />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }

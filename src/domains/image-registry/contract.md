@@ -33,13 +33,14 @@ backend (`041_remove_image_registry_ca`).
 
 ## Roles
 
-- Status tone: shared `RegistryStatus` (`foundation/role/RegistryStatus`, renders `BaseStatus`; tones from `STATUS_TONE`, `foundation/role/status-tone.ts`); label key
+- Status tone: `lib/phases.ts` `imageRegistryPhases` (Foundation "Status tone"); label key
   `status.phases.registry.<phase>`. A missing phase renders `EmptyValue`.
 - Time: `Timestamp` (relative) in the list, `MetadataTimestampMeta` in the show header.
 - Name / workspace / created / actions columns: `useMetadataColumns`.
 - Secret input: `spec.authconfig.password` is `<Input type="password">`; username is a plain
   input but follows the same keep-existing rule.
-- Display of `spec.url` + `spec.repository` (show page): inline in `pages/image-registries/show.tsx` (trims trailing / of URL and leading / of repository).
+- Display of `spec.url` + `spec.repository` (show page): `repositoryUrl` in `lib/detail-fields.ts`, the one field of
+  `imageRegistryConfigFields` (trims trailing / of URL and leading / of repository).
 
 ## Scenes
 

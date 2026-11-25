@@ -85,8 +85,8 @@ vi.mock("@/domains/cluster/components/ClusterUpgradeAction", () => ({
 vi.mock("@/domains/cluster/components/ClusterUpgradeTip", () => ({
   ClusterUpgradeTip: () => null,
 }));
-vi.mock("@/domains/cluster/components/ClusterStatus", () => ({
-  default: () => null,
+vi.mock("@/foundation/role/PhaseStatus", () => ({
+  PhaseStatus: () => null,
 }));
 vi.mock("@/domains/cluster/components/ClusterType", () => ({
   default: () => null,
@@ -95,9 +95,6 @@ vi.mock("@/domains/endpoint/components/EndpointEngine", () => ({
   default: () => null,
 }));
 vi.mock("@/domains/endpoint/components/EndpointModel", () => ({
-  default: () => null,
-}));
-vi.mock("@/domains/endpoint/components/EndpointStatus", () => ({
   default: () => null,
 }));
 vi.mock("@/foundation/scene/ShowButton", () => ({

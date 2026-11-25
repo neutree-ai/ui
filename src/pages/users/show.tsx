@@ -10,20 +10,17 @@ import {
   UserTeamsSection,
 } from "@/domains/organization/components/UserOrganization";
 import { UserEffectiveRoleAssignments } from "@/domains/role-assignment/components/UserEffectiveRoleAssignments";
+import { userHeaderFields } from "@/domains/user/lib/detail-fields";
 import type { UserProfile } from "@/domains/user/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
-import {
-  profileDisplayName,
-  profileEmail,
-  profileIdentitySourceName,
-} from "@/foundation/role/user-identity";
+import { profileDisplayName } from "@/foundation/role/user-identity";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { MetadataTimestampMeta } from "@/foundation/scene/MetadataTimestampMeta";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { Table } from "@/foundation/scene/Table";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 export const UsersShow = () => {
   const { t } = useTranslation();
@@ -49,18 +46,7 @@ export const UsersShow = () => {
         title={profileDisplayName(record.metadata)}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
-            <ShowPage.Meta label={t("common.fields.name")}>
-              {record.metadata.name}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("common.fields.email")}>
-              {profileEmail(record) || <EmptyValue />}
-            </ShowPage.Meta>
-            <ShowPage.Meta label={t("user_profiles.fields.identitySource")}>
-              <span data-testid="user-identity-source">
-                {profileIdentitySourceName(record.metadata) ||
-                  t("user_profiles.values.local")}
-              </span>
-            </ShowPage.Meta>
+            <DetailFields inline fields={userHeaderFields} record={record} />
             <MetadataTimestampMeta metadata={record.metadata} />
           </span>
         }
