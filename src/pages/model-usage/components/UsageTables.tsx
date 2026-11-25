@@ -97,6 +97,20 @@ const EmptyRow = ({ colSpan }: { colSpan: number }) => {
  * do, so no share is shown that would not add up. An entry with a `target`
  * opens it through `onOpen`.
  */
+const UsageKeyLabel = ({
+  row,
+}: {
+  row: Pick<UsageSeries, "name" | "technicalName" | "description">;
+}) => (
+  <ApiKeyLabel
+    parts={{
+      primary: row.name,
+      technicalName: row.technicalName ?? null,
+      description: row.description,
+    }}
+  />
+);
+
 export function UsageTable<T>({
   nameHeader,
   rows,
@@ -161,14 +175,11 @@ export function UsageTable<T>({
                         className="group flex max-w-full items-center gap-1 text-left text-primary hover:underline"
                         onClick={() => onOpen(target)}
                       >
-                        <ApiKeyLabel
-                          name={r.name}
-                          description={r.description}
-                        />
+                        <UsageKeyLabel row={r} />
                         <ChevronRight className="size-3.5 shrink-0 opacity-60 group-hover:opacity-100" />
                       </button>
                     ) : (
-                      <ApiKeyLabel name={r.name} description={r.description} />
+                      <UsageKeyLabel row={r} />
                     )}
                   </TableCell>
                   {showRequests ? (
@@ -279,10 +290,7 @@ export function DetailTable({
                   {formatTick(r.date)}
                 </TableCell>
                 <TableCell className="max-w-[160px] text-sm">
-                  <ApiKeyLabel
-                    name={r.who.name}
-                    description={r.who.description}
-                  />
+                  <UsageKeyLabel row={r.who} />
                 </TableCell>
                 <TableCell>
                   <EndpointTypeBadge type={r.endpoint_type} />

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -396,18 +397,21 @@ export const UsageChart = ({
         const seriesMeta = meta.get(key);
         return (
           <span
-            className="inline-flex items-baseline align-middle leading-tight"
+            className="inline-block max-w-[240px] align-middle leading-tight"
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
             }}
           >
-            <span>{seriesMeta?.name ?? key}</span>
-            {seriesMeta?.description ? (
-              <span className="ml-1 text-[10px] font-normal">
-                - {seriesMeta.description}
-              </span>
-            ) : null}
+            <ApiKeyLabel
+              variant="line"
+              className="text-[11px]"
+              parts={{
+                primary: seriesMeta?.name ?? key,
+                technicalName: seriesMeta?.technicalName ?? null,
+                description: seriesMeta?.description ?? null,
+              }}
+            />
           </span>
         );
       }}

@@ -23,7 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
+import {
+  API_KEY_SELECT_CONTENT_CLASS,
+  API_KEY_SELECT_ITEM_CLASS,
+  ApiKeyLabel,
+} from "@/domains/api-key/components/ApiKeyLabel";
 import {
   type AITrace,
   type AITraceFilterParams,
@@ -302,12 +306,16 @@ export const AITracesList = () => {
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={API_KEY_SELECT_CONTENT_CLASS}>
             <SelectItem value="all">
               {t("ai_traces.filters.allApiKeys")}
             </SelectItem>
             {keys.map((k) => (
-              <SelectItem key={k.id} value={k.id}>
+              <SelectItem
+                key={k.id}
+                value={k.id}
+                className={API_KEY_SELECT_ITEM_CLASS}
+              >
                 <ApiKeyLabel
                   name={k.metadata?.name ?? k.id}
                   displayName={k.metadata?.display_name}

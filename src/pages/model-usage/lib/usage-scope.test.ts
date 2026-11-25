@@ -281,8 +281,12 @@ describe("facts", () => {
     expect(keyFact(keyRecord(), deleted).who).toEqual({
       key: "0123456789abcdef",
       name: "key",
+      technicalName: null,
       description: null,
     });
+    expect(
+      keyFact(keyRecord({ api_key_display_name: "Support" }), deleted).who,
+    ).toMatchObject({ name: "Support", technicalName: "key" });
   });
 
   it("name a deleted API key by the start of its id", () => {
@@ -298,6 +302,7 @@ describe("facts", () => {
     ).toEqual({
       key: "0123456789abcdef",
       name: "Deleted 01234567",
+      technicalName: null,
       description: null,
     });
   });

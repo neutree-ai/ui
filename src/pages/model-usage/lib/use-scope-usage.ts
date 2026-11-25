@@ -34,6 +34,7 @@ import {
 const modelMeta = (r: UsageFact) => ({ name: modelOf(r), description: null });
 const whoMeta = (r: UsageFact) => ({
   name: r.who.name,
+  technicalName: r.who.technicalName ?? null,
   description: r.who.description,
 });
 

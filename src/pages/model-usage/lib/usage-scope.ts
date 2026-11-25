@@ -1,5 +1,6 @@
 import type { GroupUsageFilter } from "@/domains/api-key/hooks/use-group-usage";
 import type { KeyUsageFilter } from "@/domains/api-key/hooks/use-workspace-usage";
+import { apiKeyLabelParts } from "@/domains/api-key/lib/api-key-label";
 import type { ApiUsageRecord, GroupUsageRecord } from "@/domains/api-key/types";
 import {
   type OrgTreeNode,
@@ -257,6 +258,8 @@ export function breakdownLabelKeys(scope: UsageScope | null): {
 export type UsageWho = {
   key: string;
   name: string;
+  /** An API key's technical name, when its display name is the `name`. */
+  technicalName?: string | null;
   description: string | null;
 };
 
@@ -300,6 +303,25 @@ export const appFact = (r: GroupUsageRecord, label: string): UsageFact => ({
   who: { key: r.name, name: displayName(r), description: label },
 });
 
+const keyIdentity = (
+  r: ApiUsageRecord,
+  deletedLabel: (shortId: string) => string,
+): Pick<UsageWho, "name" | "technicalName" | "description"> => {
+  const { primary, technicalName, description } = apiKeyLabelParts({
+    name: r.api_key_name,
+    displayName: r.api_key_display_name,
+    description: r.api_key_description,
+  });
+  return {
+    name:
+      r.api_key_name === null
+        ? deletedLabel(r.api_key_id.slice(0, 8))
+        : primary,
+    technicalName,
+    description,
+  };
+};
+
 /**
  * A get_usage_by_dimension row as a fact of its API key. A deleted key's rows
  * carry no name: `deletedLabel` names it by the start of its id.
@@ -311,11 +333,7 @@ export const keyFact = (
   ...usageFields(r),
   who: {
     key: r.api_key_id,
-    name:
-      r.api_key_name === null
-        ? deletedLabel(r.api_key_id.slice(0, 8))
-        : r.api_key_display_name || r.api_key_name,
-    description: r.api_key_description || null,
+    ...keyIdentity(r, deletedLabel),
   },
 });
 
