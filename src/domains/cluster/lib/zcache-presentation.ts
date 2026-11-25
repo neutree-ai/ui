@@ -1,4 +1,77 @@
+import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import type { ClusterCacheStatus, ZCacheSpec, ZCacheStatus } from "../types";
+
+export type ZCacheCandidateReason =
+  | {
+      kind: "translation";
+      key:
+        | "clusters.zcache.notReady"
+        | "clusters.zcache.kubernetesControlPlane";
+    }
+  | { kind: "message"; value: string };
+
+export type ZCacheCandidate = {
+  name: string;
+  selectable: boolean;
+  reason?: ZCacheCandidateReason;
+};
+
+const CONTROL_PLANE_REASON =
+  "control-plane nodes are not used for the ZCache runtime by default";
+
+function apiCandidate(
+  candidate: NonNullable<ZCacheStatus["candidates"]>[number],
+): ZCacheCandidate {
+  if (!candidate.reason) {
+    return { name: candidate.name, selectable: candidate.selectable };
+  }
+  return {
+    name: candidate.name,
+    selectable: candidate.selectable,
+    reason:
+      candidate.reason === CONTROL_PLANE_REASON
+        ? {
+            kind: "translation",
+            key: "clusters.zcache.kubernetesControlPlane",
+          }
+        : { kind: "message", value: candidate.reason },
+  };
+}
+
+/** Resolve the nodes that can be selected before the cache service reports candidates. */
+export function resolveZCacheCandidates({
+  candidates,
+  nodeResources,
+}: {
+  candidates?: ZCacheStatus["candidates"];
+  nodeResources?: Record<string, NodeResourceStatus> | null;
+}): ZCacheCandidate[] {
+  if (candidates?.length) return candidates.map(apiCandidate);
+  if (!nodeResources) return [];
+
+  return Object.entries(nodeResources)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, resource]) => {
+      if (resource.ready === false) {
+        return {
+          name,
+          selectable: false,
+          reason: { kind: "translation", key: "clusters.zcache.notReady" },
+        };
+      }
+      if (resource.control_plane === true) {
+        return {
+          name,
+          selectable: false,
+          reason: {
+            kind: "translation",
+            key: "clusters.zcache.kubernetesControlPlane",
+          },
+        };
+      }
+      return { name, selectable: true };
+    });
+}
 
 export function sameCacheConfig(a?: ZCacheSpec, b?: ZCacheSpec) {
   if (!a?.enabled && !b?.enabled) return true;

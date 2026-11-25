@@ -23,20 +23,20 @@ import FormCardGrid from "@/foundation/components/FormCardGrid";
 import { FormFieldGroup } from "@/foundation/components/FormFieldGroup";
 import { formatToDecimal } from "@/foundation/lib/unit";
 import { cn } from "@/foundation/lib/utils";
+import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import {
   type CacheEndpointCandidate,
   cacheEndpointRefs,
 } from "../lib/cache-endpoints";
+import type { ZCacheCandidate } from "../lib/zcache-presentation";
 import {
   cacheMessage,
   isValidCacheCapacity,
   MAX_CACHE_CAPACITY_GIB,
+  resolveZCacheCandidates,
 } from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 import { CacheEndpointLinks } from "./CacheEndpointLinks";
-
-const CONTROL_PLANE_REASON =
-  "control-plane nodes are not used for the ZCache runtime by default";
 
 function CacheStatusBadge({
   phase,
@@ -94,7 +94,7 @@ function CacheRuntimeStatus({
   candidate,
 }: {
   node?: NonNullable<ZCacheStatus["nodes"]>[number];
-  candidate?: NonNullable<ZCacheStatus["candidates"]>[number];
+  candidate?: ZCacheCandidate;
 }) {
   const { t } = useTranslation();
   const ready = node?.runtime === "Ready";
@@ -105,10 +105,10 @@ function CacheRuntimeStatus({
       : t("clusters.zcache.unavailableNode");
   const reason = node?.reason
     ? cacheMessage(node.reason, t("clusters.zcache.serviceName"))
-    : candidate?.reason === CONTROL_PLANE_REASON
-      ? t("clusters.zcache.kubernetesControlPlane")
-      : candidate?.reason
-        ? cacheMessage(candidate.reason, t("clusters.zcache.serviceName"))
+    : candidate?.reason?.kind === "translation"
+      ? t(candidate.reason.key)
+      : candidate?.reason?.kind === "message"
+        ? cacheMessage(candidate.reason.value, t("clusters.zcache.serviceName"))
         : undefined;
 
   const content = (
@@ -165,11 +165,13 @@ export function ZCacheFields({
   isEdit,
   status,
   summary,
+  nodeResources,
   compact = false,
 }: {
   form: UseFormReturn;
   status?: ZCacheStatus;
   summary?: ClusterCacheStatus;
+  nodeResources?: Record<string, NodeResourceStatus> | null;
   compact?: boolean;
   isEdit: boolean;
 }) {
@@ -207,7 +209,10 @@ export function ZCacheFields({
     [];
   const selected: string[] =
     form.watch("spec.cache.options.target_nodes") ?? [];
-  const candidates = status?.candidates ?? [];
+  const candidates = resolveZCacheCandidates({
+    candidates: status?.candidates,
+    nodeResources,
+  });
   const names = [
     ...new Set([...candidates.map((node) => node.name), ...selected]),
   ];

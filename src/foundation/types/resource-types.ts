@@ -104,6 +104,8 @@ export type DeviceResource = {
 };
 
 export type NodeResourceStatus = ResourceStatus & {
+  ready?: boolean | null;
+  control_plane?: boolean | null;
   devices?: DeviceResource[] | null;
 };
 

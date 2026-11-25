@@ -236,6 +236,9 @@ export function ZCacheEditor({
                       isEdit
                       status={status}
                       summary={cluster.status?.cache}
+                      nodeResources={
+                        cluster.status?.resource_info?.node_resources
+                      }
                       compact
                     />
                     {error && (

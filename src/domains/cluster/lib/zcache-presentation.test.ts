@@ -1,14 +1,67 @@
 import { describe, expect, it } from "vitest";
+import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 import {
   activeCacheChange,
   isValidCacheCapacity,
   MAX_CACHE_CAPACITY_GIB,
+  resolveZCacheCandidates,
   resolveZCacheState,
   sameCacheConfig,
 } from "./zcache-presentation";
 
 describe("cache presentation", () => {
+  it("derives sorted cold-start candidates and their reasons", () => {
+    const nodeResources = {
+      "worker-b": {} as NodeResourceStatus,
+      "control-a": { control_plane: true } as NodeResourceStatus,
+      "worker-a": { ready: false } as NodeResourceStatus,
+    };
+    expect(resolveZCacheCandidates({ nodeResources })).toEqual([
+      {
+        name: "control-a",
+        selectable: false,
+        reason: {
+          kind: "translation",
+          key: "clusters.zcache.kubernetesControlPlane",
+        },
+      },
+      {
+        name: "worker-a",
+        selectable: false,
+        reason: { kind: "translation", key: "clusters.zcache.notReady" },
+      },
+      { name: "worker-b", selectable: true },
+    ]);
+  });
+
+  it("keeps legacy node resources selectable", () => {
+    expect(
+      resolveZCacheCandidates({
+        nodeResources: {
+          legacy: {
+            ready: undefined,
+            control_plane: null,
+          } as NodeResourceStatus,
+        },
+      }),
+    ).toEqual([{ name: "legacy", selectable: true }]);
+  });
+
+  it("prefers installed cache candidates over node resources", () => {
+    expect(
+      resolveZCacheCandidates({
+        candidates: [{ name: "installed", selectable: true }],
+        nodeResources: { fallback: {} as NodeResourceStatus },
+      }),
+    ).toEqual([{ name: "installed", selectable: true }]);
+  });
+
+  it("returns no candidates when node resources are missing or empty", () => {
+    expect(resolveZCacheCandidates({})).toEqual([]);
+    expect(resolveZCacheCandidates({ nodeResources: {} })).toEqual([]);
+  });
+
   it("ignores node ordering but not capacity or membership", () => {
     const spec = { enabled: true, l1_size_gib: 2, target_nodes: ["a", "b"] };
     expect(sameCacheConfig(spec, { ...spec, target_nodes: ["b", "a"] })).toBe(

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NodeResourceStatus } from "@/foundation/types/resource-types";
 import type { Cluster, ClusterCacheStatus, ZCacheStatus } from "../types";
 import { ZCacheFields } from "./ZCacheFields";
 
@@ -61,12 +62,14 @@ function Form({
   isEdit = true,
   legacy = false,
   summaryPhase,
+  nodeResources,
 }: {
   onSubmit: (data: Cluster) => void;
   status?: ZCacheStatus;
   isEdit?: boolean;
   legacy?: boolean;
   summaryPhase?: ClusterCacheStatus["phase"];
+  nodeResources?: Record<string, NodeResourceStatus> | null;
 }) {
   const form = useForm<Cluster>({
     defaultValues: {
@@ -108,6 +111,7 @@ function Form({
               ? { provider: "zcache", phase: summaryPhase, conditions: [] }
               : undefined
           }
+          nodeResources={nodeResources}
         />
         <button type="submit">Save</button>
       </form>
@@ -285,6 +289,45 @@ describe("ZCacheFields", () => {
       "b",
       "c",
     ]);
+  });
+  it("derives selectable nodes and localized cold-start reasons from node resources", () => {
+    render(
+      <Form
+        onSubmit={vi.fn()}
+        legacy
+        status={undefined}
+        nodeResources={{
+          "control-a": { control_plane: true } as NodeResourceStatus,
+          "worker-a": {} as NodeResourceStatus,
+          "worker-b": { ready: false } as NodeResourceStatus,
+        }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    expect(screen.getByRole("checkbox", { name: "worker-a" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+    expect(screen.getByRole("checkbox", { name: "control-a" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+    expect(screen.getByRole("checkbox", { name: "worker-b" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+    screen.getAllByText("clusters.zcache.kubernetesControlPlane");
+    screen.getAllByText("clusters.zcache.notReady");
+  });
+
+  it("shows the empty candidate hint without cache status or node resources", () => {
+    render(<Form onSubmit={vi.fn()} legacy status={undefined} />);
+    fireEvent.click(
+      screen.getByRole("switch", { name: "clusters.zcache.enable" }),
+    );
+    screen.getByText("clusters.zcache.noCandidates");
   });
   it("filters the cache node table", () => {
     render(<Form onSubmit={vi.fn()} status={observed} />);
