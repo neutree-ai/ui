@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ApiKey, ApiKeyProject } from "@/domains/api-key/types";
 
@@ -43,14 +43,35 @@ const fixture = vi.hoisted(() => {
     is_ungrouped: true,
   } as ApiKeyProject;
 
-  return { key, project };
+  const movingKey = {
+    ...key,
+    id: "key-moving",
+    metadata: {
+      ...key.metadata,
+      name: "moving-key",
+      display_name: "Moving key",
+      workspace: "design-lab",
+    },
+    spec: { ...key.spec, project_id: "project-billing" },
+  } as ApiKey;
+
+  const billing = {
+    ...project,
+    id: "project-billing",
+    metadata: { name: "billing", workspace: "design-lab" },
+    is_ungrouped: false,
+  } as ApiKeyProject;
+
+  const mutateAsync = vi.fn(async () => ({ data: 1 }));
+
+  return { key, project, movingKey, billing, mutateAsync };
 });
 
 vi.mock("@refinedev/core", () => ({
-  useCustomMutation: () => ({ mutateAsync: vi.fn() }),
+  useCustomMutation: () => ({ mutateAsync: fixture.mutateAsync }),
   useDelete: () => ({ mutateAsync: vi.fn() }),
   useInvalidate: () => vi.fn(),
-  useList: () => ({ data: { data: [fixture.key] } }),
+  useList: () => ({ data: { data: [fixture.key, fixture.movingKey] } }),
   useNavigation: () => ({ show: vi.fn() }),
   useNotification: () => ({ open: vi.fn() }),
 }));
@@ -63,7 +84,14 @@ vi.mock("@/domains/api-key/hooks/use-api-key-project-groups", () => ({
         api_keys: [fixture.key],
         api_key_count: 1,
         current_usage: 0,
-        total_projects: 1,
+        total_projects: 2,
+      },
+      {
+        project: fixture.billing,
+        api_keys: [fixture.movingKey],
+        api_key_count: 1,
+        current_usage: 0,
+        total_projects: 2,
       },
     ],
     totalApiKeys: 1,
@@ -132,5 +160,30 @@ describe("ApiKeysList empty states", () => {
     const row = within(screen.getByRole("row", { name: /Empty states key/ }));
     expect(row.getAllByTestId("empty-value")).toHaveLength(2);
     row.getByText("api_keys.limits.unlimited");
+  });
+});
+
+describe("ApiKeysList move", () => {
+  it("opens the folded target group once the move succeeds", async () => {
+    render(<ApiKeysList />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /api_keys.projects.ungrouped/ }),
+    );
+    expect(screen.queryByRole("row", { name: /Empty states key/ })).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "api_keys.selection.selectAllInProject:billing",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "api_keys.move.action" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "api_keys.move.confirm" }),
+    );
+
+    await screen.findByRole("row", { name: /Empty states key/ });
   });
 });

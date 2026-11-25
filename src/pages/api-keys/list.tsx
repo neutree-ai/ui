@@ -57,6 +57,7 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import { moveTargetGroupId } from "@/domains/api-key/lib/move-target-group";
 import type {
   AllowedModel,
   ApiKey,
@@ -418,6 +419,15 @@ export const ApiKeysList = () => {
       });
       setSelected(new Set());
       setMoveOpen(false);
+      // The moved keys land in the target group, so open it if it was folded.
+      const landing = moveTargetGroupId(projects, target, moveWorkspace);
+      if (landing) {
+        setCollapsed((old) => {
+          const next = new Set(old);
+          next.delete(landing);
+          return next;
+        });
+      }
       openNotification?.({
         type: "success",
         message: t("api_keys.move.success", {

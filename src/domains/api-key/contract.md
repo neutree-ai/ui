@@ -67,6 +67,8 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   `get_api_key_project_groups` / count (`113_api_key_search_name`) match Project/name/display name/description;
   oldest first, Ungrouped first within workspace.
 - Row actions: show, toggle, delete, move; batch: delete/move. Move sends key UUIDs and Project UUID/null.
+  A successful move opens the target group (`lib/move-target-group.ts`: the Project, or the keys' workspace's
+  Ungrouped) if the user had folded it; other groups keep their fold state.
 - Project create/update/delete RPCs (`092`): create trims name/description, edit sends both inputs;
   deletion needs no live keys (23503). `move_api_keys_to_project` (`132`) requires one owner/workspace.
 - Show (`src/pages/api-keys/show.tsx:ApiKeysShow`): name (`displayName`); workspace, description (only when set) and
