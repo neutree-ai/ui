@@ -1618,14 +1618,32 @@ describe("validation", () => {
           : registryModelsResult()) as unknown as typeof useRegistryModels);
     }
 
-    it("flags a model the lookup does not find, without further input", async () => {
-      mockExistenceLookup([{ name: "some-other-model" }]);
-      renderEndpointForm();
+    it.each([
+      {
+        source: "catalog",
+        choose: () => selectCatalog("vllm-llama"),
+      },
+      {
+        source: "registry",
+        choose: (result: Rendered) =>
+          setValues(result, {
+            "spec.model.registry": "hf",
+            "spec.model.name": "llama-3",
+          }),
+      },
+    ])(
+      "$source: flags a model the lookup does not find on the model name, without further input",
+      async ({ choose }) => {
+        mockExistenceLookup([{ name: "some-other-model" }]);
+        const { result } = renderEndpointForm();
 
-      selectCatalog("vllm-llama");
+        choose(result);
 
-      await screen.findByText("endpoints.messages.modelNotFoundInRegistry");
-    });
+        await within(screen.getByTestId("field-spec.model.name")).findByText(
+          "endpoints.messages.modelNotFoundInRegistry",
+        );
+      },
+    );
 
     it.each([
       { case: "the lookup finds the model", found: [{ name: "llama-3" }] },

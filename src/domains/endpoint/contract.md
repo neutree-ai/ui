@@ -125,7 +125,8 @@ values, null variables stays null. Masking mechanics: `src/foundation/contract.m
 ## Descriptions
 
 `useEndpointForm` requires cluster, engine/version, visible model fields, positive replicas and scheduler. Accelerator
-is optional. Create checks resolved registry/model existence; unresolved reads skip checks. Model aliases label physical
+is optional. Create checks resolved registry/model existence; unresolved reads skip checks. A missing model is
+reported on `spec.model.name`, shown for both model sources. Model aliases label physical
 names. Registry changes retain the model name until a successful exact lookup disproves it; version/file/info are
 cleared. Model errors open the editor and optional fields. Feature number inputs allow decimals; integer inputs step by
 one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks.
