@@ -69,7 +69,8 @@ array carries a `mergekey`; `extra_fields` is a map without masked values.
 
 - List: default sorter `metadata->name` asc, search `metadata->>name`, no batch delete; row actions edit, enable /
   disable (`LogSinkEnableAction`), delete. The AI traces button polls every 15 s via `summarizeForwarding` (enabled
-  count; Failed beats Degraded as the alert).
+  count; Failed beats Degraded as the alert). "Add destination" shows only with a global `log_sink:create` grant
+  (`useHasGlobalPermission`; hidden while checking); the server still rejects a create without it.
 - Show: header and two `DetailFields` sections (destination by type; delivery: counters, last sent, last
   connection test and its message), "test connection" for the stored sink (`{id}`), actions edit, enable /
   disable, delete. Secrets never shown.
