@@ -10,6 +10,9 @@
  *   description           the kind's own lib/, a foundation concept directory,
  *                         or the kind configuring a scene
  *   override              decided inline in a component or page
+ * Inside a scene descriptor helper (DESCRIPTOR_HELPERS) a read is credited to
+ * the piece that shows it: type when returned as read, type/role when handed
+ * to a shared function or component, description when the accessor computes.
  * Values only passed along (copied, handed to a library) are "wire" and are
  * not decisions.
  *
@@ -127,6 +130,13 @@ const FIELD_HINTS = [
     "decide on it in the kind's status component (BaseStatus / STATUS_TONE)",
   ],
   [/^display_name$/, "use displayName() from foundation/role/display-name"],
+];
+
+// Scene descriptor helpers. A field read inside one is credited to the piece
+// that decides its display rather than to the kind's lib; add a helper here to
+// measure its descriptors the same way.
+const DESCRIPTOR_HELPERS = [
+  { module: "foundation/scene/detail-field", name: "field" },
 ];
 
 const KIND_LIB_RE = /^(domains|pages)\/[^/]+\/(.+\/)?lib\//;
@@ -374,6 +384,60 @@ function measure() {
     return null;
   };
 
+  const isDescriptorHelper = (call) => {
+    const d = resolveSymbol(call.expression)?.declarations?.[0];
+    if (!d?.name) return false;
+    const module = rel(d.getSourceFile().fileName).replace(/\.tsx?$/, "");
+    const name = d.name.getText();
+    return DESCRIPTOR_HELPERS.some(
+      (h) => h.module === module && h.name === name,
+    );
+  };
+
+  // Inside a descriptor's accessor: a value returned as read is shown by the
+  // shared Type renderer; a value handed to a shared type/role function or
+  // component is decided there. Null when the accessor computes with it
+  // (fallback, branch, format, local component), which stays the kind's own.
+  const descriptorLayer = (node, consumer) => {
+    let fn = node.parent;
+    while (fn && !ts.isArrowFunction(fn) && !ts.isFunctionExpression(fn))
+      fn = fn.parent;
+    if (!fn) return null;
+    let arg = fn;
+    const isRender =
+      ts.isPropertyAssignment(fn.parent) &&
+      fn.parent.name.getText() === "render" &&
+      ts.isObjectLiteralExpression(fn.parent.parent);
+    if (isRender) arg = fn.parent.parent;
+    const call = arg.parent;
+    if (
+      !ts.isCallExpression(call) ||
+      !call.arguments.includes(arg) ||
+      !isDescriptorHelper(call)
+    )
+      return null;
+
+    const shared = consumer?.target ? layerOfTarget(consumer.target) : null;
+    if (shared === "type" || shared === "role") {
+      if (consumer.kind === (isRender ? "jsx" : "call")) return shared;
+    }
+    if (isRender) return null;
+
+    let n = node;
+    while (
+      ts.isParenthesizedExpression(n.parent) ||
+      ts.isNonNullExpression(n.parent) ||
+      ts.isAsExpression(n.parent)
+    )
+      n = n.parent;
+    const returned =
+      fn.body === n ||
+      (ts.isReturnStatement(n.parent) &&
+        n.parent.parent === fn.body &&
+        fn.body.statements.length === 1);
+    return returned ? "type" : null;
+  };
+
   // Who imports each module. A foundation test does not make a module used.
   const importers = new Map();
   const collectImports = (sf, r) => {
@@ -432,7 +496,9 @@ function measure() {
       let layer;
       let why = "computed inline (a comparison, fallback, format or branch)";
       const c = directConsumer(node);
+      const described = descriptorLayer(node, c);
       if (c?.kind === "copy") layer = "wire";
+      else if (described) layer = described;
       else if (fileLayer) layer = fileLayer;
       else if (inLib) layer = "description";
       else {
@@ -472,10 +538,16 @@ function measure() {
           readsDataField(p);
         if (!extended) {
           if (isLeafRead(node)) record(node, "read");
-          else if (!fileLayer && !inLib && node.name.text !== "id") {
-            // A whole object counts only when a shared piece receives it.
+          else if (node.name.text !== "id") {
+            // A whole object counts only when a shared piece receives it: from
+            // a component or page, or from a descriptor's accessor.
             const c = directConsumer(node);
-            if (c?.target && layerOfTarget(c.target)) record(node, "object");
+            const received = c?.target && layerOfTarget(c.target);
+            if (
+              received &&
+              ((!fileLayer && !inLib) || descriptorLayer(node, c))
+            )
+              record(node, "object");
           }
         }
       } else if (

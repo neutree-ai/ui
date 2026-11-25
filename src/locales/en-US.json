@@ -50,6 +50,15 @@
 		"errors": {
 			"unknown": "Unknown error"
 		},
+		"values": {
+			"yes": "Yes",
+			"no": "No"
+		},
+		"connectionTest": {
+			"ok": "Succeeded",
+			"failed": "Failed",
+			"never": "Not run yet"
+		},
 		"tabs": {
 			"basic": "Basic",
 			"monitor": "Monitor",
@@ -1093,9 +1102,6 @@
 			"timeoutSeconds": "{{count}}s",
 			"bufferDefault": "1 GiB (default)",
 			"bufferGib": "{{value}} GiB",
-			"testOk": "Succeeded",
-			"testFailed": "Failed",
-			"never": "Not run yet",
 			"endpointDefault": "AWS (default)",
 			"defaultSuffix": "{{value}} (default)",
 			"pathStyle": "Path-style",
@@ -2843,10 +2849,6 @@
 			"syncWaiting": "Sync requested. Waiting for the result."
 		},
 		"values": {
-			"yes": "Yes",
-			"no": "No",
-			"testOk": "Succeeded",
-			"testFailed": "Failed",
 			"caConfigured": "Custom CA",
 			"systemTrust": "System trust store",
 			"on": "On",

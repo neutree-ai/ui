@@ -1,4 +1,3 @@
-import { Check, Copy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,53 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
-import { cn } from "@/foundation/lib/utils";
+import { LicenseStatus } from "@/domains/license/components/LicenseStatus";
+import {
+  licenseInfoFields,
+  licenseUsageFields,
+} from "@/domains/license/lib/detail-fields";
 import { useLicense } from "@/foundation/license/use-license";
+import { DetailFields } from "@/foundation/scene/DetailFields";
 import { EmptyState } from "@/foundation/scene/EmptyState";
-import { MAX_UNLIMITED } from "@/foundation/types/license";
-
-const formatDate = (timestamp: number) => {
-  return new Date(timestamp * 1000).toLocaleDateString();
-};
-
-const formatPeriod = (seconds: number) => {
-  const days = Math.floor(seconds / (60 * 60 * 24));
-  return days;
-};
-
-const calculateRemainingDays = (signDate: number, period: number) => {
-  const expirationTimestamp = signDate + period;
-  const nowTimestamp = Math.floor(Date.now() / 1000);
-  const remainingSeconds = expirationTimestamp - nowTimestamp;
-  return Math.max(0, Math.ceil(remainingSeconds / (60 * 60 * 24)));
-};
-
-const getPhaseColor = (phase: string) => {
-  switch (phase.toLowerCase()) {
-    case "active":
-      return "text-green-600";
-    case "expired":
-      return "text-red-600";
-    case "warning":
-      return "text-yellow-600";
-    default:
-      return "text-gray-600";
-  }
-};
 
 export const LicenseShow: React.FC = () => {
   const { t } = useTranslation();
   const [licenseCode, setLicenseCode] = useState("");
-  const { copy, copied } = useCopyToClipboard();
 
   const { license, isLoading, isUpdating, error, updateLicense } = useLicense();
-
-  const copySerialNumber = (serial: string) =>
-    copy(serial, {
-      successMessage: t("license.success.serialCopied"),
-      errorMessage: t("license.errors.updateFailed"),
-    });
 
   const handleUpdateLicense = () => {
     updateLicense(licenseCode, {
@@ -80,160 +46,22 @@ export const LicenseShow: React.FC = () => {
               <EmptyState>{t("license.noLicense")}</EmptyState>
             ) : license?.status ? (
               <>
-                <div className="flex items-center gap-2">
-                  <Label className="text-base font-semibold min-w-[120px]">
-                    {t("common.fields.status")}:
-                  </Label>
-                  <span
-                    className={cn(
-                      "text-base font-semibold",
-                      getPhaseColor(license.status.phase),
-                    )}
-                  >
-                    {t(`license.phase.${license.status.phase.toLowerCase()}`)}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.edition")}
-                    </Label>
-                    <div className="text-base">
-                      {t(
-                        `license.edition.${license.status.info.edition.toLowerCase()}`,
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.vendor")}
-                    </Label>
-                    <div className="text-base">
-                      {license.status.info.vendor}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.licenseType")}
-                    </Label>
-                    <div className="text-base">
-                      {t(
-                        `license.licenseType.${license.status.info.license_type.toLowerCase()}`,
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.signDate")}
-                    </Label>
-                    <div className="text-base">
-                      {formatDate(license.status.info.sign_date)}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.period")}
-                    </Label>
-                    <div className="text-base">
-                      {license.status.info.period === MAX_UNLIMITED
-                        ? t("license.permanent")
-                        : `${formatPeriod(license.status.info.period)} ${t("license.fields.days")}`}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.expirationDate")}
-                    </Label>
-                    <div className="text-base">
-                      {license.status.info.period === MAX_UNLIMITED
-                        ? t("license.permanent")
-                        : `${formatDate(
-                            license.status.info.sign_date +
-                              license.status.info.period,
-                          )} (${calculateRemainingDays(
-                            license.status.info.sign_date,
-                            license.status.info.period,
-                          )} ${t("license.fields.days")})`}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.maxGpus")}
-                    </Label>
-                    <div className="text-base">
-                      {license.status.info.max_gpus === MAX_UNLIMITED
-                        ? t("license.unlimited")
-                        : license.status.info.max_gpus}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-sm text-muted-foreground">
-                      {t("license.fields.serial")}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <div className="text-base font-mono break-all flex-1">
-                        {license.status.info.serial}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          copySerialNumber(license.status?.info.serial ?? "")
-                        }
-                        className="shrink-0"
-                      >
-                        {copied ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
+                <LicenseStatus status={license.status} />
+                <DetailFields
+                  fields={licenseInfoFields}
+                  record={license.status.info}
+                  className="lg:grid-cols-2"
+                />
                 {license.status.usage && (
-                  <div className="pt-4 border-t">
-                    <Label className="text-base font-semibold mb-3 block">
+                  <div className="border-t pt-4">
+                    <Label className="mb-3 block text-base font-semibold">
                       {t("license.usage.title")}
                     </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {license.status.usage.GPU && (
-                        <div className="space-y-1">
-                          <Label className="text-sm text-muted-foreground">
-                            GPU
-                          </Label>
-                          <div className="text-base">
-                            {license.status.usage.GPU.used ?? 0} /{" "}
-                            {license.status.usage.GPU.limit === MAX_UNLIMITED
-                              ? t("license.unlimited")
-                              : license.status.usage.GPU.limit}
-                          </div>
-                        </div>
-                      )}
-                      {license.status.usage.Workspace && (
-                        <div className="space-y-1">
-                          <Label className="text-sm text-muted-foreground">
-                            {t("common.fields.workspace")}
-                          </Label>
-                          <div className="text-base">
-                            {license.status.usage.Workspace.used} /{" "}
-                            {license.status.usage.Workspace.limit ===
-                            MAX_UNLIMITED
-                              ? t("license.unlimited")
-                              : license.status.usage.Workspace.limit}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <DetailFields
+                      fields={licenseUsageFields(license.status.usage)}
+                      record={license.status.usage}
+                      className="lg:grid-cols-2"
+                    />
                   </div>
                 )}
               </>

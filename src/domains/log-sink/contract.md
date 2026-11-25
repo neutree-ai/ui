@@ -53,7 +53,12 @@ array carries a `mergekey`; `extra_fields` is a map without masked values.
   pinned by `LogSinkStatus.test.tsx`), label `status.phases.logSink.<phase>`.
 - Columns `useMetadataColumns().name`, no workspace column; time `Timestamp` (last sent, last connection test),
   `MetadataTimestampMeta` (show header).
-- Local formatters (not shared roles): `formatEventCount` (`en-US` grouping, absent = 0, the API omits zero counters);
+- Detail fields: `logSinkHeaderFields`, `logSinkDestinationFields`, `logSinkDeliveryFields`
+  (`lib/detail-fields.tsx`, tested in `lib/detail-fields.test.ts`) describe every show-page field, rendered by
+  `DetailFields` / `FieldValue` (Foundation "Detail fields"): enabled and skip-TLS as yes / no, counters as locale
+  numbers (absent = 0, the API omits zero counters), extra fields as `key=value` chips, an absent username as the
+  empty marker, the last test through `role/ConnectionTestResult`. Omitted settings show their default with `log_sinks.values.defaultSuffix` or a `*Default` text.
+- Local formatters (not shared roles): `formatEventCount` (list columns; `en-US` grouping, absent = 0);
   `bytesToGib` / `gibToBytes` (GiB in the form, bytes on the wire; show `log_sinks.values.bufferGib`, absent
   `bufferDefault`); `isLogSinkEnabled` (only explicit `false` is off); `formatLogSinkDestination`; `toAuthType`
   (anything but basic/bearer is none).
@@ -65,8 +70,9 @@ array carries a `mergekey`; `extra_fields` is a map without masked values.
 - List: default sorter `metadata->name` asc, search `metadata->>name`, no batch delete; row actions edit, enable /
   disable (`LogSinkEnableAction`), delete. The AI traces button polls every 15 s via `summarizeForwarding` (enabled
   count; Failed beats Degraded as the alert).
-- Show: destination section by type, delivery section (counters, last sent, last connection test message), "test
-  connection" for the stored sink (`{id}`), actions edit, enable / disable, delete. Secrets never shown.
+- Show: header and two `DetailFields` sections (destination by type; delivery: counters, last sent, last
+  connection test and its message), "test connection" for the stored sink (`{id}`), actions edit, enable /
+  disable, delete. Secrets never shown.
 - Create (`use-log-sink-form.tsx`): starts victorialogs, enabled, s3 path style on, compression gzip. Payload
   `toLogSinkPayload(values, "create")`: `{api_version, kind, metadata:{name: trimmed}, spec}`.
 - Edit: locked name, type. Prefilled via `select` -> `toLogSinkFormValues` (blank secrets, buffer in GiB, extra fields

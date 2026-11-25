@@ -35,21 +35,26 @@ Server ownership means received data. Only replacement code is editable; all bac
 
 `ResourceType` contains only GPU and Workspace. There is no features array, entitlement map, activation flag
 or explicit expiry timestamp. Expiration derives from sign date and period.
-Version, usage details, metadata and status timestamps/messages are hidden.
+Version, usage details and metadata are hidden; the status message and transition time appear in the status tooltip.
 
 ## Roles
 
-- Time: local `formatDate` multiplies Unix seconds by 1000 and calls browser `toLocaleDateString`.
-  Locale and timezone follow the browser.
-- Duration: `formatPeriod` floors seconds to whole days; `calculateRemainingDays` rounds positive remaining days
-  upward and clamps expired values to zero. The current instant is read when rendered, without a countdown timer.
+- Detail fields: `licenseInfoFields` and `licenseUsageFields` (`src/domains/license/lib/detail-fields.tsx`) describe
+  every shown field; `DetailFields` (`foundation/scene`) lays them out and `FieldValue` (`foundation/type`) renders
+  plain values. Tests: `lib/detail-fields.test.ts`. See `src/foundation/contract.md`, "Detail fields".
+- Time: sign date uses `role/Timestamp` and expiration `formatTimestamp`, both with the `YYYY-MM-DD` format in the
+  browser timezone (Unix seconds).
+- Duration: the period floors seconds to whole days; `remainingDays` rounds positive remaining days upward and
+  clamps expired values to zero. The current instant is read when rendered, without a countdown timer.
 - Limits: `MAX_UNLIMITED` is -1. Permanent period hides both duration arithmetic and remaining days;
-  unlimited GPU maximum and usage limits use `license.unlimited`. Counts otherwise remain plain numbers.
-- Status: local `getPhaseColor` lowercases phase; Active is green, Expired red, Warning yellow, others gray.
-  Labels use `license.phase.<lowercase phase>`; Warning is outside the declared phase union and has no locale key.
-- Edition and license type use lowercased translation keys; vendor and serial are raw text.
-  Serial copying uses `useCopyToClipboard`, tested in `use-copy-to-clipboard.test.ts`.
-- Shared status mechanics: `src/foundation/contract.md`, “Status tone”; License retains its own text-only mapping.
+  unlimited GPU maximum and usage limits use `license.unlimited`. A limited GPU maximum is a number, formatted by
+  `FieldValue` for the locale; usage is the text `used / limit`.
+- Status: `LicenseStatus` (`src/domains/license/components/LicenseStatus.tsx`) renders `role/BaseStatus` with
+  `STATUS_TONE`: Active positive, Expired and Invalid serious, Pending notice, anything else neutral.
+  Labels use `license.phase.<lowercase phase>`. The chip's tooltip shows `status.error_message` and
+  `status.last_transition_time`.
+- Edition and license type use lowercased translation keys; vendor is raw text. Serial is raw text with a copy
+  button (`LicenseSerial`, `useCopyToClipboard`, tested in `use-copy-to-clipboard.test.ts`).
 
 ## Scenes
 
@@ -57,10 +62,11 @@ Version, usage details, metadata and status timestamps/messages are hidden.
   There is no resource-specific permission metadata or permission check on the page's update action.
 - Read (`useLicense`): `useCustom<License>` GET `/license`, retry false, automatic error notification disabled.
   It expects one object under provider `data`, without parameters.
-- Show (`LicenseShow`): phase, edition, vendor, license type, sign date, valid period, expiration, GPU maximum,
-  serial and optional resource usage. Loading shows `license.loading`; statusCode 404 shows `license.noLicense`.
+- Show (`LicenseShow`): status chip, then `DetailFields` over `status.info` (edition, vendor, license type, sign
+  date, valid period, expiration, GPU maximum, serial) and, when present, over `status.usage`.
+  Loading shows `license.loading`; statusCode 404 shows `license.noLicense`.
 - Missing status renders no license fields. Other read errors have no explicit message here; cached status can remain.
-  GPU usage defaults a nullish used count to zero; Workspace usage has no such fallback. Missing entries are omitted.
+  A nullish used count reads as zero for every usage entry. Missing entries are omitted.
 - Update (`handleUpdateLicense`): a blank textarea is independent of the fetched `spec.code`; success clears it.
   Only mutation loading disables it, including after a 404 or missing status.
 - Create, standalone Edit, Delete and batch actions: no UI. First activation and replacement share the update action.
@@ -110,8 +116,6 @@ Unknown values receive dynamically constructed keys without an explicit raw-valu
 
 - The shared hook and types stay in foundation because Role Assignment consumes the license capability.
   A move would add a cross-domain dependency.
-- Status uses local text colors rather than BaseStatus or STATUS_TONE; adopting either changes presentation.
-  Reasons for these presentation differences are unknown.
 - Update is a flat custom PATCH rather than the generic record edit flow; its backend reason is unverified.
   Shared edit payload mechanics: `src/foundation/contract.md`, “Edit PATCH”.
 
@@ -135,7 +139,7 @@ License error codes remain unknown.
 ## Open points
 
 No live activation was exercised. Licensed GET/PATCH schemas, authorization, masking, expiry enforcement and GPU
-accounting are unverified. Hidden errors, Warning phase and phase-independent gating are observations,
-not proven contradictions with the unavailable license API.
+accounting are unverified. Phase-independent gating is an observation, not a proven contradiction with the
+unavailable license API.
 `api.validate_workspace_limit` (`021_workspace_limits`) caps the public backend at one live workspace;
 licensed overrides and whether successful PATCH means immediate activation remain untraced.

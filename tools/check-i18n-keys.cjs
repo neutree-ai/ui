@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Checks that all t("key") calls in source code reference keys
- * that actually exist in the locale file.
+ * Checks that all t("key") calls and detail-field labels (field("key", …))
+ * in source code reference keys that actually exist in the locale file.
  *
  * Usage: node tools/check-i18n-keys.cjs
  */
@@ -50,14 +50,18 @@ function collectFiles(dir) {
 /** Extract t("...") keys from source, skipping dynamic expressions */
 const T_CALL_RE = /\bt\(\s*["'`]([^"'`]+)["'`]/g;
 
+// A detail-field descriptor names its label key as the first argument of
+// field("…") from foundation/scene/detail-field.
+const FIELD_CALL_RE = /\bfield\(\s*["'`]([^"'`]+)["'`]/g;
+const FIELD_MODULE_RE = /scene\/detail-field["']/;
+
 function extractKeys(content) {
-  const keys = [];
-  let match = T_CALL_RE.exec(content);
-  while (match !== null) {
-    keys.push(match[1]);
-    match = T_CALL_RE.exec(content);
-  }
-  return keys;
+  const patterns = FIELD_MODULE_RE.test(content)
+    ? [T_CALL_RE, FIELD_CALL_RE]
+    : [T_CALL_RE];
+  return patterns.flatMap((re) =>
+    [...content.matchAll(re)].map((match) => match[1]),
+  );
 }
 
 /* ---------- main ---------- */
@@ -84,7 +88,7 @@ if (missing.length === 0) {
 } else {
   console.error(`\n❌ ${missing.length} missing i18n key(s):\n`);
   for (const { file, key } of missing) {
-    console.error(`  ${file}: t("${key}")`);
+    console.error(`  ${file}: "${key}"`);
   }
   console.error(`
 How to fix:
