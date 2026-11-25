@@ -23,11 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  API_KEY_SELECT_CONTENT_CLASS,
-  API_KEY_SELECT_ITEM_CLASS,
-  ApiKeyLabel,
-} from "@/domains/api-key/components/ApiKeyLabel";
+import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import {
   type AITrace,
   type AITraceFilterParams,
@@ -306,7 +302,9 @@ export const AITracesList = () => {
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className={API_KEY_SELECT_CONTENT_CLASS}>
+          {/* The list stops growing at the cap, and each item's text may
+              shrink so a long description clips instead of widening it. */}
+          <SelectContent className="max-w-[360px]">
             <SelectItem value="all">
               {t("ai_traces.filters.allApiKeys")}
             </SelectItem>
@@ -314,7 +312,7 @@ export const AITracesList = () => {
               <SelectItem
                 key={k.id}
                 value={k.id}
-                className={API_KEY_SELECT_ITEM_CLASS}
+                className="[&>span:last-child]:min-w-0"
               >
                 <ApiKeyLabel
                   name={k.metadata?.name ?? k.id}

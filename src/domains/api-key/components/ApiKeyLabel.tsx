@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -6,7 +6,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  type ApiKeyLabelParts,
   apiKeyLabelDetails,
   apiKeyLabelParts,
 } from "@/domains/api-key/lib/api-key-label";
@@ -15,16 +14,12 @@ import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 
-/**
- * Class names that keep an API key select to a stable width: the open list
- * stops growing at the cap, and each item may shrink so its label can clip.
- */
-export const API_KEY_SELECT_CONTENT_CLASS = "max-w-[360px]";
-export const API_KEY_SELECT_ITEM_CLASS = "[&>span:last-child]:min-w-0";
+const INTERACTIVE = 'button, a, [role="option"], [role="combobox"]';
 
 /**
- * One clipped line. Its tooltip carries the full text when the line is cut off,
- * or always when `alwaysTip` says the tooltip holds more than the line shows.
+ * One clipped line. Its tooltip carries the full text when the line is cut
+ * off, or always when `alwaysTip` says the tooltip holds more than the line
+ * shows. Without `tip`, the tooltip repeats the line's own text.
  */
 function ClippedLine({
   tip,
@@ -32,103 +27,102 @@ function ClippedLine({
   className,
   children,
 }: {
-  tip: ReactNode;
+  tip?: ReactNode;
   alwaysTip?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const truncated = useIsTruncated(ref);
+  const tipped = useIsTruncated(ref) || alwaysTip;
+  // Inside a button, link or select the control itself takes focus; a second
+  // stop inside it would nest one interactive element in another.
+  const [nested, setNested] = useState(false);
+  useLayoutEffect(() => {
+    setNested(Boolean(ref.current?.parentElement?.closest(INTERACTIVE)));
+  }, []);
+  const focusable = tipped && !nested;
   const line = (
     <div
       ref={ref}
-      tabIndex={truncated || alwaysTip ? 0 : undefined}
-      className={cn("truncate", className)}
+      tabIndex={focusable ? 0 : undefined}
+      className={cn(
+        "truncate",
+        focusable &&
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--nt-outline-active-focus)]",
+        className,
+      )}
     >
       {children}
     </div>
   );
-  if (!truncated && !alwaysTip) return line;
+  if (!tipped) return line;
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>{line}</TooltipTrigger>
-        <TooltipContent className="max-w-md break-all">{tip}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>{line}</TooltipTrigger>
+      <TooltipContent className="max-w-md break-all">
+        {tip ?? children}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 /**
  * An API key's name, with its technical name and description.
  *
- * `stacked` is the name with the technical name and description under it, for a
- * list row or table cell. `inline` is the name alone on one line, for a control
- * one line tall (a select trigger); `line` adds the description to that line,
- * for a chart legend. The one-line variants keep the rest in the tooltip.
+ * `stacked` is the name with the technical name and description under it, for
+ * a list row or table cell. `inline` is the name alone on one line, for a
+ * control one line tall (a select trigger), with the rest on its tooltip.
  */
 export function ApiKeyLabel({
   name,
   displayName,
   description,
-  parts,
   variant = "stacked",
   className,
 }: {
   name?: string | null;
   displayName?: string | null;
   description?: string | null;
-  /** A label already resolved by `apiKeyLabelParts`, in place of the three above. */
-  parts?: ApiKeyLabelParts;
-  variant?: "stacked" | "inline" | "line";
+  variant?: "stacked" | "inline";
   className?: string;
 }) {
   const { t } = useTranslation();
-  const label = parts ?? apiKeyLabelParts({ name, displayName, description });
-  const { primary, technicalName } = label;
-  const detail = label.description;
-  const primaryText = primary || <EmptyValue />;
+  const label = apiKeyLabelParts({ name, displayName, description });
+  const primary = label.primary || <EmptyValue />;
 
-  if (variant !== "stacked") {
+  if (variant === "inline") {
     const lines = apiKeyLabelDetails(label, t("api_keys.label.technicalName"));
     return (
-      <ClippedLine
-        alwaysTip={lines.length > 1}
-        tip={lines.map((line) => <div key={line}>{line}</div>)}
-        className={cn("min-w-0 text-sm", className)}
-      >
-        {primaryText}
-        {variant === "line" && detail ? (
-          <span className="ml-1 text-[10px] font-normal"> - {detail}</span>
-        ) : null}
-      </ClippedLine>
+      <TooltipProvider delayDuration={200}>
+        <ClippedLine
+          alwaysTip={lines.length > 1}
+          tip={<div className="whitespace-pre-line">{lines.join("\n")}</div>}
+          className={cn("min-w-0 text-sm", className)}
+        >
+          {primary}
+        </ClippedLine>
+      </TooltipProvider>
     );
   }
 
   return (
-    <div className={cn("min-w-0 text-left", className)}>
-      <ClippedLine tip={primary} className="text-sm">
-        {primaryText}
-      </ClippedLine>
-      {technicalName ? (
-        <ClippedLine
-          tip={technicalName}
-          className="font-mono text-[10px] font-normal leading-4 text-muted-foreground/70"
-        >
-          {technicalName}
-        </ClippedLine>
-      ) : null}
-      {detail ? (
-        // The leading is explicit: at 10px the line otherwise inherits the
-        // name's 20px line box, which reads as a gap between the two lines and
-        // pushes the block out of any control sized for one line.
-        <ClippedLine
-          tip={detail}
-          className="text-[10px] font-normal leading-4 text-muted-foreground/70"
-        >
-          {detail}
-        </ClippedLine>
-      ) : null}
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className={cn("min-w-0 text-left", className)}>
+        <ClippedLine className="text-sm">{primary}</ClippedLine>
+        {label.technicalName ? (
+          <ClippedLine className="font-mono text-[10px] font-normal leading-4 text-muted-foreground/70">
+            {label.technicalName}
+          </ClippedLine>
+        ) : null}
+        {label.description ? (
+          // The leading is explicit: at 10px the line otherwise inherits the
+          // name's 20px line box, which reads as a gap between the two lines and
+          // pushes the block out of any control sized for one line.
+          <ClippedLine className="text-[10px] font-normal leading-4 text-muted-foreground/70">
+            {label.description}
+          </ClippedLine>
+        ) : null}
+      </div>
+    </TooltipProvider>
   );
 }

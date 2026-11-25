@@ -15,7 +15,6 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ApiKeyLabel } from "@/domains/api-key/components/ApiKeyLabel";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
 import {
@@ -395,23 +394,25 @@ export const UsageChart = ({
       formatter={(_value, entry) => {
         const key = String(entry?.dataKey ?? "");
         const seriesMeta = meta.get(key);
+        const name = seriesMeta?.name ?? key;
+        const description = seriesMeta?.description;
+        // Capped and clipped so a long description cannot push the other
+        // entries aside; the full text stays on the native title.
         return (
           <span
-            className="inline-block max-w-[240px] align-middle leading-tight"
+            className="inline-block max-w-[240px] truncate align-middle leading-tight"
+            title={description ? `${name} - ${description}` : name}
             style={{
               cursor: "pointer",
               opacity: hidden.has(key) ? 0.35 : 1,
             }}
           >
-            <ApiKeyLabel
-              variant="line"
-              className="text-[11px]"
-              parts={{
-                primary: seriesMeta?.name ?? key,
-                technicalName: seriesMeta?.technicalName ?? null,
-                description: seriesMeta?.description ?? null,
-              }}
-            />
+            {name}
+            {description ? (
+              <span className="ml-1 text-[10px] font-normal">
+                - {description}
+              </span>
+            ) : null}
           </span>
         );
       }}

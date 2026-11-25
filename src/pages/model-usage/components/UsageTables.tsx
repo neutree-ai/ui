@@ -92,10 +92,8 @@ const EmptyRow = ({ colSpan }: { colSpan: number }) => {
 };
 
 /**
- * Usage per entry — department, user, Team, API key or model — with each
- * entry's share of `total`. Pass `total` null when entries overlap, as Teams
- * do, so no share is shown that would not add up. An entry with a `target`
- * opens it through `onOpen`.
+ * An entry's name. `name` is the name the entry reads as; for an API key shown
+ * by its display name, `technicalName` holds its `metadata.name`.
  */
 const UsageKeyLabel = ({
   row,
@@ -103,14 +101,18 @@ const UsageKeyLabel = ({
   row: Pick<UsageSeries, "name" | "technicalName" | "description">;
 }) => (
   <ApiKeyLabel
-    parts={{
-      primary: row.name,
-      technicalName: row.technicalName ?? null,
-      description: row.description,
-    }}
+    name={row.technicalName ?? row.name}
+    displayName={row.name}
+    description={row.description}
   />
 );
 
+/**
+ * Usage per entry — department, user, Team, API key or model — with each
+ * entry's share of `total`. Pass `total` null when entries overlap, as Teams
+ * do, so no share is shown that would not add up. An entry with a `target`
+ * opens it through `onOpen`.
+ */
 export function UsageTable<T>({
   nameHeader,
   rows,

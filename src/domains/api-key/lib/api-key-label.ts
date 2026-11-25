@@ -2,7 +2,7 @@
  * What an API key shows wherever it is named: usage tables and charts, the
  * access log and its filters. One rule keeps those places consistent.
  */
-export type ApiKeyLabelParts = {
+type ApiKeyLabelParts = {
   /** The name to read: the display name, or the technical name without one. */
   primary: string;
   /** `metadata.name` when a display name hides it; null when it is the primary. */

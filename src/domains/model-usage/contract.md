@@ -97,7 +97,8 @@ departments return no rows, unknown Teams can fail permission. `get_usage_by_dim
   Shares use one decimal or 0% without a denominator; nonpositive previous usage shows no comparison.
 - Names: `groupFact` uses `displayName`; `keyFact` uses `apiKeyLabelParts` (display name, else technical name, with the technical
   name kept as `technicalName`), or a deleted-key label with eight UUID characters; `ApiKeyLabel` displays it in
-  key tables and the chart legend, clipped with the full text on a tooltip.
+  the tables, clipped with the full text on a tooltip. Chart legend entries cap their width and clip, with the full
+  text on the native title.
 - Null model groups use `EMPTY_VALUE` through `modelOf`; detail missing model/endpoint/type uses `EmptyValue`. Null
   splits count as zero; ticks use M/D (`formatTick`), ranges use `formatRangeLabel`.
 - Empty: `model_usage.empty`, zero totals; first load has a loader; comparison failures hide change.

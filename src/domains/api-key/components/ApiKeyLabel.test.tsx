@@ -42,4 +42,21 @@ describe("ApiKeyLabel", () => {
     expect(tip.textContent).toContain("api_keys.label.technicalName");
     expect(tip.textContent).toContain("Production calls");
   });
+
+  it("leaves a clipped line out of the tab order inside a button", () => {
+    vi.mocked(useIsTruncated).mockReturnValue(true);
+    render(
+      <>
+        <ApiKeyLabel name="apikey-plain" />
+        <button type="button">
+          <ApiKeyLabel name="apikey-in-button" />
+        </button>
+      </>,
+    );
+
+    expect(screen.getByText("apikey-plain").tabIndex).toBe(0);
+    expect(screen.getByText("apikey-in-button").hasAttribute("tabindex")).toBe(
+      false,
+    );
+  });
 });
