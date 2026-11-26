@@ -194,6 +194,16 @@ describe("targets", () => {
     },
   );
 
+  it("explains an invalid limit on a fixed route", () => {
+    renderEditor([makeRoute()]);
+
+    change(field("maxInflightRequests")[0], "-1");
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "external_endpoints.messages.maxInflightRequestsInvalid",
+    );
+  });
+
   it("offers no target removal on a fixed route", () => {
     renderEditor([makeRoute()]);
 

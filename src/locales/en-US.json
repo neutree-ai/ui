@@ -1985,8 +1985,7 @@
 			"selectProvider": "Select a model service",
 			"provider": "e.g. local-vllm",
 			"weight": "0-100",
-			"maxInflightRequests": "Maximum concurrent requests",
-			"primaryCapacity": "Enter concurrency limit"
+			"maxInflightRequests": "Maximum concurrent requests"
 		},
 		"quickCreate": {
 			"title": "Quickly create upstream channel",

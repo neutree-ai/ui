@@ -1,6 +1,8 @@
 import type { ModelRoute } from "../types";
 
 // Shared by inline feedback, save availability, and the submission guard.
+// Concurrency limits are checked where the editor offers them: every strategy
+// but weighted, where an empty or 0 limit means unlimited.
 export function getRouteStrategyError(route: ModelRoute) {
   if (route.strategy === "weighted") {
     if (
@@ -17,6 +19,7 @@ export function getRouteStrategyError(route: ModelRoute) {
       return "external_endpoints.messages.weightTotalInvalid";
   }
   if (
+    route.strategy !== "weighted" &&
     route.targets.some(
       ({ max_inflight_requests: limit }) =>
         limit != null &&

@@ -57,6 +57,14 @@ export function priorityTargetIndices(route: ModelRoute) {
   };
 }
 
+/** A target can be removed unless it is the route's last target or a priority route's last primary target. */
+export function canRemoveTarget(route: ModelRoute, index: number) {
+  if (route.targets.length <= 1) return false;
+  if (routeStrategyOf(route) !== "priority") return true;
+  const { primary } = priorityTargetIndices(route);
+  return !(primary.includes(index) && primary.length <= 1);
+}
+
 /** A blank target added to a route; a priority route places it in the requested tier. */
 export function newRouteTarget(strategy: RouteStrategy, primary: boolean) {
   const target: ModelRouteTarget = { upstream: "", upstream_model: "" };

@@ -75,9 +75,32 @@ describe("externalEndpointShowView", () => {
     expect(view.monitorsRoutes).toBe(false);
     expect(view.routes.map((route) => route.model)).toEqual(["chat", "embed"]);
     expect(view.callableModels).toEqual(["chat"]);
-    expect(view.upstreams.map((card) => card.failedStatus?.phase)).toEqual([
-      undefined,
-      "Failed",
+    expect(view.upstreams.map((card) => card.failure)).toEqual([
+      null,
+      { models: ["embed"], servedByOther: false },
     ]);
+  });
+
+  it("lists only the failed upstream's models no ready upstream still serves", () => {
+    const failure = (models: string[]) =>
+      externalEndpointShowView(
+        withStatus(
+          makeExternalEndpoint({
+            upstreams: [makeUpstream(), makeUpstream({ name: "b" })],
+          }),
+          {
+            upstream_status: [
+              { ref: "https://example.com", phase: "Failed", models },
+              { ref: "https://example.com", phase: "Ready", models: ["chat"] },
+            ],
+          },
+        ),
+      ).upstreams[0].failure;
+    expect(failure(["chat", "embed"])).toEqual({
+      models: ["embed"],
+      servedByOther: false,
+    });
+    expect(failure(["chat"])).toEqual({ models: [], servedByOther: true });
+    expect(failure([])).toEqual({ models: [], servedByOther: false });
   });
 });

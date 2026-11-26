@@ -187,8 +187,8 @@ export const ExternalEndpointsShow = () => {
                             )}
                           </div>
                         </div>
-                        {upstream.failedStatus && (
-                          <FailedUpstreamAlert status={upstream.failedStatus} />
+                        {upstream.failure && (
+                          <FailedUpstreamAlert {...upstream.failure} />
                         )}
                         <p className="mt-2 break-all text-xs text-muted-foreground">
                           <span className="mr-2">

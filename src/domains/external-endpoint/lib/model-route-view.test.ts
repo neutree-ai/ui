@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeRoute, makeTarget } from "../testing/fixtures";
 import {
+  canRemoveTarget,
   newRouteTarget,
   priorityTargetIndices,
   routeTargetRows,
@@ -57,6 +58,21 @@ describe("routeTargetRows", () => {
 });
 
 describe("editor route rules", () => {
+  it("keeps a route's last target and a priority route's last primary target", () => {
+    const priority = (...tiers: number[]) =>
+      makeRoute({
+        strategy: "priority",
+        targets: tiers.map((priority) => makeTarget({ priority })),
+      });
+    expect(canRemoveTarget(makeRoute(), 0)).toBe(false);
+    expect(canRemoveTarget(weights(50, 50), 0)).toBe(true);
+    expect([0, 1].map((i) => canRemoveTarget(priority(0, 1), i))).toEqual([
+      false,
+      true,
+    ]);
+    expect(canRemoveTarget(priority(0, 0, 1), 0)).toBe(true);
+  });
+
   it("counts an unset weight as 0 in the editor total", () => {
     expect(routeWeightTotal(weights(undefined, 40, 0))).toBe(40);
   });

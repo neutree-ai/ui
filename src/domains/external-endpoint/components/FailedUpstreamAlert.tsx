@@ -1,25 +1,20 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { UpstreamStatus } from "@/domains/external-endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 
 /**
  * Shown for an upstream the gateway could not resolve. The models listed are
- * exactly the ones that stopped answering; the error itself lives in the
+ * exactly the ones that stopped answering; when other upstreams still serve
+ * all of its models, it says so instead. The error itself lives in the
  * upstream's status badge, which also offers copy-to-clipboard.
  */
 export default function FailedUpstreamAlert({
-  status,
-  unavailableModels,
+  models,
+  servedByOther,
 }: {
-  status: UpstreamStatus;
-  unavailableModels?: Set<string>;
+  models: string[];
+  servedByOther: boolean;
 }) {
   const { t } = useTranslation();
-  const allModels = status.models ?? [];
-  const models = unavailableModels
-    ? allModels.filter((model) => unavailableModels.has(model))
-    : allModels;
-  const servedByOther = allModels.length > 0 && models.length === 0;
 
   return (
     <Alert variant="destructive" className="mb-4">
