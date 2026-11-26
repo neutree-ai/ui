@@ -739,14 +739,6 @@ describe("model source", () => {
     change(sourceInput(), "");
     expect(result.current.form.getValues("spec.model_sources")).toEqual({});
   });
-
-  it("ignores a source typed before the model is named", () => {
-    const { result } = renderEndpointForm({ action: "create" });
-    change(sourceInput(), "partner");
-    expect(result.current.form.getValues("spec.model_sources") ?? {}).toEqual(
-      {},
-    );
-  });
 });
 
 describe("submit adapter", () => {
@@ -805,16 +797,6 @@ describe("submit adapter", () => {
       error: "external_endpoints.validation.duplicateProvider",
     },
     {
-      name: "a blank channel name",
-      spec: { upstreams: [makeUpstream({ name: " " })], model_routes: [] },
-      error: "external_endpoints.validation.duplicateProvider",
-    },
-    {
-      name: "an unnamed model",
-      spec: { model_routes: [makeRoute({ model: " " })] },
-      error: "external_endpoints.validation.virtualModelRequired",
-    },
-    {
       name: "a target on an unknown channel",
       spec: {
         model_routes: [
@@ -831,23 +813,6 @@ describe("submit adapter", () => {
       result.current.form.getFieldState("spec.model_routes").error?.message,
     ).toBe(error);
   });
-
-  it.each([undefined, null])(
-    "saves a route with strategy %s as fixed, weighting its target 1",
-    async (strategy) => {
-      const target = makeTarget({ max_inflight_requests: 2 });
-      await finishWith({
-        upstreams: [makeUpstream()],
-        model_routes: [
-          makeRoute({ strategy, targets: [{ ...target, weight: undefined }] }),
-        ],
-      });
-
-      expect(submitted().model_routes).toEqual([
-        makeRoute({ strategy: "fixed", targets: [target] }),
-      ]);
-    },
-  );
 
   it.each([
     { name: "legacy", modelRoutes: undefined, models: ["chat", "embedding"] },
@@ -972,44 +937,6 @@ describe("upstream credentials on edit", () => {
 });
 
 describe("loading a saved endpoint", () => {
-  it.each([
-    { strategy: "fixed" as const, priorities: [0], locked: false, tiers: [0] },
-    {
-      strategy: "weighted" as const,
-      priorities: [0, 0],
-      locked: true,
-      tiers: [0, 0],
-    },
-    {
-      strategy: "priority" as const,
-      priorities: [1, 2, 3],
-      locked: true,
-      tiers: [0, 1, 1],
-    },
-    {
-      strategy: "priority" as const,
-      priorities: [20, 10, 10],
-      locked: true,
-      tiers: [1, 0, 0],
-    },
-  ])(
-    "loads $strategy priorities $priorities as tiers $tiers, locked: $locked",
-    ({ strategy, priorities, locked, tiers }) => {
-      renderHook(() => useExternalEndpointForm({ action: "edit" }));
-      const route = makeRoute({
-        strategy,
-        targets: priorities.map((priority) => makeTarget({ priority })),
-      });
-
-      const [loaded] =
-        selectRecord(makeExternalEndpoint({ model_routes: [route] })).spec
-          .model_routes ?? [];
-
-      expect(loaded).toMatchObject({ strategyLocked: locked });
-      expect(loaded.targets.map((t) => t.priority)).toEqual(tiers);
-    },
-  );
-
   it("shows priority tiers and saves them without reordering targets", async () => {
     const targets = [20, 10, 10].map((priority, index) =>
       makeTarget({

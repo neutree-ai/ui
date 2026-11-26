@@ -6,6 +6,7 @@ import { FormCombobox } from "@/foundation/role/FormCombobox";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
+/** `status` is set only when the endpoint reports a phase (`endpointRefOptions`). */
 export type EndpointOption = BaseOption & { status?: BaseStatus };
 
 type Props = Pick<ComponentProps<typeof FormCombobox>, "value" | "onChange"> & {
@@ -27,7 +28,7 @@ export const EndpointRefSelect = forwardRef<
         return (
           <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <span className="truncate">{endpoint.label}</span>
-            {endpoint.status?.phase ? (
+            {endpoint.status ? (
               <span className="shrink-0">
                 <PhaseStatus status={endpoint.status} phases={endpointPhases} />
               </span>

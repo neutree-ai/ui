@@ -190,7 +190,7 @@
   "src/pages/external-endpoints/list.tsx": "29b0068b072d90e212d7e49f68e6f8c6",
   "src/pages/external-endpoints/show.tsx": "48772aa051af8cfe9b4ce5314b5f1b3e",
   "src/domains/external-endpoint/types.ts": "3a358d624da131e808244858b135596a",
-  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "b11c3b3ab2986e480faa68eb0e3fc86a",
+  "src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": "7e458b8a2f878498f2ecc7b2e30b7bf9",
   "src/domains/external-endpoint/components/CurlExample.tsx": "20084d662c026beeeb9cc6cb69335ed1",
   "src/domains/external-endpoint/lib/build-curl-command.ts": "aef504b00a7ee2db2ff13d55784c114d",
   "src/domains/external-endpoint/lib/clean-upstreams-for-submit.ts": "4b8f30c86e76977d7e9c19796064b6cb",
@@ -318,9 +318,9 @@
   "src/domains/external-endpoint/components/ModelRouteEditor.tsx": "fd5ab8e01bdfafdb9cfb615e1546f7b1",
   "src/domains/external-endpoint/lib/get-upstream-model-mappings.ts": "83f08a26ea8f3d5293820a5dd138306e",
   "src/domains/external-endpoint/lib/validate-route-strategy.ts": "e00c054de33a0ae6ff674b09a01ef0f8",
-  "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "5cb03b267786c02e62acece9ce41e0a3",
+  "src/domains/external-endpoint/components/EndpointRefSelect.tsx": "c5d06f640a9de7cad8750ce594cc672e",
   "src/domains/external-endpoint/components/ModelRouteDetails.tsx": "cf3f7f93f0fb486d453a7d88150502d6",
-  "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "24580d14a08027df2cdef29db9367c7a",
+  "src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": "0610459512bb16469ac16d59f727ff27",
   "src/domains/external-endpoint/components/UpstreamNameLabel.tsx": "c77e91a288fedb5b75df5549d87b9797",
   "src/domains/api-key/components/ModelQuotaRows.tsx": "d24f20d0ce81e0e0888755a6162a76ff",
   "src/domains/external-endpoint/components/UpstreamModelInput.tsx": "6fb9c2a8fb83e106e83c090f42341569",
@@ -689,5 +689,7 @@
   "src/domains/api-key/lib/api-key-policy-form.ts": "c7bcd64ea1bb36883095faa629ad299f",
   "src/domains/api-key/lib/api-key-display-list.ts": "e4a9856092295f55d1ea79fdb1931627",
   "src/domains/api-key/lib/api-key-display-project.ts": "54cb7a7e62c99ba7a0bb19155c62b807",
-  "src/domains/api-key/lib/api-key-display-show.ts": "4bdad463ef8cb2931685a54ca104813e"
+  "src/domains/api-key/lib/api-key-display-show.ts": "4bdad463ef8cb2931685a54ca104813e",
+  "src/domains/external-endpoint/lib/external-endpoint-form-routes.ts": "f7b56fbb318ad10f8a0b26f5902cbc66",
+  "src/domains/external-endpoint/lib/external-endpoint-form-upstreams.ts": "085be980454c5fe98145055aa412c139"
 }

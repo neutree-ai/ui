@@ -19,7 +19,27 @@ import { useTestConnectivity } from "@/domains/external-endpoint/hooks/use-test-
 import { cleanUpstreamsForSubmit } from "@/domains/external-endpoint/lib/clean-upstreams-for-submit";
 import type { UpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
 import { deriveUpstreamType } from "@/domains/external-endpoint/lib/derive-upstream-type";
-import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
+import {
+  migrateLegacyRoutes,
+  modelSourceUsage,
+  removeRouteUpstream,
+  routeForForm,
+  routesForSubmit,
+  routeTargetsError,
+  setModelSource,
+  setRouteTargetUpstream,
+} from "@/domains/external-endpoint/lib/external-endpoint-form-routes";
+import {
+  blankExternalUpstream,
+  endpointRefOptions,
+  hasInvalidUpstreamNames,
+  nameUnnamedUpstreams,
+  newUpstreamName,
+  routeUpstreamLabel,
+  takenUpstreamNames,
+  upstreamName,
+  upstreamReference,
+} from "@/domains/external-endpoint/lib/external-endpoint-form-upstreams";
 import type { EditableModelRoute } from "@/domains/external-endpoint/lib/route-strategy";
 import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import { getRouteStrategyError } from "@/domains/external-endpoint/lib/validate-route-strategy";
@@ -39,7 +59,6 @@ import { useModelSourceLabel } from "@/foundation/model-reference/ModelSourceBad
 import {
   deriveRouteModelSource,
   modelSourceSuggestions,
-  parseStoredModelSource,
 } from "@/foundation/model-reference/model-source";
 import { FormSelect } from "@/foundation/role/FormSelect";
 import WorkspaceField from "@/foundation/role/WorkspaceField";
@@ -49,34 +68,6 @@ import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { useRefineFieldArray } from "@/foundation/scene/use-refine-field-array";
 import UpstreamNameLabel from "../components/UpstreamNameLabel";
 import { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
-
-const emptyExternalUpstream: UpstreamSpec = {
-  upstream: { url: "" },
-  auth: { type: "bearer", credential: "" },
-  model_mapping: {},
-  models: null,
-};
-
-function nextProviderName(usedNames: Set<string | undefined>) {
-  let index = 1;
-  while (usedNames.has(`provider-${index}`)) index++;
-  return `provider-${index}`;
-}
-
-function removeRouteProvider(
-  routes: ModelRoute[] | null | undefined,
-  providerName: string,
-): ModelRoute[] | null | undefined {
-  if (!routes) return routes;
-  return routes
-    .map((route) => ({
-      ...route,
-      targets: route.targets.filter(
-        (target) => target.upstream !== providerName,
-      ),
-    }))
-    .filter((route) => route.targets.length > 0);
-}
 
 export const useExternalEndpointForm = ({
   action,
@@ -125,27 +116,7 @@ export const useExternalEndpointForm = ({
               ...record,
               spec: {
                 ...record.spec,
-                model_routes: record.spec.model_routes?.map((route) => {
-                  const editable: EditableModelRoute = {
-                    ...route,
-                    strategyLocked:
-                      route.strategy === "priority" ||
-                      route.strategy === "weighted",
-                  };
-                  if (route.strategy !== "priority") return editable;
-                  // The form exposes two tiers: the lowest priority is primary;
-                  // all remaining targets share the standby tier on save.
-                  const primary = Math.min(
-                    ...route.targets.map((target) => target.priority ?? 0),
-                  );
-                  return {
-                    ...editable,
-                    targets: route.targets.map((target) => ({
-                      ...target,
-                      priority: (target.priority ?? 0) === primary ? 0 : 1,
-                    })),
-                  };
-                }),
+                model_routes: record.spec.model_routes?.map(routeForForm),
               },
             },
           };
@@ -173,13 +144,12 @@ export const useExternalEndpointForm = ({
   );
   const fields = upstreamFields.map((field) => {
     const initial = field as unknown as UpstreamSpec;
-    const reference = channelReferences.current.get(field.id) ?? {
-      name: initial.name ?? "",
-      url: initial.upstream?.url ?? "",
-    };
+    const reference =
+      channelReferences.current.get(field.id) ?? upstreamReference(initial);
     channelReferences.current.set(field.id, reference);
     return { ...field, name: reference.name, storedUrl: reference.url };
   });
+  const storedNames = fields.map((field) => field.name);
   const isEdit = action === "edit";
 
   const connectivity = useTestConnectivity();
@@ -195,15 +165,7 @@ export const useExternalEndpointForm = ({
   // upstream resolves to a single source.
   const modelSources = form.watch("spec.model_sources");
   const handleModelSourceChange = useCallback(
-    (model: string, value: string) => {
-      if (!model) return;
-
-      const next = { ...(form.getValues("spec.model_sources") ?? {}) };
-      const source = parseStoredModelSource(value);
-      if (source) next[model] = source;
-      else delete next[model];
-      form.setValue("spec.model_sources", next, { shouldDirty: true });
-    },
+    (model: string, value: string) => setModelSource(form, model, value),
     [form],
   );
 
@@ -217,27 +179,15 @@ export const useExternalEndpointForm = ({
   });
 
   const modelSourceLabel = useModelSourceLabel();
-  const modelSourceOptions = modelSourceSuggestions([
-    // What this form has already assigned, for the models it currently has.
-    // Without it a value typed for the first model is not offered for the
-    // second, which is exactly where retyping it slightly differently would
-    // fragment the set.
-    {
+  const modelSourceOptions = modelSourceSuggestions(
+    modelSourceUsage(
       modelSources,
-      models: effectiveModelRoutes.map((route) => route.model),
-    },
-    // Sibling endpoints, counted only for the models they still serve:
-    // suggesting a value whose last user is gone is the opposite of what this
-    // list is for.
-    ...(siblingEndpoints?.data ?? []).map((item) => {
-      const spec =
-        (item as { spec?: ExternalEndpointSpec | null }).spec ?? null;
-      return {
-        modelSources: spec?.model_sources,
-        models: getExposedModels(spec),
-      };
-    }),
-  ]).map((source) => ({
+      effectiveModelRoutes,
+      (siblingEndpoints?.data ?? []).map(
+        (item) => (item as { spec?: ExternalEndpointSpec | null }).spec ?? null,
+      ),
+    ),
+  ).map((source) => ({
     label: modelSourceLabel(source),
     value: source,
   }));
@@ -250,24 +200,7 @@ export const useExternalEndpointForm = ({
     (name: string, upstream: UpstreamSpec) => {
       if (!quickCreateTarget) return;
       append({ ...upstream, name });
-      const routes: ModelRoute[] = form.getValues("spec.model_routes") ?? [];
-      const { routeIndex, targetIndex } = quickCreateTarget;
-      form.setValue(
-        "spec.model_routes",
-        routes.map((route, index) =>
-          index === routeIndex
-            ? {
-                ...route,
-                targets: route.targets.map((target, index) =>
-                  index === targetIndex
-                    ? { ...target, upstream: name }
-                    : target,
-                ),
-              }
-            : route,
-        ),
-        { shouldDirty: true, shouldValidate: true },
-      );
+      setRouteTargetUpstream(form, quickCreateTarget, name);
       setQuickCreateTarget(null);
     },
     [append, form, quickCreateTarget],
@@ -277,21 +210,14 @@ export const useExternalEndpointForm = ({
   // same routes. Missing names are assigned once, never derived after deletion.
   useEffect(() => {
     if (!upstreams?.length) return;
-    const usedNames = new Set(
-      upstreams.map((upstream) => upstream.name).filter(Boolean),
+    const named = nameUnnamedUpstreams(
+      upstreams,
+      fields.map((field) => field.name),
     );
-    const named = upstreams.map((upstream, index) => {
-      if (fields[index]?.name || upstream.name) return upstream;
-      const name = nextProviderName(usedNames);
-      usedNames.add(name);
-      return { ...upstream, name };
-    });
     if (named.some((upstream, index) => upstream !== upstreams[index]))
       replace(named);
-    if (modelRoutes == null) {
-      form.setValue("spec.model_routes", routesFromLegacy(named));
-    }
-  }, [upstreams, fields, modelRoutes, replace, form.setValue]);
+    migrateLegacyRoutes(form, modelRoutes, named);
+  }, [upstreams, fields, modelRoutes, replace, form]);
 
   /** Auto-load models when an endpoint_ref is selected in the combobox */
   const handleEndpointRefChange = useCallback(
@@ -330,21 +256,11 @@ export const useExternalEndpointForm = ({
     meta: { workspace: currentWorkspace },
   });
 
-  const endpointOptions = (endpoints.query.data?.data || [])
-    .map((item) => {
-      const phase = (item as { status?: { phase?: string } }).status?.phase;
-      return {
-        label: item.metadata.name,
-        value: item.metadata.name,
-        phase,
-        status: (item as { status?: { phase?: string } }).status,
-      };
-    })
-    .sort((a, b) => {
-      const aRunning = a.phase === "Running" ? 0 : 1;
-      const bRunning = b.phase === "Running" ? 0 : 1;
-      return aRunning - bRunning;
-    });
+  const endpointOptions = endpointRefOptions(
+    (endpoints.query.data?.data ?? []) as Parameters<
+      typeof endpointRefOptions
+    >[0],
+  );
 
   const originalOnFinish = form.refineCore.onFinish;
   form.refineCore.onFinish = async (values) => {
@@ -357,13 +273,8 @@ export const useExternalEndpointForm = ({
       );
     }
     if (v.spec) {
-      const providerNames = (v.spec.upstreams ?? []).map(
-        (upstream) => upstream.name?.trim() || "",
-      );
-      if (
-        providerNames.some((name) => !name) ||
-        new Set(providerNames).size !== providerNames.length
-      ) {
+      const providerNames = (v.spec.upstreams ?? []).map(upstreamName);
+      if (hasInvalidUpstreamNames(providerNames)) {
         form.setError("spec.model_routes", {
           type: "validate",
           message: t("external_endpoints.validation.duplicateProvider"),
@@ -374,31 +285,11 @@ export const useExternalEndpointForm = ({
         // Inline feedback and disabled buttons use the same rules; also guard direct submissions.
         if (v.spec.model_routes.some(getRouteStrategyError)) return;
 
-        const seenModels = new Set<string>();
-        const invalid = v.spec.model_routes.find((route) => {
-          if (!route.model.trim() || seenModels.has(route.model.trim())) {
-            return true;
-          }
-          seenModels.add(route.model.trim());
-          if (!route.targets.length) return true;
-          if (
-            route.targets.some(
-              (target) =>
-                !target.upstream.trim() ||
-                !target.upstream_model.trim() ||
-                !fields.some((field) => field.name === target.upstream),
-            )
-          ) {
-            return true;
-          }
-          return false;
-        });
-        if (invalid) {
+        const routeError = routeTargetsError(v.spec.model_routes, storedNames);
+        if (routeError) {
           form.setError("spec.model_routes", {
             type: "validate",
-            message: invalid.model.trim()
-              ? t("external_endpoints.validation.routeTargetRequired")
-              : t("external_endpoints.validation.virtualModelRequired"),
+            message: t(routeError),
           });
           return;
         }
@@ -412,23 +303,10 @@ export const useExternalEndpointForm = ({
         ...upstream,
         model_mapping: {},
       }));
-      v.spec.model_routes = (routes as EditableModelRoute[]).map(
-        ({ strategyLocked: _strategyLocked, ...route }) => ({
-          ...route,
-          strategy: route.strategy ?? "fixed",
-          targets: route.targets.map((target) => ({
-            ...target,
-            upstream:
-              providerNames[
-                fields.findIndex((field) => field.name === target.upstream)
-              ] ?? target.upstream,
-            priority: target.priority ?? 0,
-            weight:
-              route.strategy === "weighted"
-                ? target.weight
-                : target.weight || 1,
-          })),
-        }),
+      v.spec.model_routes = routesForSubmit(
+        routes as EditableModelRoute[],
+        storedNames,
+        providerNames,
       );
     }
     return originalOnFinish(v);
@@ -509,8 +387,8 @@ export const useExternalEndpointForm = ({
               value={effectiveModelRoutes as ModelRoute[]}
               // Stable reference values, current editable display names.
               providers={fields.map((field, index) => ({
-                value: field.name || "",
-                label: upstreams?.[index]?.name || field.name || "",
+                value: field.name,
+                label: routeUpstreamLabel(upstreams?.[index], field.name),
                 modelListRequest: getUpstreamModelRequest(
                   upstreams?.[index],
                   currentWorkspace,
@@ -539,13 +417,8 @@ export const useExternalEndpointForm = ({
               size="sm"
               onClick={() => {
                 append({
-                  ...emptyExternalUpstream,
-                  name: nextProviderName(
-                    new Set([
-                      ...fields.map((field) => field.name),
-                      ...(upstreams ?? []).map((upstream) => upstream.name),
-                    ]),
-                  ),
+                  ...blankExternalUpstream(),
+                  name: newUpstreamName(storedNames, upstreams),
                 });
               }}
             >
@@ -568,7 +441,7 @@ export const useExternalEndpointForm = ({
                     </span>
                   }
                   title={
-                    upstreams?.[index]?.name?.trim() ||
+                    upstreamName(upstreams?.[index]) ||
                     t("external_endpoints.sections.modelService", {
                       index: index + 1,
                     })
@@ -586,9 +459,9 @@ export const useExternalEndpointForm = ({
                       onClick={() => {
                         form.setValue(
                           "spec.model_routes",
-                          removeRouteProvider(
+                          removeRouteUpstream(
                             form.getValues("spec.model_routes"),
-                            field.name || "",
+                            field.name,
                           ),
                           { shouldDirty: true },
                         );
@@ -784,10 +657,7 @@ export const useExternalEndpointForm = ({
           onOpenChange={(open) => {
             if (!open) setQuickCreateTarget(null);
           }}
-          existingNames={[
-            ...fields.map((field) => field.name || ""),
-            ...(upstreams ?? []).map((upstream) => upstream.name?.trim() || ""),
-          ]}
+          existingNames={takenUpstreamNames(storedNames, upstreams)}
           endpointOptions={endpointOptions}
           onCreate={handleQuickUpstreamCreate}
         />
