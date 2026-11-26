@@ -694,5 +694,5 @@
   "src/domains/external-endpoint/lib/external-endpoint-form-upstreams.ts": "085be980454c5fe98145055aa412c139",
   "src/domains/external-endpoint/lib/external-endpoint-display-show.ts": "4272adffc444bda64fab830b26520dcd",
   "src/domains/external-endpoint/lib/model-route-view.ts": "fa882c7655687a29f893bc4dd3fd4f90",
-  "src/domains/external-endpoint/testing/visual-fixtures.ts": "bab51b626e8b7dc02ef9fd91353e6ef4"
+  "src/domains/external-endpoint/testing/visual-fixtures.ts": "066589e68d5e522f457cf2fa681e3739"
 }

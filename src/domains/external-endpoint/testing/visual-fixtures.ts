@@ -76,7 +76,7 @@ export const routedExternalEndpoint: ExternalEndpoint = {
     phase: "Degraded",
     last_transition_time: "2026-05-30T10:00:00Z",
     error_message: null,
-    service_url: "http://gateway.example.com/v1",
+    service_url: "http://gateway.example.com",
     upstream_status: [
       {
         kind: "endpoint_ref",
