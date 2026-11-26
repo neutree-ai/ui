@@ -1,27 +1,4 @@
 {
-	"src/domains/api-key/components/ApiKeyLimitsCard.tsx": {
-		"entry.endpoint_name": 3,
-		"entry.model": 2,
-		"entry.remaining": 2,
-		"entry.token_limit": 1,
-		"entry.type": 2,
-		"entry.used": 1,
-		"limits.disabled": 1,
-		"limits.quota_granularity": 1,
-		"limits.quota_period": 1,
-		"limits.token_quota?.period": 1,
-		"m.token_limit": 1,
-		"quota.limit": 1,
-		"quota.remaining": 1,
-		"quota?.limit": 2,
-		"quota?.remaining": 1,
-		"quota?.used": 1
-	},
-	"src/domains/api-key/components/CreateApiKeyForm.tsx": {
-		"apiKey.status.sk_value": 1,
-		"apiKey.status?.sk_value": 1,
-		"apiKey?.status?.sk_value": 1
-	},
 	"src/domains/api-key/components/ProjectPicker.tsx": {
 		"p.metadata.name": 2,
 		"p.spec.description": 3,
@@ -36,30 +13,6 @@
 		"key.spec.limits?.disabled": 1,
 		"quota.period": 1,
 		"quota?.limit": 1
-	},
-	"src/domains/api-key/hooks/use-api-key-policy.ts": {
-		"e.token_limit": 1,
-		"entry.endpoint_name": 2,
-		"entry.token_limit": 1,
-		"entry.type": 2,
-		"l.quota_granularity": 1,
-		"l.quota_period": 1,
-		"l.quota_period_start": 1,
-		"l.quota_resets_at": 1,
-		"limits.concurrency": 5,
-		"limits.disabled": 1,
-		"limits.quota_period": 2,
-		"limits.rpm": 5,
-		"limits.rps": 5,
-		"limits.token_quota.limit": 1,
-		"limits.token_quota.period": 1,
-		"limits.token_quota?.limit": 1,
-		"m.endpoint_name": 2,
-		"m.remaining": 2,
-		"m.token_limit": 2,
-		"m.type": 2,
-		"m.used": 2,
-		"next.disabled": 2
 	},
 	"src/domains/cluster/hooks/use-cluster-form.tsx": {
 		"spec.accelerator_virtualization.enabled": 2,

@@ -23,15 +23,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
-  type ApiKeyPolicyFormValues,
-  apiKeyPolicyDefaults,
-  buildApiKeyLimits,
-  limitsToForm,
-  resolveQuotaPeriod,
   useApiKeyDisable,
   useApiKeyLimits,
   useModelSourceByValue,
 } from "@/domains/api-key/hooks/use-api-key-policy";
+import {
+  apiKeyLimitsDisabled,
+  apiKeyQuotaReadout,
+} from "@/domains/api-key/lib/api-key-limits-view";
+import {
+  type ApiKeyPolicyFormValues,
+  apiKeyPolicyDefaults,
+  buildApiKeyLimits,
+  limitsToForm,
+} from "@/domains/api-key/lib/api-key-policy-form";
 import type { ApiKeyLimits } from "@/domains/api-key/types";
 import { cn } from "@/foundation/lib/utils";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
@@ -115,7 +120,7 @@ export const ApiKeyLimitsCard = ({
     refresh().catch(() => {});
   }, [refresh]);
 
-  const disabled = !!limits.disabled;
+  const disabled = apiKeyLimitsDisabled(limits);
   const [toggling, setToggling] = useState(false);
 
   const onSave = async (values: FieldValues) => {
@@ -175,44 +180,7 @@ export const ApiKeyLimitsCard = ({
     }
   };
 
-  // Which quota is actually in force. Read it from the granularity the backend
-  // derived, never from whether token_quota exists: token_quota is deliberately
-  // retained in per-model mode so clearing the entry limits falls back to it,
-  // and showing it there would be a second, unenforced readout.
-  const granularity = limits.quota_granularity ?? "overall";
-  // Clamp the period to a known value so the i18n lookup never renders the raw
-  // key when the backend returns an unexpected period.
-  const period = resolveQuotaPeriod(
-    limits.quota_period ?? limits.token_quota?.period,
-  );
-  // Server-computed; absent on an older response, in which case the period name
-  // is shown on its own rather than a date this client guessed.
-  const resetsAt = limits.quota_resets_at;
-
-  // Token-quota consumption (current period) — computed by get_api_key_limits.
-  const quota = limits.token_quota;
-  const hasQuota =
-    granularity === "overall" && !!quota?.limit && quota.limit > 0;
-  const used = Number(quota?.used ?? 0) || 0;
-  const limit = Number(quota?.limit ?? 0) || 0;
-  // Prefer the backend-computed remaining (source of truth; may be negative to
-  // convey overage); fall back to limit - used when it isn't provided.
-  const remaining =
-    typeof quota?.remaining === "number" ? quota.remaining : limit - used;
-  const ratio = hasQuota ? used / limit : 0;
-  const pct = Math.max(0, Math.min(100, ratio * 100));
-  const over = hasQuota && used >= limit;
-  const warn = !over && ratio >= 0.8;
-
-  // Per-model consumption: one row per allowlist entry that carries a limit.
-  // Entries without one are unlimited and carry no used/remaining at all, so
-  // they get no readout here — the editor below still lists them.
-  const perModelEntries =
-    granularity === "per_model"
-      ? (limits.allowed_models ?? []).filter(
-          (m) => typeof m.token_limit === "number",
-        )
-      : [];
+  const { period, resetsAt, overall, perModel } = apiKeyQuotaReadout(limits);
 
   return (
     <Form {...form}>
@@ -320,7 +288,7 @@ export const ApiKeyLimitsCard = ({
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Per-model consumption (current period) */}
-            {perModelEntries.length > 0 && (
+            {perModel.length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">
                   {t("api_keys.limits.perModel.consumptionTitle")}
@@ -347,82 +315,66 @@ export const ApiKeyLimitsCard = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {perModelEntries.map((entry) => {
-                        const entryUsed = Number(entry.used ?? 0) || 0;
-                        const entryLimit = Number(entry.token_limit ?? 0) || 0;
-                        // remaining is authoritative and may be negative: a soft
-                        // quota can be overshot before enforcement catches up.
-                        const entryRemaining =
-                          typeof entry.remaining === "number"
-                            ? entry.remaining
-                            : entryLimit - entryUsed;
-                        const exhausted = entryRemaining <= 0;
-                        return (
-                          <tr
-                            key={`${entry.type ?? ""}|${entry.endpoint_name ?? ""}|${entry.model}`}
-                            className="border-t"
-                          >
-                            <td className="py-1.5 pr-3">
-                              <div className="font-medium">{entry.model}</div>
-                              <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground">
-                                {entry.endpoint_name ? (
-                                  <span>{entry.endpoint_name}</span>
-                                ) : null}
-                                {entry.type ? (
-                                  <ModelSourceBadge
-                                    source={
-                                      sourceByValue.get(
-                                        modelOptionValue(
-                                          entry.type,
-                                          entry.endpoint_name ?? "",
-                                          entry.model,
-                                        ),
-                                      ) ?? modelSourceOfEndpointKind(entry.type)
-                                    }
-                                  />
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="h-5 font-normal"
-                                  >
-                                    {t("api_keys.models.anySource")}
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-1.5 pr-3 tabular-nums">
-                              {formatTokenQuota(entryLimit)}
-                            </td>
-                            <td className="py-1.5 pr-3 tabular-nums">
-                              {formatTokenQuota(entryUsed)}
-                            </td>
-                            <td
-                              className={cn(
-                                "py-1.5 pr-3 tabular-nums",
-                                exhausted && "text-destructive",
-                              )}
-                            >
-                              {exhausted
-                                ? t("api_keys.limits.perModel.exhausted", {
-                                    amount: formatTokenQuota(entryRemaining),
-                                  })
-                                : formatTokenQuota(entryRemaining)}
-                            </td>
-                            <td className="py-1.5">
-                              <div>
-                                {t(`api_keys.limits.periods.${period}`)}
-                              </div>
-                              {resetsAt ? (
-                                <div className="text-xs text-muted-foreground">
-                                  {t("api_keys.limits.resetsOn", {
-                                    date: resetsAt,
-                                  })}
-                                </div>
+                      {perModel.map((entry) => (
+                        <tr key={entry.key} className="border-t">
+                          <td className="py-1.5 pr-3">
+                            <div className="font-medium">{entry.model}</div>
+                            <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground">
+                              {entry.endpointName ? (
+                                <span>{entry.endpointName}</span>
                               ) : null}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              {entry.type ? (
+                                <ModelSourceBadge
+                                  source={
+                                    sourceByValue.get(
+                                      modelOptionValue(
+                                        entry.type,
+                                        entry.endpointName ?? "",
+                                        entry.model,
+                                      ),
+                                    ) ?? modelSourceOfEndpointKind(entry.type)
+                                  }
+                                />
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="h-5 font-normal"
+                                >
+                                  {t("api_keys.models.anySource")}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-1.5 pr-3 tabular-nums">
+                            {formatTokenQuota(entry.limit)}
+                          </td>
+                          <td className="py-1.5 pr-3 tabular-nums">
+                            {formatTokenQuota(entry.used)}
+                          </td>
+                          <td
+                            className={cn(
+                              "py-1.5 pr-3 tabular-nums",
+                              entry.exhausted && "text-destructive",
+                            )}
+                          >
+                            {entry.exhausted
+                              ? t("api_keys.limits.perModel.exhausted", {
+                                  amount: formatTokenQuota(entry.remaining),
+                                })
+                              : formatTokenQuota(entry.remaining)}
+                          </td>
+                          <td className="py-1.5">
+                            <div>{t(`api_keys.limits.periods.${period}`)}</div>
+                            {resetsAt ? (
+                              <div className="text-xs text-muted-foreground">
+                                {t("api_keys.limits.resetsOn", {
+                                  date: resetsAt,
+                                })}
+                              </div>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -433,7 +385,7 @@ export const ApiKeyLimitsCard = ({
             )}
 
             {/* Token-quota consumption */}
-            {hasQuota && (
+            {overall && (
               <div className="space-y-1">
                 <div className="text-sm font-medium">
                   {t("api_keys.limits.consumptionTitle")}
@@ -442,20 +394,21 @@ export const ApiKeyLimitsCard = ({
                   <div
                     className={cn(
                       "h-full transition-all",
-                      over
+                      overall.over
                         ? "bg-destructive"
-                        : warn
+                        : overall.warn
                           ? "bg-amber-500"
                           : "bg-primary",
                     )}
-                    style={{ width: `${pct}%` }}
+                    style={{ width: `${overall.percent}%` }}
                   />
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {formatTokenQuota(used)} / {formatTokenQuota(limit)}{" "}
+                  {formatTokenQuota(overall.used)} /{" "}
+                  {formatTokenQuota(overall.limit)}{" "}
                   {t("api_keys.limits.tokensUnit")} ·{" "}
                   {t("api_keys.limits.remainingLabel")}:{" "}
-                  {formatTokenQuota(remaining)} ·{" "}
+                  {formatTokenQuota(overall.remaining)} ·{" "}
                   {t(`api_keys.limits.periods.${period}`)}
                   {resetsAt
                     ? ` · ${t("api_keys.limits.resetsOn", { date: resetsAt })}`

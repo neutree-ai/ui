@@ -169,7 +169,7 @@
   "src/foundation/lib/clipboard.ts": "8ea6c6599de974dae258857f23378ae1",
   "src/foundation/hooks/use-copy-to-clipboard.ts": "07e810e997a67f0864304fb5ad441573",
   "src/domains/api-key/hooks/use-api-key-usage.ts": "3bb3d7500eec3e10abe17aabb67e9e31",
-  "src/domains/api-key/components/CreateApiKeyForm.tsx": "ec852418e9f06cd3e4d5e75c2e0016d1",
+  "src/domains/api-key/components/CreateApiKeyForm.tsx": "46074072feb9f44f8a5c4956e48ff65e",
   "src/domains/workspace/hooks/use-workspace-form.tsx": "8b0e2cc17108a15c696ae6422dac8a0a",
   "src/domains/user/hooks/use-user-form.tsx": "4ee5d1adc5ef30cbb950f20cacecdcbf",
   "src/domains/role-assignment/hooks/use-role-assignment-form.tsx": "033a5d09b16d10377648a723c222fdd3",
@@ -235,12 +235,12 @@
   "src/domains/cluster/lib/resource-status.ts": "35d911578f65ad13d4f5d33f65a4f9dd",
   "src/domains/endpoint/components/EndpointClusterGpuResourcesPanel.tsx": "e3dd7a7e9e18802d4fd5399a3ae5022d",
   "src/domains/cluster/lib/accelerator-virtualization.ts": "1dd92e93bb75bf024bfce03beaaa5bec",
-  "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "55fd2557b2bcd4ff4945ba18616a102f",
+  "src/domains/api-key/components/ApiKeyLimitsCard.tsx": "aca2a53362a8de8c6584ae7a63555a5c",
   "src/domains/api-key/components/ApiKeyPerformanceCard.tsx": "926eeb413183006a2f3dd794eaf7a6bf",
   "src/domains/api-key/components/ApiKeyPolicyFields.tsx": "61d5a441cf542b7508c765c002d6ff82",
   "src/domains/api-key/components/ApiKeyRankingOverview.tsx": "c155b86339b4d85d8e2c1468453a8f1c",
   "src/domains/api-key/components/ModelMultiSelect.tsx": "75fbf9a9580cce06bc263411d0102782",
-  "src/domains/api-key/hooks/use-api-key-policy.ts": "cf087c7bd4c0a9c3cf25832f77262ab0",
+  "src/domains/api-key/hooks/use-api-key-policy.ts": "736410b64f6d48441fb6136af12f9dc7",
   "src/pages/model-catalogs/edit.tsx": "2c4c4adbfe2de6c8b799bedf1b534cb3",
   "src/pages/model-catalogs/components/FeaturesList.tsx": "e68a4369a62b564bbbdcfd3c614a4b38",
   "src/pages/model-catalogs/components/ImportDialog.tsx": "500e7dc1df946211db999a6c19f0bf49",
@@ -684,5 +684,8 @@
   "src/domains/endpoint/lib/endpoint-form-capacity.ts": "d6b40c790a19f62833dd61867801ba23",
   "src/domains/endpoint/lib/endpoint-form-model.ts": "b0d4ef3300ed1e0908f1d2acf1b69189",
   "src/domains/endpoint/lib/endpoint-form-resources.ts": "330e56d416db0756aad84173c03ba792",
-  "src/domains/endpoint/testing/visual-fixtures.ts": "fee0bb2a5d28cb92ff7f8777c29b5b08"
+  "src/domains/endpoint/testing/visual-fixtures.ts": "fee0bb2a5d28cb92ff7f8777c29b5b08",
+  "src/domains/api-key/lib/api-key-limits-view.ts": "c477a59f3dda9105c790c1484947aa64",
+  "src/domains/api-key/lib/api-key-policy-form.ts": "c7bcd64ea1bb36883095faa629ad299f",
+  "src/domains/api-key/lib/created-key-secret.ts": "f515fd7e1fd3f60dde7530a536ab5cdc"
 }

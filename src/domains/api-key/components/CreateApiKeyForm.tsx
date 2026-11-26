@@ -13,13 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiKeyPolicyFields } from "@/domains/api-key/components/ApiKeyPolicyFields";
 import { CreatedKeySummary } from "@/domains/api-key/components/CreatedKeySummary";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
+import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
 import {
   type ApiKeyPolicyFormValues,
   apiKeyPolicyDefaults,
   buildApiKeyLimits,
-} from "@/domains/api-key/hooks/use-api-key-policy";
-import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+} from "@/domains/api-key/lib/api-key-policy-form";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
+import { createdKeySecret } from "@/domains/api-key/lib/created-key-secret";
 import { createdKeySummary } from "@/domains/api-key/lib/created-key-summary";
 import type { ApiKey } from "@/domains/api-key/types";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
@@ -182,7 +183,7 @@ export const CreateApiKeyForm = ({
           <div className="relative">
             <div className="p-3 bg-muted rounded-md border min-h-[60px] flex items-center">
               <code className="text-sm break-all font-mono leading-relaxed">
-                {apiKey.status?.sk_value}
+                {createdKeySecret(apiKey)}
               </code>
             </div>
             <Button
@@ -191,9 +192,8 @@ export const CreateApiKeyForm = ({
               size="sm"
               className="absolute top-2 right-2"
               onClick={() => {
-                if (apiKey?.status?.sk_value) {
-                  handleCopy(apiKey.status.sk_value);
-                }
+                const secret = createdKeySecret(apiKey);
+                if (secret) handleCopy(secret);
               }}
             >
               {copied ? (

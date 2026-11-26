@@ -76,8 +76,8 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   failed or its name) via `DetailFields` over `lib/detail-fields.ts`; timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
 - Create (`components/CreateApiKeyForm.tsx:onSubmit`): `create_api_key` sends workspace, null technical name,
   display name, Project/null, description, zero legacy quota and `buildApiKeyLimits` result. Expiry is absent.
-- Create success view: the one-time Secret, then a summary read from the RPC response (`createdKeySummary`,
-  `lib/created-key-summary.ts`): Project name (resolved from the workspace Project list the picker shares, so an inline
+- Create success view: the one-time Secret (`createdKeySecret`, `lib/created-key-secret.ts`), then a summary read
+  from the RPC response (`createdKeySummary`, `lib/created-key-summary.ts`): Project name (resolved from the workspace Project list the picker shares, so an inline
   created Project resolves; ungrouped when `spec.project_id` is null; `EmptyValue` if the id is not listed), display name
   and description (`EmptyValue` when blank), shown through `DetailFields`; the description clips at three lines.
   Application keys omit the Project row and read no Project list.
@@ -85,12 +85,16 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   and limits only. `132` requires an enabled account, Active Team and Team create permission.
 - Edit (`components/ApiKeyLimitsCard.tsx:saveConfiguration`): prefill identity from record props and limits from
   `get_api_key_limits`. `limitsToForm` restores exact units, including wildcard/partial pins and unavailable entries.
+  The form values, validation and mapping live in `lib/api-key-policy-form.ts` (tests beside it).
+- Edit consumption (`apiKeyQuotaReadout`, `lib/api-key-limits-view.ts`): follows `quota_granularity`, not token_quota
+  presence. Overall: used/limit/remaining with a bar (`quotaUsageMeter`: amber from 80%, red at the limit). Per-model:
+  one row per entry with token_limit; remaining ≤ 0 is exhausted. Remaining is the server's, else limit − used.
 - Save posts `update_api_key_configuration` with key UUID, Project/null, display name, description and rebuilt limits;
   disabled is preserved. Name/workspace/owner/expiry/status are absent. Blank description is sent as an empty string.
 - `buildApiKeyLimits`: drops blanks, deduplicates model/type/endpoint, omits empty numbers and computed usage;
-  per-model-only quotas send token_quota with period alone. Tests: `hooks/use-api-key-policy.test.ts`.
-- Enable/disable (`useApiKeyDisable`): read current limits, remove computed fields, then `set_api_key_limits`
-  with `{p_id,p_limits}`. Disable adds true; enable removes disabled. Empty allowed_models is retained here.
+  per-model-only quotas send token_quota with period alone.
+- Enable/disable (`useApiKeyDisable`): read current limits, remove computed fields (`limitsWithDisabled`), then
+  `set_api_key_limits` with `{p_id,p_limits}`. Disable adds true; enable removes disabled. Empty allowed_models is retained here.
 - Delete mechanics: `src/foundation/contract.md`, “Soft delete and force”. Personal list/show retain force controls;
   application list explicitly disables force. No local reference pre-check; missing row name/workspace blocks batch.
 - `ApiKeyController.sync` revokes the gateway consumer before Deleted, then removes the row next reconcile.
@@ -148,7 +152,7 @@ Force 10226 has no translation mapping; list deletion reports partial-failure co
    `src/pages/api-keys/show.tsx:ApiKeysShow` inherit `DeleteConfirmDialog`'s default allowForceDelete.
    API: `rejectAPIKeyForceDelete` (`internal/routes/proxies/api_key_validation.go`) returns 10226.
    Users selecting force receive a refusal instead of deleting their key. Ticket: TBD
-2. Untouched edit broadens an explicit deny-all key. UI: `hooks/use-api-key-policy.ts:limitsToForm` and
+2. Untouched edit broadens an explicit deny-all key. UI: `lib/api-key-policy-form.ts:limitsToForm` and
    `buildApiKeyLimits` turn `{allowed_models:[]}` into `{}`;
    `src/pages/api-keys/list.tsx:ModelsCell` labels it All models.
    API: `api.get_api_key_model_rules` (`137_subject_policies`) preserves deny-all arrays; `Kong.effectiveModelRules`
@@ -158,7 +162,7 @@ Force 10226 has no translation mapping; list deletion reports partial-failure co
    `components/TokenQuotaField.tsx:TokenQuotaField` use `isValidTokenQuota`, which requires a safe JavaScript integer.
    API: `api.validate_api_key_limits` (`099`) accepts int64 token limits up to 9223372036854775807.
    Users must reduce large quotas before saving; per-model mode can drop an unsafe overall fallback. Ticket: TBD
-4. A period-only overall configuration loses its period. UI: `hooks/use-api-key-policy.ts:buildApiKeyLimits`
+4. A period-only overall configuration loses its period. UI: `lib/api-key-policy-form.ts:buildApiKeyLimits`
    omits token_quota without any amount or entry limit. API: `api.validate_api_key_limits` (`099`) accepts
    `{token_quota:{period:"weekly"}}`; `api.get_api_key_limits` (`132`) returns its weekly period.
    An untouched save removes that period, so a later quota starts monthly. Ticket: TBD
