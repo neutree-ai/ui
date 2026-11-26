@@ -20,6 +20,10 @@ import {
   unversionedEngineEndpoint,
 } from "../../src/domains/endpoint/testing/visual-fixtures";
 import {
+  legacyExternalEndpoint,
+  routedExternalEndpoint,
+} from "../../src/domains/external-endpoint/testing/visual-fixtures";
+import {
   ldapSource,
   oidcSource,
   untestedOidcSource,
@@ -98,6 +102,20 @@ const apiKey = (id: string, row: typeof usedApiKey, ready: string): Screen => ({
   ready,
 });
 
+const externalEndpoint = (
+  id: string,
+  row: typeof routedExternalEndpoint,
+  page: "show" | "edit",
+): Screen => ({
+  id: `external-endpoint-${id}`,
+  route: `/${VISUAL_WORKSPACE}/external-endpoints/${page}/${row.metadata.name}`,
+  data: {
+    tables: { external_endpoints: [row], endpoints: [chatEndpoint] },
+  },
+  // A route card names its model only once the record has loaded.
+  ready: page === "show" ? row.metadata.name : "Configuration: chat",
+});
+
 /** Every page the visual diff screenshots; add one entry per screen. */
 export const screens: Screen[] = [
   license("active", activeLicense, "Example Corp"),
@@ -167,4 +185,8 @@ export const screens: Screen[] = [
     },
     ready: "Batch jobs",
   },
+  externalEndpoint("routed", routedExternalEndpoint, "show"),
+  externalEndpoint("legacy", legacyExternalEndpoint, "show"),
+  externalEndpoint("edit", routedExternalEndpoint, "edit"),
+  externalEndpoint("edit-legacy", legacyExternalEndpoint, "edit"),
 ];

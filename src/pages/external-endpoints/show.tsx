@@ -10,16 +10,11 @@ import ExternalEndpointMonitor, {
 import FailedUpstreamAlert from "@/domains/external-endpoint/components/FailedUpstreamAlert";
 import ModelRouteDetails from "@/domains/external-endpoint/components/ModelRouteDetails";
 import { externalEndpointHeaderFields } from "@/domains/external-endpoint/lib/detail-fields";
-import { getExposedModels } from "@/domains/external-endpoint/lib/get-exposed-models";
-import { getUnavailableModels } from "@/domains/external-endpoint/lib/get-unavailable-models";
-import { getUpstreamModelMappings } from "@/domains/external-endpoint/lib/get-upstream-model-mappings";
-import { isServingPhase } from "@/domains/external-endpoint/lib/is-serving-phase";
-import { matchUpstreamStatuses } from "@/domains/external-endpoint/lib/match-upstream-statuses";
+import { externalEndpointShowView } from "@/domains/external-endpoint/lib/external-endpoint-display-show";
 import {
   externalEndpointPhases,
   upstreamPhases,
 } from "@/domains/external-endpoint/lib/phases";
-import { routesFromLegacy } from "@/domains/external-endpoint/lib/routes-from-legacy";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import { Loader } from "@/foundation/components/Loader";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -59,23 +54,7 @@ export const ExternalEndpointsShow = () => {
     return <div>{t("pages.error.notFound")}</div>;
   }
 
-  const allModels = getExposedModels(record.spec);
-  const upstreamStatuses = matchUpstreamStatuses(
-    record.spec,
-    record.status?.upstream_status,
-  );
-  const isServing = isServingPhase(record.status?.phase);
-  // A degraded endpoint still serves, so the example must only offer models
-  // that are actually routable — not the ones its failed upstream dropped.
-  const unavailableModels = getUnavailableModels(upstreamStatuses);
-  const callableModels = allModels.filter(
-    (model) => !unavailableModels.has(model),
-  );
-
-  const upstreams = record.spec?.upstreams ?? [];
-  const routes = record.spec?.model_routes ?? routesFromLegacy(upstreams);
-  const upstreamName = (index: number) =>
-    upstreams[index]?.name || `provider-${index + 1}`;
+  const view = externalEndpointShowView(record);
 
   return (
     <ShowPage record={record} showCurrentBreadcrumb={false}>
@@ -105,9 +84,9 @@ export const ExternalEndpointsShow = () => {
               />
               {/* The URLs are long and only worth their space when asked for —
                   the same affordance the endpoint detail page uses. */}
-              {record.status?.service_url && (
+              {view.serviceUrl && (
                 <EndpointAccessSummary
-                  serviceUrl={record.status.service_url}
+                  serviceUrl={view.serviceUrl}
                   className="shrink-0"
                 />
               )}
@@ -146,17 +125,18 @@ export const ExternalEndpointsShow = () => {
               each one keeping ShowPage.Section's own 20px content padding and
               card radius instead of restating them tighter here. */}
           <div className="space-y-3">
-            {routes.length ? (
+            {view.routes.length ? (
               <ShowPage.Section
                 title={t("external_endpoints.sections.virtualModels")}
               >
                 <div className="space-y-3">
-                  {routes.map((route) => (
+                  {view.routes.map((route) => (
                     <ModelRouteDetails
                       key={route.model}
                       onViewMonitoring={
-                        record.spec?.model_routes?.length
-                          ? () => selectTab("monitor", route.model)
+                        view.monitorsRoutes
+                          ? // ddu-override: the monitor tab opens filtered to this route's model
+                            () => selectTab("monitor", route.model)
                           : undefined
                       }
                       route={route}
@@ -169,37 +149,29 @@ export const ExternalEndpointsShow = () => {
                         record.metadata.name,
                         { ...record.metadata, query: { model: route.model } },
                       )}
-                      serviceUrl={record.status?.service_url ?? undefined}
+                      serviceUrl={view.serviceUrl}
                     />
                   ))}
                 </div>
               </ShowPage.Section>
             ) : null}
 
-            {upstreams.length > 0 && (
+            {view.upstreams.length > 0 && (
               <ShowPage.Section
                 title={t("external_endpoints.sections.modelServices")}
               >
                 <div className="divide-y divide-border/50">
-                  {upstreams.map((upstream, index) => {
-                    const upstreamStatus = upstreamStatuses[index];
-                    const mappings = getUpstreamModelMappings(
-                      record.spec,
-                      upstream,
-                    );
-                    const exposedCount = new Set(
-                      mappings.flatMap((mapping) => mapping.exposedModels),
-                    ).size;
-
+                  {view.upstreams.map((upstream, index) => {
+                    const { mappings, status } = upstream;
                     return (
                       <div key={index} className="py-4 first:pt-1 last:pb-1">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-foreground">
-                              {upstreamName(index)}
+                              {upstream.name}
                             </span>
                             <span className="rounded-md bg-background px-2 py-1 text-xs text-muted-foreground shadow-sm">
-                              {upstream.endpoint_ref
+                              {upstream.internal
                                 ? t(
                                     "external_endpoints.options.upstreamTypeInternal",
                                   )
@@ -207,27 +179,24 @@ export const ExternalEndpointsShow = () => {
                                     "external_endpoints.options.upstreamTypeExternal",
                                   )}
                             </span>
-                            {upstreamStatus && (
+                            {status && (
                               <PhaseStatus
-                                status={upstreamStatus}
+                                status={status}
                                 phases={upstreamPhases}
                               />
                             )}
                           </div>
                         </div>
-                        {upstreamStatus?.phase === "Failed" && (
-                          <FailedUpstreamAlert status={upstreamStatus} />
+                        {upstream.failedStatus && (
+                          <FailedUpstreamAlert status={upstream.failedStatus} />
                         )}
                         <p className="mt-2 break-all text-xs text-muted-foreground">
                           <span className="mr-2">
-                            {upstream.endpoint_ref
+                            {upstream.internal
                               ? t("external_endpoints.fields.endpointRef")
                               : t("external_endpoints.fields.upstreamUrl")}
                           </span>
-                          <code>
-                            {upstream.endpoint_ref ||
-                              upstream.upstream?.url || <EmptyValue />}
-                          </code>
+                          <code>{upstream.reference ?? <EmptyValue />}</code>
                         </p>
                         <details className="group mt-3">
                           {/* Muted rather than primary: the primary-coloured
@@ -255,7 +224,7 @@ export const ExternalEndpointsShow = () => {
                               ),
                               exposed: t(
                                 "external_endpoints.messages.mappingExposedCount",
-                                { count: exposedCount },
+                                { count: upstream.exposedCount },
                               ),
                             })}
                           </summary>
@@ -316,10 +285,10 @@ export const ExternalEndpointsShow = () => {
               </ShowPage.Section>
             )}
 
-            {isServing && record.status?.service_url && (
+            {view.exampleServiceUrl && (
               <CurlExample
-                serviceUrl={record.status.service_url}
-                models={callableModels}
+                serviceUrl={view.exampleServiceUrl}
+                models={view.callableModels}
               />
             )}
           </div>

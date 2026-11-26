@@ -14,6 +14,11 @@ import { cn } from "@/foundation/lib/utils";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
 import type { ModelSource } from "@/foundation/model-reference/model-source";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
+import {
+  ROUTE_STRATEGY_TEXT,
+  routeStrategyOf,
+  routeTargetRows,
+} from "../lib/model-route-view";
 import CurlExample from "./CurlExample";
 
 type Props = {
@@ -32,25 +37,12 @@ export default function ModelRouteDetails({
   onViewMonitoring,
 }: Props) {
   const { t } = useTranslation();
-  const strategy = route.strategy ?? "fixed";
-  const showRole = strategy === "priority";
+  const strategy = routeStrategyOf(route);
   const showWeight = strategy === "weighted";
-  const totalWeight = route.targets.reduce(
-    (sum, target) => sum + (target.weight ?? 1),
-    0,
-  );
+  const rows = routeTargetRows(route);
   // Keep column positions consistent across routing strategies.
   const rowClassName =
     "grid grid-cols-[4fr_5fr_3fr] items-center text-left [&>*]:min-w-0 [&>*]:px-3";
-  const primaryPriority = Math.min(
-    ...route.targets.map((target) => target.priority ?? 0),
-  );
-  const strategyLabel =
-    strategy === "priority"
-      ? t("external_endpoints.options.priorityRouting")
-      : strategy === "weighted"
-        ? t("external_endpoints.options.weightedRouting")
-        : t("external_endpoints.options.fixedRouting");
 
   const strategyColor =
     strategy === "priority"
@@ -69,6 +61,7 @@ export default function ModelRouteDetails({
               heading (16px), and colour is reserved here for the source and
               strategy badges. */}
           <h3 className="min-w-0 break-all text-base font-semibold text-foreground">
+            {/* ddu-override: the card is titled by its route's model name, shown as stored */}
             {route.model}
           </h3>
           <ModelSourceBadge source={source} />
@@ -80,7 +73,7 @@ export default function ModelRouteDetails({
               strategyColor,
             )}
           >
-            {strategyLabel}
+            {t(ROUTE_STRATEGY_TEXT[strategy].label)}
           </span>
           {/* The chip is a label, everything after it is a control. Without the
               rule the strategy chip reads as a fourth, differently shaped
@@ -136,12 +129,15 @@ export default function ModelRouteDetails({
             >
               <DialogHeader>
                 <DialogTitle className="break-all pr-6">
-                  {t("external_endpoints.actions.testModel")} · {route.model}
+                  {t("external_endpoints.actions.testModel")} ·{" "}
+                  {/* ddu-override: the dialog names the route's model, shown as stored */}
+                  {route.model}
                 </DialogTitle>
               </DialogHeader>
               {serviceUrl && (
                 <CurlExample
                   serviceUrl={serviceUrl}
+                  // ddu-override: the example calls only this route's model
                   models={[route.model]}
                   className="mt-0 min-w-0 border-0 shadow-none"
                 />
@@ -180,19 +176,16 @@ export default function ModelRouteDetails({
             </tr>
           </thead>
           <tbody className="block divide-y">
-            {route.targets.map((target, index) => (
-              <tr
-                className={rowClassName}
-                key={`${target.upstream}-${target.upstream_model}-${index}`}
-              >
+            {rows.map((row) => (
+              <tr className={rowClassName} key={row.key}>
                 <td>
                   <div className="flex items-center justify-start gap-2">
-                    <span className="min-w-0 break-all">{target.upstream}</span>
-                    {showRole && (
+                    <span className="min-w-0 break-all">{row.upstream}</span>
+                    {row.role && (
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium",
-                          (target.priority ?? 0) === primaryPriority
+                          row.role === "primary"
                             ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300"
                             : "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
                         )}
@@ -201,7 +194,7 @@ export default function ModelRouteDetails({
                           aria-hidden="true"
                           className="h-1.5 w-1.5 rounded-full bg-current"
                         />
-                        {(target.priority ?? 0) === primaryPriority
+                        {row.role === "primary"
                           ? t("external_endpoints.options.primaryRole")
                           : t("external_endpoints.options.fallbackRole")}
                       </span>
@@ -210,20 +203,15 @@ export default function ModelRouteDetails({
                 </td>
                 <td>
                   <code className="break-all text-xs">
-                    {target.upstream_model || <EmptyValue />}
+                    {row.upstreamModel ?? <EmptyValue />}
                   </code>
                 </td>
                 {showWeight && (
-                  <td className="text-left tabular-nums">
-                    {Number(
-                      (((target.weight ?? 1) / totalWeight) * 100).toFixed(2),
-                    )}
-                    %
-                  </td>
+                  <td className="text-left tabular-nums">{row.weightShare}%</td>
                 )}
                 {!showWeight && (
                   <td className="text-left tabular-nums text-muted-foreground">
-                    {target.max_inflight_requests ||
+                    {row.maxInflight ??
                       t("external_endpoints.fields.unlimited")}
                   </td>
                 )}

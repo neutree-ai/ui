@@ -26,7 +26,7 @@ UI type: `src/domains/external-endpoint/types.ts`. Owner is user unless noted; "
 | `...upstreams[].auth.credential` | string | no; `""` | yes (`api:"-"`) | write-only | none; never returned, not even by the credentials route (`RegisterCredentialsRoutes` omits external endpoints) |
 | `...upstreams[].endpoint_ref` | string | internal kind; absent | no | yes | `Kind()` is `endpoint_ref` when the pointer is non-nil |
 | `...upstreams[].model_mapping` | `Record<string,string>` | required in Go; UI writes `{}` | no | legacy | superseded by non-empty `model_routes` |
-| `...upstreams[].models` | string[] / null | UI-only; `null` | no | - | not in `ExternalEndpointUpstreamEntry`; sent from `emptyExternalUpstream`; deviation 3 |
+| `...upstreams[].models` | string[] / null | UI-only; `null` | no | - | not in `ExternalEndpointUpstreamEntry`; sent from `blankExternalUpstream`; deviation 3 |
 | `spec.model_routes[]` | array | no; one blank fixed route on create, absent on edit | no | yes | gateway `compileExternalEndpointModelRoutes` (not at write): model non-empty and unique, >= 1 target, `max_attempts >= 0`, known target upstream, non-empty `upstream_model`, no negative priority / weight / `max_inflight_requests` |
 | `...model_routes[].model` | string | yes; `""` | no | yes | as above |
 | `...model_routes[].strategy` | `fixed` / `priority` / `weighted` | no; `fixed` | no | locked once `priority` / `weighted` | Go: "optional UI presentation hint"; behavior follows priority and weight |
@@ -66,21 +66,39 @@ deviations 1, 2).
   else legacy `model_mapping` keys).
 - Show: header type (`getEndpointType`, empty marker without upstreams), exposed-model count and timeout
   (`formatTimeout`) are `externalEndpointHeaderFields` in `lib/detail-fields.ts`.
-  Tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
-  `routesFromLegacy` for specs without `model_routes`; per-upstream status and mapping (`getUpstreamModelMappings`);
-  `CurlExample` when serving and a service URL exists (models minus `getUnavailableModels`). No polling. Credentials
-  never shown.
+  Tabs overview and monitor (`?tab=monitor`, `?model=`; the dashboard needs a workspace,
+  `modelRoutingDashboardScope` in `lib/monitoring-state.ts`). The page reads its record through
+  `externalEndpointShowView` (`lib/external-endpoint-display-show.ts`): routes via `ModelRouteDetails`, falling back to
+  `routesFromLegacy` for specs without `model_routes` (only stored routes link to monitoring); per-upstream cards with
+  name (`provider-N` when unnamed), internal / external by `endpoint_ref` truthiness, the endpoint name or URL, status
+  and mapping (`getUpstreamModelMappings`); `CurlExample` when serving and a service URL exists (models minus
+  `getUnavailableModels`). No polling. Credentials never shown.
+- Route display (`lib/model-route-view.ts`, shared by `ModelRouteEditor` and `ModelRouteDetails`): `routeStrategyOf`
+  (unset = fixed), `ROUTE_STRATEGY_TEXT` labels and hints; weighted routes show weight, others
+  `max_inflight_requests`. Detail card rows (`routeTargetRows`): weight share of the total with unset weight counting
+  1, primary = lowest priority, `0` / unset cap = unlimited. Editor: weight total with unset = 0 (`routeWeightTotal`,
+  as validation), tiers by `priorityTargetIndices` (0 / unset primary, > 0 fallback), new targets `newRouteTarget`,
+  number inputs empty = unset (`withTargetNumber`), model source only once the route is named.
 - Create (`use-external-endpoint-form.tsx`): `mode: "all"`; one blank fixed route, no upstream; switching an upstream
   between external and endpoint_ref resets the other kind's fields.
-- Edit: locked name, workspace. Prefilled via `select`: routes get `strategyLocked` for priority / weighted; priority
-  routes show two tiers (lowest priority = primary, others standby); credentials start empty. `cacheTime: 0`. Legacy
-  specs (no `model_routes`) migrate in the form by `routesFromLegacy`; unnamed upstreams get `provider-N`.
+- Form rules live in `lib/external-endpoint-form-routes.ts` (routes, model sources) and
+  `lib/external-endpoint-form-upstreams.ts` (upstream rows, names, endpoint_ref options, the quick-create upstream);
+  `useExternalEndpointForm` wires them.
+- Edit: locked name, workspace. Prefilled via `select` with `routeForForm`: routes get `strategyLocked` for priority /
+  weighted; priority routes show two tiers (lowest priority = primary, others standby); credentials start empty.
+  `cacheTime: 0`. Legacy specs (no `model_routes`) migrate in the form (`migrateLegacyRoutes` -> `routesFromLegacy`);
+  unnamed upstreams get `provider-N` once (`nameUnnamedUpstreams`). Each row keeps its name and URL as first loaded
+  (`upstreamReference`) until submit; routes reference rows by that stored name.
+- New upstream rows (`blankExternalUpstream`) are named by `newUpstreamName`; removing a row drops its targets and the
+  routes left empty (`removeRouteUpstream`). Quick-create (`QuickUpstreamDialog`, `quickUpstream`) refuses
+  `takenUpstreamNames` and points the target that opened it at the new row (`setRouteTargetUpstream`).
 - Submit adapter (`onFinish` in `useExternalEndpointForm`), in order: `cleanUpstreamsForSubmit` (drop `upstream` and
   `auth` from endpoint_ref entries, `endpoint_ref` from external ones, an empty untouched credential on edit); reject
-  blank or duplicate upstream names (`duplicateProvider`) and route problems (`getRouteStrategyError` silently, others
-  set a `spec.model_routes` error); trim names; every `model_mapping` = `{}`; default `strategy` fixed, `priority` 0,
-  `weight` 1 for non-weighted; rewrite target upstream names to trimmed; drop `strategyLocked`. Whole record (incl.
-  `id`, `status`, `route_type`) is the PATCH body.
+  blank or duplicate trimmed upstream names (`hasInvalidUpstreamNames`, `duplicateProvider`) and route problems
+  (`getRouteStrategyError` silently, `routeTargetsError` sets a `spec.model_routes` error); trim names; every
+  `model_mapping` = `{}`; `routesForSubmit`: default `strategy` fixed, `priority` 0, `weight` 1 for non-weighted;
+  rewrite target upstream names from stored to trimmed; drop `strategyLocked`. Whole record (incl. `id`, `status`,
+  `route_type`) is the PATCH body.
 - Connectivity test (`TestConnectivityButton`, `useTestConnectivity`): external entries post `{upstream:{url},
   auth:{type:"bearer", credential}}`, on edit also `name`, `workspace`, `stored_upstream_url` (URL as first loaded, per
   row by stable field id) so the server backfills the stored credential for the original URL; endpoint_ref entries post
@@ -94,19 +112,21 @@ deviations 1, 2).
 
 - `metadata.name`: only `required` (`validation.nameRequired`). `metadata.workspace`: required, `isValidWorkspace`.
 - `spec.timeout`: `NumberInput` min 0, unit s / min. `upstreams[].name`: unique at submit only. `upstream.url`: required
-  (`validation.upstreamUrlRequired`). `endpoint_ref`: `EndpointRefSelect` over `useSelect("endpoints")`.
+  (`validation.upstreamUrlRequired`). `endpoint_ref`: `EndpointRefSelect` over `useSelect("endpoints")`
+  via `endpointRefOptions` (Running first; phase shown only when reported).
 - Routes: `getRouteStrategyError` (weight integer 0-100 summing to 100; priority needs a primary target with integer
   `max_inflight_requests` 1..2147483647), shared by inline feedback, `submitBlocked` and the submit guard. Model name,
-  target upstream, upstream model required; model names unique (adapter).
-- Model source: free text with suggestions (presets plus sibling endpoints' values for models they still serve); blank
-  deletes.
+  target upstream, upstream model required; model names unique; target upstream must name a row (`routeTargetsError`,
+  adapter).
+- Model source: free text with suggestions (presets plus this form's and sibling endpoints' values for models they
+  still serve, `modelSourceUsage`); blank deletes, ignored before the model is named (`setModelSource`).
 
 ## Overrides
 
 - Model routes supersede `model_mapping`: the form writes `{}` and migrates legacy mappings (`routesFromLegacy`),
   matching the gateway's precedence (`095`).
-- `priority` routes collapse to two tiers on load and save (`select`, deviation 5); pinned by "shows priority tiers and
-  saves them".
+- `priority` routes collapse to two tiers on load and save (`routeForForm`, deviation 5); pinned by "shows priority
+  tiers and saves them".
 - `strategyLocked`: strategy is only a presentation hint in the API; reason unknown beyond avoiding silent loss of
   configuration.
 - Default timeout 300000 ms vs gateway 60000 (commit "raise default timeout (#523)"): long LLM calls.
@@ -140,7 +160,7 @@ surface only as status errors, not at save.
    - API: `mergeExcludedFieldsRecursive` treats `""` as `isEmptyValue` and backfills when the identity (URL) matches.
    - Effect: save succeeds, credential unchanged. Foundation "Masked fields" item 2. Ticket: TBD
 3. UI-only keys are sent on the wire and have no API counterpart.
-   - UI: form default `spec.route_type` and `emptyExternalUpstream.models: null` (every record carries them back on
+   - UI: form default `spec.route_type` and `blankExternalUpstream().models: null` (every record carries them back on
      PATCH).
    - API: neither `ExternalEndpointSpec` nor `ExternalEndpointUpstreamEntry` (nor composite types of `053`, `095`,
      `098`) has them; only `kong.go` uses a `route_type` of an internal endpoint.
@@ -151,9 +171,9 @@ surface only as status errors, not at save.
      (10232).
    - Effect: generic toast after submit. Ticket: TBD
 5. An untouched edit rewrites target priorities of a `priority` route.
-   - UI: `select` in `useExternalEndpointForm` maps priorities to two tiers (lowest 0, others 1) on load and the form
-     saves them (pinned by "shows priority tiers and saves them without reordering targets": 20 / 10 / 10 becomes 1 / 0
-     / 0; `loads $strategy priorities`: 1 / 2 / 3 becomes 0 / 1 / 1).
+   - UI: `routeForForm` (`select` in `useExternalEndpointForm`) maps priorities to two tiers (lowest 0, others 1) on
+     load and the form saves them (pinned by "shows priority tiers and saves them without reordering targets": 20 / 10
+     / 10 becomes 1 / 0 / 0; `routeForForm` "loads $strategy priorities": 1 / 2 / 3 becomes 0 / 1 / 1).
    - API: `ExternalEndpointModelRouteTarget.Priority` is any non-negative int, passed through
      `compileExternalEndpointModelRoutes` to the gateway plugin (how the plugin orders three distinct priorities was not
      read).

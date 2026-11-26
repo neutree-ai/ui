@@ -13,47 +13,6 @@
 	"src/domains/engine/components/EngineVersionSummary.tsx": {
 		"item.version": 1
 	},
-	"src/domains/external-endpoint/components/EndpointRefSelect.tsx": {
-		"endpoint.status?.phase": 1
-	},
-	"src/domains/external-endpoint/components/ExternalEndpointMonitor.tsx": {
-		"record.metadata.workspace": 1
-	},
-	"src/domains/external-endpoint/components/ModelRouteDetails.tsx": {
-		"route.model": 3,
-		"route.strategy": 1,
-		"target.max_inflight_requests": 1,
-		"target.priority": 3,
-		"target.upstream": 2,
-		"target.upstream_model": 2,
-		"target.weight": 2
-	},
-	"src/domains/external-endpoint/components/ModelRouteEditor.tsx": {
-		"route.model": 5,
-		"route.strategy": 1,
-		"target.max_inflight_requests": 1,
-		"target.priority": 3,
-		"target.upstream": 1,
-		"target.weight": 2
-	},
-	"src/domains/external-endpoint/components/QuickUpstreamDialog.tsx": {
-		"upstream.endpoint_ref": 1
-	},
-	"src/domains/external-endpoint/hooks/use-external-endpoint-form.tsx": {
-		"initial.name": 1,
-		"initial.upstream?.url": 1,
-		"invalid.model": 1,
-		"route.model": 4,
-		"route.strategy": 5,
-		"spec.model_routes": 3,
-		"spec.model_sources": 2,
-		"target.priority": 3,
-		"target.upstream": 5,
-		"target.upstream_model": 1,
-		"target.weight": 2,
-		"upstream.name": 5,
-		"upstreams?.[index]?.name": 2
-	},
 	"src/domains/group-policy/components/ApiKeyGroupPolicyHint.tsx": {
 		"own.in_scope": 1
 	},
@@ -293,12 +252,7 @@
 	},
 	"src/pages/external-endpoints/show.tsx": {
 		"record.status?.phase": 1,
-		"record.status?.service_url": 3,
-		"route.model": 1,
-		"upstream.endpoint_ref": 3,
-		"upstream.upstream?.url": 1,
-		"upstreamStatus?.phase": 1,
-		"upstreams[index]?.name": 1
+		"route.model": 1
 	},
 	"src/pages/log-sinks/list.tsx": {
 		"(original as LogSink).metadata.name": 1,

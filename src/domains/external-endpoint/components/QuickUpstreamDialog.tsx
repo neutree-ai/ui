@@ -12,6 +12,8 @@ import { FormControl, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { FormSelect } from "@/foundation/role/FormSelect";
+import type { UpstreamType } from "../lib/derive-upstream-type";
+import { quickUpstream } from "../lib/external-endpoint-form-upstreams";
 import type { UpstreamSpec } from "../types";
 import { type EndpointOption, EndpointRefSelect } from "./EndpointRefSelect";
 
@@ -25,13 +27,6 @@ type Props = {
   onCreate: (name: string, upstream: UpstreamSpec) => void;
 };
 
-const blankUpstream = (): UpstreamSpec => ({
-  upstream: { url: "" },
-  auth: { type: "bearer", credential: "" },
-  model_mapping: {},
-  models: null,
-});
-
 export default function QuickUpstreamDialog({
   open,
   onOpenChange,
@@ -41,7 +36,7 @@ export default function QuickUpstreamDialog({
 }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
-  const [type, setType] = useState("external");
+  const [type, setType] = useState<UpstreamType>("external");
   const [url, setUrl] = useState("");
   const [endpointRef, setEndpointRef] = useState("");
   const [credential, setCredential] = useState("");
@@ -69,20 +64,11 @@ export default function QuickUpstreamDialog({
       : endpointOptions.some((option) => option.value === endpointRef));
 
   const submit = () => {
-    const trimmedName = name.trim();
-    const trimmedUrl = url.trim();
     if (!canCreate) return;
-
-    const upstream = blankUpstream();
-    if (type === "endpoint_ref") {
-      upstream.upstream = null;
-      upstream.endpoint_ref = endpointRef;
-      upstream.auth = null;
-    } else {
-      upstream.upstream = { url: trimmedUrl };
-      upstream.auth = { type: "bearer", credential };
-    }
-    onCreate(trimmedName, upstream);
+    onCreate(
+      name.trim(),
+      quickUpstream(type, { url: url.trim(), endpointRef, credential }),
+    );
     close(false);
   };
 
@@ -116,7 +102,7 @@ export default function QuickUpstreamDialog({
             {t("external_endpoints.fields.upstreamType")}
             <FormSelect
               value={type}
-              onChange={setType}
+              onChange={(value) => setType(value as UpstreamType)}
               options={[
                 {
                   label: t("external_endpoints.options.upstreamTypeExternal"),

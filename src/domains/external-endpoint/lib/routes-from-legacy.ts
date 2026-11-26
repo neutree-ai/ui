@@ -1,5 +1,10 @@
 import type { ModelRoute, UpstreamSpec } from "../types";
 
+/** An upstream's name, or `provider-N` by its position while unnamed. */
+export function upstreamNameAt(upstream: UpstreamSpec, index: number) {
+  return upstream.name || `provider-${index + 1}`;
+}
+
 export function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
   const routes: ModelRoute[] = [];
   const seen = new Set<string>();
@@ -14,7 +19,7 @@ export function routesFromLegacy(upstreams: UpstreamSpec[]): ModelRoute[] {
         strategy: "fixed",
         targets: [
           {
-            upstream: upstream.name || `provider-${index + 1}`,
+            upstream: upstreamNameAt(upstream, index),
             upstream_model: upstreamModel,
             priority: 0,
             weight: 1,
