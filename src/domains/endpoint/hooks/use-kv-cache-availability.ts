@@ -2,6 +2,7 @@ import {
   type EndpointCacheManagerStatus,
   readEndpointCacheManagerStatus,
 } from "@/domains/endpoint/lib/cache-manager-status";
+import { checksZCacheRuntime } from "@/domains/endpoint/lib/endpoint-deploy-kv-cache";
 import {
   endpointZCacheOptions,
   kvCacheUnavailableReason,
@@ -41,11 +42,7 @@ export function useKvCacheAvailability({
     systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
     true;
   const zcacheOptions = endpointZCacheOptions(cluster);
-  const versions = useCacheVersions(
-    hasZCache &&
-      cluster?.spec.type === "kubernetes" &&
-      zcacheOptions?.enabled === true,
-  );
+  const versions = useCacheVersions(checksZCacheRuntime(hasZCache, cluster));
   const cacheManager = readEndpointCacheManagerStatus(
     cluster,
     cacheStatusLoading,

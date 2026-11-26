@@ -284,38 +284,6 @@ describe("useEndpointClusterResources", () => {
     });
   });
 
-  it("returns gpuStep 0.1 for ssh cluster", () => {
-    const clusters = [makeCluster("ssh-cluster", "ssh")];
-
-    const { result } = renderHook(() =>
-      useEndpointClusterResources({
-        currentCluster: "ssh-cluster",
-        clustersData: clusters,
-        selectedAccelerator: null,
-        currentUsage: zeroUsage,
-        t: mockT,
-      }),
-    );
-
-    expect(result.current.gpuStep).toBe(0.1);
-  });
-
-  it("returns gpuStep 1 for k8s cluster", () => {
-    const clusters = [makeCluster("k8s-cluster", "k8s")];
-
-    const { result } = renderHook(() =>
-      useEndpointClusterResources({
-        currentCluster: "k8s-cluster",
-        clustersData: clusters,
-        selectedAccelerator: null,
-        currentUsage: zeroUsage,
-        t: mockT,
-      }),
-    );
-
-    expect(result.current.gpuStep).toBe(1);
-  });
-
   it("adds currentUsage back to maxAvailable", () => {
     const clusters = [
       makeCluster("cluster-a", "k8s", {

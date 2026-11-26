@@ -10,50 +10,17 @@ vi.mock("@/foundation/cache-version/use-cache-versions", () => ({
   useCacheVersions: vi.fn(() => ({ isLoading: false, isError: false })),
 }));
 
-const cluster = (type: string, enabled: boolean) =>
-  ({
+it("fetches runtime versions for a ZCache cluster on a ZCache platform", () => {
+  vi.mocked(useSystemApi).mockReturnValue({
+    systemInfo: { capabilities: { cluster_cache_providers: ["zcache"] } },
+  } as unknown as ReturnType<typeof useSystemApi>);
+  const cluster = {
     metadata: { name: "test" },
-    spec: { type, cache: { provider: "zcache", options: { enabled } } },
-  }) as unknown as EndpointClusterRef;
-
-it.each([
-  {
-    name: "a ZCache cluster",
-    providers: ["zcache"],
-    target: cluster("kubernetes", true),
-    fetch: true,
-  },
-  {
-    name: "a cluster without ZCache",
-    providers: ["zcache"],
-    target: cluster("kubernetes", false),
-    fetch: false,
-  },
-  {
-    name: "an SSH cluster",
-    providers: ["zcache"],
-    target: cluster("ssh", true),
-    fetch: false,
-  },
-  {
-    name: "no cluster",
-    providers: ["zcache"],
-    target: undefined,
-    fetch: false,
-  },
-  {
-    name: "a platform without ZCache",
-    providers: [],
-    target: cluster("kubernetes", true),
-    fetch: false,
-  },
-])(
-  "fetches runtime versions for $name: $fetch",
-  ({ providers, target, fetch }) => {
-    vi.mocked(useSystemApi).mockReturnValue({
-      systemInfo: { capabilities: { cluster_cache_providers: providers } },
-    } as unknown as ReturnType<typeof useSystemApi>);
-    renderHook(() => useKvCacheAvailability({ cluster: target }));
-    expect(vi.mocked(useCacheVersions)).toHaveBeenLastCalledWith(fetch);
-  },
-);
+    spec: {
+      type: "kubernetes",
+      cache: { provider: "zcache", options: { enabled: true } },
+    },
+  } as unknown as EndpointClusterRef;
+  renderHook(() => useKvCacheAvailability({ cluster }));
+  expect(vi.mocked(useCacheVersions)).toHaveBeenLastCalledWith(true);
+});

@@ -34,6 +34,7 @@ import {
   SUPPORTED_IMAGE_FORMATS,
   SUPPORTED_IMAGE_TYPES,
 } from "@/domains/endpoint/lib/chat-helpers";
+import { playgroundServePath } from "@/domains/endpoint/lib/playground-target";
 import { useStickToBottom } from "@/foundation/hooks/use-stick-to-bottom";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { getErrorMessage } from "@/foundation/scene/error-message";
@@ -138,9 +139,7 @@ export default function ChatPlayground({ endpoint }: ChatPlaygroundProps) {
 
   const openai = createOpenAICompatible({
     name: "ai-platform",
-    baseURL: `${location.protocol}//${
-      location.host
-    }/api/v1/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1`,
+    baseURL: `${location.protocol}//${location.host}/api/v1${playgroundServePath(endpoint)}`,
     apiKey: "no",
     headers: {
       ...clientPostgrest.headers,

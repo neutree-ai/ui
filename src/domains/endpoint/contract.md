@@ -61,7 +61,8 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 - Runtime allocations: `lib/resource-status.ts`, `EndpointRuntimeResourcesCard`; their tests.
 - Performance trends: `lib/performance-trends.ts`, `lib/performance-format.ts`; colocated tests.
   `EndpointPerformanceTrendChart` uses its existing local `TrendPlot` for single and split latency series.
-- Playground: `usePlaygroundModels`, `lib/chat-helpers.ts`, `lib/rerank-helpers.ts`; colocated tests.
+- Playground: `usePlaygroundModels`, `lib/chat-helpers.ts`, `lib/rerank-helpers.ts`; serve-proxy path
+  `lib/playground-target.ts`; colocated tests.
 
 ## Scenes
 
@@ -132,9 +133,13 @@ is optional. Create checks resolved registry/model existence; unresolved reads s
 reported on `spec.model.name`, shown for both model sources. Model aliases label physical
 names. Registry changes retain the model name until a successful exact lookup disproves it; version/file/info are
 cleared. Model errors open the editor and optional fields. Feature number inputs allow decimals; integer inputs step by
-one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks.
-Create prefers vLLM; engine images constrain accelerators. ZCache timeout: 0.1..60, switch default 5 seconds;
-`useKvCacheAvailability` / `kvCacheUnavailableReason` tests own availability. Labels use `endpoints.*` / `common.*`.
+one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks
+(`lib/endpoint-deploy-engine.ts`). Create prefers vLLM; engine images constrain accelerators. ZCache timeout: 0.1..60,
+switch default 5 seconds, a typed timeout kept when re-enabled (`lib/endpoint-deploy-kv-cache.ts`);
+`kvCacheUnavailableReason` / `checksZCacheRuntime` tests own availability. The review step summarises each step through
+`endpointReviewSummary` (`lib/endpoint-deploy-review.ts`): dashes for empty identities, zero resources, one replica.
+Capacity pools: `lib/endpoint-deploy-resources.ts`; resolved-model summary, variant registry and KV estimate inputs:
+`lib/endpoint-deploy-model.ts`. Labels use `endpoints.*` / `common.*`.
 
 ## Overrides
 

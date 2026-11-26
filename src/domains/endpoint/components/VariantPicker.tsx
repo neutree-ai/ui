@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { useId } from "react";
+import { variantRegistry } from "@/domains/endpoint/lib/endpoint-deploy-model";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { DEFAULT_VARIANT } from "@/foundation/recipe/normalize";
@@ -32,6 +33,7 @@ export const VariantPicker = ({
     >
       {entries.map(([key, v]) => {
         const selected = key === value;
+        const registry = variantRegistry(v);
         return (
           <label
             key={key}
@@ -91,9 +93,9 @@ export const VariantPicker = ({
                   </span>
                 )}
               </span>
-              {v.model?.registry && (
+              {registry && (
                 <span className="mt-1 block truncate font-mono text-[10px] text-[var(--nt-text-neutral-tertiary)]">
-                  {v.model.registry}
+                  {registry}
                 </span>
               )}
             </span>

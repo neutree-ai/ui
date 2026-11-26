@@ -12,6 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EndpointAdvancedParameters } from "@/domains/endpoint/components/EndpointAdvancedParameters";
 import { formatCatalogFeature } from "@/domains/endpoint/lib/catalog-origin";
 import {
+  endpointHasModel,
+  endpointReplicaCount,
+  endpointReviewSummary,
+} from "@/domains/endpoint/lib/endpoint-deploy-review";
+import {
   type EndpointReviewChange,
   formatEndpointReviewValue,
 } from "@/domains/endpoint/lib/endpoint-review-changes";
@@ -38,6 +43,7 @@ import { cn } from "@/foundation/lib/utils";
 import { formatGb } from "@/foundation/recipe/vram";
 import { FormSectionStack } from "@/foundation/scene/FormSectionStack";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
+import { FieldValue } from "@/foundation/type/FieldValue";
 
 const STEP_KEYS = {
   [EndpointStep.model]: "endpoints.wizard.steps.model",
@@ -96,7 +102,7 @@ function DeploymentSummary<T extends FieldValues>({
 }) {
   const { t } = useTranslation();
   const values = form.watch() as unknown as Endpoint;
-  const hasModel = Boolean(values.spec.model?.name);
+  const hasModel = endpointHasModel(values);
 
   return (
     <aside
@@ -315,8 +321,7 @@ function ReviewStep<T extends FieldValues>({
 }) {
   const { t } = useTranslation();
   const values = form.watch() as unknown as Endpoint;
-  const engine = values.spec.engine;
-  const resources = values.spec.resources;
+  const summary = endpointReviewSummary(values);
   const cache = values.spec.kv_cache;
   const advanced = values.spec.deployment_options?.scheduler?.type;
   const resourceIssues = issues.filter(
@@ -335,34 +340,23 @@ function ReviewStep<T extends FieldValues>({
     {
       step: EndpointStep.model,
       label: t("endpoints.wizard.steps.model"),
-      value: t("endpoints.wizard.review.model", {
-        model: values.spec.model?.name || "—",
-      }),
+      value: t("endpoints.wizard.review.model", { model: summary.model }),
     },
     {
       step: EndpointStep.resources,
       label: t("endpoints.wizard.steps.resources"),
-      value: t("endpoints.wizard.review.resources", {
-        cluster: values.spec.cluster || "—",
-        count: values.spec.replicas?.num ?? 1,
-        cpu: resources?.cpu ?? 0,
-        memory: resources?.memory ?? 0,
-        gpu: resources?.gpu ?? 0,
-      }),
+      value: t("endpoints.wizard.review.resources", summary.resources),
     },
     {
       step: EndpointStep.runtime,
       label: t("endpoints.wizard.steps.runtime"),
-      value: cache
-        ? t("endpoints.wizard.review.runtimeCache", {
-            engine: engine?.engine || "—",
-            version: engine?.version || "—",
-            timeout: cache.options?.timeout_seconds ?? 5,
-          })
-        : t("endpoints.wizard.review.runtimeNoCache", {
-            engine: engine?.engine || "—",
-            version: engine?.version || "—",
-          }),
+      value:
+        summary.cacheTimeout === null
+          ? t("endpoints.wizard.review.runtimeNoCache", summary.engine)
+          : t("endpoints.wizard.review.runtimeCache", {
+              ...summary.engine,
+              timeout: summary.cacheTimeout,
+            }),
     },
     {
       step: EndpointStep.advanced,
@@ -442,7 +436,7 @@ function ReviewStep<T extends FieldValues>({
                 {t("common.fields.name")}
               </div>
               <div className="mt-0.5 break-all text-sm font-semibold">
-                {values.metadata?.name || <EmptyValue />}
+                <FieldValue value={values.metadata?.name} />
               </div>
             </div>
             <div className="min-w-0">
@@ -450,7 +444,7 @@ function ReviewStep<T extends FieldValues>({
                 {t("common.fields.workspace")}
               </div>
               <div className="mt-0.5 break-all text-sm font-semibold">
-                {values.metadata?.workspace || <EmptyValue />}
+                <FieldValue value={values.metadata?.workspace} />
               </div>
             </div>
           </div>
@@ -543,7 +537,7 @@ function ReviewStep<T extends FieldValues>({
                 : !validationAttempted
                   ? t("endpoints.wizard.review.checksPending")
                   : t("endpoints.wizard.review.checkResources", {
-                      count: values.spec.replicas?.num ?? 1,
+                      count: endpointReplicaCount(values),
                     })}
             </p>
             <p className="flex items-start gap-2">
