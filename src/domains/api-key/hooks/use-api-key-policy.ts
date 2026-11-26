@@ -14,6 +14,7 @@ import {
 import {
   compareWorkspaceModelOptions,
   modelOptionValue,
+  nonBlankModelName,
   useWorkspaceModels,
   type WorkspaceModelOption,
 } from "@/foundation/model-reference/use-workspace-models";
@@ -94,9 +95,9 @@ export function invokableModelOptions(
   const byValue = new Map(known.map((option) => [option.value, option]));
   const options: WorkspaceModelOption[] = [];
   for (const row of rows) {
-    const model = String(row.model ?? "").trim();
+    const model = nonBlankModelName(row.model);
     const endpointName = String(row.endpoint_name ?? "").trim();
-    if (!model || !endpointName) continue;
+    if (model === undefined || !endpointName) continue;
     const type = row.type === "external" ? "external" : "internal";
     const value = modelOptionValue(type, endpointName, model);
     const seen = byValue.get(value);

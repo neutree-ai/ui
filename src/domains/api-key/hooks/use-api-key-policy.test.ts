@@ -126,6 +126,24 @@ describe("invokableModelOptions", () => {
     ]);
   });
 
+  it("keeps the served model name as reported, skipping blank names", () => {
+    const row = (model: string) => ({
+      model,
+      type: "internal",
+      endpoint_name: "ep",
+      source_label: null,
+      phase: "Running",
+    });
+    const options = invokableModelOptions(
+      [row(" Z "), row("   "), row("")],
+      [],
+      "default",
+    );
+    expect(options.map((o) => [o.value, o.label, o.model])).toEqual([
+      ["internal:ep: Z ", " Z ", " Z "],
+    ]);
+  });
+
   it("takes the phase from the row, so endpoint reads are not needed", () => {
     const options = invokableModelOptions(
       [
