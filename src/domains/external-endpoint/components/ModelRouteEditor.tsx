@@ -313,7 +313,7 @@ export default function ModelRouteEditor({
                               type="number"
                               aria-invalid={!!strategyError}
                               aria-describedby={weightTotalId}
-                              min={1}
+                              min={0}
                               max={100}
                               step={1}
                               required

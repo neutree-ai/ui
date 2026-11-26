@@ -32,7 +32,7 @@ UI type: `src/domains/external-endpoint/types.ts`. Owner is user unless noted; "
 | `...model_routes[].strategy` | `fixed` / `priority` / `weighted` | no; `fixed` | no | locked once `priority` / `weighted` | Go: "optional UI presentation hint"; behavior follows priority and weight |
 | `...targets[].{upstream,upstream_model}` | string | yes; `""` | no | yes | as above |
 | `...targets[].priority` | int >= 0 | no; `0` (`1` standby) | no | yes | gateway negative check; UI exposes two tiers |
-| `...targets[].weight` | int | no; `1`, or 1-100 summing to 100 (weighted) | no | yes | Go: 0 means 1; the 100-sum rule is UI-only |
+| `...targets[].weight` | int or null | no; `nil` defaults to `1`, or 0-100 summing to 100 (weighted) | no | yes | Go preserves explicit `0` as a disabled target and defaults `nil` to `1`; all-explicit-zero routes are rejected at compile time, while failed providers retain existing skip behavior; the 100-sum rule is UI-only |
 | `...targets[].max_inflight_requests` | int | no | no | yes | gateway negative check; UI requires 1..2147483647 for primary targets of `priority` routes |
 | `...model_routes[].{retryable_conditions,max_attempts}` | string[] / int | no | no | no UI | in UI type, no form field; round-trips untouched |
 | `spec.model_sources` | `Record<model,string>` | no; absent | no | yes | trigger `validate_external_endpoint_model_source` (`098`, relaxed by `101`): object 10241, string values 10242; keys not served are pruned on every write |
@@ -95,7 +95,7 @@ deviations 1, 2).
 - `metadata.name`: only `required` (`validation.nameRequired`). `metadata.workspace`: required, `isValidWorkspace`.
 - `spec.timeout`: `NumberInput` min 0, unit s / min. `upstreams[].name`: unique at submit only. `upstream.url`: required
   (`validation.upstreamUrlRequired`). `endpoint_ref`: `EndpointRefSelect` over `useSelect("endpoints")`.
-- Routes: `getRouteStrategyError` (weight integer 1-100 summing to 100; priority needs a primary target with integer
+- Routes: `getRouteStrategyError` (weight integer 0-100 summing to 100; priority needs a primary target with integer
   `max_inflight_requests` 1..2147483647), shared by inline feedback, `submitBlocked` and the submit guard. Model name,
   target upstream, upstream model required; model names unique (adapter).
 - Model source: free text with suggestions (presets plus sibling endpoints' values for models they still serve); blank
