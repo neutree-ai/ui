@@ -653,7 +653,7 @@
   "src/domains/model-catalog/lib/phases.ts": "dc1a69ac7bb73766b1f25a6c3a9134fe",
   "src/domains/model-registry/lib/phases.ts": "87fd47d71ac5ff82f02b6681129d14f3",
   "src/foundation/endpoint-phase/endpoint-phases.ts": "f65b7cede0632002bdefe60fdff6af4a",
-  "src/foundation/role/PhaseStatus.tsx": "841ade7310e5a8992bee12d0cc2e92af",
+  "src/foundation/role/PhaseStatus.tsx": "fad14f48fba0556d1a1f316f722c18b4",
   "src/foundation/role/phases.ts": "099ff8b227aa9bdbbf7b198569fadc21",
   "src/domains/cluster/lib/detail-fields.tsx": "892a627c8391422b85373daef52103d3",
   "src/domains/endpoint/lib/detail-fields.tsx": "19fbfe619f87024396ce7db75843a6af",
