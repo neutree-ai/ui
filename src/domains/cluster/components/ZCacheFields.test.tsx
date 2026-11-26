@@ -196,30 +196,6 @@ describe("ZCacheFields", () => {
       "/team-a/endpoints/show/endpoint-resource",
     ]);
   });
-  it("lets a saved but never-applied node be withdrawn while inference uses cache", () => {
-    cacheDependencies.rows = [
-      {
-        id: 1,
-        metadata: { name: "endpoint-a" },
-        status: { kv_cache: { provider: "zcache", details: { in_use: true } } },
-      },
-    ];
-    render(
-      <Form
-        onSubmit={vi.fn()}
-        status={{
-          ...observed,
-          current: { enabled: true, l1_size_gib: 8, target_nodes: ["a"] },
-        }}
-      />,
-    );
-    expect(
-      screen.getByRole("checkbox", { name: "a" }).hasAttribute("disabled"),
-    ).toBe(true);
-    expect(
-      screen.getByRole("checkbox", { name: "b" }).hasAttribute("disabled"),
-    ).toBe(false);
-  });
   it("queries dependencies only when saved or edited cache is enabled", async () => {
     render(<Form onSubmit={vi.fn()} legacy />);
     expect(
@@ -295,20 +271,13 @@ describe("ZCacheFields", () => {
     expect(screen.queryByRole("checkbox", { name: "a" })).toBeNull();
     screen.getByRole("checkbox", { name: "c" });
   });
-  it("keeps selected nodes visible during inventory failure and prevents adding stale candidates", () => {
+  // Which nodes lock during an inventory failure is zcacheNodeChoices' rule.
+  it("explains an inventory failure above the node table", () => {
     render(
       <Form
         onSubmit={vi.fn()}
         status={{ ...observed, observation_error: "unavailable" }}
       />,
-    );
-    expect(screen.getByRole("checkbox", { name: "a" })).toHaveProperty(
-      "disabled",
-      false,
-    );
-    expect(screen.getByRole("checkbox", { name: "c" })).toHaveProperty(
-      "disabled",
-      true,
     );
     expect(screen.getByRole("alert").textContent).toContain("unavailable");
   });

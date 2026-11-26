@@ -30,6 +30,10 @@ type ZCacheViewState = {
   basePhase: ZCachePhase;
   desiredEnabled: boolean;
   phase: ZCachePhase;
+  /** The provider reports a failure a fresh retry request may clear. */
+  retryable: boolean;
+  /** The per-node capacity an active capacity update applies. */
+  changeCapacityGiB?: number;
   resultLabelKey:
     | "clusters.zcache.applied"
     | "clusters.zcache.disabled"
@@ -81,17 +85,30 @@ export function resolveZCacheState({
               ? "clusters.zcache.unavailable"
               : "clusters.zcache.unknown"
             : "clusters.zcache.reconciling";
+  const activeChange = activeCacheChange(status);
+  const request = activeChange?.request;
+  const controlPlane = status?.control_plane;
 
   return {
-    activeChange: activeCacheChange(status),
+    activeChange,
     availability,
     basePhase,
     desiredEnabled: desired?.enabled === true,
     phase,
+    retryable:
+      phase === "Failed" ||
+      (!!controlPlane?.health_message && !controlPlane.ready),
+    changeCapacityGiB:
+      request?.operation?.kind === "update_cache"
+        ? request.lmcache?.l1SizeGb || undefined
+        : undefined,
     resultLabelKey,
     stale,
   };
 }
+
+export const cacheFailed = (summary?: ClusterCacheStatus) =>
+  summary?.phase === "Failed";
 
 export function operationLabel(kind?: string) {
   switch (kind) {
@@ -108,7 +125,7 @@ export function operationLabel(kind?: string) {
   }
 }
 
-export function operationPhase(phase?: string) {
+function operationPhase(phase?: string) {
   switch (phase) {
     case "Succeeded":
       return "clusters.zcache.operationSucceeded";
@@ -123,6 +140,41 @@ export function operationPhase(phase?: string) {
     default:
       return "clusters.zcache.unknown";
   }
+}
+
+/** The activity sheet: the current problem or change, then past operations. */
+export function zcacheActivity(
+  summary?: ClusterCacheStatus,
+  status?: ZCacheStatus,
+) {
+  const change = status?.change;
+  const details =
+    summary?.error_message || status?.observation_error || change
+      ? {
+          open: cacheFailed(summary) || !!status?.observation_error,
+          errorMessage: summary?.error_message,
+          observationError: status?.observation_error,
+          change: change && {
+            phaseKey: operationPhase(change.phase),
+            message: change.message,
+            operationId: change.operation_id || undefined,
+          },
+        }
+      : undefined;
+  const operations = (status?.operations ?? []).map((op) => ({
+    id: op.id,
+    labelKey: operationLabel(op.kind),
+    phaseKey: operationPhase(op.phase),
+    failed: op.phase === "Failed",
+    createdAt: op.created_at || undefined,
+    message: op.message,
+    nodes: (op.nodes ?? []).map((node) => ({
+      name: node.name,
+      phaseKey: operationPhase(node.phase),
+      reason: node.reason || undefined,
+    })),
+  }));
+  return { details, operations };
 }
 
 // Use the product's neutral name in messages; keep resource identifiers intact.

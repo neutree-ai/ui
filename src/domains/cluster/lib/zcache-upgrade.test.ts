@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Cluster } from "../types";
 import {
   type CacheDependentEndpoint,
+  canStartUpgrade,
   defaultUpgradeAction,
   effectiveUpgrade,
+  targetRuntimeVersion,
   upgradeEndpointPayload,
   upgradeEngineTargets,
   upgradeInProgress,
+  upgradeProgress,
 } from "./zcache-upgrade";
 
 function makeCluster({
@@ -106,5 +109,55 @@ describe("upgrade actions", () => {
       engine_version,
       disable_cache,
     });
+  });
+});
+
+describe("upgrade summary", () => {
+  const spec = { enabled: true, l1_size_gib: 1, target_nodes: [] };
+
+  it("names the target version only while it differs from the ready one", () => {
+    expect(targetRuntimeVersion({ ...spec, version: "v2" }, "v1")).toBe("v2");
+    expect(
+      targetRuntimeVersion({ ...spec, version: "v1" }, "v1"),
+    ).toBeUndefined();
+    expect(targetRuntimeVersion(spec, "v1")).toBeUndefined();
+  });
+
+  it("starts an upgrade only on an enabled cache with none under way", () => {
+    expect(canStartUpgrade(spec)).toBe(true);
+    expect(canStartUpgrade({ ...spec, enabled: false })).toBe(false);
+    expect(
+      canStartUpgrade(spec, {
+        id: "u",
+        phase: "UpdatingRuntime",
+        endpoints: [],
+      }),
+    ).toBe(false);
+  });
+
+  it("reports an unfinished upgrade with each endpoint's progress and link", () => {
+    expect(
+      upgradeProgress(
+        {
+          id: "u",
+          phase: "Failed",
+          endpoints: [{ name: "chat api", phase: "Failed", message: "oom" }],
+        },
+        null,
+      ),
+    ).toEqual({
+      phaseKey: "clusters.cacheUpgrade.phases.Failed",
+      endpoints: [
+        {
+          name: "chat api",
+          href: "/default/endpoints/show/chat%20api",
+          phaseKey: "clusters.cacheUpgrade.phases.Failed",
+          message: "oom",
+        },
+      ],
+    });
+    expect(
+      upgradeProgress({ id: "u", phase: "Succeeded", endpoints: [] }, "w"),
+    ).toBeUndefined();
   });
 });

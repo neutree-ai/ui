@@ -1,4 +1,10 @@
-import { type Cluster, type ZCacheStatus, zcacheStatus } from "../types";
+import { endpointHref } from "@/foundation/accelerator/accelerator-observations";
+import {
+  type Cluster,
+  type ZCacheSpec,
+  type ZCacheStatus,
+  zcacheStatus,
+} from "../types";
 
 export const RESOURCE_SPEC_SIGNATURE = "neutree.ai/resource-spec-signature";
 const CACHE_UPGRADE_REQUEST = "neutree.ai/cache-upgrade";
@@ -42,6 +48,37 @@ export function effectiveUpgrade(
 
 export function upgradeInProgress(upgrade?: ZCacheStatus["upgrade"]) {
   return !!upgrade && !["Succeeded", "Failed"].includes(upgrade.phase);
+}
+
+/** The version the runtime is moving to, while it differs from the ready one. */
+export const targetRuntimeVersion = (spec?: ZCacheSpec, ready?: string) =>
+  spec?.version && spec.version !== ready ? spec.version : undefined;
+
+/** A new upgrade needs an enabled cache and no upgrade under way. */
+export const canStartUpgrade = (
+  spec?: ZCacheSpec,
+  upgrade?: ZCacheStatus["upgrade"],
+) => !!spec?.enabled && !upgradeInProgress(upgrade);
+
+const upgradePhaseKey = (phase: string) =>
+  `clusters.cacheUpgrade.phases.${phase}` as const;
+
+/** The upgrade still to report, with each endpoint's progress; none once it succeeded. */
+export function upgradeProgress(
+  upgrade: ZCacheStatus["upgrade"] | undefined,
+  clusterWorkspace?: string | null,
+) {
+  if (!upgrade || upgrade.phase === "Succeeded") return undefined;
+  const workspace = clusterWorkspace ?? "default";
+  return {
+    phaseKey: upgradePhaseKey(upgrade.phase),
+    endpoints: upgrade.endpoints.map((ep) => ({
+      name: ep.name,
+      href: endpointHref({ workspace, endpoint: ep.name }),
+      phaseKey: upgradePhaseKey(ep.phase),
+      message: ep.message || undefined,
+    })),
+  };
 }
 
 /**

@@ -1,10 +1,10 @@
 import { useCan, useInvalidate, useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 import { clusterCacheErrorMessage } from "../lib/zcache-errors";
+import { withCacheRetry } from "../lib/zcache-form";
 import { cacheMessage } from "../lib/zcache-presentation";
 import type { Cluster } from "../types";
 
@@ -21,15 +21,7 @@ export function CacheRetry({ cluster }: { cluster: Cluster }) {
       await mutateAsync({
         resource: "clusters",
         id: cluster.metadata.name,
-        values: {
-          metadata: {
-            ...cluster.metadata,
-            annotations: {
-              ...cluster.metadata.annotations,
-              "neutree.ai/zcache-retry": uuidv4(),
-            },
-          },
-        },
+        values: { metadata: withCacheRetry(cluster.metadata) },
         meta: {
           idColumnName: "metadata->name",
           workspace: cluster.metadata.workspace,

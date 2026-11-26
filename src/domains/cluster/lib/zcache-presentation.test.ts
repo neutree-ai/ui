@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
 import {
   activeCacheChange,
+  cacheFailed,
   isValidCacheCapacity,
   MAX_CACHE_CAPACITY_GIB,
   resolveZCacheState,
   sameCacheConfig,
+  zcacheActivity,
 } from "./zcache-presentation";
 
 describe("cache presentation", () => {
@@ -140,5 +142,102 @@ describe("cache presentation", () => {
     { value: undefined, valid: false },
   ])("capacity $value -> valid: $valid", ({ value, valid }) => {
     expect(isValidCacheCapacity(value)).toBe(valid);
+  });
+
+  it.each([
+    { phase: "Failed", control_plane: undefined, retryable: true },
+    {
+      phase: "Ready",
+      control_plane: { ready: false, health_message: "down" },
+      retryable: true,
+    },
+    {
+      phase: "Ready",
+      control_plane: { ready: true, health_message: "ok" },
+      retryable: false,
+    },
+    { phase: "Ready", control_plane: { ready: false }, retryable: false },
+  ] as const)(
+    "phase $phase, control plane $control_plane -> retryable: $retryable",
+    ({ phase, control_plane, retryable }) => {
+      const summary = { provider: "zcache", phase, conditions: [] };
+      const state = resolveZCacheState({
+        summary,
+        status: { control_plane },
+      });
+      expect(state.retryable).toBe(retryable);
+      expect(cacheFailed(summary)).toBe(phase === "Failed");
+    },
+  );
+
+  it.each([
+    ["update_cache", 5, 5],
+    ["update_cache", undefined, undefined],
+    ["add_nodes", 5, undefined],
+  ])("an active %s with L1 %s reports capacity %s", (kind, l1SizeGb, gib) => {
+    const status: ZCacheStatus = {
+      change: {
+        phase: "Running",
+        request: { operation: { kind }, lmcache: { l1SizeGb } },
+      },
+    };
+    expect(resolveZCacheState({ status }).changeCapacityGiB).toBe(gib);
+  });
+
+  it("builds the activity sheet from the current change and past operations", () => {
+    const { details, operations } = zcacheActivity(
+      {
+        provider: "zcache",
+        phase: "Failed",
+        conditions: [],
+        error_message: "boom",
+      },
+      {
+        change: { phase: "Rejected", message: "invalid" },
+        operations: [
+          {
+            id: "op-1",
+            kind: "add_nodes",
+            phase: "Failed",
+            nodes: [{ name: "a", phase: "Failed", reason: "no space" }],
+          },
+        ],
+      },
+    );
+    expect(details).toEqual({
+      open: true,
+      errorMessage: "boom",
+      observationError: undefined,
+      change: {
+        phaseKey: "clusters.zcache.operationFailed",
+        message: "invalid",
+        operationId: undefined,
+      },
+    });
+    expect(operations).toEqual([
+      {
+        id: "op-1",
+        labelKey: "clusters.zcache.actions.addNodes",
+        phaseKey: "clusters.zcache.operationFailed",
+        failed: true,
+        createdAt: undefined,
+        message: undefined,
+        nodes: [
+          {
+            name: "a",
+            phaseKey: "clusters.zcache.operationFailed",
+            reason: "no space",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("has no current details without an error or change, and opens on an observation error", () => {
+    expect(zcacheActivity(undefined, {}).details).toBeUndefined();
+    expect(
+      zcacheActivity(undefined, { observation_error: "unreachable" }).details
+        ?.open,
+    ).toBe(true);
   });
 });

@@ -61,60 +61,6 @@
 		"m.used": 2,
 		"next.disabled": 2
 	},
-	"src/domains/cluster/components/ClusterCacheSection.tsx": {
-		"cluster.metadata?.workspace": 1,
-		"cp.ready": 1,
-		"cp?.health_message": 1,
-		"desired.l1_size_gib": 1,
-		"desired?.enabled": 3,
-		"n.name": 2,
-		"n.runtime": 1,
-		"node.capacity_bytes": 3,
-		"node.runtime": 2,
-		"node?.reason": 1,
-		"request.lmcache.l1SizeGb": 1,
-		"request.lmcache?.l1SizeGb": 1,
-		"request?.operation?.kind": 1,
-		"status?.observed_at": 1
-	},
-	"src/domains/cluster/components/ZCacheActivity.tsx": {
-		"n.name": 1,
-		"n.reason": 1,
-		"op.created_at": 1,
-		"op.phase": 1,
-		"status.change.operation_id": 1,
-		"status?.observation_error": 2,
-		"summary?.error_message": 1
-	},
-	"src/domains/cluster/components/ZCacheEditor.tsx": {
-		"cluster.status?.cache?.phase": 3,
-		"spec.config.kubernetes_config.kubeconfig": 2
-	},
-	"src/domains/cluster/components/ZCacheFields.tsx": {
-		"candidate?.reason": 2,
-		"candidate?.selectable": 3,
-		"node.capacity_bytes": 2,
-		"node.name": 3,
-		"node.runtime": 1,
-		"node?.reason": 1,
-		"node?.runtime": 1,
-		"spec.cache.options": 2,
-		"spec.cache.options.enabled": 3,
-		"spec.cache.options.target_nodes": 4,
-		"spec.cache.provider": 1,
-		"status?.observation_error": 2,
-		"summary?.phase": 1
-	},
-	"src/domains/cluster/components/ZCacheUpgrade.tsx": {
-		"cluster.metadata.workspace": 1,
-		"ep.message": 2,
-		"ep.name": 2,
-		"ep.phase": 1,
-		"spec.version": 1,
-		"spec?.enabled": 1,
-		"spec?.version": 1,
-		"upgrade.phase": 2
-	},
 	"src/domains/cluster/hooks/use-cluster-form.tsx": {
 		"spec.accelerator_virtualization.enabled": 2,
 		"spec.version": 2

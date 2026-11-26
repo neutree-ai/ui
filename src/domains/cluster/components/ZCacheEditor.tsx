@@ -3,7 +3,6 @@ import { useState } from "react";
 import { type FieldValues, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +15,10 @@ import {
 import { cn } from "@/foundation/lib/utils";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 import { useCacheCapacityConfirmation } from "../hooks/use-cache-capacity-confirmation";
+import { zcacheSaveValues } from "../lib/zcache-form";
 import {
   activeCacheChange,
+  cacheFailed,
   cacheMessage,
   sameCacheConfig,
 } from "../lib/zcache-presentation";
@@ -50,6 +51,7 @@ export function ZCacheEditor({
   const draft = form.watch("spec.cache.options");
   const unchanged = sameCacheConfig(draft, zcacheSpec(cluster));
   const busy = activeCacheChange(status);
+  const failed = cacheFailed(cluster.status?.cache);
   const confirming = capacityConfirmation !== null || confirmDiscard;
 
   const close = () => {
@@ -66,41 +68,11 @@ export function ZCacheEditor({
   const save = async () => {
     if (isLoading || access?.can !== true) return;
     setError("");
-    const spec = structuredClone(cluster.spec);
-    spec.cache = {
-      provider: "zcache",
-      options: {
-        enabled: draft?.enabled === true,
-        ...(draft?.version ? { version: draft.version } : {}),
-        l1_size_gib: Number(draft?.l1_size_gib ?? 1),
-        target_nodes: [...(draft?.target_nodes ?? [])],
-      },
-    };
-    // Masked credentials must not overwrite the stored kubeconfig.
-    if (
-      spec.config.kubernetes_config &&
-      !spec.config.kubernetes_config.kubeconfig
-    ) {
-      delete spec.config.kubernetes_config.kubeconfig;
-    }
     try {
       await mutateAsync({
         resource: "clusters",
         id: cluster.metadata.name,
-        values: {
-          spec,
-          ...(cluster.status?.cache?.phase === "Failed"
-            ? {
-                metadata: {
-                  ...cluster.metadata,
-                  annotations: {
-                    ...cluster.metadata.annotations,
-                    "neutree.ai/zcache-retry": uuidv4(),
-                  },
-                },
-              }
-            : {}),
-        },
+        values: zcacheSaveValues(cluster, draft),
         meta: {
           idColumnName: "metadata->name",
           workspace: cluster.metadata.workspace,
@@ -262,13 +234,13 @@ export function ZCacheEditor({
                     disabled={
                       isLoading ||
                       access?.can !== true ||
-                      (unchanged && cluster.status?.cache?.phase !== "Failed")
+                      (unchanged && !failed)
                     }
                   >
                     {t(
                       isLoading
                         ? "clusters.zcache.saving"
-                        : cluster.status?.cache?.phase === "Failed" && unchanged
+                        : failed && unchanged
                           ? "clusters.zcache.retry"
                           : "clusters.zcache.save",
                     )}

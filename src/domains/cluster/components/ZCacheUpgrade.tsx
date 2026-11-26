@@ -30,12 +30,14 @@ import { getErrorMessage } from "@/foundation/scene/error-message";
 import { cacheUpgradeErrorMessage } from "../lib/zcache-errors";
 import {
   type CacheDependentEndpoint,
+  canStartUpgrade,
   defaultUpgradeAction,
   effectiveUpgrade,
   RESOURCE_SPEC_SIGNATURE,
+  targetRuntimeVersion,
   upgradeEndpointPayload,
   upgradeEngineTargets,
-  upgradeInProgress,
+  upgradeProgress,
 } from "../lib/zcache-upgrade";
 import { type Cluster, zcacheSpec, zcacheStatus } from "../types";
 
@@ -45,7 +47,9 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
   const { data: permission } = useCan({ resource: "clusters", action: "edit" });
   const spec = zcacheSpec(cluster);
   const readyVersion = zcacheStatus(cluster)?.ready_runtime_version;
+  const targetVersion = targetRuntimeVersion(spec, readyVersion);
   const upgrade = effectiveUpgrade(cluster);
+  const progress = upgradeProgress(upgrade, cluster.metadata?.workspace);
   return (
     <div className="space-y-3 rounded-md border p-4">
       <div className="flex flex-col items-stretch gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -55,9 +59,9 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
               version: readyVersion ?? t("clusters.zcache.unknown"),
             })}
           </div>
-          {spec?.version && spec.version !== readyVersion && (
+          {targetVersion && (
             <div className="text-muted-foreground">
-              {t("clusters.cacheUpgrade.target", { version: spec.version })}
+              {t("clusters.cacheUpgrade.target", { version: targetVersion })}
             </div>
           )}
         </div>
@@ -65,28 +69,21 @@ export function ZCacheUpgrade({ cluster }: { cluster: Cluster }) {
           className="shrink-0 self-start lg:self-auto"
           size="sm"
           variant="outline"
-          disabled={
-            permission?.can !== true ||
-            !spec?.enabled ||
-            upgradeInProgress(upgrade)
-          }
+          disabled={permission?.can !== true || !canStartUpgrade(spec, upgrade)}
           onClick={() => setOpen(true)}
         >
           {t("clusters.cacheUpgrade.title")}
         </Button>
       </div>
-      {upgrade && upgrade.phase !== "Succeeded" && (
+      {progress && (
         <div role="status" className="space-y-1 text-sm">
-          <p>{t(`clusters.cacheUpgrade.phases.${upgrade.phase}`)}</p>
-          {upgrade.endpoints.map((ep) => (
+          <p>{t(progress.phaseKey)}</p>
+          {progress.endpoints.map((ep) => (
             <div key={ep.name} className="flex flex-wrap gap-2">
-              <Link
-                className="underline"
-                href={`/${encodeURIComponent(cluster.metadata.workspace ?? "default")}/endpoints/show/${encodeURIComponent(ep.name)}`}
-              >
+              <Link className="underline" href={ep.href}>
                 {ep.name}
               </Link>
-              <span>{t(`clusters.cacheUpgrade.phases.${ep.phase}`)}</span>
+              <span>{t(ep.phaseKey)}</span>
               {ep.message && (
                 <span className="text-destructive">{ep.message}</span>
               )}

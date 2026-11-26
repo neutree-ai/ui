@@ -13,13 +13,13 @@ import { useSystemApi } from "@/foundation/hooks/use-system-api";
 import { MetricBar } from "@/foundation/role/MetricBar";
 import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import Timestamp from "@/foundation/role/Timestamp";
-import { formatToDecimal } from "@/foundation/role/unit";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import {
   type CacheEndpointCandidate,
   cacheEndpointRefs,
 } from "../lib/cache-endpoints";
+import { readyNodeCount, zcacheNodeDetails } from "../lib/zcache-nodes";
 import {
   cacheMessage,
   operationLabel,
@@ -81,16 +81,12 @@ function ZCacheDetails({
   const desired = zcacheSpec(cluster);
   const state = resolveZCacheState({ desired, status, summary });
   const { activeChange: busy, availability, phase, resultLabelKey } = state;
-  const { stale } = state;
-  const nodes = status?.nodes ?? [];
-  const targetNodes = desired?.enabled ? desired.target_nodes : [];
-  const names = [...new Set([...nodes.map((n) => n.name), ...targetNodes])];
-  const ready = nodes.filter((n) => n.runtime === "Ready").length;
-  const request = busy?.request;
-  const cp = status?.control_plane;
+  const { stale, desiredEnabled, changeCapacityGiB } = state;
+  const rows = zcacheNodeDetails(desired, status, stale, l1CacheByNode);
+  const workspace = cluster.metadata?.workspace;
   const cacheEndpoints = useMemo(
-    () => cacheEndpointRefs(endpoints, cluster.metadata?.workspace),
-    [cluster.metadata?.workspace, endpoints],
+    () => cacheEndpointRefs(endpoints, workspace),
+    [workspace, endpoints],
   );
   return (
     <ShowPage.Section
@@ -104,9 +100,7 @@ function ZCacheDetails({
       }
       actions={
         <div className="flex gap-2">
-          {(phase === "Failed" || (cp?.health_message && !cp.ready)) && (
-            <CacheRetry cluster={cluster} />
-          )}
+          {state.retryable && <CacheRetry cluster={cluster} />}
           <Button
             size="sm"
             disabled={access?.can !== true}
@@ -154,19 +148,16 @@ function ZCacheDetails({
             <p className="font-medium text-primary">
               {busy
                 ? t("clusters.zcache.executing", {
-                    action: t(operationLabel(request?.operation?.kind)),
+                    action: t(operationLabel(busy.request?.operation?.kind)),
                   })
                 : t("clusters.zcache.waiting")}
-              {request?.operation?.kind === "update_cache" &&
-              request.lmcache?.l1SizeGb
-                ? ` · L1 ${request.lmcache.l1SizeGb} GiB`
-                : ""}
+              {changeCapacityGiB ? ` · L1 ${changeCapacityGiB} GiB` : ""}
             </p>
             <p className="text-muted-foreground">
-              {desired?.enabled
+              {desiredEnabled && desired
                 ? t("clusters.zcache.latestTarget", {
                     size: desired.l1_size_gib,
-                    count: targetNodes.length,
+                    count: desired.target_nodes.length,
                   })
                 : t("clusters.zcache.stopping")}
             </p>
@@ -177,16 +168,17 @@ function ZCacheDetails({
             )}
           </div>
         )}
-        {(phase !== "Disabled" || names.length > 0) && (
+        {(phase !== "Disabled" || rows.length > 0) && (
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
               {stale
                 ? t("clusters.zcache.lastObservation")
                 : t("clusters.zcache.readyCount", {
-                    ready,
-                    total: names.length,
+                    ready: readyNodeCount(status),
+                    total: rows.length,
                   })}
             </span>
+            {/* ddu-override: the observed-at line only appears once an observation exists */}
             {status?.observed_at && (
               <span>
                 {t("clusters.zcache.observedAt")}{" "}
@@ -195,7 +187,7 @@ function ZCacheDetails({
             )}
           </div>
         )}
-        {names.length > 0 ? (
+        {rows.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -215,46 +207,23 @@ function ZCacheDetails({
                 </tr>
               </thead>
               <tbody>
-                {names.map((name) => {
-                  const node = nodes.find((n) => n.name === name);
-                  const target = targetNodes.includes(name);
+                {rows.map((row) => {
+                  const { name, capacityLabel, usedLabel, percent } = row;
                   const nodeEndpoints = cacheEndpoints.filter((endpoint) =>
                     endpoint.nodes.includes(name),
                   );
-                  const usage = l1CacheByNode?.[name];
-                  const usedGiB = !stale ? usage?.usedGiB : null;
-                  const capacityGiB =
-                    usage?.capacityGiB ??
-                    (node && node.capacity_bytes > 0
-                      ? node.capacity_bytes / 2 ** 30
-                      : null);
-                  const percent =
-                    usedGiB != null && capacityGiB != null && capacityGiB > 0
-                      ? Math.round(
-                          Math.min(
-                            100,
-                            Math.max(0, (usedGiB / capacityGiB) * 100),
-                          ),
-                        )
-                      : null;
-                  const usedLabel =
-                    usedGiB != null ? formatToDecimal(usedGiB, 1) : null;
-                  const capacityLabel =
-                    capacityGiB != null
-                      ? formatToDecimal(capacityGiB, 0)
-                      : null;
                   return (
                     <tr key={name} className="border-b last:border-0">
                       <td className="py-3 pr-6">
                         <span className="whitespace-nowrap">{name}</span>
-                        {node?.reason && node.runtime !== "Ready" && (
+                        {row.reason && (
                           <details className="mt-1 text-xs text-muted-foreground">
                             <summary className="cursor-pointer">
                               {t("clusters.zcache.viewReason")}
                             </summary>
                             <p className="mt-1 max-w-xl break-words">
                               {cacheMessage(
-                                node.reason,
+                                row.reason,
                                 t("clusters.zcache.serviceName"),
                               )}
                             </p>
@@ -262,16 +231,8 @@ function ZCacheDetails({
                         )}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-6">
-                        {t(
-                          stale
-                            ? "clusters.zcache.unknown"
-                            : !node
-                              ? "clusters.zcache.pendingNode"
-                              : node.runtime === "Ready"
-                                ? "clusters.zcache.ready"
-                                : "clusters.zcache.notReady",
-                        )}
-                        {!target && (
+                        {t(row.runtimeKey)}
+                        {!row.target && (
                           <p className="mt-1 text-xs text-muted-foreground">
                             {t("clusters.zcache.removingNode")}
                           </p>
@@ -314,17 +275,13 @@ function ZCacheDetails({
                             className="mt-2 max-w-64"
                           />
                         )}
-                        {target &&
-                          desired &&
-                          (!node ||
-                            node.capacity_bytes / 2 ** 30 !==
-                              desired.l1_size_gib) && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {t("clusters.zcache.nodeTarget", {
-                                size: desired.l1_size_gib,
-                              })}
-                            </p>
-                          )}
+                        {row.targetGiB !== undefined && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t("clusters.zcache.nodeTarget", {
+                              size: row.targetGiB,
+                            })}
+                          </p>
+                        )}
                       </td>
                       <td className="min-w-56 py-3 pl-6">
                         {endpointsLoading ? (
@@ -377,7 +334,7 @@ function ZCacheDetails({
         ) : (
           <p className="py-3 text-sm text-muted-foreground">
             {t(
-              desired?.enabled
+              desiredEnabled
                 ? "clusters.zcache.noRuntimeNodes"
                 : "clusters.zcache.disabledHint",
             )}
