@@ -37,7 +37,7 @@ vi.mock(
 import {
   apiKeyPolicyDefaults,
   type PolicyModelRow,
-} from "@/domains/api-key/hooks/use-api-key-policy";
+} from "@/domains/api-key/lib/api-key-policy-form";
 import { ApiKeyPolicyFields } from "./ApiKeyPolicyFields";
 
 const pinned = (model: string, endpoint: string): PolicyModelRow => ({

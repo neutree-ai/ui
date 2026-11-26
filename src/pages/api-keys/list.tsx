@@ -48,8 +48,6 @@ import { ApiKeyRankingOverview } from "@/domains/api-key/components/ApiKeyRankin
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
 import { ProjectPicker } from "@/domains/api-key/components/ProjectPicker";
 import {
-  rateSummary,
-  resolveQuotaPeriod,
   useAllApiKeyTraffic,
   useAllApiKeyUsage,
   useApiKeyDisable,
@@ -73,6 +71,11 @@ import {
   createKeyPreset as groupCreateKeyPreset,
   keysMovingTo,
 } from "@/domains/api-key/lib/api-key-display-project";
+import { quotaUsageMeter } from "@/domains/api-key/lib/api-key-limits-view";
+import {
+  rateSummary,
+  resolveQuotaPeriod,
+} from "@/domains/api-key/lib/api-key-policy-form";
 import { moveTargetGroupId } from "@/domains/api-key/lib/move-target-group";
 import type {
   AllowedModel,
@@ -202,6 +205,7 @@ function ModelsCell({
   );
 }
 
+const NO_METER = { percent: 0, over: false, warn: false };
 export const ApiKeysList = () => {
   const { t } = useTranslation();
   const { current: workspace } = useWorkspace();
@@ -1014,17 +1018,13 @@ export const ApiKeysList = () => {
                               usage?.token_limit && usage.token_limit > 0
                                 ? usage.token_limit
                                 : null;
-                            const usageRatio =
-                              usage && usageLimit ? usage.used / usageLimit : 0;
-                            const usagePercent = Math.max(
-                              0,
-                              Math.min(100, usageRatio * 100),
-                            );
-                            const usageOver =
-                              usage && usageLimit
-                                ? usage.used >= usageLimit
-                                : false;
-                            const usageWarn = !usageOver && usageRatio >= 0.8;
+                            const {
+                              percent: usagePercent,
+                              over: usageOver,
+                              warn: usageWarn,
+                            } = usage && usageLimit
+                              ? quotaUsageMeter(usage.used, usageLimit)
+                              : NO_METER;
                             // The most utilised limited model of a per-model
                             // key. Unlimited models never appear here: they have
                             // no denominator to be a ratio of.
@@ -1034,16 +1034,16 @@ export const ApiKeysList = () => {
                               usage.top_model
                                 ? usage.top_model_limit
                                 : null;
-                            const topModelRatio = topModelLimit
-                              ? (usage?.top_model_used ?? 0) / topModelLimit
-                              : 0;
-                            const topModelPercent = Math.max(
-                              0,
-                              Math.min(100, topModelRatio * 100),
-                            );
-                            const topModelOver = topModelRatio >= 1;
-                            const topModelWarn =
-                              !topModelOver && topModelRatio >= 0.8;
+                            const {
+                              percent: topModelPercent,
+                              over: topModelOver,
+                              warn: topModelWarn,
+                            } = topModelLimit
+                              ? quotaUsageMeter(
+                                  usage?.top_model_used ?? 0,
+                                  topModelLimit,
+                                )
+                              : NO_METER;
                             const status = apiKeyStatus(key, t, usageOver);
                             return (
                               <tr key={key.id} className="border-t">

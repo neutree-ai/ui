@@ -26,10 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CreateApiKeyForm } from "@/domains/api-key/components/CreateApiKeyForm";
-import {
-  rateSummary,
-  useApiKeyDisable,
-} from "@/domains/api-key/hooks/use-api-key-policy";
+import { useApiKeyDisable } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   apiKeyDeleteRows,
   apiKeyRowView,
@@ -37,6 +34,7 @@ import {
   liveKeysNewestFirst,
   overallTokenQuota,
 } from "@/domains/api-key/lib/api-key-display-list";
+import { rateSummary } from "@/domains/api-key/lib/api-key-policy-form";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { Loader } from "@/foundation/components/Loader";

@@ -6,13 +6,13 @@ import type {
   ApiKeyLimits,
 } from "@/domains/api-key/types";
 import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";
+import { apiKeyLimitsDisabled } from "./api-key-limits-view";
 
 /** A key is gone once its deletion has started. */
 const isApiKeyDeleted = (key: ApiKey) =>
   Boolean(key.metadata?.deletion_timestamp);
 
 /** A disabled key is refused by the gateway, whatever its lifecycle phase. */
-const isApiKeyDisabled = (key: ApiKey) => Boolean(key.spec.limits?.disabled);
 
 /**
  * A key row in a key table: the label rule's name and description, and the
@@ -36,7 +36,7 @@ export function apiKeyRowView(key: ApiKey) {
  * else active. `alert` marks the two that need attention.
  */
 export function apiKeyStatus(key: ApiKey, t: TFunction, quotaExceeded = false) {
-  const disabled = isApiKeyDisabled(key);
+  const disabled = apiKeyLimitsDisabled(key.spec.limits);
   return {
     disabled,
     alert: disabled || quotaExceeded,

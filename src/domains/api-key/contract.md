@@ -55,7 +55,7 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   or the inline variant hiding the technical name or description, carries the full text on a tooltip. Filters and
   links keep the key UUID.
 - Time: `Timestamp`, `MetadataTimestampMeta`; empty values: `EmptyValue`; rates: `rateSummary`.
-- Status badges (`apiKeyStatus`, `lib/api-key-display-list.ts`) read limits.disabled independently of lifecycle phase:
+- Status badges (`apiKeyStatus`, `lib/api-key-display-list.ts`) read limits.disabled (`apiKeyLimitsDisabled`) independently of lifecycle phase:
   disabled, else quota exceeded (personal list only), else active. Key tables name rows by the label rule
   (`apiKeyRowView`); a blank description or workspace shows nothing or `EmptyValue`.
 - Models: `ModelSourceBadge`, `useWorkspaceModelMap`, `useModelSourceByValue`; unknown pins show unavailable.
@@ -82,7 +82,7 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   failed or its name) via `DetailFields` over `lib/detail-fields.ts`; timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
 - Create (`components/CreateApiKeyForm.tsx:onSubmit`): `create_api_key` sends workspace, null technical name,
   display name, Project/null, description, zero legacy quota and `buildApiKeyLimits` result. Expiry is absent.
-- Create success view: the one-time Secret (`createdKeySecret`, `lib/created-key-secret.ts`), then a summary read
+- Create success view: the one-time Secret (`createdKeySecret`, `lib/created-key-summary.ts`), then a summary read
   from the RPC response (`createdKeySummary`, `lib/created-key-summary.ts`): Project name (resolved from the workspace Project list the picker shares, so an inline
   created Project resolves; ungrouped when `spec.project_id` is null; `EmptyValue` if the id is not listed), display name
   and description (`EmptyValue` when blank), shown through `DetailFields`; the description clips at three lines.

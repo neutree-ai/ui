@@ -20,8 +20,10 @@ import {
   buildApiKeyLimits,
 } from "@/domains/api-key/lib/api-key-policy-form";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
-import { createdKeySecret } from "@/domains/api-key/lib/created-key-secret";
-import { createdKeySummary } from "@/domains/api-key/lib/created-key-summary";
+import {
+  createdKeySecret,
+  createdKeySummary,
+} from "@/domains/api-key/lib/created-key-summary";
 import type { ApiKey } from "@/domains/api-key/types";
 import { useCopyToClipboard } from "@/foundation/hooks/use-copy-to-clipboard";
 import {

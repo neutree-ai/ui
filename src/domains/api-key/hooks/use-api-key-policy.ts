@@ -27,15 +27,6 @@ import {
 // The limits form and its mapping live in lib/api-key-policy-form.ts; the
 // shared ApiKeyLimits type comes from the domain's types.ts and trace stats
 // from the foundation API layer.
-export {
-  apiKeyPolicyDefaults,
-  formQuotaGranularity,
-  isPositiveIntLimit,
-  overlappingModelRowValues,
-  type PolicyModelRow,
-  rateSummary,
-  resolveQuotaPeriod,
-} from "@/domains/api-key/lib/api-key-policy-form";
 
 // Load a single API key's limits (edit). Writes go through
 // update_api_key_configuration, which replaces the whole limits object (single
