@@ -104,7 +104,7 @@
   "src/foundation/components/AppBreadcrumbs.tsx": "e772adfcf4378047e6bdd545044e342e",
   "src/foundation/components/AppSidebar.tsx": "d1ce37450df95e4c964768708c0c0e89",
   "src/foundation/components/BaseLayout.tsx": "64ddc4474cb6be136156ab722644c460",
-  "src/foundation/components/DefaultLayout.tsx": "e7b6429138f9c7b5761162e8843adbb0",
+  "src/foundation/components/DefaultLayout.tsx": "16fea89993f7db7c85d568c7fae3ec43",
   "src/foundation/components/Link.tsx": "274ab18e160e72304ff04329e14e15e9",
   "src/foundation/components/Loader.tsx": "c79f9710029a86a58fd583de991a879f",
   "src/foundation/components/Logo.tsx": "7041a1d3b8aa6785d7f5690847e1937f",
@@ -589,7 +589,7 @@
   "src/foundation/model-reference/registry-model-display.ts": "2e94b8e04015464855423f27d3dc11a4",
   "src/foundation/model-reference/registry-models.ts": "15cae42d9ea0a99ae96673d8cd25dec6",
   "src/foundation/model-reference/use-registry-models.ts": "c1c2e408346634c917eade98ab7250bf",
-  "src/foundation/license/use-license.ts": "266ab20174ac2008b3dd2162d3596e7b",
+  "src/foundation/license/use-license.ts": "db3ac3599c55a056c750994c6b8ac2cf",
   "src/foundation/grafana/GrafanaDashboardLink.tsx": "1d9e86ca4485d7e3d38d4fb453e58e35",
   "src/foundation/grafana/grafana-dashboard-url.ts": "5301dbc1a951077f4ea0b08b58dd681b",
   "src/foundation/cache-version/use-cache-versions.ts": "b93a591f561aadfffa45f4740337196b",
@@ -694,5 +694,7 @@
   "src/domains/external-endpoint/lib/external-endpoint-form-upstreams.ts": "085be980454c5fe98145055aa412c139",
   "src/domains/external-endpoint/lib/external-endpoint-display-show.ts": "4272adffc444bda64fab830b26520dcd",
   "src/domains/external-endpoint/lib/model-route-view.ts": "fa882c7655687a29f893bc4dd3fd4f90",
-  "src/domains/external-endpoint/testing/visual-fixtures.ts": "066589e68d5e522f457cf2fa681e3739"
+  "src/domains/external-endpoint/testing/visual-fixtures.ts": "066589e68d5e522f457cf2fa681e3739",
+  "src/foundation/license/subscription-expiry.ts": "c424250173af6fb7e29b0b0d00176fd0",
+  "src/foundation/license/SubscriptionExpiryAlert.tsx": "b630f15b230dbb6b864dbf86d47bec47"
 }

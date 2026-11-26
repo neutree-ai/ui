@@ -142,7 +142,10 @@ directory it does not name; a module only one kind uses belongs in that kind's d
 - `cache-version/` — cache runtime versions and the engine versions each supports (Cluster, Endpoint).
 - `endpoint-phase/` — endpoint status phases and their tones (Endpoint, Cluster, External Endpoint, model pickers).
 - `grafana/` — Grafana dashboard configuration, URLs and embeds (Dashboard, Cluster, Endpoint, External Endpoint).
-- `license/` — the installed license and its usage limits (License, Workspace Policy).
+- `license/` — the installed license and its usage limits (License, Workspace Policy), plus the authenticated
+  app shell's subscription expiry alert. `subscription-expiry` owns the `Expired + SUBSCRIPTION` rule;
+  `SubscriptionExpiryAlert` polls the shared `/license` query every 60 seconds and has no dismiss action.
+  `useLicense` accepts a polling interval only for observers that need it; other consumers do not start timers.
 - `model-reference/` — a model as other kinds refer to it: registry models and versions, the workspace's invocable
   models, model source, and the option groups and badge that show them.
 - `oem-config/` — the OEM branding record (OEM Config, login, app shell).

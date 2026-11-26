@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/foundation/components/AppSidebar";
 import { cn } from "@/foundation/lib/utils";
+import { SubscriptionExpiryAlert } from "@/foundation/license/SubscriptionExpiryAlert";
 
 type LogoType = React.ReactElement | React.ReactNode;
 
@@ -49,6 +50,7 @@ export const DefaultLayout = ({
             </div>
           )}
         </header>
+        <SubscriptionExpiryAlert />
         <main className="grow px-4 py-2 flex flex-col overflow-auto">
           {children}
         </main>

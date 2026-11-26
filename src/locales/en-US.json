@@ -3468,6 +3468,7 @@
 		"title": "Systems"
 	},
 	"license": {
+		"subscriptionExpired": "Your subscription license has expired. Please update your license as soon as possible to continue using the platform.",
 		"title": "License",
 		"loading": "Loading license information...",
 		"noLicense": "Enterprise license not activated yet",

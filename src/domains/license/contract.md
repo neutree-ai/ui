@@ -59,6 +59,11 @@ Version, usage details and metadata are hidden; the status message and transitio
 
 - Entry (`src/App.tsx`): Settings resource `license` has list URL `/license`; that route mounts `LicenseShow`.
   There is no resource-specific permission metadata or permission check on the page's update action.
+- Expiry notice: the authenticated app shell shows a non-dismissible `license.subscriptionExpired` alert when
+  the server reports `Expired` and `status.info.license_type` is `SUBSCRIPTION`. Trial expiry and invalid licenses
+  do not trigger this subscription notice. The alert polls the shared license query every 60 seconds in the
+  foreground; a successful renewal refetch updates all observers and removes it once the server reports Active.
+  Query errors retain the last successful data, so a transport failure does not clear a confirmed expiry.
 - Read (`useLicense`): `useCustom<License>` GET `/license`, retry false, automatic error notification disabled.
   It expects one object under provider `data`, without parameters.
 - Show (`LicenseShow`): status chip, then `DetailFields` over `status.info` (edition, vendor, license type, sign
