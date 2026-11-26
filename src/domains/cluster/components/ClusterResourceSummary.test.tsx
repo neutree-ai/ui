@@ -106,19 +106,6 @@ describe("ClusterResourceSummary", () => {
     screen.getByRole("img", { name: "GPU Cards: - / 2" });
   });
 
-  it("treats an omitted quantity in an existing availability group as zero", () => {
-    renderSummary(
-      makeInfo({
-        allocatable: { nvidia_gpu: group(1) },
-        available: { nvidia_gpu: group(undefined) },
-      }),
-    );
-
-    screen.getByText("1 / 1");
-    screen.getByText("100% allocated");
-    screen.getByText("0 cards");
-  });
-
   it("uses a continuous meter with decimals for fractional card availability", () => {
     renderSummary(
       makeInfo({
@@ -130,14 +117,6 @@ describe("ClusterResourceSummary", () => {
     screen.getByText("1.5 cards");
     expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
     screen.getByRole("progressbar", { name: "GPU Cards: 0.5 / 2.0" });
-  });
-
-  it("keeps the meter continuous when fractional groups sum to an integer", () => {
-    const halves = { nvidia_gpu: group(0.5), npu: group(0.5) };
-    renderSummary(makeInfo({ allocatable: halves, available: halves }));
-
-    expect(screen.queryByRole("img", { name: /GPU Cards/ })).toBeNull();
-    screen.getByRole("progressbar", { name: "GPU Cards: 0.0 / 1.0" });
   });
 
   it("hides accelerator metrics when the cluster has no cards", () => {

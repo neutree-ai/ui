@@ -3,6 +3,7 @@ import {
   getAcceleratorProductResourceRows,
 } from "@/domains/cluster/lib/accelerator-virtualization";
 import { calcResourceUsage } from "@/domains/cluster/lib/calc-resource-usage";
+import { acceleratorCardCounts } from "@/domains/cluster/lib/resource-status";
 import {
   METRIC_BAR_SERIES_FILL_CLASSES,
   MetricBar,
@@ -181,35 +182,7 @@ export function ClusterResourceSummary({
   if (!allocatable) return null;
 
   const productRows = getAcceleratorProductResourceRows(resourceInfo);
-  const acceleratorGroups = allocatable.accelerator_groups ?? {};
-  const availableGroups = resourceInfo.available?.accelerator_groups;
-  const totalCards = Object.values(acceleratorGroups).reduce(
-    (sum, group) => sum + group.quantity,
-    0,
-  );
-  // A missing accelerator type leaves the card count unknown. The API omits a
-  // present group's zero quantity, though, so that specific shape means zero.
-  const availableCards = Object.keys(acceleratorGroups).reduce<number | null>(
-    (sum, type) => {
-      const group = availableGroups?.[type];
-      return sum == null || group == null ? null : sum + (group.quantity ?? 0);
-    },
-    0,
-  );
-  const hasFractionalCardGroup = Object.values(acceleratorGroups).some(
-    (group) => !Number.isInteger(group.quantity),
-  );
-  const hasFractionalAvailableCardGroup = Object.keys(acceleratorGroups).some(
-    (type) => {
-      const quantity = availableGroups?.[type]?.quantity;
-      return quantity != null && !Number.isInteger(quantity);
-    },
-  );
-  const useDiscreteCardMeter =
-    !hasFractionalCardGroup &&
-    !hasFractionalAvailableCardGroup &&
-    Number.isInteger(totalCards) &&
-    (availableCards == null || Number.isInteger(availableCards));
+  const cards = acceleratorCardCounts(resourceInfo);
   const vram = sumProductPool(
     productRows,
     "allocatableMemoryMiB",
@@ -245,15 +218,15 @@ export function ClusterResourceSummary({
       {/* No heading row here: the three metrics below label themselves, and the
           total that row used to carry is already the denominator of Card Count.
           The rule is enough to separate them from CPU and memory. */}
-      {totalCards > 0 && (
+      {cards.total > 0 && (
         <div className="border-t pt-4">
           <div className="grid gap-5 md:grid-cols-3">
             <UsageMetric
               label={t("clusters.fields.physicalGpu")}
-              total={totalCards}
-              available={availableCards}
+              total={cards.total}
+              available={cards.available}
               unit="cards"
-              discrete={useDiscreteCardMeter}
+              discrete={cards.discrete}
               series="gold"
               t={t}
             />

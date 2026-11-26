@@ -1,4 +1,4 @@
-import { useCustom, useSelect } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
 import { useForm } from "@refinedev/react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelCacheFields } from "@/domains/cluster/components/ModelCacheFields";
 import NodeIPsField from "@/domains/cluster/components/NodeIPsField";
+import { useAvailableVersions } from "@/domains/cluster/hooks/use-available-versions";
 import { isAcceleratorVirtualizationSupported } from "@/domains/cluster/lib/accelerator-virtualization";
 import { transformClusterValues } from "@/domains/cluster/lib/transform-cluster-values";
 import { clusterCacheErrorMessage } from "@/domains/cluster/lib/zcache-errors";
@@ -101,21 +102,11 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
 
   const imageRegistry = form.watch("spec.image_registry");
 
-  const versionsQueryEnabled = !!workspace && !!imageRegistry && !!type;
-
-  const { data: versionsData, isLoading: isLoadingVersions } = useCustom<{
-    available_versions: string[];
-  }>({
-    url: versionsQueryEnabled
-      ? `/clusters/available_versions?${new URLSearchParams({ workspace, image_registry: imageRegistry, cluster_type: type }).toString()}`
-      : "",
-    method: "get",
-    queryOptions: {
-      enabled: versionsQueryEnabled,
-    },
-  });
-
-  const availableVersions = versionsData?.data?.available_versions ?? [];
+  const {
+    versions: availableVersions,
+    isLoading: isLoadingVersions,
+    queryable: versionsQueryable,
+  } = useAvailableVersions({ workspace, imageRegistry, type });
 
   const specVersion = form.watch("spec.version");
   const acceleratorVirtualizationSupported =
@@ -281,7 +272,7 @@ export const useClusterForm = ({ action }: { action: "create" | "edit" }) => {
               label: v,
               value: v,
             }))}
-            disabled={!versionsQueryEnabled || isLoadingVersions || isEdit}
+            disabled={!versionsQueryable || isLoadingVersions || isEdit}
           />
         </FormFieldGroup>
       </FormCardGrid>

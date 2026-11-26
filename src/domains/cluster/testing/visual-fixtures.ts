@@ -126,3 +126,39 @@ export const bareKubernetesCluster = makeCluster(
   { type: "kubernetes", config: { kubernetes_config: {} } },
   runningStatus,
 );
+
+/** An SSH cluster moving to v1.1.0 before any node reports a version. */
+const upgrading = makeCluster("cluster-e", sshCluster.spec, {
+  ...runningStatus,
+  phase: phase("Upgrading"),
+});
+export const upgradingCluster: Cluster = {
+  ...upgrading,
+  spec: { ...upgrading.spec, version: "v1.1.0" },
+};
+
+/** A running GPU cluster on v1.0.0 whose accelerator has no newer version. */
+export const gpuCluster = makeCluster("cluster-f", sshCluster.spec, {
+  ...runningStatus,
+  version: "v1.0.0",
+  accelerator_type: "nvidia_gpu",
+});
+
+const versionsPath = (cluster: Cluster, acceleratorType?: string) =>
+  `clusters/available_versions?${new URLSearchParams({
+    workspace: VISUAL_WORKSPACE,
+    image_registry: cluster.spec.image_registry,
+    cluster_type: cluster.spec.type,
+    ...(acceleratorType ? { accelerator_type: acceleratorType } : {}),
+  }).toString()}`;
+
+/**
+ * `available_versions` for SSH clusters on registry-a: v1.1.0 in general, but
+ * only v1.0.0 for the nvidia_gpu accelerator.
+ */
+export const clusterVersions = {
+  [versionsPath(sshCluster)]: { available_versions: ["v1.0.0", "v1.1.0"] },
+  [versionsPath(sshCluster, "nvidia_gpu")]: {
+    available_versions: ["v1.0.0"],
+  },
+};

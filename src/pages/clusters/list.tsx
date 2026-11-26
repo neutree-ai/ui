@@ -4,7 +4,7 @@ import {
   ClusterUpgradeAction,
   ClusterUpgradeProvider,
 } from "@/domains/cluster/components/ClusterUpgradeAction";
-import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
+import { ClusterVersion } from "@/domains/cluster/components/ClusterVersion";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
 import { clusterPhases } from "@/domains/cluster/lib/phases";
 import type { Cluster } from "@/domains/cluster/types";
@@ -14,7 +14,6 @@ import { ListPage } from "@/foundation/scene/ListPage";
 import { useMetadataColumns } from "@/foundation/scene/metadata-columns";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { defaultSorters, Table } from "@/foundation/scene/Table";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
 export const ClustersList = () => {
@@ -56,30 +55,9 @@ export const ClustersList = () => {
             accessorKey="status.version"
             id="version"
             enableHiding
-            cell={({ row }) => {
-              const cluster = row.original as Cluster;
-              const version = cluster.status?.version;
-              if (!version) return <EmptyValue />;
-              if (
-                cluster.status?.phase === "Upgrading" &&
-                cluster.spec.version
-              ) {
-                return (
-                  <span className="inline-flex items-center">
-                    {version}{" "}
-                    <span className="text-muted-foreground">
-                      &rarr; {cluster.spec.version}
-                    </span>
-                  </span>
-                );
-              }
-              return (
-                <span className="inline-flex items-center">
-                  {version}
-                  <ClusterUpgradeTip cluster={cluster} />
-                </span>
-              );
-            }}
+            cell={({ row }) => (
+              <ClusterVersion cluster={row.original as Cluster} />
+            )}
           />
           <Table.Column
             header={t("common.fields.type")}

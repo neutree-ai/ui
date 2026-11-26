@@ -4,9 +4,12 @@ import {
 } from "../../src/domains/api-key/testing/visual-fixtures";
 import {
   bareKubernetesCluster,
+  clusterVersions,
   emptySshCluster,
+  gpuCluster,
   kubernetesCluster,
   sshCluster,
+  upgradingCluster,
 } from "../../src/domains/cluster/testing/visual-fixtures";
 import {
   ldapSource,
@@ -105,6 +108,21 @@ export const screens: Screen[] = [
   cluster("ssh-empty", emptySshCluster),
   cluster("kubernetes", kubernetesCluster),
   cluster("kubernetes-bare", bareKubernetesCluster),
+  {
+    id: "cluster-gpu",
+    route: `/${VISUAL_WORKSPACE}/clusters/show/${gpuCluster.metadata.name}`,
+    data: { ...record("clusters", gpuCluster), custom: clusterVersions },
+    ready: gpuCluster.metadata.name,
+  },
+  {
+    id: "cluster-list-versions",
+    route: `/${VISUAL_WORKSPACE}/clusters`,
+    data: {
+      tables: { clusters: [sshCluster, upgradingCluster, gpuCluster] },
+      custom: clusterVersions,
+    },
+    ready: gpuCluster.metadata.name,
+  },
 
   apiKey("used", usedApiKey, "CI pipeline"),
   apiKey("unused", unusedApiKey, "Total Tokens"),

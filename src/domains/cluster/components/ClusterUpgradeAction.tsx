@@ -1,4 +1,4 @@
-import { useCustom, useInvalidate, useUpdate } from "@refinedev/core";
+import { useInvalidate, useUpdate } from "@refinedev/core";
 import { ArrowUpCircle } from "lucide-react";
 import {
   createContext,
@@ -20,18 +20,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { isSshCluster } from "@/domains/cluster/lib/cluster-type";
 import {
-  getUpgradeVersions,
+  clusterVersionQuery,
   isUpgradeVersion,
+  upgradeVersionsFor,
 } from "@/domains/cluster/lib/upgrade-versions";
 import type { Cluster } from "@/domains/cluster/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { getErrorMessage } from "@/foundation/scene/error-message";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
-
-type AvailableVersionsResponse = {
-  available_versions: string[];
-};
+import { FieldValue } from "@/foundation/type/FieldValue";
+import { useAvailableVersions } from "../hooks/use-available-versions";
 
 // ── Context to lift dialog state above the dropdown ──
 
@@ -108,36 +107,14 @@ function UpgradeDialog({
   const { mutateAsync, isLoading: isUpdating } = useUpdate<Cluster>();
   const [targetVersion, setTargetVersion] = useState<string>("");
 
-  const upgradeVersionsUrl = (() => {
-    const params = new URLSearchParams({
-      workspace: cluster.metadata.workspace ?? "",
-      image_registry: cluster.spec.image_registry,
-      cluster_type: cluster.spec.type,
-    });
-    if (cluster.status?.accelerator_type) {
-      params.set("accelerator_type", cluster.status.accelerator_type);
-    }
-    return `/clusters/available_versions?${params.toString()}`;
-  })();
-
-  const { data, isLoading: isLoadingVersions } =
-    useCustom<AvailableVersionsResponse>({
-      url: upgradeVersionsUrl,
-      method: "get",
-      queryOptions: {
-        enabled: open,
-      },
-    });
-
-  const availableVersions = useMemo(
-    () =>
-      getUpgradeVersions(
-        data?.data?.available_versions ?? [],
-        cluster.spec.version,
-      ),
-    [cluster.spec.version, data?.data?.available_versions],
+  const { versions, isLoading: isLoadingVersions } = useAvailableVersions(
+    clusterVersionQuery(cluster),
+    { enabled: open },
   );
-  const currentVersion = cluster.status?.version ?? <EmptyValue />;
+  const availableVersions = useMemo(
+    () => upgradeVersionsFor(cluster, versions),
+    [cluster, versions],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -197,7 +174,7 @@ function UpgradeDialog({
               {t("clusters.fields.currentVersion")}
             </div>
             <div className="text-sm text-muted-foreground">
-              {currentVersion}
+              <FieldValue value={cluster.status?.version} />
             </div>
           </div>
           <div className="space-y-1">
@@ -224,9 +201,9 @@ function UpgradeDialog({
               />
             )}
           </div>
-          <Alert variant={cluster.spec.type === "ssh" ? "warning" : "info"}>
+          <Alert variant={isSshCluster(cluster) ? "warning" : "info"}>
             <AlertDescription>
-              {cluster.spec.type === "ssh"
+              {isSshCluster(cluster)
                 ? t("clusters.messages.upgradeWarningSSH")
                 : t("clusters.messages.upgradeWarningK8s")}
             </AlertDescription>

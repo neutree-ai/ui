@@ -12,13 +12,18 @@ import {
 } from "@/domains/cluster/components/ClusterUpgradeAction";
 import { NodeResourcesTable } from "@/domains/cluster/components/NodeResourcesTable";
 import { useClusterMonitorPanels } from "@/domains/cluster/hooks/use-cluster-monitor-panels";
+import { clusterEndpointsFilter } from "@/domains/cluster/lib/cluster-endpoints";
+import {
+  isSshCluster,
+  supportsZCache,
+} from "@/domains/cluster/lib/cluster-type";
 import {
   clusterHeaderFields,
   clusterRouterFields,
   clusterSshFields,
   modelCacheFields,
+  modelCacheTitle,
 } from "@/domains/cluster/lib/detail-fields";
-import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import { getRayDashboardProxy } from "@/domains/cluster/lib/get-ray-dashboard-proxy";
 import { clusterPhases } from "@/domains/cluster/lib/phases";
 import { getZCacheDashboardProps } from "@/domains/cluster/lib/zcache-dashboard";
@@ -92,16 +97,10 @@ export const ClustersShow = () => {
   } = useList<Endpoint>({
     resource: "endpoints",
     meta: { workspace: record?.metadata.workspace, workspaced: true },
-    filters: [
-      {
-        field: "spec->cluster",
-        operator: "eq",
-        value: JSON.stringify(record?.metadata.name),
-      },
-    ],
+    filters: record ? clusterEndpointsFilter(record) : [],
     pagination: { mode: "off" },
     queryOptions: {
-      enabled: !!record?.metadata.name,
+      enabled: !!record,
       refetchInterval: polling ? 15000 : false,
     },
   });
@@ -151,7 +150,7 @@ export const ClustersShow = () => {
     ? null
     : selectedPanel === "cache"
       ? getZCacheDashboardProps(grafanaUrl, {
-          workspace: record.metadata.workspace ?? "default",
+          workspace: record.metadata.workspace,
           clusterName: record.metadata.name,
           status: cacheStatus,
         })
@@ -163,10 +162,7 @@ export const ClustersShow = () => {
         );
 
   const dashboardUrl = getRayDashboardProxy(data?.data);
-  const showCacheTab =
-    record.spec.type === "kubernetes" &&
-    systemInfo?.capabilities?.cluster_cache_providers?.includes("zcache") ===
-      true;
+  const showCacheTab = supportsZCache(record, systemInfo);
   // The deep link may name the cache tab before the capability is known.
   const activeTab = tab === "cache" && !showCacheTab ? "basic" : tab;
   return (
@@ -221,7 +217,7 @@ export const ClustersShow = () => {
                 {t("common.tabs.monitor")}
               </TabsTrigger>
             )}
-            {record.spec.type === "ssh" && (
+            {isSshCluster(record) && (
               <TabsTrigger value="ray" className={detailTabTriggerClassName}>
                 {t("common.tabs.rayDashboard")}
               </TabsTrigger>
@@ -319,8 +315,6 @@ export const ClustersShow = () => {
                 <div className="space-y-4">
                   {(record.spec.config.model_caches || []).map(
                     (cache, index) => {
-                      const cacheType = getCacheType(cache);
-
                       return (
                         // Nested surfaces step down a radius level. Repeating
                         // the card radius inside a card reads as a seam rather
@@ -331,8 +325,7 @@ export const ClustersShow = () => {
                         >
                           <div className="flex items-center gap-1 pb-3 text-sm font-medium leading-none text-[var(--nt-text-neutral-super)]">
                             <span className="mr-1 text-xs">#{index + 1}</span>
-                            {cache.name ||
-                              t(`clusters.fields.modelCache.type.${cacheType}`)}
+                            {modelCacheTitle(cache, t)}
                           </div>
 
                           <DetailFields
@@ -351,15 +344,7 @@ export const ClustersShow = () => {
                 showColumnVisibility={false}
                 refineCoreProps={{
                   resource: "endpoints",
-                  filters: {
-                    permanent: [
-                      {
-                        field: "spec->cluster",
-                        operator: "eq",
-                        value: JSON.stringify(record.metadata.name),
-                      },
-                    ],
-                  },
+                  filters: { permanent: clusterEndpointsFilter(record) },
                 }}
               >
                 {metadataColumns.name}
@@ -454,7 +439,7 @@ export const ClustersShow = () => {
               )}
             </TabsContent>
           )}
-          {record.spec.type === "ssh" && (
+          {isSshCluster(record) && (
             <TabsContent value="ray" className="mt-0 flex-1">
               {dashboardUrl && (
                 <iframe

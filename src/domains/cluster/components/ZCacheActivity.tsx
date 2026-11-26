@@ -6,12 +6,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import Timestamp from "@/foundation/role/Timestamp";
-import {
-  cacheMessage,
-  operationLabel,
-  operationPhase,
-} from "../lib/zcache-presentation";
+import { cacheMessage, zcacheActivity } from "../lib/zcache-presentation";
 import type { ClusterCacheStatus, ZCacheStatus } from "../types";
+
 export function ZCacheActivity({
   status,
   summary,
@@ -24,7 +21,8 @@ export function ZCacheActivity({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const phase = summary?.phase;
+  const serviceName = t("clusters.zcache.serviceName");
+  const { details, operations } = zcacheActivity(summary, status);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -36,40 +34,23 @@ export function ZCacheActivity({
           <SheetTitle>{t("clusters.zcache.operations")}</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {(summary?.error_message ||
-            status?.observation_error ||
-            status?.change) && (
+          {details && (
             <details
-              open={phase === "Failed" || !!status?.observation_error}
+              open={details.open}
               className="mb-4 rounded-md bg-muted/50 p-3 text-sm"
             >
               <summary className="cursor-pointer font-medium">
                 {t("clusters.zcache.currentDetails")}
               </summary>
               <div className="mt-3 space-y-2 break-words">
-                <p>
-                  {cacheMessage(
-                    summary?.error_message,
-                    t("clusters.zcache.serviceName"),
-                  )}
-                </p>
-                <p>
-                  {cacheMessage(
-                    status?.observation_error,
-                    t("clusters.zcache.serviceName"),
-                  )}
-                </p>
-                {status?.change && (
+                <p>{cacheMessage(details.errorMessage, serviceName)}</p>
+                <p>{cacheMessage(details.observationError, serviceName)}</p>
+                {details.change && (
                   <>
-                    <p>{t(operationPhase(status.change.phase))}</p>
-                    <p>
-                      {cacheMessage(
-                        status.change.message,
-                        t("clusters.zcache.serviceName"),
-                      )}
-                    </p>
+                    <p>{t(details.change.phaseKey)}</p>
+                    <p>{cacheMessage(details.change.message, serviceName)}</p>
                     <p className="font-mono text-xs">
-                      {status.change.operation_id ||
+                      {details.change.operationId ||
                         t("clusters.zcache.notAccepted")}
                     </p>
                   </>
@@ -77,41 +58,34 @@ export function ZCacheActivity({
               </div>
             </details>
           )}
-          {(status?.operations ?? []).map((op) => (
+          {operations.map((op) => (
             <details key={op.id} className="border-b py-4">
               <summary className="cursor-pointer text-sm">
                 <span className="ml-1 inline-flex w-[90%] flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">
-                    {t(operationLabel(op.kind))}
-                  </span>
+                  <span className="font-medium">{t(op.labelKey)}</span>
                   <span
                     className={
-                      op.phase === "Failed"
-                        ? "text-destructive"
-                        : "text-muted-foreground"
+                      op.failed ? "text-destructive" : "text-muted-foreground"
                     }
                   >
-                    {t(operationPhase(op.phase))}
+                    {t(op.phaseKey)}
                   </span>
                 </span>
-                {op.created_at && (
+                {op.createdAt && (
                   <span className="mt-1 block pl-4 text-xs text-muted-foreground">
-                    <Timestamp timestamp={op.created_at} />
+                    <Timestamp timestamp={op.createdAt} />
                   </span>
                 )}
               </summary>
               <div className="mt-3 space-y-3 pl-4 text-sm">
-                {op.nodes?.map((n) => (
+                {op.nodes.map((n) => (
                   <div key={n.name} className="break-words">
                     <p>
-                      {n.name} · {t(operationPhase(n.phase))}
+                      {n.name} · {t(n.phaseKey)}
                     </p>
                     {n.reason && (
                       <p className="text-muted-foreground">
-                        {cacheMessage(
-                          n.reason,
-                          t("clusters.zcache.serviceName"),
-                        )}
+                        {cacheMessage(n.reason, serviceName)}
                       </p>
                     )}
                   </div>
@@ -122,13 +96,13 @@ export function ZCacheActivity({
                   </summary>
                   <p className="mt-2 break-all font-mono">{op.id}</p>
                   <p className="mt-1 break-words">
-                    {cacheMessage(op.message, t("clusters.zcache.serviceName"))}
+                    {cacheMessage(op.message, serviceName)}
                   </p>
                 </details>
               </div>
             </details>
           ))}
-          {!status?.operations?.length && (
+          {operations.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
               {t("clusters.zcache.noOperations")}
             </p>

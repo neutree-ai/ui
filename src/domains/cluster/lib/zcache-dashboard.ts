@@ -28,7 +28,11 @@ const nodeVector = (nodes: CacheNode[], value: (node: CacheNode) => number) =>
  */
 export const getZCacheDashboardProps = (
   grafanaUrl: string,
-  context: { workspace: string; clusterName: string; status?: ZCacheStatus },
+  context: {
+    workspace?: string | null;
+    clusterName: string;
+    status?: ZCacheStatus;
+  },
 ): GrafanaDashboardProps => {
   const { status } = context;
   const nodes = (
@@ -40,7 +44,7 @@ export const getZCacheDashboardProps = (
       dashboardId: ZCACHE_DASHBOARD_ID,
       variables: {
         ...getCommonVariables(),
-        Workspace: context.workspace,
+        Workspace: context.workspace ?? "default",
         Cluster: context.clusterName,
         CacheCapacity: nodeVector(
           nodes.filter(
