@@ -55,7 +55,9 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   or the inline variant hiding the technical name or description, carries the full text on a tooltip. Filters and
   links keep the key UUID.
 - Time: `Timestamp`, `MetadataTimestampMeta`; empty values: `EmptyValue`; rates: `rateSummary`.
-- Enabled badges read limits.disabled independently of lifecycle phase.
+- Status badges (`apiKeyStatus`, `lib/api-key-display-list.ts`) read limits.disabled independently of lifecycle phase:
+  disabled, else quota exceeded (personal list only), else active. Key tables name rows by the label rule
+  (`apiKeyRowView`); a blank description or workspace shows nothing or `EmptyValue`.
 - Models: `ModelSourceBadge`, `useWorkspaceModelMap`, `useModelSourceByValue`; unknown pins show unavailable.
   `endpointPhaseClass` in `src/pages/api-keys/list.tsx` retains local tones without STATUS_TONE's border token.
 
@@ -63,6 +65,9 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
 
 - List (`src/pages/api-keys/list.tsx:ApiKeysList`): Project, name/description, workspace, enabled, models,
   token consumption, rates, usage, created, actions. Server folder paging; no sortable columns.
+  Groups (`apiKeyGroupView`, `lib/api-key-display-project.ts`): the RPC's ungrouped bucket is labelled by translation
+  and offers no edit/delete; creating from a group presets its workspace and Project (`createKeyPreset`). The Models
+  column resolves pinned entries to listed endpoints (`allowedModelView`). The ranking lists live keys of the scope.
 - `useApiKeyProjectGroups`: workspace, trimmed search, disabled filter, page/size; blank filters become null.
   `get_api_key_project_groups` / count (`113_api_key_search_name`) match Project/name/display name/description;
   oldest first, Ungrouped first within workspace.
@@ -71,7 +76,8 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   Ungrouped) if the user had folded it; other groups keep their fold state.
 - Project create/update/delete RPCs (`092`): create trims name/description, edit sends both inputs;
   deletion needs no live keys (23503). `move_api_keys_to_project` (`132`) requires one owner/workspace.
-- Show (`src/pages/api-keys/show.tsx:ApiKeysShow`): name (`displayName`); workspace, description (only when set) and
+- Show (`src/pages/api-keys/show.tsx:ApiKeysShow`, reads via `apiKeyShowContext`, `lib/api-key-display-show.ts`):
+  name (`displayName`); workspace, description (only when set) and
   usage (locale number), then the application (rendered by the page) or else the Project (ungrouped, loading, load
   failed or its name) via `DetailFields` over `lib/detail-fields.ts`; timestamps, traffic, group-policy hint and editable limits. No standalone edit route or lifecycle badge.
 - Create (`components/CreateApiKeyForm.tsx:onSubmit`): `create_api_key` sends workspace, null technical name,
@@ -99,7 +105,8 @@ quota_granularity, quota_period, quota_period_start and quota_resets_at. Remaini
   application list explicitly disables force. No local reference pre-check; missing row name/workspace blocks batch.
 - `ApiKeyController.sync` revokes the gateway consumer before Deleted, then removes the row next reconcile.
   Gateway failure retains the phase, records an error and retries; force never advances it.
-- `ServiceAccountApiKeys`: unpaged account filter, newest first, show/edit limits, toggle and delete; no Project.
+- `ServiceAccountApiKeys`: unpaged account filter, live keys newest first (`liveKeysNewestFirst`), show/edit limits,
+  toggle and delete; no Project. Limits read overall quota (`overallTokenQuota`, monthly by default) then rates.
 - Usage: `useAllApiKeyUsage` requests page UUIDs; null means all, empty array none. `fetchAITraceKeyStats`
   supplies 24h traffic, empty on failure. Usage polling uses `useUsageRpcBatch` and its existing tests.
 - YAML mechanics: `src/foundation/contract.md`, “YAML import and export”. API keys are exportable without secrets;

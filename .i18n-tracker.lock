@@ -39,8 +39,8 @@
   "src/pages/clusters/edit.tsx": "0d55cbfc5eeab64fd74dfb95910bcff0",
   "src/pages/clusters/list.tsx": "2a55d4b784d1737ac502d2354b520d8e",
   "src/pages/clusters/show.tsx": "609ac529bc9eceeb1e1b5d8aabc10540",
-  "src/pages/api-keys/list.tsx": "0253e854d0c908cae62bd0826368cf3f",
-  "src/pages/api-keys/show.tsx": "7f4a2235f4ca7db185d59992a639eb9a",
+  "src/pages/api-keys/list.tsx": "4ec89d08a4fcf20e0a4431f24acb91f5",
+  "src/pages/api-keys/show.tsx": "9994f2f1fce8e39f1c3074d0aba3aec1",
   "src/components/ui/alert-dialog.tsx": "70af8c8b7632a7cc58b311f65ecd1309",
   "src/components/ui/alert.tsx": "fbaa8074e9f744b7c3d6aceef2c29652",
   "src/components/ui/badge.tsx": "e03f6851f659b905fb4b769a894952bd",
@@ -289,7 +289,7 @@
   "src/domains/api-key/hooks/use-api-key-project-groups.ts": "ea25e396a339f2c9356bdde173120454",
   "src/domains/api-key/hooks/use-api-key-projects.ts": "cfef148cad7902f1de0e4ea87f66adbb",
   "src/domains/api-key/components/ApiKeyLabel.tsx": "6de9df3c069764843070153b5b8b7e51",
-  "src/domains/api-key/components/ProjectPicker.tsx": "3b219ecbda807618202634de7ef34996",
+  "src/domains/api-key/components/ProjectPicker.tsx": "28287390abe90440af27b216a9cab6ce",
   "src/domains/model-registry/lib/model-card-html.ts": "c122c65d212a4fd311ef8abe86dcadd6",
   "src/domains/endpoint/components/WorkloadImageInput.tsx": "bbd6d7e119197e1df4a31227dc035491",
   "src/domains/model-registry/components/ModelRegistryWriteActions.tsx": "e99d42084e95c6de91a74e1beb5e104f",
@@ -461,7 +461,7 @@
   "src/domains/api-key/components/TeamUsage.tsx": "deb75c4370d20668949d41d895228cbd",
   "src/domains/group-policy/components/TeamTokenPool.tsx": "7df2651ec5bc19988b54a8d0a3db0cd5",
   "src/pages/organization/team-detail-tabs.tsx": "a49b1f683d4768ec0ba841a18114edf8",
-  "src/domains/api-key/components/ServiceAccountApiKeys.tsx": "7f125290d063cd0dad911c0f414841ce",
+  "src/domains/api-key/components/ServiceAccountApiKeys.tsx": "e6295e811bed6719974895e54c0798a7",
   "src/domains/api-key/lib/usage-summary.ts": "077faf50424d8aa762884d6fe138515c",
   "src/domains/service-account/components/TeamServiceAccounts.tsx": "87d7a7faaa20381a08aafb9c276107aa",
   "src/domains/service-account/hooks/use-service-accounts.ts": "5df118aeb11cc48274cb710dbdb8d597",
@@ -687,5 +687,8 @@
   "src/domains/endpoint/testing/visual-fixtures.ts": "fee0bb2a5d28cb92ff7f8777c29b5b08",
   "src/domains/api-key/lib/api-key-limits-view.ts": "c477a59f3dda9105c790c1484947aa64",
   "src/domains/api-key/lib/api-key-policy-form.ts": "c7bcd64ea1bb36883095faa629ad299f",
-  "src/domains/api-key/lib/created-key-secret.ts": "f515fd7e1fd3f60dde7530a536ab5cdc"
+  "src/domains/api-key/lib/created-key-secret.ts": "f515fd7e1fd3f60dde7530a536ab5cdc",
+  "src/domains/api-key/lib/api-key-display-list.ts": "d5fcddb219bc1e48dfcf838a4f6a0c5c",
+  "src/domains/api-key/lib/api-key-display-project.ts": "54cb7a7e62c99ba7a0bb19155c62b807",
+  "src/domains/api-key/lib/api-key-display-show.ts": "4bdad463ef8cb2931685a54ca104813e"
 }

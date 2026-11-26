@@ -30,6 +30,13 @@ import {
   rateSummary,
   useApiKeyDisable,
 } from "@/domains/api-key/hooks/use-api-key-policy";
+import {
+  apiKeyDeleteRows,
+  apiKeyRowView,
+  apiKeyStatus,
+  liveKeysNewestFirst,
+  overallTokenQuota,
+} from "@/domains/api-key/lib/api-key-display-list";
 import { serviceAccountKeyErrorMessage } from "@/domains/api-key/lib/create-api-key-error";
 import type { ApiKey } from "@/domains/api-key/types";
 import { Loader } from "@/foundation/components/Loader";
@@ -79,13 +86,7 @@ export function ServiceAccountApiKeys({
       { field: "service_account_id", operator: "eq", value: serviceAccountId },
     ],
   });
-  const keys = (query.data?.data ?? [])
-    .filter((key) => !key.metadata?.deletion_timestamp)
-    .sort((a, b) =>
-      String(b.metadata.creation_timestamp ?? "").localeCompare(
-        String(a.metadata.creation_timestamp ?? ""),
-      ),
-    );
+  const keys = liveKeysNewestFirst(query.data?.data ?? []);
 
   const refresh = () =>
     invalidate({ resource: "api_keys", invalidates: ["list"] });
@@ -112,16 +113,7 @@ export function ServiceAccountApiKeys({
   const remove = (key: ApiKey) =>
     run(async () => {
       const [variable] = buildBatchDeleteVariables(
-        [
-          {
-            original: {
-              metadata: {
-                ...key.metadata,
-                workspace: key.metadata.workspace ?? undefined,
-              },
-            },
-          },
-        ],
+        apiKeyDeleteRows([key]),
         "api_keys",
         false,
       );
@@ -138,12 +130,12 @@ export function ServiceAccountApiKeys({
   };
 
   const quotaSummary = (key: ApiKey) => {
-    const quota = key.spec.limits?.token_quota;
+    const quota = overallTokenQuota(key.spec.limits);
     const parts = rateSummary(key.spec.limits);
-    if (quota?.limit) {
+    if (quota) {
       parts.unshift(
         `${formatTokenQuota(quota.limit)} / ${t(
-          `api_keys.limits.periods.${quota.period ?? "monthly"}`,
+          `api_keys.limits.periods.${quota.period}`,
         )}`,
       );
     }
@@ -200,27 +192,22 @@ export function ServiceAccountApiKeys({
           </TableHeader>
           <TableBody>
             {keys.map((key) => {
-              const disabled = !!key.spec.limits?.disabled;
+              const row = apiKeyRowView(key);
+              const { disabled, alert, label } = apiKeyStatus(key, t);
               return (
                 <TableRow key={key.id} data-testid={`sa-api-key-${key.id}`}>
                   <TableCell>
-                    <div className="font-medium">
-                      {displayName(key.metadata)}
-                    </div>
-                    {key.spec.description && (
+                    <div className="font-medium">{row.name}</div>
+                    {row.description && (
                       <div className="text-xs text-muted-foreground">
-                        {key.spec.description}
+                        {row.description}
                       </div>
                     )}
                   </TableCell>
+                  <TableCell>{row.workspace ?? <EmptyValue />}</TableCell>
                   <TableCell>
-                    {key.metadata.workspace ?? <EmptyValue />}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={disabled ? "destructive" : "outline"}>
-                      {disabled
-                        ? t("api_keys.limits.statusDisabled")
-                        : t("api_keys.limits.statusActive")}
+                    <Badge variant={alert ? "destructive" : "outline"}>
+                      {label}
                     </Badge>
                   </TableCell>
                   <TableCell>{modelSummary(key)}</TableCell>

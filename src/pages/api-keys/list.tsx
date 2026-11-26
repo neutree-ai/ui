@@ -57,6 +57,22 @@ import {
 } from "@/domains/api-key/hooks/use-api-key-policy";
 import { useApiKeyProjectGroups } from "@/domains/api-key/hooks/use-api-key-project-groups";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import {
+  allowedModelView,
+  apiKeyDeleteRows,
+  apiKeyRowView,
+  apiKeyStatus,
+  everyKeyHasWorkspace,
+  keyWorkspaces,
+  rankingKeys as liveRankingKeys,
+} from "@/domains/api-key/lib/api-key-display-list";
+import {
+  apiKeyCurrentGroupLabel,
+  apiKeyGroupLabels,
+  apiKeyGroupView,
+  createKeyPreset as groupCreateKeyPreset,
+  keysMovingTo,
+} from "@/domains/api-key/lib/api-key-display-project";
 import { moveTargetGroupId } from "@/domains/api-key/lib/move-target-group";
 import type {
   AllowedModel,
@@ -67,7 +83,6 @@ import { ALL_WORKSPACES, useWorkspace } from "@/foundation/hooks/use-workspace";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
-import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";
 import Timestamp from "@/foundation/role/Timestamp";
 import { buildBatchDeleteVariables } from "@/foundation/scene/batch-delete";
 import { DeleteConfirmDialog } from "@/foundation/scene/DeleteConfirmDialog";
@@ -126,41 +141,24 @@ function ModelsCell({
 
   return (
     <div className="flex flex-col gap-2">
-      {visible.map((model, index) => {
-        const pinned = Boolean(model.type && model.endpoint_name);
-        const endpoint = pinned
-          ? modelMap
-              .get(model.model)
-              ?.endpoints.find(
-                (item) =>
-                  item.name === model.endpoint_name && item.type === model.type,
-              )
-          : undefined;
+      {visible.map((entry, index) => {
+        const { key, model, endpointName, endpoint, source } = allowedModelView(
+          entry,
+          modelMap,
+          index,
+        );
         return (
-          <div
-            key={`${model.type ?? ""}:${model.endpoint_name ?? ""}:${model.model}:${index}`}
-            className="flex min-w-0 flex-col gap-1"
-          >
-            <span className="truncate font-semibold" title={model.model}>
-              {model.model}
+          <div key={key} className="flex min-w-0 flex-col gap-1">
+            <span className="truncate font-semibold" title={model}>
+              {model}
             </span>
-            {pinned ? (
+            {endpointName ? (
               <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                <span className="max-w-[140px] truncate">
-                  {model.endpoint_name}
-                </span>
+                <span className="max-w-[140px] truncate">{endpointName}</span>
                 {/* The source label replaces the old Internal/External badge.
-                    When the endpoint is no longer listed we fall back to the
+                    When the endpoint is no longer listed it falls back to the
                     derivation, which is exact for internal endpoints. */}
-                <ModelSourceBadge
-                  source={
-                    endpoint
-                      ? endpoint.source
-                      : model.type
-                        ? modelSourceOfEndpointKind(model.type)
-                        : undefined
-                  }
-                />
+                <ModelSourceBadge source={source} />
                 {endpoint ? (
                   <Badge
                     variant="outline"
@@ -206,12 +204,6 @@ function ModelsCell({
 
 export const ApiKeysList = () => {
   const { t } = useTranslation();
-  // The ungrouped bucket is synthesised by the RPC, so its name arrives as a
-  // fixed English string; only real Projects carry a user-supplied name.
-  const projectLabel = (project: ApiKeyProject) =>
-    project.is_ungrouped
-      ? t("api_keys.projects.ungrouped")
-      : project.metadata.name;
   const { current: workspace } = useWorkspace();
   const scoped = workspace === ALL_WORKSPACES ? undefined : workspace;
   const [open, setOpen] = useState(false);
@@ -262,21 +254,8 @@ export const ApiKeysList = () => {
     queryOptions: { enabled: Boolean(workspace) },
   });
   const rankingKeys = useMemo(
-    () =>
-      (keysData?.data ?? [])
-        .filter(
-          (key) =>
-            !key.metadata?.deletion_timestamp &&
-            (workspace === ALL_WORKSPACES ||
-              key.metadata?.workspace === workspace),
-        )
-        .map((key) => ({
-          id: String(key.id),
-          name:
-            key.metadata?.display_name || key.metadata?.name || String(key.id),
-          description: key.spec.description,
-        })),
-    [keysData, workspace],
+    () => liveRankingKeys(keysData?.data ?? [], scoped),
+    [keysData, scoped],
   );
   const [debouncedQuery, setDebouncedQuery] = useState("");
   useEffect(() => {
@@ -300,26 +279,13 @@ export const ApiKeysList = () => {
   const selectedKeys = (keysData?.data ?? []).filter((key) =>
     selected.has(key.id),
   );
-  const selectedWorkspaces = [
-    ...new Set(
-      selectedKeys
-        .map((key) => key.metadata.workspace)
-        .filter((value): value is string => Boolean(value)),
-    ),
-  ];
+  const selectedWorkspaces = keyWorkspaces(selectedKeys);
   const moveWorkspace =
     selectedWorkspaces.length === 1 ? selectedWorkspaces[0] : "";
-  const movableKeyCount = selectedKeys.filter(
-    (key) => (key.spec.project_id ?? "") !== target,
-  ).length;
+  const movableKeyCount = keysMovingTo(selectedKeys, target).length;
   const { data: moveProjects } = useApiKeyProjects(moveWorkspace);
   const projects = grouped.map((group) => group.project);
-  const moveProjectNames = new Map(
-    [...moveProjects, ...projects].map((project) => [
-      project.id,
-      projectLabel(project),
-    ]),
-  );
+  const moveProjectNames = apiKeyGroupLabels([...moveProjects, ...projects], t);
   const expansionContext = [
     scoped,
     debouncedQuery,
@@ -369,10 +335,7 @@ export const ApiKeysList = () => {
     ]);
   };
   const createKey = (project?: ApiKeyProject) => {
-    setCreateKeyPreset({
-      workspace: project?.metadata.workspace ?? scoped ?? "",
-      projectId: project?.is_ungrouped ? "" : (project?.id ?? ""),
-    });
+    setCreateKeyPreset(groupCreateKeyPreset(project, scoped));
     setCreateKeySession((session) => session + 1);
     setOpen(true);
   };
@@ -469,19 +432,12 @@ export const ApiKeysList = () => {
   };
   const deleteApiKeys = async (forceDelete: boolean) => {
     if (deletingKeys.length === 0) return;
-    if (deletingKeys.some((key) => !key.metadata.workspace)) {
+    if (!everyKeyHasWorkspace(deletingKeys)) {
       setActionError(t("api_keys.messages.missingWorkspace"));
       return;
     }
     const variables = buildBatchDeleteVariables(
-      deletingKeys.map((key) => ({
-        original: {
-          metadata: {
-            ...key.metadata,
-            workspace: key.metadata.workspace ?? undefined,
-          },
-        },
-      })),
+      apiKeyDeleteRows(deletingKeys),
       "api_keys",
       forceDelete,
     );
@@ -633,13 +589,10 @@ export const ApiKeysList = () => {
                   className="grid grid-cols-2 gap-4 border-b px-3 py-2 text-sm last:border-b-0"
                 >
                   <span className="min-w-0 truncate font-medium">
-                    {key.metadata.display_name || key.metadata.name}
+                    {apiKeyRowView(key).name}
                   </span>
                   <span className="min-w-0 truncate text-muted-foreground">
-                    {key.spec.project_id
-                      ? (moveProjectNames.get(key.spec.project_id) ??
-                        t("api_keys.move.unknownProject"))
-                      : t("api_keys.projects.ungrouped")}
+                    {apiKeyCurrentGroupLabel(key, moveProjectNames, t)}
                   </span>
                 </div>
               ))}
@@ -917,6 +870,7 @@ export const ApiKeysList = () => {
           )}
         {pageGroups.map(({ project, shown, count }) => {
           const isOpen = !collapsed.has(project.id);
+          const group = apiKeyGroupView(project, t);
           const projectKeyIds = shown.map((key) => key.id);
           const selectedProjectKeyCount = projectKeyIds.filter((id) =>
             selected.has(id),
@@ -951,15 +905,13 @@ export const ApiKeysList = () => {
                     <ChevronRight className="h-4 w-4 shrink-0" />
                   )}
                   <span className="min-w-0">
-                    <strong className="block truncate">
-                      {projectLabel(project)}
-                    </strong>
-                    {project.spec.description && (
+                    <strong className="block truncate">{group.label}</strong>
+                    {group.description && (
                       <span
                         className="block truncate text-xs text-muted-foreground"
-                        title={project.spec.description}
+                        title={group.description}
                       >
-                        {project.spec.description}
+                        {group.description}
                       </span>
                     )}
                   </span>
@@ -972,7 +924,7 @@ export const ApiKeysList = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {!project.is_ungrouped && (
+                    {group.isProject && (
                       <DropdownMenuItem onClick={() => startEdit(project)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         {t("api_keys.projects.edit")}
@@ -982,7 +934,7 @@ export const ApiKeysList = () => {
                       <Plus className="mr-2 h-4 w-4" />
                       {t("api_keys.projects.createKey")}
                     </DropdownMenuItem>
-                    {!project.is_ungrouped && (
+                    {group.isProject && (
                       <DropdownMenuItem
                         className="text-destructive"
                         disabled={count > 0}
@@ -1023,7 +975,7 @@ export const ApiKeysList = () => {
                               <Checkbox
                                 aria-label={t(
                                   "api_keys.selection.selectAllInProject",
-                                  { name: projectLabel(project) },
+                                  { name: group.label },
                                 )}
                                 checked={projectSelectionState}
                                 onCheckedChange={(checked) =>
@@ -1052,6 +1004,7 @@ export const ApiKeysList = () => {
                         <tbody>
                           {shown.map((key) => {
                             const limits = key.spec.limits ?? {};
+                            const row = apiKeyRowView(key);
                             const usage = usageByKey.get(String(key.id));
                             // A per-model key has no single pool, so the summary
                             // returns a null token_limit for it: there is a
@@ -1091,6 +1044,7 @@ export const ApiKeysList = () => {
                             const topModelOver = topModelRatio >= 1;
                             const topModelWarn =
                               !topModelOver && topModelRatio >= 0.8;
+                            const status = apiKeyStatus(key, t, usageOver);
                             return (
                               <tr key={key.id} className="border-t">
                                 <td>
@@ -1115,30 +1069,27 @@ export const ApiKeysList = () => {
                                     variant="link"
                                     className="!h-auto !min-h-0 items-start !p-0 text-left"
                                   >
-                                    <strong>
-                                      {key.metadata.display_name ||
-                                        key.metadata.name}
-                                    </strong>
+                                    <strong>{row.name}</strong>
                                   </ShowButton>
-                                  {key.spec.description && (
+                                  {row.description && (
                                     <div
                                       className="max-w-xs truncate text-xs text-muted-foreground"
-                                      title={key.spec.description}
+                                      title={row.description}
                                     >
-                                      {key.spec.description}
+                                      {row.description}
                                     </div>
                                   )}
                                 </td>
                                 <td>
-                                  {key.metadata.workspace ? (
+                                  {row.workspace ? (
                                     <ShowButton
                                       resource="workspaces"
-                                      recordItemId={key.metadata.workspace}
+                                      recordItemId={row.workspace}
                                       meta={{}}
                                       variant="link"
                                       className="!h-auto !min-h-0 items-start !p-0"
                                     >
-                                      {key.metadata.workspace}
+                                      {row.workspace}
                                     </ShowButton>
                                   ) : (
                                     <EmptyValue />
@@ -1147,18 +1098,10 @@ export const ApiKeysList = () => {
                                 <td>
                                   <Badge
                                     variant={
-                                      limits.disabled || usageOver
-                                        ? "destructive"
-                                        : "outline"
+                                      status.alert ? "destructive" : "outline"
                                     }
                                   >
-                                    {limits.disabled
-                                      ? t("api_keys.limits.statusDisabled")
-                                      : usageOver
-                                        ? t(
-                                            "api_keys.limits.statusQuotaExceeded",
-                                          )
-                                        : t("api_keys.limits.statusActive")}
+                                    {status.label}
                                   </Badge>
                                 </td>
                                 <td>
@@ -1333,18 +1276,18 @@ export const ApiKeysList = () => {
                                       <DropdownMenuItem
                                         onClick={() =>
                                           void (
-                                            limits.disabled
+                                            status.disabled
                                               ? enable(key.id)
                                               : disable(key.id)
                                           ).then(refresh)
                                         }
                                       >
-                                        {limits.disabled ? (
+                                        {status.disabled ? (
                                           <Power className="mr-2 h-4 w-4" />
                                         ) : (
                                           <PowerOff className="mr-2 h-4 w-4" />
                                         )}
-                                        {limits.disabled
+                                        {status.disabled
                                           ? t("api_keys.limits.enable")
                                           : t("api_keys.limits.disable")}
                                       </DropdownMenuItem>
