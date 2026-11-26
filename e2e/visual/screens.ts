@@ -12,6 +12,12 @@ import {
   upgradingCluster,
 } from "../../src/domains/cluster/testing/visual-fixtures";
 import {
+  chatEndpoint,
+  endpointFormCustom,
+  endpointFormTables,
+  unversionedEngineEndpoint,
+} from "../../src/domains/endpoint/testing/visual-fixtures";
+import {
   ldapSource,
   oidcSource,
   untestedOidcSource,
@@ -122,6 +128,26 @@ export const screens: Screen[] = [
       custom: clusterVersions,
     },
     ready: gpuCluster.metadata.name,
+  },
+
+  {
+    id: "endpoint-engine-unversioned",
+    route: `/${VISUAL_WORKSPACE}/endpoints/show/${unversionedEngineEndpoint.metadata.name}`,
+    data: record("endpoints", unversionedEngineEndpoint),
+    ready: unversionedEngineEndpoint.metadata.name,
+  },
+  {
+    id: "endpoint-edit",
+    route: `/${VISUAL_WORKSPACE}/endpoints/edit/${chatEndpoint.metadata.name}`,
+    data: {
+      tables: {
+        endpoints: [chatEndpoint],
+        clusters: [sshCluster],
+        ...endpointFormTables,
+      },
+      custom: endpointFormCustom,
+    },
+    ready: "Review configuration",
   },
 
   apiKey("used", usedApiKey, "CI pipeline"),

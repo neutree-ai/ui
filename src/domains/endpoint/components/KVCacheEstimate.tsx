@@ -25,6 +25,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
+  defaultEstimateTokens,
+  kvCacheEstimateInputs,
+} from "@/domains/endpoint/lib/endpoint-deploy-model";
+import {
   type EngineCacheArgControls,
   type EngineCacheArgs,
   NO_ENGINE_CACHE_ARG_CONTROLS,
@@ -266,22 +270,6 @@ const Factor = ({ factor }: { factor: KvCacheFactor }) => {
  * the config states, and it is the starting value of an input the user owns.
  */
 const DEFAULT_INDEXER_PRECISION: KvCachePrecisionId = "fp4";
-
-/**
- * Which extra inputs a checkpoint calls for. Each one is keyed on a statement in
- * the checkpoint rather than on the family the estimator settled on: the family
- * depends on these inputs, so reading it back to decide which to render would be
- * circular, and a model that states none of them keeps the panel it had.
- */
-const hasLinearAttention = (info: ModelInfo): boolean =>
-  (info.layer_types ?? []).includes("linear_attention");
-
-const hasIndexer = (info: ModelInfo): boolean =>
-  (info.compress_ratios ?? []).includes(4);
-
-const hasDraftModules = (info: ModelInfo): boolean =>
-  Boolean(info.mtp_num_layers) ||
-  (info.compress_ratios ?? []).length > (info.num_hidden_layers ?? 0);
 
 const PrecisionSelect = ({
   id,
@@ -817,10 +805,8 @@ const Estimator = ({
   // number presented as an estimate of their deployment. Concurrency does have
   // a floor worth defaulting to: one sequence is the smallest deployment that
   // exists, and it is visibly a starting point rather than a claim.
-  const derivedTokens =
-    engineArgs.maxModelLen ?? info.max_position_embeddings ?? null;
   const tokensField = useDeploymentDefault(
-    derivedTokens,
+    defaultEstimateTokens(engineArgs, info),
     engineArgs.maxModelLen !== null
       ? "deployment"
       : (modelFieldSource(info, "max_position_embeddings") ?? "auto"),
@@ -853,9 +839,13 @@ const Estimator = ({
   const [includeDraftKvCache, setIncludeDraftKvCache] = useState(false);
   const [showFormula, setShowFormula] = useState(false);
 
-  const linear = hasLinearAttention(info);
-  const indexes = hasIndexer(info);
-  const drafts = hasDraftModules(info);
+  // Each extra input is keyed on a statement in the checkpoint rather than on
+  // the family the estimator settles on, which depends on these inputs.
+  const {
+    linearAttention: linear,
+    indexer: indexes,
+    draftModules: drafts,
+  } = kvCacheEstimateInputs(info);
 
   const tokensSource = tokensField.source;
   const sequencesSource = sequencesField.source;

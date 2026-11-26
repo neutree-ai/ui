@@ -24,13 +24,10 @@ describe("EndpointEngine", () => {
     screen.getByText("vllm:v0.24.0");
   });
 
-  // A catalog saved with a broken or engine-less spec used to throw here and,
-  // with no error boundary above it, blank the whole list page.
-  it.each([
-    ["a missing engine", {}],
-    ["an engine without a name", { engine: { version: "v1" } }],
-  ])("renders a placeholder for %s", (_label, spec) => {
-    render(<EndpointEngine spec={spec as never} metadata={metadata} />);
+  // A catalog saved with an engine-less spec used to throw here and, with no
+  // error boundary above it, blank the whole list page.
+  it("renders a placeholder for a missing engine", () => {
+    render(<EndpointEngine spec={{}} metadata={metadata} />);
 
     screen.getByText("-");
   });

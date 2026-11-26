@@ -24,6 +24,7 @@ import { DocumentListEditor } from "@/domains/endpoint/components/DocumentListEd
 import { PlaygroundLayout } from "@/domains/endpoint/components/PlaygroundLayout";
 import { useDocumentList } from "@/domains/endpoint/hooks/use-document-list";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
+import { playgroundServePath } from "@/domains/endpoint/lib/playground-target";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { clientPostgrest } from "@/foundation/lib/api";
 import { CHART_BRAND } from "@/foundation/role/chart-palette";
@@ -131,7 +132,7 @@ export default function EmbeddingPlayground({
     }
 
     const openai = createOpenAI({
-      baseURL: `/api/v1/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1`,
+      baseURL: `/api/v1${playgroundServePath(endpoint)}`,
       apiKey: "no",
       headers: { ...clientPostgrest.headers },
     });

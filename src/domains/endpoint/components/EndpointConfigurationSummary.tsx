@@ -2,12 +2,15 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatCatalogFeature } from "@/domains/endpoint/lib/catalog-origin";
 import {
+  endpointConfigurationSummary,
+  type SummaryRow,
+} from "@/domains/endpoint/lib/endpoint-display-summary";
+import {
   CAPACITY_METRIC_LABELS,
   type EndpointReviewContext,
   formatCapacityValue,
 } from "@/domains/endpoint/lib/review-context";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
-import { getRoundedVgpuMemoryGiBValue } from "@/domains/endpoint/lib/vgpu";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
@@ -28,27 +31,13 @@ export function EndpointConfigurationSummary({
 }: Props) {
   const { t } = useTranslation();
   const spec = values.spec;
-  const model = spec.model;
-  const resources = spec.resources;
-  const accelerator = resources?.accelerator;
-  const virtualization = accelerator?.virtualization;
+  const summary = endpointConfigurationSummary(spec, t);
   const engineArgs = Object.entries(
     (spec.variables?.engine_args as Record<string, unknown> | undefined) ?? {},
   );
   const env = Object.entries(spec.env ?? {});
-  const replicas = Math.max(1, Number(spec.replicas?.num ?? 1));
   const schedulerType = spec.deployment_options?.scheduler?.type;
   const scheduler = schedulerLabel(schedulerType, t) ?? schedulerType;
-  const vgpuMemoryGiB = getRoundedVgpuMemoryGiBValue(
-    virtualization?.memory_mib,
-  );
-  const cacheTimeout = spec.kv_cache?.options?.timeout_seconds ?? 5;
-  const cacheValue = spec.kv_cache
-    ? t("endpoints.wizard.summary.cacheConfiguration", {
-        provider: spec.kv_cache.provider,
-        timeout: cacheTimeout,
-      })
-    : t("endpoints.wizard.summary.cacheDisabled");
 
   return (
     <div className="space-y-5">
@@ -62,14 +51,16 @@ export function EndpointConfigurationSummary({
       <ConfigSection title={t("endpoints.wizard.summary.deployment")}>
         <ConfigRow label={t("common.fields.cluster")}>
           <span className="inline-flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5">
-            <span>{spec.cluster || <EmptyValue />}</span>
+            <span>{summary.cluster || <EmptyValue />}</span>
             <span className="text-xs text-muted-foreground">
               · {t("endpoints.fields.nodeCount")}{" "}
               {reviewContext.nodeCount ?? <EmptyValue />}
             </span>
           </span>
         </ConfigRow>
-        <ConfigRow label={t("endpoints.fields.replicas")}>{replicas}</ConfigRow>
+        <ConfigRow label={t("endpoints.fields.replicas")}>
+          {summary.replicas}
+        </ConfigRow>
         <ConfigRow label={t("endpoints.fields.schedulerType")}>
           {scheduler || <EmptyValue />}
         </ConfigRow>
@@ -116,59 +107,16 @@ export function EndpointConfigurationSummary({
               )}
             </>
           )}
-          <ConfigRow label={t("endpoints.fields.modelRegistry")}>
-            {model?.registry || <EmptyValue />}
-          </ConfigRow>
-          <ConfigRow label={t("common.fields.model")}>
-            {model?.name || <EmptyValue />}
-          </ConfigRow>
-          <ConfigRow label={t("common.fields.task")}>
-            {model?.task || <EmptyValue />}
-          </ConfigRow>
-          <ConfigRow label={t("endpoints.fields.modelVersion")}>
-            {model?.version ||
-              t("endpoints.wizard.summary.versionResolvedAtDeployment")}
-          </ConfigRow>
-          <ConfigRow label={t("endpoints.fields.modelFile")}>
-            {model?.file || t("endpoints.wizard.summary.fileDefaultEntryPoint")}
-          </ConfigRow>
+          <ConfigRows rows={summary.model} />
         </ConfigSection>
       )}
 
       <ConfigSection title={t("endpoints.wizard.summary.runtime")}>
-        <ConfigRow label={t("common.fields.engine")}>
-          {formatEngine(spec.engine)}
-        </ConfigRow>
-        <ConfigRow label={t("endpoints.wizard.summary.cache")}>
-          {cacheValue}
-        </ConfigRow>
+        <ConfigRows rows={summary.runtime} />
       </ConfigSection>
 
       <ConfigSection title={t("endpoints.wizard.summary.resources")}>
-        <ConfigRow label={t("endpoints.fields.accelerator")}>
-          {accelerator?.product || accelerator?.type || <EmptyValue />}
-        </ConfigRow>
-        <ConfigRow label={t("endpoints.wizard.summary.resourceRequest")}>
-          {t("endpoints.wizard.summary.resourcePerReplicaValue", {
-            cpu: resources?.cpu ?? 0,
-            memory: resources?.memory ?? 0,
-            gpu: resources?.gpu ?? 0,
-          })}
-        </ConfigRow>
-        {vgpuMemoryGiB != null && (
-          <ConfigRow label={t("endpoints.fields.singleCardMemory")}>
-            {t("endpoints.wizard.summary.gibValue", {
-              value: vgpuMemoryGiB,
-            })}
-          </ConfigRow>
-        )}
-        {virtualization?.core_percent != null && (
-          <ConfigRow label={t("endpoints.fields.vgpuCoreLimit")}>
-            {t("endpoints.wizard.summary.percentValue", {
-              value: virtualization.core_percent,
-            })}
-          </ConfigRow>
-        )}
+        <ConfigRows rows={summary.resources} />
       </ConfigSection>
 
       {(reviewContext.clusterCapacity ||
@@ -249,12 +197,15 @@ const ConfigRow = ({
   </div>
 );
 
-const formatEngine = (
-  engine: Endpoint["spec"]["engine"] | null | undefined,
-) => {
-  const value = [engine?.engine, engine?.version].filter(Boolean).join(" ");
-  return value || <EmptyValue />;
-};
+const ConfigRows = ({ rows }: { rows: SummaryRow[] }) => (
+  <>
+    {rows.map((row) => (
+      <ConfigRow key={row.label} label={row.label}>
+        {row.value || <EmptyValue />}
+      </ConfigRow>
+    ))}
+  </>
+);
 
 const capacityValue = (value: number | null) =>
   value == null ? <EmptyValue /> : formatCapacityValue(value);

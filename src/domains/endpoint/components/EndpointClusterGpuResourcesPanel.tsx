@@ -42,6 +42,10 @@ import type {
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
 import {
+  summarizeResourcePool,
+  toPercentValue,
+} from "../lib/endpoint-deploy-resources";
+import {
   type EndpointResourceRequestContext,
   isDeviceUsableForRequest,
 } from "../lib/gpu-usability";
@@ -115,37 +119,7 @@ const readingTitle = (value: ReactNode) =>
 
 const formatUnitLabel = (unit: string | undefined) => unit?.trim() ?? "";
 
-const toPercentValue = (
-  used: number | null | undefined,
-  total: number | null | undefined,
-) => {
-  const numericUsed = Number(used ?? 0);
-  const numericTotal = Number(total ?? 0);
-  if (!Number.isFinite(numericUsed) || numericTotal <= 0) return 0;
-
-  return Number(((numericUsed / numericTotal) * 100).toFixed(1));
-};
-
 const formatPercent = (value: number) => `${formatCount(value)}%`;
-
-const summarizeResourcePool = (
-  total: number | null | undefined,
-  available: number | null | undefined,
-) => {
-  const normalizedTotal = total ?? null;
-  const normalizedAvailable = available ?? null;
-  const used =
-    normalizedTotal == null || normalizedAvailable == null
-      ? null
-      : Math.max(0, normalizedTotal - normalizedAvailable);
-
-  return {
-    available: normalizedAvailable,
-    total: normalizedTotal,
-    used,
-    percent: toPercentValue(used, normalizedTotal),
-  };
-};
 
 const sumOptionalNumbers = (values: Array<number | null | undefined>) => {
   let hasValue = false;
@@ -608,14 +582,8 @@ function EndpointClusterResourceSummary({
   gpuCount: number | null;
   t: Translate;
 }) {
-  const cpuSummary = summarizeResourcePool(
-    resourceInfo.allocatable?.cpu,
-    resourceInfo.available?.cpu,
-  );
-  const memorySummary = summarizeResourcePool(
-    resourceInfo.allocatable?.memory,
-    resourceInfo.available?.memory,
-  );
+  const cpuSummary = summarizeResourcePool(resourceInfo, "cpu");
+  const memorySummary = summarizeResourcePool(resourceInfo, "memory");
   const acceleratorMemorySummary = summarizeRows(summaryRows, "memory");
   const acceleratorCoreSummary = summarizeRows(summaryRows, "core");
   const showDetailedGpuMetrics =
@@ -746,14 +714,8 @@ const groupNodesWithGpuRows = (
       nodeName,
       rows: nodeRows,
       usableCount: nodeRows.filter((row) => row.usable).length,
-      cpuSummary: summarizeResourcePool(
-        nodeStatus?.allocatable?.cpu,
-        nodeStatus?.available?.cpu,
-      ),
-      memorySummary: summarizeResourcePool(
-        nodeStatus?.allocatable?.memory,
-        nodeStatus?.available?.memory,
-      ),
+      cpuSummary: summarizeResourcePool(nodeStatus, "cpu"),
+      memorySummary: summarizeResourcePool(nodeStatus, "memory"),
       gpuMemory: summarizeRows(nodeRows, "memory"),
       gpuCore: summarizeRows(nodeRows, "core"),
     };

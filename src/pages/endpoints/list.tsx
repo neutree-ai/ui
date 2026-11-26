@@ -7,6 +7,7 @@ import {
 } from "@/domains/endpoint/components/EndpointSaveAsCatalogAction";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ModelTaskFilter } from "@/domains/endpoint/components/ModelTaskFilter";
+import { endpointModelRef } from "@/domains/endpoint/lib/endpoint-display-model";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { endpointPhases } from "@/foundation/endpoint-phase/endpoint-phases";
 import { useTranslation } from "@/foundation/lib/i18n";
@@ -88,7 +89,7 @@ export const EndpointsList = () => {
                 // than labelling a model it does not have.
                 <div className="flex items-center gap-1">
                   <EndpointModel model={model} />
-                  {model?.name && (
+                  {endpointModelRef(model) && (
                     <ModelSourceBadge source={SELF_HOSTED_MODEL_SOURCE} />
                   )}
                 </div>

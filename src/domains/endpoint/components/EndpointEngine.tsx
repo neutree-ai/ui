@@ -1,3 +1,4 @@
+import { engineRefLabel } from "@/domains/endpoint/lib/endpoint-display-model";
 import { ShowButton } from "@/foundation/scene/ShowButton";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { Metadata } from "@/foundation/types/basic-types";
@@ -17,7 +18,8 @@ export default function EndpointEngine({
   // spec a user saved in a broken shape. Render a placeholder rather than
   // throwing: this sits inside list cards, where one bad record would otherwise
   // take down the whole page.
-  if (!engine?.engine) {
+  const label = engineRefLabel(engine);
+  if (!engine || !label) {
     return <EmptyValue />;
   }
   return (
@@ -32,7 +34,7 @@ export default function EndpointEngine({
       variant="link"
       resource="engines"
     >
-      {engine.engine}:{engine.version}
+      {label}
     </ShowButton>
   );
 }

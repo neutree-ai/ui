@@ -2,6 +2,10 @@ import { useCustom } from "@refinedev/core";
 import { useEffect, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { playgroundMaxLength } from "@/domains/endpoint/lib/chat-helpers";
+import {
+  hasPlaygroundTarget,
+  playgroundServePath,
+} from "@/domains/endpoint/lib/playground-target";
 import type { Endpoint } from "@/domains/endpoint/types";
 
 type ModelOption = { label: string; value: string };
@@ -15,10 +19,10 @@ export function usePlaygroundModels(
   form: UseFormReturn<any>,
 ) {
   const modelsData = useCustom({
-    url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/models`,
+    url: `${playgroundServePath(endpoint)}/models`,
     method: "get",
     queryOptions: {
-      enabled: Boolean(endpoint?.metadata?.name),
+      enabled: hasPlaygroundTarget(endpoint),
     },
   });
 

@@ -54,14 +54,20 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 - Workspace mechanics: `src/foundation/contract.md`, “Workspace selection”.
 - Status mechanics: `src/foundation/contract.md`, “Status tone”; the table is `foundation/endpoint-phase`
   (`endpointPhases`), shared with the kinds that show an endpoint; unknown has no tone.
-- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`.
+- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`. `lib/endpoint-display-model.ts` decides what they
+  show: `endpointModelRef` (no name, no model; `name:version`), `engineRefLabel` (`engine:version`, bare name without a
+  version, empty without a name; the review summary uses it too). Tests: `lib/endpoint-display-model.test.ts`.
+- Summaries: `lib/endpoint-display-summary.ts` holds replica counts (`replicaCount` stored, default 1;
+  `requestedReplicas` form, at least 1), the KV cache timeout default (5s), the review rows
+  (`endpointConfigurationSummary`) and the catalog resources card view (`requestedResourcesView`). Tests beside it.
 - Resource units: `normalizeEndpointResourcesForForm` and submit share `getVgpuVirtualization` decoding.
   Tests: `lib/endpoint-form-helpers.test.ts`, `lib/vgpu.test.ts`.
 - Structured arguments: `parseStructuredArgument` serves submit and `EndpointAdvancedParameters`; colocated tests.
 - Runtime allocations: `lib/resource-status.ts`, `EndpointRuntimeResourcesCard`; their tests.
 - Performance trends: `lib/performance-trends.ts`, `lib/performance-format.ts`; colocated tests.
   `EndpointPerformanceTrendChart` uses its existing local `TrendPlot` for single and split latency series.
-- Playground: `usePlaygroundModels`, `lib/chat-helpers.ts`, `lib/rerank-helpers.ts`; colocated tests.
+- Playground: `usePlaygroundModels`, `lib/chat-helpers.ts`, `lib/rerank-helpers.ts`; serve-proxy path
+  `lib/playground-target.ts`; colocated tests.
 
 ## Scenes
 
@@ -73,7 +79,10 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
   Header fields are `DetailFields inline` over `lib/detail-fields.tsx` (Foundation "Detail fields"):
   `endpointIdentityFields` (model, source, task, engine, catalog only when annotated, cluster link) before the access
   summary, `endpointRuntimeFields` (served models or the empty marker, replicas defaulting to 1, scheduler only above
-  one replica) after it. Polls basic 15s, cluster 30s.
+  one replica) after it. Polls basic 15s, cluster 30s. Lookups, inactive phases (Paused, Deleted), the Ray Serve
+  application URL, shown engine parameters (ZCache adds the reported kv_transfer_config) and the KV cache section
+  (`endpointKVCacheSummary`: hidden unless the cluster has ZCache on and the endpoint uses ZCache or none) are in
+  `lib/endpoint-display-show.ts`; tests beside it.
 - Create/Edit: `EndpointDeploymentForm` / `useEndpointForm`; on-touch validation and final global validation. Replicas
   belong to the resources step, including review and server-error navigation; no catalog reapplication on edit.
 - Create: manual unless model_catalog hash query; registry-model links prefill identity. Ordinary catalogs merge
@@ -101,11 +110,16 @@ use response bounds. Backend `performanceTrendsHandler` / `performanceRange`
 (`internal/routes/observations/performance_trends.go`) return rolling series without summary; custom range maximum 30
 days.
 
-Shared placement/observations: `src/foundation/contract.md`, “Accelerator resources”. `useEndpointForm` credits only
-observed same-cluster allocations on eligible nodes/devices. A Running edit with no reported replica placement (static
-CPU-only replicas report none), same cluster and cache, and a request within its current allocation skips the placement
-check (`isRequestWithinAllocation`, tests beside it). Without snapshots, legacy aggregate checks apply. Empty
-cache pools fail positive requests. CPU/memory input ceilings retain values above the per-node maximum.
+Shared placement/observations: `src/foundation/contract.md`, “Accelerator resources”. The form's request rules live in
+`lib/endpoint-form-capacity.ts`: `endpointFormCluster` (cluster type, vGPU support, node count),
+`endpointEditCredit`, `endpointRequestCapacity` (allocation mode, card figures, verdicts, input ceilings),
+`gpuCapacityMessages` and `reviewCapacityMetrics`. Edits credit only observed same-cluster allocations on eligible
+nodes/devices. A Running edit with no reported replica placement (static CPU-only replicas report none), same cluster
+and cache, and a request within its current allocation skips the placement check (`isRequestWithinAllocation`).
+Without snapshots, legacy aggregate checks apply. Empty cache pools fail positive requests. CPU/memory input ceilings
+retain values above the per-node maximum. Virtualization edits (unsupported keys dropped, memory aligned to the shown
+GiB, typed memory/core) and accelerator reconciliation with the cluster inventory: `lib/endpoint-form-resources.ts`.
+Tests beside each; the hook tests prove the wiring.
 
 ## Submit and reopen
 
@@ -132,9 +146,14 @@ is optional. Create checks resolved registry/model existence; unresolved reads s
 reported on `spec.model.name`, shown for both model sources. Model aliases label physical
 names. Registry changes retain the model name until a successful exact lookup disproves it; version/file/info are
 cleared. Model errors open the editor and optional fields. Feature number inputs allow decimals; integer inputs step by
-one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks.
-Create prefers vLLM; engine images constrain accelerators. ZCache timeout: 0.1..60, switch default 5 seconds;
-`useKvCacheAvailability` / `kvCacheUnavailableReason` tests own availability. Labels use `endpoints.*` / `common.*`.
+one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks
+(`lib/endpoint-deploy-engine.ts`). Create prefers vLLM; engine images constrain accelerators. Model and engine writes:
+`lib/endpoint-form-model.ts`. ZCache timeout: 0.1..60,
+switch default 5 seconds, a typed timeout kept when re-enabled (`lib/endpoint-deploy-kv-cache.ts`);
+`kvCacheUnavailableReason` / `checksZCacheRuntime` tests own availability. The review step summarises each step through
+`endpointReviewSummary` (`lib/endpoint-deploy-review.ts`): dashes for empty identities, zero resources, one replica.
+Capacity pools: `lib/endpoint-deploy-resources.ts`; resolved-model summary, variant registry and KV estimate inputs:
+`lib/endpoint-deploy-model.ts`. Labels use `endpoints.*` / `common.*`.
 
 ## Overrides
 

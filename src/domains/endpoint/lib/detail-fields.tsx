@@ -4,6 +4,7 @@ import EndpointModel from "@/domains/endpoint/components/EndpointModel";
 import ModelTask from "@/domains/endpoint/components/ModelTask";
 import { ServedModelName } from "@/domains/endpoint/components/ServedModelName";
 import { readCatalogOrigin } from "@/domains/endpoint/lib/catalog-origin";
+import { replicaCount } from "@/domains/endpoint/lib/endpoint-display-summary";
 import { schedulerLabel } from "@/domains/endpoint/lib/scheduler";
 import type { Endpoint } from "@/domains/endpoint/types";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
@@ -13,8 +14,6 @@ import { ShowButton } from "@/foundation/scene/ShowButton";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type EndpointField = DetailField<Endpoint>;
-
-const replicaCount = (endpoint: Endpoint) => endpoint.spec.replicas?.num ?? 1;
 
 /** What the endpoint serves and where: the header fields before its URLs. */
 export const endpointIdentityFields = (endpoint: Endpoint): EndpointField[] => {
@@ -89,6 +88,8 @@ export const endpointRuntimeFields = (endpoint: Endpoint): EndpointField[] => [
         <EmptyValue />
       ),
   }),
-  field("endpoints.fields.replicas", replicaCount),
-  ...(replicaCount(endpoint) > 1 ? [scheduler] : []),
+  field("endpoints.fields.replicas", (current) =>
+    replicaCount(current.spec.replicas),
+  ),
+  ...(replicaCount(endpoint.spec.replicas) > 1 ? [scheduler] : []),
 ];

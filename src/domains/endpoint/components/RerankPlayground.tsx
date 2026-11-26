@@ -15,6 +15,7 @@ import { DocumentListEditor } from "@/domains/endpoint/components/DocumentListEd
 import { PlaygroundLayout } from "@/domains/endpoint/components/PlaygroundLayout";
 import { useDocumentList } from "@/domains/endpoint/hooks/use-document-list";
 import { usePlaygroundModels } from "@/domains/endpoint/hooks/use-playground-models";
+import { playgroundServePath } from "@/domains/endpoint/lib/playground-target";
 import {
   processRerankResults,
   type RankedDocument,
@@ -106,7 +107,7 @@ export default function RerankPlayground({ endpoint }: RerankPlaygroundProps) {
     setIsProcessing(true);
     try {
       const { data } = await rerankMutation({
-        url: `/serve-proxy/${endpoint.metadata.workspace}/${endpoint.metadata.name}/v1/rerank`,
+        url: `${playgroundServePath(endpoint)}/rerank`,
         method: "post",
         values: {
           model: values.model,

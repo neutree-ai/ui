@@ -9,6 +9,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  clusterDeviceOf,
+  requestedCorePercent,
+} from "@/domains/endpoint/lib/endpoint-display-show";
+import {
   type EndpointGpuResourceAllocation,
   type EndpointGpuResourceGroup,
   type EndpointReplicaResourceGroup,
@@ -17,7 +21,6 @@ import {
   getEndpointResourceSummaryRows,
 } from "@/domains/endpoint/lib/resource-status";
 import { otherGpuReservation } from "@/domains/endpoint/lib/shared-gpu";
-import { getVgpuVirtualization } from "@/domains/endpoint/lib/vgpu";
 import {
   type AcceleratorSample,
   allocationComposition,
@@ -1558,9 +1561,7 @@ export default function EndpointRuntimeResourcesCard({
   );
   const activeReplicaKey = hoveredReplicaKey ?? selectedReplicaKey;
   const acceleratorType = requestedResources?.accelerator?.type;
-  const requestedCorePerCard =
-    getVgpuVirtualization(requestedResources?.accelerator)?.core_percent ??
-    undefined;
+  const requestedCorePerCard = requestedCorePercent(requestedResources);
   const replicaGroups = getEndpointReplicaResourceGroups(resources, {
     clusterResourceInfo,
     acceleratorType,
@@ -1687,12 +1688,11 @@ export default function EndpointRuntimeResourcesCard({
                     }}
                   >
                     {node.devices.map((device, deviceIndex) => {
-                      const clusterDevice =
-                        clusterResourceInfo?.node_resources?.[
-                          node.nodeId
-                        ]?.devices?.find(
-                          (candidate) => candidate.uuid === device.uuid,
-                        );
+                      const clusterDevice = clusterDeviceOf(
+                        clusterResourceInfo,
+                        node.nodeId,
+                        device.uuid,
+                      );
                       return (
                         <GpuResourceCard
                           activeReplicaKey={activeReplicaKey}

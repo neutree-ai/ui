@@ -9,6 +9,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Combobox as AsyncCombobox } from "@/components/ui/combobox";
+import { resolvedModelSummary } from "@/domains/endpoint/lib/endpoint-deploy-model";
 import type { ModelSpec } from "@/domains/endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -110,12 +111,10 @@ export function EndpointResolvedModelEditor({
     if (!direct && !editing && hasModelError) onEditingRequested();
   }, [direct, editing, hasModelError, onEditingRequested]);
 
-  const versionFile = [
-    values.version || t("endpoints.resolvedModel.auto"),
-    values.file,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const summary = resolvedModelSummary(
+    values,
+    t("endpoints.resolvedModel.auto"),
+  );
   const editableFields = (
     <div className={cn("grid grid-cols-1 sm:grid-cols-2", FORM_GRID_GAP_CLASS)}>
       <FormFieldGroup
@@ -213,9 +212,9 @@ export function EndpointResolvedModelEditor({
       {!editing && (
         <dl className="grid grid-cols-1 bg-[var(--nt-fill-neutral-white)]/55 sm:grid-cols-3">
           {[
-            [t("endpoints.fields.modelRegistry"), values.registry],
-            [t("endpoints.fields.modelName"), values.name],
-            [t("endpoints.resolvedModel.versionFile"), versionFile],
+            [t("endpoints.fields.modelRegistry"), summary.registry],
+            [t("endpoints.fields.modelName"), summary.name],
+            [t("endpoints.resolvedModel.versionFile"), summary.versionFile],
           ].map(([label, value]) => (
             <div
               key={label}

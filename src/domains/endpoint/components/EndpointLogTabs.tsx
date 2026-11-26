@@ -14,6 +14,7 @@ import {
   useEndpointLogSources,
 } from "@/domains/endpoint/hooks/use-endpoint-log-sources";
 import { useStreamingLogs } from "@/domains/endpoint/hooks/use-streaming-logs";
+import { engineContainerNames } from "@/domains/endpoint/lib/endpoint-display-show";
 import {
   getDefaultLogContainer,
   getLogUrls,
@@ -70,11 +71,7 @@ export const EndpointLogTabs: FC<EndpointLogTabsProps> = ({
     pagination: { mode: "off" },
     queryOptions: { enabled: isKubernetes },
   });
-  const engineNames = new Set(
-    enginesData?.data.map((engine) => engine.metadata.name) ?? [
-      endpoint.spec.engine.engine,
-    ],
-  );
+  const engineNames = engineContainerNames(enginesData?.data, endpoint);
   const activeContainer =
     containers.find(
       (container) => container.container_name === activeContainerName,

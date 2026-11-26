@@ -1,3 +1,4 @@
+import { endpointModelRef } from "@/domains/endpoint/lib/endpoint-display-model";
 import type { EndpointSpec } from "@/domains/endpoint/types";
 import { registryModelQuery } from "@/foundation/model-reference/registry-model-link";
 import { ShowButton } from "@/foundation/scene/ShowButton";
@@ -13,47 +14,36 @@ export default function EndpointModel({
 }) {
   // A Flex endpoint serves a workload Neutree neither fetches nor names, so it
   // has no model to show. Same empty state as ModelTask, rather than a blank.
-  //
-  // Tested on the name, not on the block: the form submits an engine that
-  // brings its own workload with `spec.model` still present — it carries the
-  // task the gateway routes on and nothing else — so a truthy block with an
-  // empty name is the *usual* shape here, and it rendered as an empty string.
-  if (!model?.name) {
+  const ref = endpointModelRef(model);
+  if (!ref) {
     return <EmptyValue />;
   }
 
-  const nameWithVersion = model.version
-    ? `${model.name}:${model.version}`
-    : model.name;
-
-  if (!workspace || !model.registry) {
-    return <div>{nameWithVersion}</div>;
+  if (!workspace || !ref.registry) {
+    return <div>{ref.label}</div>;
   }
 
   return (
     <span className="inline-flex items-center gap-1">
       <ShowButton
-        recordItemId={model.registry}
+        recordItemId={ref.registry}
         meta={{ workspace }}
         variant="link"
         resource="model_registries"
       >
-        {model.registry}
+        {ref.registry}
       </ShowButton>
       <span className="text-muted-foreground">/</span>
       <ShowButton
-        recordItemId={model.registry}
+        recordItemId={ref.registry}
         meta={{
           workspace,
-          query: registryModelQuery({
-            model: model.name,
-            version: model.version,
-          }),
+          query: registryModelQuery({ model: ref.name, version: ref.version }),
         }}
         variant="link"
         resource="model_registries"
       >
-        {nameWithVersion}
+        {ref.label}
       </ShowButton>
     </span>
   );

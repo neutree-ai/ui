@@ -4,6 +4,10 @@ import {
   findBestNodeForAccelerator,
   parseClusterResources,
 } from "@/domains/endpoint/lib/cluster-resources";
+import {
+  findEndpointCluster,
+  gpuCountStep,
+} from "@/domains/endpoint/lib/endpoint-deploy-resources";
 import { computeMaxAvailable } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import { endpointZCacheOptions } from "@/domains/endpoint/lib/zcache";
 import type { EndpointClusterRef } from "@/domains/endpoint/types";
@@ -25,9 +29,7 @@ export function useEndpointClusterResources({
   currentUsage,
   t,
 }: UseEndpointClusterResourcesProps) {
-  const selectedCluster = clustersData?.find(
-    (cluster) => cluster.metadata.name === currentCluster,
-  );
+  const selectedCluster = findEndpointCluster(clustersData, currentCluster);
   const schedulingResourceInfo = useMemo(() => {
     const info = selectedCluster?.status?.resource_info;
     const cache = endpointZCacheOptions(selectedCluster);
@@ -77,10 +79,7 @@ export function useEndpointClusterResources({
     [singleNodeMax, clusterResources, currentUsage],
   );
 
-  const gpuStep = useMemo(() => {
-    const clusterType = selectedCluster?.spec?.type;
-    return clusterType === "ssh" ? 0.1 : 1;
-  }, [selectedCluster?.spec?.type]);
+  const gpuStep = gpuCountStep(selectedCluster);
 
   return {
     selectedCluster,

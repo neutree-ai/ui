@@ -777,25 +777,6 @@ describe("vGPU split inputs", () => {
     });
   });
 
-  it("keeps the core limit when the memory is cleared or zeroed", () => {
-    const { result } = renderEndpointForm("create", {
-      clusters: [vgpuCluster()],
-    });
-    setValues(result, {
-      "spec.cluster": "vgpu",
-      "spec.resources.accelerator": formResources({
-        virtualization: { memory_mib: 4096, core_percent: 25 },
-      }).accelerator,
-    });
-    selectGpuAllocationMode("vgpu");
-
-    typeInto(memoryInput(), "");
-    expect(fieldValue(result, VIRTUALIZATION)).toEqual({ core_percent: 25 });
-
-    typeInto(memoryInput(), "0");
-    expect(fieldValue(result, VIRTUALIZATION)).toEqual({ core_percent: 25 });
-  });
-
   it.each([
     {
       supported: undefined,

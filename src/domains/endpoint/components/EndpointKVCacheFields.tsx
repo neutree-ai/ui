@@ -21,6 +21,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { KvCacheAvailability } from "@/domains/endpoint/hooks/use-kv-cache-availability";
 import type { EndpointCacheManagerStatus } from "@/domains/endpoint/lib/cache-manager-status";
+import {
+  DEFAULT_KV_CACHE_TIMEOUT_SECONDS,
+  endpointKvCacheConfig,
+  setEndpointKvCacheEnabled,
+} from "@/domains/endpoint/lib/endpoint-deploy-kv-cache";
 import { cn } from "@/foundation/lib/utils";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import FormCardGrid from "@/foundation/scene/FormCardGrid";
@@ -99,6 +104,7 @@ export function EndpointKVCacheFields({
       ? { phase: phaseKey ? t(phaseKey) : cacheManager.phase }
       : {};
   const supported = unavailableReason === null;
+  const config = endpointKvCacheConfig(form, cache, cluster);
   if (cache?.provider && cache.provider !== "zcache") return null;
   if (!hasZCache && !enabled) return null;
   const cacheSwitch = (
@@ -106,22 +112,7 @@ export function EndpointKVCacheFields({
       aria-label={t("endpoints.kvCacheSettings.enable")}
       checked={enabled}
       disabled={!enabled && !supported}
-      onCheckedChange={(value) => {
-        form.setValue(
-          "spec.kv_cache",
-          value
-            ? {
-                provider: "zcache",
-                options: {
-                  timeout_seconds:
-                    form.getValues("spec.kv_cache.options.timeout_seconds") ??
-                    5,
-                },
-              }
-            : null,
-          { shouldDirty: true, shouldValidate: true },
-        );
-      }}
+      onCheckedChange={(value) => setEndpointKvCacheEnabled(form, value)}
     />
   );
   const unavailableMessage = unavailableReason ? (
@@ -148,7 +139,10 @@ export function EndpointKVCacheFields({
         min={0.1}
         max={60}
         step={0.1}
-        value={form.watch("spec.kv_cache.options.timeout_seconds") ?? 5}
+        value={
+          form.watch("spec.kv_cache.options.timeout_seconds") ??
+          DEFAULT_KV_CACHE_TIMEOUT_SECONDS
+        }
         onChange={(event) =>
           form.setValue(
             "spec.kv_cache.options.timeout_seconds",
@@ -281,15 +275,12 @@ export function EndpointKVCacheFields({
                 [
                   t("endpoints.kvCacheSettings.timeoutLabel"),
                   t("endpoints.kvCacheSettings.timeoutValue", {
-                    seconds:
-                      cache?.options?.timeout_seconds ??
-                      form.getValues("spec.kv_cache.options.timeout_seconds") ??
-                      5,
+                    seconds: config.timeoutSeconds,
                   }),
                 ],
                 [
                   t("common.fields.cluster"),
-                  cluster?.metadata.name ??
+                  config.cluster ??
                     t("endpoints.kvCacheSettings.clusterNotSelected"),
                 ],
               ].map(([label, value]) => (
