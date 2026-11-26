@@ -1,4 +1,6 @@
 import {
+  apiKeyListRpc,
+  blankDescriptionApiKey,
   unusedApiKey,
   usedApiKey,
 } from "../../src/domains/api-key/testing/visual-fixtures";
@@ -152,4 +154,17 @@ export const screens: Screen[] = [
 
   apiKey("used", usedApiKey, "CI pipeline"),
   apiKey("unused", unusedApiKey, "Total Tokens"),
+  {
+    id: "api-key-list",
+    route: `/${VISUAL_WORKSPACE}/api-keys`,
+    data: {
+      tables: { api_keys: [usedApiKey, unusedApiKey, blankDescriptionApiKey] },
+      rpc: {
+        list_api_key_projects: [],
+        list_invokable_models: [],
+        ...apiKeyListRpc,
+      },
+    },
+    ready: "Batch jobs",
+  },
 ];
