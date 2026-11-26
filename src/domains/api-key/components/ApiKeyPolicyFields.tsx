@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { ModelMultiSelect } from "@/domains/api-key/components/ModelMultiSelect";
 import { ModelQuotaRows } from "@/domains/api-key/components/ModelQuotaRows";
 import { TokenQuotaField } from "@/domains/api-key/components/TokenQuotaField";
+import { useInvokableModels } from "@/domains/api-key/hooks/use-api-key-policy";
 import {
   formQuotaGranularity,
   isPositiveIntLimit,
   overlappingModelRowValues,
   type PolicyModelRow,
   resolveQuotaPeriod,
-  useInvokableModels,
-} from "@/domains/api-key/hooks/use-api-key-policy";
+} from "@/domains/api-key/lib/api-key-policy-form";
 import { FormFieldGroup } from "@/foundation/scene/FormFieldGroup";
 import { LabelWithHint } from "@/foundation/scene/InfoHint";
 import {

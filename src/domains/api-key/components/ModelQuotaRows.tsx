@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
-import type { PolicyModelRow } from "@/domains/api-key/hooks/use-api-key-policy";
+import type { PolicyModelRow } from "@/domains/api-key/lib/api-key-policy-form";
 import { cn } from "@/foundation/lib/utils";
 import { ModelSourceBadge } from "@/foundation/model-reference/ModelSourceBadge";
 import { modelSourceOfEndpointKind } from "@/foundation/model-reference/model-source";

@@ -19,6 +19,10 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import {
+  projectNameById,
+  projectPickerOption,
+} from "@/domains/api-key/lib/api-key-display-project";
 import type { ApiKeyProject } from "@/domains/api-key/types";
 import { getErrorMessage } from "@/foundation/scene/error-message";
 
@@ -103,7 +107,7 @@ export function ProjectPicker({
             className="w-full justify-between font-normal"
           >
             <span className="truncate">
-              {projects.find((p) => p.id === value)?.metadata.name ??
+              {projectNameById(projects, value) ??
                 (allowUngrouped
                   ? t("api_keys.projects.ungrouped")
                   : t("api_keys.projects.select"))}
@@ -133,28 +137,31 @@ export function ProjectPicker({
                     {t("api_keys.projects.ungrouped")}
                   </CommandItem>
                 )}
-                {projects.map((p) => (
-                  <CommandItem
-                    key={p.id}
-                    value={`${p.metadata.name} ${p.spec.description}`}
-                    onSelect={() => {
-                      onChange(p.id, p);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={`mr-2 h-4 w-4 ${value === p.id ? "opacity-100" : "opacity-0"}`}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate">{p.metadata.name}</span>
-                      {p.spec.description && (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {p.spec.description}
-                        </span>
-                      )}
-                    </span>
-                  </CommandItem>
-                ))}
+                {projects.map((p) => {
+                  const option = projectPickerOption(p);
+                  return (
+                    <CommandItem
+                      key={p.id}
+                      value={option.searchText}
+                      onSelect={() => {
+                        onChange(p.id, p);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${value === p.id ? "opacity-100" : "opacity-0"}`}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate">{option.label}</span>
+                        {option.description && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {option.description}
+                          </span>
+                        )}
+                      </span>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>

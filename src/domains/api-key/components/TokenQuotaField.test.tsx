@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 
-import { apiKeyPolicyDefaults } from "@/domains/api-key/hooks/use-api-key-policy";
+import { apiKeyPolicyDefaults } from "@/domains/api-key/lib/api-key-policy-form";
 import { selectOption } from "@/foundation/testing/interactions";
 import { TokenQuotaField } from "./TokenQuotaField";
 

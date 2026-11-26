@@ -1,66 +1,4 @@
 {
-	"src/domains/api-key/components/ApiKeyLimitsCard.tsx": {
-		"entry.endpoint_name": 3,
-		"entry.model": 2,
-		"entry.remaining": 2,
-		"entry.token_limit": 1,
-		"entry.type": 2,
-		"entry.used": 1,
-		"limits.disabled": 1,
-		"limits.quota_granularity": 1,
-		"limits.quota_period": 1,
-		"limits.token_quota?.period": 1,
-		"m.token_limit": 1,
-		"quota.limit": 1,
-		"quota.remaining": 1,
-		"quota?.limit": 2,
-		"quota?.remaining": 1,
-		"quota?.used": 1
-	},
-	"src/domains/api-key/components/CreateApiKeyForm.tsx": {
-		"apiKey.status.sk_value": 1,
-		"apiKey.status?.sk_value": 1,
-		"apiKey?.status?.sk_value": 1
-	},
-	"src/domains/api-key/components/ProjectPicker.tsx": {
-		"p.metadata.name": 2,
-		"p.spec.description": 3,
-		"projects.find((p) => p.id === value)?.metadata.name": 1
-	},
-	"src/domains/api-key/components/ServiceAccountApiKeys.tsx": {
-		"a.metadata.creation_timestamp": 1,
-		"b.metadata.creation_timestamp": 1,
-		"key.metadata.workspace": 2,
-		"key.metadata?.deletion_timestamp": 1,
-		"key.spec.description": 2,
-		"key.spec.limits?.disabled": 1,
-		"quota.period": 1,
-		"quota?.limit": 1
-	},
-	"src/domains/api-key/hooks/use-api-key-policy.ts": {
-		"e.token_limit": 1,
-		"entry.endpoint_name": 2,
-		"entry.token_limit": 1,
-		"entry.type": 2,
-		"l.quota_granularity": 1,
-		"l.quota_period": 1,
-		"l.quota_period_start": 1,
-		"l.quota_resets_at": 1,
-		"limits.concurrency": 5,
-		"limits.disabled": 1,
-		"limits.quota_period": 2,
-		"limits.rpm": 5,
-		"limits.rps": 5,
-		"limits.token_quota.limit": 1,
-		"limits.token_quota.period": 1,
-		"limits.token_quota?.limit": 1,
-		"m.endpoint_name": 2,
-		"m.remaining": 2,
-		"m.token_limit": 2,
-		"m.type": 2,
-		"m.used": 2,
-		"next.disabled": 2
-	},
 	"src/domains/cluster/hooks/use-cluster-form.tsx": {
 		"spec.accelerator_virtualization.enabled": 2,
 		"spec.version": 2
@@ -327,36 +265,6 @@
 	"src/domains/service-account/hooks/use-service-accounts.ts": {
 		"account.spec?.description": 1,
 		"current.is_default": 1
-	},
-	"src/pages/api-keys/list.tsx": {
-		"key.metadata.display_name": 2,
-		"key.metadata.name": 2,
-		"key.metadata.workspace": 5,
-		"key.metadata?.deletion_timestamp": 1,
-		"key.metadata?.display_name": 1,
-		"key.metadata?.name": 1,
-		"key.metadata?.workspace": 1,
-		"key.spec.description": 2,
-		"key.spec.project_id": 3,
-		"limits.disabled": 5,
-		"model.endpoint_name": 4,
-		"model.model": 3,
-		"model.type": 4,
-		"project.is_ungrouped": 3,
-		"project.metadata.name": 1,
-		"project.spec.description": 2,
-		"project?.is_ungrouped": 1,
-		"project?.metadata.workspace": 1
-	},
-	"src/pages/api-keys/show.tsx": {
-		"record.metadata.workspace": 4,
-		"record.spec.description": 1,
-		"record.spec.project_id": 1,
-		"record.user_id": 2,
-		"record?.metadata.workspace": 1,
-		"record?.service_account_id": 1,
-		"record?.spec.project_id": 1,
-		"record?.user_id": 1
 	},
 	"src/pages/clusters/show.tsx": {
 		"record.status?.phase": 1

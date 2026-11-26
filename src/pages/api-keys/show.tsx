@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ApiKeyLimitsCard } from "@/domains/api-key/components/ApiKeyLimitsCard";
 import { ApiKeyPerformanceCard } from "@/domains/api-key/components/ApiKeyPerformanceCard";
 import { useApiKeyProjects } from "@/domains/api-key/hooks/use-api-key-projects";
+import { projectNameById } from "@/domains/api-key/lib/api-key-display-project";
+import { apiKeyShowContext } from "@/domains/api-key/lib/api-key-display-show";
 import { apiKeyHeaderFields } from "@/domains/api-key/lib/detail-fields";
 import type { ApiKey } from "@/domains/api-key/types";
 import { ApiKeyGroupPolicyHint } from "@/domains/group-policy/components/ApiKeyGroupPolicyHint";
@@ -20,26 +22,19 @@ export const ApiKeysShow = () => {
     query: { data, isLoading, refetch },
   } = useShow();
   const record = data?.data as ApiKey | undefined;
-  const serviceAccountId = record?.service_account_id ?? undefined;
+  const context = apiKeyShowContext(record);
   const {
     data: projects,
     isLoading: isProjectLoading,
     error: projectError,
-  } = useApiKeyProjects(
-    serviceAccountId === undefined
-      ? (record?.metadata.workspace ?? undefined)
-      : undefined,
-  );
+  } = useApiKeyProjects(context.projectsWorkspace);
   // Readable only to whoever may read the owner: no profile, no link.
   const { data: owners } = useList<{ metadata: Metadata }>({
     resource: "user_profiles",
-    filters: [{ field: "id", operator: "eq", value: record?.user_id }],
-    queryOptions: { enabled: !!record?.user_id },
+    filters: [{ field: "id", operator: "eq", value: context.userId }],
+    queryOptions: { enabled: !!context.userId },
   });
   const ownerProfile = owners?.data?.[0]?.metadata?.name;
-  const project = projects.find(
-    (candidate) => candidate.id === record?.spec.project_id,
-  );
 
   if (isLoading) {
     return <div>{t("api_keys.messages.loading")}</div>;
@@ -61,7 +56,7 @@ export const ApiKeysShow = () => {
                 fields={apiKeyHeaderFields(
                   record,
                   {
-                    name: project?.metadata.name,
+                    name: projectNameById(projects, context.projectId),
                     isLoading: isProjectLoading,
                     error: projectError,
                   },
@@ -77,30 +72,26 @@ export const ApiKeysShow = () => {
           <div className="mt-4 space-y-3">
             <ApiKeyPerformanceCard
               apiKeyId={String(record.id)}
-              workspace={record.metadata.workspace ?? ""}
+              workspace={context.workspace}
             />
-            {(record.user_id || serviceAccountId) &&
-              record.metadata.workspace && (
-                <ApiKeyGroupPolicyHint
-                  ownerId={record.user_id ?? serviceAccountId ?? ""}
-                  workspace={record.metadata.workspace}
-                  profileHref={
-                    ownerProfile
-                      ? userModelAccessHref(
-                          ownerProfile,
-                          record.metadata.workspace,
-                        )
-                      : undefined
-                  }
-                />
-              )}
+            {context.policyOwnerId && context.workspace && (
+              <ApiKeyGroupPolicyHint
+                ownerId={context.policyOwnerId}
+                workspace={context.workspace}
+                profileHref={
+                  ownerProfile
+                    ? userModelAccessHref(ownerProfile, context.workspace)
+                    : undefined
+                }
+              />
+            )}
             <ApiKeyLimitsCard
               apiKeyId={String(record.id)}
-              workspace={record.metadata.workspace ?? ""}
-              projectId={record.spec.project_id ?? null}
+              workspace={context.workspace}
+              projectId={context.projectId}
               displayName={displayName(record.metadata)}
-              description={record.spec.description ?? ""}
-              serviceAccountId={serviceAccountId}
+              description={context.description}
+              serviceAccountId={context.applicationId}
               onSaved={refetch}
             />
           </div>
