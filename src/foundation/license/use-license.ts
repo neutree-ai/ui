@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { License } from "@/foundation/types/license";
 import { MAX_UNLIMITED } from "@/foundation/types/license";
+import { isExpiredSubscription } from "./subscription-expiry";
 
-export const useLicense = () => {
+export const useLicense = (refetchInterval: number | false = false) => {
   const { t } = useTranslation();
 
   const {
@@ -18,6 +19,7 @@ export const useLicense = () => {
     method: "get",
     queryOptions: {
       retry: false,
+      refetchInterval,
     },
     errorNotification: false,
   });
@@ -81,5 +83,6 @@ export const useLicense = () => {
     updateLicense: handleUpdateLicense,
     supportMultiWorkspace,
     licenseNotAvailable,
+    isExpiredSubscription: isExpiredSubscription(license?.status),
   };
 };
