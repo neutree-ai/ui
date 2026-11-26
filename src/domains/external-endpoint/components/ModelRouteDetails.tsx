@@ -36,7 +36,7 @@ export default function ModelRouteDetails({
   const showRole = strategy === "priority";
   const showWeight = strategy === "weighted";
   const totalWeight = route.targets.reduce(
-    (sum, target) => sum + (target.weight || 1),
+    (sum, target) => sum + (target.weight ?? 1),
     0,
   );
   // Keep column positions consistent across routing strategies.
@@ -216,7 +216,7 @@ export default function ModelRouteDetails({
                 {showWeight && (
                   <td className="text-left tabular-nums">
                     {Number(
-                      (((target.weight || 1) / totalWeight) * 100).toFixed(2),
+                      (((target.weight ?? 1) / totalWeight) * 100).toFixed(2),
                     )}
                     %
                   </td>

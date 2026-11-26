@@ -20,6 +20,7 @@ describe("getRouteStrategyError", () => {
   it.each([
     { name: "fixed", route: makeRoute(), error: undefined },
     { name: "weighted 70/30", route: weighted(70, 30), error: undefined },
+    { name: "weighted 0/100", route: weighted(0, 100), error: undefined },
     {
       name: "weighted 70/70",
       route: weighted(70, 70),
@@ -32,7 +33,6 @@ describe("getRouteStrategyError", () => {
     },
     ...[
       [100, undefined],
-      [100, 0],
       [50.5, 49.5],
       [101, -1],
       [100, Number.NaN],

@@ -6,7 +6,7 @@ export function getRouteStrategyError(route: ModelRoute) {
     if (
       route.targets.some(
         ({ weight }) =>
-          !Number.isInteger(weight) || (weight ?? 0) < 1 || (weight ?? 0) > 100,
+          !Number.isInteger(weight) || (weight ?? 0) < 0 || (weight ?? 0) > 100,
       )
     )
       return "external_endpoints.messages.weightRequired";
