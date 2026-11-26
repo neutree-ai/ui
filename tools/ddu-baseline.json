@@ -77,33 +77,6 @@
 		"request?.operation?.kind": 1,
 		"status?.observed_at": 1
 	},
-	"src/domains/cluster/components/ClusterResourceSummary.tsx": {
-		"group.quantity": 3
-	},
-	"src/domains/cluster/components/ClusterUpgradeAction.tsx": {
-		"cluster.metadata.workspace": 1,
-		"cluster.spec.type": 2,
-		"cluster.spec.version": 1,
-		"cluster.status.accelerator_type": 1,
-		"cluster.status?.accelerator_type": 1,
-		"cluster.status?.version": 1
-	},
-	"src/domains/cluster/components/ClusterUpgradeTip.tsx": {
-		"cluster.metadata.workspace": 2,
-		"cluster.spec.image_registry": 1,
-		"cluster.spec.type": 1,
-		"cluster.spec.version": 1,
-		"cluster.status?.phase": 1,
-		"cluster.status?.version": 1
-	},
-	"src/domains/cluster/components/NodeResourcesTable.tsx": {
-		"accGroup?.quantity": 1,
-		"device.health": 1,
-		"device.product": 1,
-		"group.quantity": 2,
-		"nodeStatus.allocatable?.cpu": 2,
-		"nodeStatus.allocatable?.memory": 2
-	},
 	"src/domains/cluster/components/ZCacheActivity.tsx": {
 		"n.name": 1,
 		"n.reason": 1,
@@ -145,9 +118,6 @@
 	"src/domains/cluster/hooks/use-cluster-form.tsx": {
 		"spec.accelerator_virtualization.enabled": 2,
 		"spec.version": 2
-	},
-	"src/domains/cluster/hooks/use-cluster-monitor-panels.ts": {
-		"cluster?.spec.type": 1
 	},
 	"src/domains/cluster/hooks/use-model-cache-fields.ts": {
 		"spec.config.model_caches": 1,
@@ -630,17 +600,8 @@
 		"record?.spec.project_id": 1,
 		"record?.user_id": 1
 	},
-	"src/pages/clusters/list.tsx": {
-		"cluster.spec.version": 2,
-		"cluster.status?.phase": 1
-	},
 	"src/pages/clusters/show.tsx": {
-		"cache.name": 1,
-		"record.metadata.name": 1,
-		"record.metadata.workspace": 1,
-		"record.spec.type": 3,
-		"record.status?.phase": 1,
-		"record?.metadata.name": 2
+		"record.status?.phase": 1
 	},
 	"src/pages/endpoints/list.tsx": {
 		"model?.name": 1

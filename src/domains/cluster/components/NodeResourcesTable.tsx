@@ -31,9 +31,15 @@ import type {
   ClusterResourceInfo,
   NodeResourceStatus,
 } from "@/foundation/types/resource-types";
-import { calcResourceUsage } from "../lib/calc-resource-usage";
 import { observedGpuFromDevice } from "../lib/observed-gpu";
-import { getAcceleratorProductQuantities } from "../lib/resource-status";
+import {
+  acceleratorGroups,
+  getAcceleratorProductQuantities,
+  mixesDeviceProducts,
+  nodeHasAccelerators,
+  nodeHasHealthyDevice,
+  nodeUsage,
+} from "../lib/resource-status";
 import { ResourceProgressBar } from "./ResourceProgressBar";
 
 interface ProductGroupsBreakdownProps {
@@ -106,28 +112,15 @@ export const NodeResourcesTable = ({
   l1CacheByNode,
 }: NodeResourcesTableProps) => {
   const sortedNodeEntries = Object.entries(nodeResources).sort(
-    ([, left], [, right]) => {
-      const leftHasGpu =
-        (left.devices?.length ?? 0) > 0 ||
-        Object.values(left.allocatable?.accelerator_groups ?? {}).some(
-          (group) => group.quantity > 0,
-        );
-      const rightHasGpu =
-        (right.devices?.length ?? 0) > 0 ||
-        Object.values(right.allocatable?.accelerator_groups ?? {}).some(
-          (group) => group.quantity > 0,
-        );
-      return Number(rightHasGpu) - Number(leftHasGpu);
-    },
+    ([, left], [, right]) =>
+      Number(nodeHasAccelerators(right)) - Number(nodeHasAccelerators(left)),
   );
 
   const [expandedNodeNames, setExpandedNodeNames] = useState<Set<string>>(
     () =>
       new Set(
         sortedNodeEntries
-          .filter(([, node]) =>
-            (node.devices ?? []).some((device) => device.health),
-          )
+          .filter(([, node]) => nodeHasHealthyDevice(node))
           .map(([name]) => name),
       ),
   );
@@ -172,21 +165,11 @@ export const NodeResourcesTable = ({
           {sortedNodeEntries.map(([nodeName, nodeStatus]) => {
             const hasDevices = (nodeStatus.devices?.length ?? 0) > 0;
             const isExpanded = expandedNodeNames.has(nodeName);
-            const cpu = calcResourceUsage(
-              nodeStatus.allocatable?.cpu || 0,
-              nodeStatus.available?.cpu,
-            );
-            const memory = calcResourceUsage(
-              nodeStatus.allocatable?.memory || 0,
-              nodeStatus.available?.memory,
-            );
+            const { cpu, memory } = nodeUsage(nodeStatus);
             const sortedDevices = [...(nodeStatus.devices ?? [])].sort(
               compareDevicesByOrderThenUuid,
             );
-            const showProduct =
-              new Set(
-                sortedDevices.map((device) => device.product).filter(Boolean),
-              ).size > 1;
+            const showProduct = mixesDeviceProducts(sortedDevices);
             const gpuRows = sortedDevices.map((device, index) => (
               <GpuObservationCard
                 key={device.uuid}
@@ -244,7 +227,7 @@ export const NodeResourcesTable = ({
                     <ResourceProgressBar
                       label=""
                       used={cpu.used}
-                      total={nodeStatus.allocatable?.cpu || 0}
+                      total={cpu.total}
                       compact
                       series="teal"
                     />
@@ -254,7 +237,7 @@ export const NodeResourcesTable = ({
                       <ResourceProgressBar
                         label=""
                         used={memory.used}
-                        total={nodeStatus.allocatable?.memory || 0}
+                        total={memory.total}
                         unit="GiB"
                         compact
                         series="violet"
@@ -300,23 +283,19 @@ export const NodeResourcesTable = ({
                     </div>
                   </TableCell>
                   {acceleratorTypes.map((accType) => {
-                    const accGroup =
-                      nodeStatus.allocatable?.accelerator_groups?.[accType];
-                    const availableAccGroup =
-                      nodeStatus.available?.accelerator_groups?.[accType];
-                    const accAllocatable = accGroup?.quantity || 0;
+                    const groups = acceleratorGroups(nodeStatus, accType);
                     return (
                       <TableCell key={accType} className="align-middle">
-                        {accAllocatable === 0 ? (
+                        {groups.quantity === 0 ? (
                           <EmptyValue />
                         ) : (
                           <div>
                             <ProductGroupsBreakdown
                               allocatableGroups={getAcceleratorProductQuantities(
-                                accGroup,
+                                groups.allocatable,
                               )}
                               availableGroups={getAcceleratorProductQuantities(
-                                availableAccGroup,
+                                groups.available,
                               )}
                               t={t}
                             />

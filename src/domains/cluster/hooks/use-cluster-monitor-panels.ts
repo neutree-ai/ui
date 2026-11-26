@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isKubernetesCluster } from "../lib/cluster-type";
 import { type Cluster, hasZCache } from "../types";
 
 type ClusterMonitorPanelType = "overview" | "routing" | "cache";
@@ -9,7 +10,7 @@ export const useClusterMonitorPanels = (cluster?: Cluster) => {
   const cacheAvailable = hasZCache(cluster);
   const panels: ClusterMonitorPanelType[] = [
     "overview",
-    ...(cluster?.spec.type === "kubernetes" ? (["routing"] as const) : []),
+    ...(isKubernetesCluster(cluster) ? (["routing"] as const) : []),
     ...(cacheAvailable ? (["cache"] as const) : []),
   ];
   return {

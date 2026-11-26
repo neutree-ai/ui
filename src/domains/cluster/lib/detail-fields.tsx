@@ -1,12 +1,13 @@
+import type { TFunction } from "i18next";
 import ClusterType from "@/domains/cluster/components/ClusterType";
-import { ClusterUpgradeTip } from "@/domains/cluster/components/ClusterUpgradeTip";
+import { ClusterVersion } from "@/domains/cluster/components/ClusterVersion";
 import { isAcceleratorVirtualizationEnabled } from "@/domains/cluster/lib/accelerator-virtualization";
+import { isKubernetesCluster } from "@/domains/cluster/lib/cluster-type";
 import { getAccessModeLabel } from "@/domains/cluster/lib/get-access-mode-label";
 import { getCacheType } from "@/domains/cluster/lib/get-cache-type";
 import type { Cluster, ModelCache } from "@/domains/cluster/types";
 import { type DetailField, field } from "@/foundation/scene/detail-field";
 import { ShowButton } from "@/foundation/scene/ShowButton";
-import { EmptyValue } from "@/foundation/type/EmptyValue";
 
 type Config = Cluster["spec"]["config"];
 type SshConfig = NonNullable<Config["ssh_config"]>;
@@ -30,18 +31,7 @@ export const clusterHeaderFields = (
     render: (current) => <ClusterType type={current.spec.type} />,
   }),
   field("common.fields.version", {
-    render: (current) => (
-      <span className="inline-flex min-w-0 items-center">
-        {current.status?.version ?? <EmptyValue />}
-        {current.status?.phase === "Upgrading" && current.spec.version && (
-          <span className="text-muted-foreground">
-            {" "}
-            &rarr; {current.spec.version}
-          </span>
-        )}
-        <ClusterUpgradeTip cluster={current} />
-      </span>
-    ),
+    render: (current) => <ClusterVersion cluster={current} />,
   }),
   field("common.fields.imageRegistry", {
     render: (current) => (
@@ -55,7 +45,7 @@ export const clusterHeaderFields = (
       </ShowButton>
     ),
   }),
-  ...(cluster.spec.type === "kubernetes" ? [acceleratorVirtualization] : []),
+  ...(isKubernetesCluster(cluster) ? [acceleratorVirtualization] : []),
 ];
 
 export const clusterSshFields: DetailField<SshConfig>[] = [
@@ -77,6 +67,16 @@ const CACHE_TYPE_KEYS = {
   pvc: "clusters.options.pvc",
   host_path: "clusters.options.hostPath",
 } as const;
+
+const CACHE_TITLE_KEYS = {
+  nfs: "clusters.fields.modelCache.type.nfs",
+  pvc: "clusters.fields.modelCache.type.pvc",
+  host_path: "clusters.fields.modelCache.type.host_path",
+} as const;
+
+/** A model cache's heading: its name, else its storage kind. */
+export const modelCacheTitle = (cache: ModelCache, t: TFunction) =>
+  cache.name || t(CACHE_TITLE_KEYS[getCacheType(cache)]);
 
 type CacheField = DetailField<ModelCache>;
 

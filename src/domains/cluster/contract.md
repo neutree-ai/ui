@@ -50,10 +50,15 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
 - Secret input: `omitEmptyUntouched` (`foundation/role/touched-fields.ts`), edit hint
   `common.messages.leaveEmptyToKeepValue`.
 - Columns `useMetadataColumns`; time `Timestamp`; empty marker `EmptyValue`; type label `ClusterType` (other values as
-  is); `getAccessModeLabel`; `isAcceleratorVirtualizationEnabled` (`lib/accelerator-virtualization.ts`).
+  is); `getAccessModeLabel`; `isAcceleratorVirtualizationEnabled` (`lib/accelerator-virtualization.ts`); type checks
+  `isSshCluster` / `isKubernetesCluster` (`lib/cluster-type.ts`).
 - Device observations and placement: `src/foundation/contract.md`, “Accelerator resources”.
-- Version: `status.version` (what runs); `Upgrading` shows `status.version -> spec.version`; else `ClusterUpgradeTip`.
-  Resources: `ClusterResourceSummary`, `NodeResourcesTable`.
+- Version (`ClusterVersion`, list and show): `status.version` (what runs); `Upgrading` adds `-> spec.version`
+  (`upgradeTargetVersion`); else `ClusterUpgradeTip`, shown when a Running cluster has an upgrade target
+  (`hasUpgradeVersion`, the same lookup and filter as the upgrade dialog). Lookups: `useAvailableVersions` over
+  `availableVersionsUrl` (`lib/upgrade-versions.ts`), idle until workspace, registry and type are set.
+- Resources: `ClusterResourceSummary`, `NodeResourcesTable` over `lib/resource-status.ts` (`acceleratorCardCounts`,
+  `nodeUsage`, `nodeHasAccelerators` sorts accelerator nodes first, `nodeHasHealthyDevice` opens a node at first).
 
 ## Scenes
 
@@ -62,16 +67,17 @@ Masking and credential export: `src/foundation/contract.md`, “Masked fields”
   only), SSH nodes, router and each model cache are `DetailFields` over `lib/detail-fields.tsx` (`clusterSshFields`,
   `clusterRouterFields`, `modelCacheFields`; Foundation "Detail fields"): worker IPs comma-joined, an unknown access
   mode (`getAccessModeLabel`) or absent router capacity as the empty marker, a cache's type as plain text and its
-  path from `nfs` or else `host_path`. Polls every 10 s unless the monitor tab is open. Cache tab needs kubernetes and `system
-  capabilities.cluster_cache_providers` containing `zcache`. Secrets not shown.
+  path from `nfs` or else `host_path`; a cache's heading is its name, else its storage kind (`modelCacheTitle`). Endpoints
+  on the cluster: `clusterEndpointsFilter` (`spec->cluster` = name). Polls every 10 s unless the monitor tab is open. Cache tab needs `supportsZCache`: kubernetes and
+  `system capabilities.cluster_cache_providers` containing `zcache`. Secrets not shown.
 - Create (`use-cluster-form.tsx`): `mode: "all"`; payload `transformClusterValues(values, false)`. Switching type
   replaces `spec.config` with that type's defaults. Versions come from `/clusters/available_versions` for workspace,
   registry and type; the newest is selected, cleared when none.
 - Edit: locked name, workspace, type, image registry, version, head IP, ssh user, model cache fields of ssh clusters.
   Secrets start empty. Focus/reconnect refetch is off to avoid overwriting edits with controller updates. Save
   `transformClusterValues(values, true, touchedFields)`; whole record PATCH with `spec.cache` normalized.
-- Upgrade (`ClusterUpgradeAction`): `available_versions` (with `accelerator_type` when known), only versions above
-  `spec.version` (`getUpgradeVersions`); PATCH `{...cluster, spec: {...cluster.spec, version}}`; error toasts
+- Upgrade (`ClusterUpgradeAction`): `available_versions` (`clusterVersionQuery`: with `accelerator_type` when known),
+  only versions above `spec.version` (`upgradeVersionsFor`); PATCH `{...cluster, spec: {...cluster.spec, version}}`; error toasts
   `getErrorMessage`.
 - Cache (`ClusterCacheSection`, `ZCacheEditor`, `CacheRetry`, `ZCacheUpgrade`): dialog PATCH `{spec}` (loaded spec,
   `cache` replaced, empty `kubeconfig` dropped; when cache phase is Failed also
