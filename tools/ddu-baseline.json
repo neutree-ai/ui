@@ -72,71 +72,6 @@
 	"src/domains/dashboard/hooks/use-quick-start.ts": {
 		"e.metadata.name": 1
 	},
-	"src/domains/endpoint/components/DeploymentConfigCard.tsx": {
-		"replicas?.num": 1
-	},
-	"src/domains/endpoint/components/EndpointConfigurationSummary.tsx": {
-		"accelerator?.product": 1,
-		"accelerator?.type": 1,
-		"engine?.engine": 1,
-		"engine?.version": 1,
-		"model?.file": 1,
-		"model?.name": 1,
-		"model?.registry": 1,
-		"model?.task": 1,
-		"model?.version": 1,
-		"resources?.cpu": 1,
-		"resources?.gpu": 1,
-		"resources?.memory": 1,
-		"spec.cluster": 1,
-		"spec.kv_cache?.options?.timeout_seconds": 1,
-		"spec.replicas?.num": 1,
-		"virtualization?.core_percent": 1
-	},
-	"src/domains/endpoint/components/EndpointDeploymentSummary.tsx": {
-		"values.spec.replicas?.num": 1
-	},
-	"src/domains/endpoint/components/EndpointEngine.tsx": {
-		"engine.engine": 1,
-		"engine.version": 1,
-		"engine?.engine": 1
-	},
-	"src/domains/endpoint/components/EndpointKVCacheSummary.tsx": {
-		"cluster.metadata.name": 2,
-		"endpoint.metadata.workspace": 1,
-		"endpoint.spec.kv_cache?.options?.timeout_seconds": 1,
-		"endpoint.spec.kv_cache?.provider": 1
-	},
-	"src/domains/endpoint/components/EndpointLogTabs.tsx": {
-		"endpoint.spec.engine.engine": 1,
-		"engine.metadata.name": 1
-	},
-	"src/domains/endpoint/components/EndpointModel.tsx": {
-		"model.name": 2,
-		"model.registry": 2,
-		"model.version": 2,
-		"model?.name": 1
-	},
-	"src/domains/endpoint/components/EndpointRuntimeResourcesCard.tsx": {
-		"candidate.uuid": 1,
-		"getVgpuVirtualization(requestedResources?.accelerator)?.core_percent": 1
-	},
-	"src/domains/endpoint/components/EndpointSaveAsCatalogAction.tsx": {
-		"endpoint.metadata.workspace": 1
-	},
-	"src/domains/endpoint/components/ModelOptionalFields.tsx": {
-		"values.file": 1,
-		"values.version": 1
-	},
-	"src/domains/endpoint/components/ResourcesCard.tsx": {
-		"displayResources.accelerator.product": 1,
-		"displayResources.accelerator.type": 1,
-		"displayResources.gpu": 1,
-		"displayResources?.accelerator?.product": 1,
-		"displayResources?.accelerator?.type": 1,
-		"displayResources?.gpu": 1,
-		"vgpuVirtualization?.core_percent": 1
-	},
 	"src/domains/endpoint/hooks/use-endpoint-form.tsx": {
 		"activeVariant?.vram_minimum_gb": 1,
 		"candidate.metadata.name": 1,
@@ -478,22 +413,8 @@
 	"src/pages/clusters/show.tsx": {
 		"record.status?.phase": 1
 	},
-	"src/pages/endpoints/list.tsx": {
-		"model?.name": 1
-	},
 	"src/pages/endpoints/show.tsx": {
-		"record.metadata.name": 1,
-		"record.metadata.workspace": 2,
-		"record.spec.engine.version": 1,
-		"record.spec.model?.name": 1,
-		"record.status?.kv_cache?.provider": 1,
-		"record.status?.phase": 1,
-		"record?.metadata.workspace": 1,
-		"record?.spec.cluster": 4,
-		"record?.spec.engine.engine": 1,
-		"record?.status?.phase": 2,
-		"record?.status?.service_url": 1,
-		"v.version": 1
+		"record.status?.phase": 1
 	},
 	"src/pages/engines/components/EngineCard.tsx": {
 		"engine.metadata.workspace": 1,

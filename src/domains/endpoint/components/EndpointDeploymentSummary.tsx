@@ -6,6 +6,7 @@ import {
   type KVCacheEstimateState,
 } from "@/domains/endpoint/components/KVCacheEstimate";
 import { VRAMCheckBadge } from "@/domains/endpoint/components/VRAMCheckBadge";
+import { requestedReplicas } from "@/domains/endpoint/lib/endpoint-display-summary";
 import type {
   EngineCacheArgControls,
   EngineCacheArgs,
@@ -87,7 +88,7 @@ export function EndpointDeploymentSummary({
 
   const weightsGb = declared?.perReplicaGb ?? null;
   const knownPerReplicaGb = perReplicaRequiredGb(weightsGb, kvGb);
-  const replicas = Math.max(1, Number(values.spec.replicas?.num ?? 1));
+  const replicas = requestedReplicas(values.spec.replicas);
   const fleetGb =
     knownPerReplicaGb != null ? knownPerReplicaGb * replicas : null;
   const completeEstimate = weightsGb != null && kvGb != null;

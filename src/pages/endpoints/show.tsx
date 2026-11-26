@@ -25,6 +25,14 @@ import {
   endpointRuntimeFields,
 } from "@/domains/endpoint/lib/detail-fields";
 import {
+  endpointEngineVersion,
+  endpointShowQueries,
+  isEndpointInactive,
+  rayServeApplicationUrl,
+  runtimeCardIdentity,
+  shownEngineParameters,
+} from "@/domains/endpoint/lib/endpoint-display-show";
+import {
   endpointCacheDashboard,
   endpointZCacheOptions,
 } from "@/domains/endpoint/lib/zcache";
@@ -122,7 +130,7 @@ const RayDashboardTab = ({
 
   return (
     <iframe
-      src={`${rayDashboardUrl}#/serve/applications/${record.metadata.workspace}_${record.metadata.name}`}
+      src={rayServeApplicationUrl(rayDashboardUrl, record)}
       className="w-full h-full"
       onLoad={handleIframeLoad}
       ref={iframeRef}
@@ -144,8 +152,8 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     queryOptions: { refetchInterval: onBasicTab ? 15000 : false },
   });
   const record = data?.data;
-  const inactive =
-    record?.status?.phase === "Paused" || record?.status?.phase === "Deleted";
+  const inactive = isEndpointInactive(record);
+  const queries = endpointShowQueries(record);
   const observations = useAcceleratorObservations(
     "endpoints",
     record?.metadata.workspace,
@@ -166,46 +174,26 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
 
   const { data: engineData } = useOne<Engine>({
     resource: "engines",
-    id: record?.spec.engine.engine,
-    queryOptions: {
-      enabled: Boolean(record?.spec.engine.engine),
-    },
+    id: queries.engine.id,
+    queryOptions: { enabled: queries.engine.enabled },
   });
 
   const { data: clusterData } = useList<Cluster>({
     resource: "clusters",
-    meta: {
-      workspace: record?.metadata.workspace,
-      workspaced: true,
-    },
-    filters: [
-      {
-        field: "metadata->name",
-        operator: "eq",
-        value: JSON.stringify(record?.spec.cluster),
-      },
-    ],
+    meta: queries.cluster.meta,
+    filters: queries.cluster.filters,
     queryOptions: {
-      enabled: Boolean(record?.spec.cluster),
+      enabled: queries.cluster.enabled,
       refetchInterval: onBasicTab ? 30_000 : false,
     },
   });
   const { data: clusterEndpoints } = useList<Endpoint>({
     resource: "endpoints",
-    meta: {
-      workspace: record?.metadata.workspace,
-      workspaced: true,
-    },
-    filters: [
-      {
-        field: "spec->cluster",
-        operator: "eq",
-        value: JSON.stringify(record?.spec.cluster),
-      },
-    ],
+    meta: queries.clusterEndpoints.meta,
+    filters: queries.clusterEndpoints.filters,
     pagination: { mode: "off" },
     queryOptions: {
-      enabled: Boolean(record?.metadata.workspace && record?.spec.cluster),
+      enabled: queries.clusterEndpoints.enabled,
       refetchInterval: onBasicTab ? 15_000 : false,
     },
   });
@@ -232,7 +220,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
     engineType: record?.spec.engine.engine,
   });
 
-  const url = record?.status?.service_url ?? "";
+  const url = record?.status?.service_url;
 
   if (isLoading) {
     return <Loader className="h-4 text-primary" />;
@@ -255,14 +243,11 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
         })
       : null;
 
-  const engineVersion = engineData?.data?.spec.versions.find(
-    (v) => v.version === record.spec.engine.version,
+  const engineVersion = endpointEngineVersion(
+    engineData?.data?.spec.versions,
+    record,
   );
   const playground = resolvePlayground(engineVersion, record.spec.model?.task);
-  const kvTransferConfig =
-    record.status?.kv_cache?.provider === "zcache"
-      ? record.status.kv_cache.details?.kv_transfer_config
-      : undefined;
 
   return (
     <EndpointSaveAsCatalogProvider>
@@ -354,9 +339,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
             />
             {!inactive && (
               <EndpointRuntimeResourcesCard
-                endpointName={record.metadata.name}
-                workspace={record.metadata.workspace ?? "default"}
-                modelName={record.spec.model?.name ?? ""}
+                {...runtimeCardIdentity(record)}
                 gpuAllocations={clusterGpuAllocations}
                 samples={gpuSamples}
                 deviceSamples={deviceSamples}
@@ -384,14 +367,7 @@ export const EndpointsShow: React.FC<IResourceComponentsProps> = () => {
               />
             )}
             <EndpointAdvancedParameters
-              engineParameters={{
-                ...(record.spec.variables?.engine_args as
-                  | Record<string, unknown>
-                  | undefined),
-                ...(kvTransferConfig
-                  ? { kv_transfer_config: kvTransferConfig }
-                  : {}),
-              }}
+              engineParameters={shownEngineParameters(record)}
               environmentVariables={record.spec.env}
             />
           </TabsContent>

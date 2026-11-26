@@ -1,71 +1,53 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
-import type { Endpoint, EndpointClusterRef } from "../types";
+import { makeEndpoint } from "../testing/builders";
+import type { EndpointClusterRef } from "../types";
 import { EndpointKVCacheSummary } from "./EndpointKVCacheSummary";
 
-describe("EndpointKVCacheSummary", () => {
-  it("omits the cluster link when the endpoint has no cluster context", () => {
-    render(
-      <MemoryRouter>
-        <EndpointKVCacheSummary
-          endpoint={
-            {
-              metadata: { workspace: "default" },
-              spec: { kv_cache: null },
-            } as Endpoint
-          }
-        />
-      </MemoryRouter>,
-    );
+const cluster = (enabled: boolean) =>
+  ({
+    metadata: { name: "gpu-cluster" },
+    spec: { cache: { provider: "zcache", options: { enabled } } },
+  }) as unknown as EndpointClusterRef;
 
-    expect(screen.queryByRole("link")).toBeNull();
+const renderSummary = (kvCache: boolean, configured: boolean) =>
+  render(
+    <MemoryRouter>
+      <EndpointKVCacheSummary
+        endpoint={makeEndpoint({
+          spec: {
+            kv_cache: kvCache
+              ? { provider: "zcache", options: { timeout_seconds: 2 } }
+              : null,
+          },
+        })}
+        cluster={cluster(configured)}
+      />
+    </MemoryRouter>,
+  );
+
+describe("EndpointKVCacheSummary", () => {
+  it("shows the endpoint's timeout and links the cluster's cache", () => {
+    renderSummary(true, true);
+
+    screen.getByText("common.options.enabled");
+    screen.getByText("endpoints.kvCacheSettings.timeoutValue:2");
+    expect(screen.getByRole("link").getAttribute("href")).toBe(
+      "/default/clusters/show/gpu-cluster?section=cache",
+    );
   });
 
-  it.each([
-    [true, true],
-    [true, false],
-    [false, true],
-    [false, false],
-  ])("renders enabled=%s configured=%s", (enabled, configured) => {
-    const endpoint = {
-      metadata: { workspace: "default" },
-      spec: {
-        kv_cache: enabled
-          ? { provider: "zcache", options: { timeout_seconds: 2 } }
-          : null,
-      },
-    } as Endpoint;
-    const cluster = {
-      metadata: { name: "gpu-cluster" },
-      spec: { cache: { provider: "zcache", options: { enabled: configured } } },
-    } as unknown as EndpointClusterRef;
-    render(
-      <MemoryRouter>
-        <EndpointKVCacheSummary endpoint={endpoint} cluster={cluster} />
-      </MemoryRouter>,
-    );
-    if (!configured) {
-      expect(
-        screen.queryByRole("heading", {
-          name: /endpoints\.kvCacheSettings\.enable/,
-        }),
-      ).toBeNull();
-      return;
-    }
+  it("says the endpoint opted out when the cluster offers the cache", () => {
+    renderSummary(false, true);
 
-    expect(screen.queryByRole("switch")).toBeNull();
-    screen.getByText(
-      enabled ? "common.options.enabled" : "common.options.disabled",
-    );
-    expect(
-      Boolean(screen.queryByText("endpoints.kvCacheSettings.timeoutValue:2")),
-    ).toBe(enabled);
-    const link = screen.queryByRole("link");
-    expect(Boolean(link)).toBe(configured);
-    if (link)
-      expect(link.getAttribute("href")).toBe(
-        "/default/clusters/show/gpu-cluster?section=cache",
-      );
+    screen.getByText("common.options.disabled");
+    screen.getByText("endpoints.kvCacheSettings.endpointDisabled");
+  });
+
+  it("renders nothing when the cluster has the cache off", () => {
+    renderSummary(true, false);
+
+    expect(screen.queryByText("endpoints.kvCacheSettings.enable")).toBeNull();
   });
 });

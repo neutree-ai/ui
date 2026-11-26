@@ -8,6 +8,7 @@ import {
 } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { hasOptionalModelFields } from "@/domains/endpoint/lib/endpoint-display-model";
 import type { ModelSpec } from "@/domains/endpoint/types";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { cn } from "@/foundation/lib/utils";
@@ -51,7 +52,7 @@ export function ModelOptionalFields({
   const [expandedOverride, setExpandedOverride] = useState<boolean | null>(
     null,
   );
-  const expanded = expandedOverride ?? Boolean(values.version || values.file);
+  const expanded = expandedOverride ?? hasOptionalModelFields(values);
 
   useLayoutEffect(() => {
     if (hasError) setExpandedOverride(true);

@@ -30,36 +30,19 @@ vi.mock("@/foundation/scene/ShowButton", () => ({
 const model = (spec: Partial<ModelSpec>) => spec as ModelSpec;
 
 describe("EndpointModel", () => {
-  it("renders name and version when the endpoint names a model", () => {
+  it("renders the name and version as plain text without a workspace", () => {
     render(
-      <EndpointModel model={model({ name: "qwen3-8b", version: "v1" })} />,
+      <EndpointModel
+        model={model({ registry: "model-nfs", name: "qwen", version: "v1" })}
+      />,
     );
 
-    screen.getByText("qwen3-8b:v1");
+    expect(screen.queryByText("model-nfs")).toBeNull();
+    expect(screen.getByText("qwen:v1").dataset.resource).toBeUndefined();
   });
 
-  it("renders the bare name when there is no version", () => {
-    render(<EndpointModel model={model({ name: "qwen3-8b" })} />);
-
-    screen.getByText("qwen3-8b");
-  });
-
-  // A Flex endpoint deploys with no model at all, so the API omits spec.model
-  // entirely. Dereferencing it used to throw and, with no error boundary above
-  // it, blank the whole endpoints list page.
   it("renders a placeholder for a model-free endpoint", () => {
     render(<EndpointModel model={null} />);
-
-    screen.getByText("-");
-  });
-
-  // The other shape of the same endpoint: the form keeps the block and fills in
-  // only the task the gateway routes on, so `spec.model` is truthy with an empty
-  // name and the model column rendered an empty cell.
-  it("renders the placeholder when the model block names no model", () => {
-    render(
-      <EndpointModel model={model({ name: "", task: "text-generation" })} />,
-    );
 
     screen.getByText("-");
   });
@@ -105,16 +88,5 @@ describe("EndpointModel", () => {
     expect(JSON.parse(screen.getByText("qwen").dataset.query ?? "")).toEqual({
       model: "qwen",
     });
-  });
-
-  it("renders plain text without a workspace", () => {
-    render(
-      <EndpointModel
-        model={model({ registry: "model-nfs", name: "qwen", version: "v1" })}
-      />,
-    );
-
-    expect(screen.queryByText("model-nfs")).toBeNull();
-    expect(screen.getByText("qwen:v1").dataset.resource).toBeUndefined();
   });
 });

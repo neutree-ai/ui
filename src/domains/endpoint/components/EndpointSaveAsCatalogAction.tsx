@@ -131,6 +131,7 @@ function SaveAsCatalogDialog({
         values: buildCatalogFromEndpoint(endpoint, trimmed),
         meta: {
           idColumnName: "metadata->name",
+          // ddu-override: the catalog is created in the endpoint's own workspace; "" only satisfies the meta type
           workspace: endpoint.metadata.workspace ?? "",
           workspaced: true,
         },

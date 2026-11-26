@@ -66,7 +66,7 @@ describe("EndpointConfigurationSummary", () => {
       "text-generation",
       "endpoints.wizard.summary.versionResolvedAtDeployment",
       "endpoints.wizard.summary.fileDefaultEntryPoint",
-      "vllm 0.31.0",
+      "vllm:0.31.0",
       "endpoints.wizard.summary.cacheConfiguration:zcache,5",
       "NVIDIA H100",
       "endpoints.wizard.summary.resourcePerReplicaValue:8,32,1",
@@ -111,7 +111,7 @@ describe("EndpointConfigurationSummary", () => {
     );
 
     expect(screen.queryByText("endpoints.fields.modelRegistry")).toBeNull();
-    screen.getByText("vllm 0.31.0");
+    screen.getByText("vllm:0.31.0");
   });
 
   it("shows compose and capacity failures without a catalog", () => {

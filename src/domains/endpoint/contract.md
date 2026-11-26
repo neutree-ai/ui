@@ -54,7 +54,12 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
 - Workspace mechanics: `src/foundation/contract.md`, “Workspace selection”.
 - Status mechanics: `src/foundation/contract.md`, “Status tone”; the table is `foundation/endpoint-phase`
   (`endpointPhases`), shared with the kinds that show an endpoint; unknown has no tone.
-- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`.
+- Model/engine/task: `EndpointModel`, `EndpointEngine`, `ModelTask`. `lib/endpoint-display-model.ts` decides what they
+  show: `endpointModelRef` (no name, no model; `name:version`), `engineRefLabel` (`engine:version`, bare name without a
+  version, empty without a name; the review summary uses it too). Tests: `lib/endpoint-display-model.test.ts`.
+- Summaries: `lib/endpoint-display-summary.ts` holds replica counts (`replicaCount` stored, default 1;
+  `requestedReplicas` form, at least 1), the KV cache timeout default (5s), the review rows
+  (`endpointConfigurationSummary`) and the catalog resources card view (`requestedResourcesView`). Tests beside it.
 - Resource units: `normalizeEndpointResourcesForForm` and submit share `getVgpuVirtualization` decoding.
   Tests: `lib/endpoint-form-helpers.test.ts`, `lib/vgpu.test.ts`.
 - Structured arguments: `parseStructuredArgument` serves submit and `EndpointAdvancedParameters`; colocated tests.
@@ -74,7 +79,10 @@ Per-card memory has a physical ceiling; placement capacity is left to scheduling
   Header fields are `DetailFields inline` over `lib/detail-fields.tsx` (Foundation "Detail fields"):
   `endpointIdentityFields` (model, source, task, engine, catalog only when annotated, cluster link) before the access
   summary, `endpointRuntimeFields` (served models or the empty marker, replicas defaulting to 1, scheduler only above
-  one replica) after it. Polls basic 15s, cluster 30s.
+  one replica) after it. Polls basic 15s, cluster 30s. Lookups, inactive phases (Paused, Deleted), the Ray Serve
+  application URL, shown engine parameters (ZCache adds the reported kv_transfer_config) and the KV cache section
+  (`endpointKVCacheSummary`: hidden unless the cluster has ZCache on and the endpoint uses ZCache or none) are in
+  `lib/endpoint-display-show.ts`; tests beside it.
 - Create/Edit: `EndpointDeploymentForm` / `useEndpointForm`; on-touch validation and final global validation. Replicas
   belong to the resources step, including review and server-error navigation; no catalog reapplication on edit.
 - Create: manual unless model_catalog hash query; registry-model links prefill identity. Ordinary catalogs merge

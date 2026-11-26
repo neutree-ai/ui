@@ -493,27 +493,6 @@ describe("EndpointsShow", () => {
     expect(advancedParametersProps.current?.engineParameters).toEqual({});
   });
 
-  it("does not interpret another provider's details as zcache configuration", () => {
-    useShowMock.mockReturnValue({
-      query: {
-        data: {
-          data: {
-            ...endpoint,
-            status: {
-              kv_cache: {
-                provider: "other",
-                details: { kv_transfer_config: { unrelated: true } },
-              },
-            },
-          },
-        },
-        isLoading: false,
-      },
-    });
-    render(<EndpointsShow />);
-    expect(advancedParametersProps.current?.engineParameters).toEqual({});
-  });
-
   it.each(["chat-primary", "chat-alias"])("copies served model %s", (model) => {
     useShowMock.mockReturnValue({
       query: {

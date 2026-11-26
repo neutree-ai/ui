@@ -1,12 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { normalizeEndpointResourcesForForm } from "@/domains/endpoint/lib/endpoint-form-helpers";
 import {
-  getVgpuMemoryDisplay,
-  getVgpuVirtualization,
-  hasVgpuResources,
-} from "@/domains/endpoint/lib/vgpu";
-import { formatToDecimal } from "@/foundation/role/unit";
+  acceleratorTypeLabel,
+  requestedResourcesView,
+} from "@/domains/endpoint/lib/endpoint-display-summary";
 import { ShowPage } from "@/foundation/scene/ShowPage";
 import { EmptyValue } from "@/foundation/type/EmptyValue";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
@@ -27,66 +24,39 @@ export default function ResourcesCard({
   className,
 }: ResourcesCardProps) {
   const { t } = useTranslation();
-  const displayResources = normalizeEndpointResourcesForForm(
-    resources as unknown as Record<string, unknown> | null | undefined,
-  );
-
-  const shouldShowGpu = showGpuConditionally
-    ? Boolean(displayResources?.gpu && displayResources.gpu > 0)
-    : true;
-
-  const hasAccelerator = Boolean(
-    displayResources?.accelerator?.type &&
-      displayResources?.accelerator?.product,
-  );
-  const vgpuVirtualization = getVgpuVirtualization(
-    displayResources?.accelerator,
-  );
-  const isVgpu = hasVgpuResources(displayResources);
-  const vgpuMemory = getVgpuMemoryDisplay(vgpuVirtualization, undefined);
-  const vgpuCorePercent =
-    vgpuVirtualization?.core_percent !== undefined ? (
-      formatToDecimal(vgpuVirtualization.core_percent, 0)
-    ) : (
-      <EmptyValue />
-    );
+  const view = requestedResourcesView(resources);
 
   const content = (
     <>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {shouldShowGpu && (
+        {(!showGpuConditionally || view.requestsGpu) && (
           <ShowPage.Row title={t("common.fields.gpu")}>
-            {formatToDecimal(displayResources?.gpu) ?? <EmptyValue />}
+            {view.gpu ?? <EmptyValue />}
           </ShowPage.Row>
         )}
         <ShowPage.Row title={t("common.fields.cpu")}>
-          {formatToDecimal(displayResources?.cpu) ?? <EmptyValue />}
+          {view.cpu ?? <EmptyValue />}
         </ShowPage.Row>
         <ShowPage.Row title={t("common.fields.memory")}>
-          {formatToDecimal(displayResources?.memory) ?? <EmptyValue />}
+          {view.memory ?? <EmptyValue />}
         </ShowPage.Row>
       </div>
 
-      {hasAccelerator && displayResources?.accelerator && (
+      {view.accelerator && (
         <div className="mt-5 grid gap-5 border-t pt-4 md:grid-cols-2 xl:grid-cols-4">
           <ShowPage.Row title={t("common.fields.acceleratorType")}>
-            {t(
-              `clusters.acceleratorTypes.${displayResources.accelerator.type}`,
-              {
-                defaultValue: displayResources.accelerator.type,
-              },
-            )}
+            {acceleratorTypeLabel(view.accelerator.type, t)}
           </ShowPage.Row>
           <ShowPage.Row title={t("common.fields.acceleratorProduct")}>
-            {displayResources.accelerator.product}
+            {view.accelerator.product}
           </ShowPage.Row>
-          {isVgpu && (
+          {view.vgpu && (
             <>
               <ShowPage.Row title={t("endpoints.fields.requestedVgpuMemory")}>
-                {vgpuMemory ?? <EmptyValue />}
+                {view.vgpu.memory ?? <EmptyValue />}
               </ShowPage.Row>
               <ShowPage.Row title={t("endpoints.fields.vgpuCorePercent")}>
-                {vgpuCorePercent}
+                {view.vgpu.corePercent ?? <EmptyValue />}
               </ShowPage.Row>
             </>
           )}

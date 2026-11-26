@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 import type { ResourceSpec } from "@/foundation/types/serving-types";
 import ResourcesCard from "./ResourcesCard";
 
@@ -16,33 +16,7 @@ vi.mock("@/foundation/scene/ShowPage", () => ({
 }));
 
 describe("ResourcesCard", () => {
-  it("does not append a percent sign when vGPU core percent is unset", () => {
-    render(
-      <ResourcesCard
-        resources={
-          {
-            cpu: 2,
-            memory: 8,
-            gpu: 1,
-            accelerator: {
-              type: "nvidia_gpu",
-              product: "Tesla-T4",
-              virtualization: {
-                memory_mib: 8192,
-              },
-            },
-          } as ResourceSpec
-        }
-      />,
-    );
-
-    screen.getByText("endpoints.fields.vgpuCorePercent");
-    screen.getByText("8.0 GiB");
-    screen.getByText("-");
-    expect(screen.queryByText("-%")).toBeNull();
-  });
-
-  it("renders vGPU core percent as a plain number when configured", () => {
+  it("shows the requested resources and vGPU limits", () => {
     render(
       <ResourcesCard
         resources={
@@ -63,8 +37,8 @@ describe("ResourcesCard", () => {
       />,
     );
 
-    screen.getByText("50");
-    expect(screen.queryByText("50%")).toBeNull();
-    screen.getByText("8.0 GiB");
+    for (const text of ["2.0", "8.0", "Tesla-T4", "8.0 GiB", "50"]) {
+      screen.getByText(text);
+    }
   });
 });
