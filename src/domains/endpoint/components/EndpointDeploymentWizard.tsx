@@ -13,9 +13,9 @@ import { EndpointAdvancedParameters } from "@/domains/endpoint/components/Endpoi
 import { formatCatalogFeature } from "@/domains/endpoint/lib/catalog-origin";
 import {
   endpointHasModel,
-  endpointReplicaCount,
   endpointReviewSummary,
 } from "@/domains/endpoint/lib/endpoint-deploy-review";
+import { replicaCount } from "@/domains/endpoint/lib/endpoint-display-summary";
 import {
   type EndpointReviewChange,
   formatEndpointReviewValue,
@@ -537,7 +537,7 @@ function ReviewStep<T extends FieldValues>({
                 : !validationAttempted
                   ? t("endpoints.wizard.review.checksPending")
                   : t("endpoints.wizard.review.checkResources", {
-                      count: endpointReplicaCount(values),
+                      count: replicaCount(values.spec.replicas),
                     })}
             </p>
             <p className="flex items-start gap-2">

@@ -1,11 +1,10 @@
-import { DEFAULT_KV_CACHE_TIMEOUT_SECONDS } from "@/domains/endpoint/lib/endpoint-deploy-kv-cache";
 import type { Endpoint } from "@/domains/endpoint/types";
+import {
+  kvCacheTimeoutSeconds,
+  replicaCount,
+} from "./endpoint-display-summary";
 
 const MISSING = "—";
-
-/** The replica count the form deploys: one when unset. */
-export const endpointReplicaCount = (values: Endpoint) =>
-  values.spec.replicas?.num ?? 1;
 
 /** Whether the form has a model to estimate weights for. */
 export const endpointHasModel = (values: Endpoint) =>
@@ -21,7 +20,7 @@ export function endpointReviewSummary(values: Endpoint) {
     model: model?.name || MISSING,
     resources: {
       cluster: cluster || MISSING,
-      count: endpointReplicaCount(values),
+      count: replicaCount(values.spec.replicas),
       cpu: resources?.cpu ?? 0,
       memory: resources?.memory ?? 0,
       gpu: resources?.gpu ?? 0,
@@ -30,8 +29,6 @@ export function endpointReviewSummary(values: Endpoint) {
       engine: engine?.engine || MISSING,
       version: engine?.version || MISSING,
     },
-    cacheTimeout: kv_cache
-      ? (kv_cache.options?.timeout_seconds ?? DEFAULT_KV_CACHE_TIMEOUT_SECONDS)
-      : null,
+    cacheTimeout: kv_cache ? kvCacheTimeoutSeconds(kv_cache) : null,
   };
 }

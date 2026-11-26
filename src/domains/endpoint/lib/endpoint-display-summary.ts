@@ -5,6 +5,7 @@ import type {
   ReplicaSpec,
   ResourceSpec,
 } from "../types";
+import { DEFAULT_KV_CACHE_TIMEOUT_SECONDS } from "./endpoint-deploy-kv-cache";
 import { engineRefLabel } from "./endpoint-display-model";
 import { normalizeEndpointResourcesForForm } from "./endpoint-form-helpers";
 import {
@@ -27,9 +28,9 @@ export const replicaCount = (replicas: ReplicaSpec | null | undefined) =>
 export const requestedReplicas = (replicas: ReplicaSpec | null | undefined) =>
   Math.max(1, Number(replicas?.num ?? 1));
 
-/** The KV cache timeout, five seconds when the endpoint sets none. */
+/** The KV cache timeout, the default when the endpoint sets none. */
 export const kvCacheTimeoutSeconds = (kvCache: EndpointSpec["kv_cache"]) =>
-  kvCache?.options?.timeout_seconds ?? 5;
+  kvCache?.options?.timeout_seconds ?? DEFAULT_KV_CACHE_TIMEOUT_SECONDS;
 
 /** An accelerator type's display name, the type itself when unnamed. */
 export const acceleratorTypeLabel = (type: string, t: Translate) =>
