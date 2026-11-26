@@ -1,3 +1,5 @@
+import type { ExternalEndpoint } from "../types";
+
 const ranges = ["15m", "1h", "6h", "24h", "7d"];
 export function readMonitoringState(params: URLSearchParams) {
   const from = params.get("from") ?? "now-1h";
@@ -19,3 +21,9 @@ export function readMonitoringState(params: URLSearchParams) {
     absolute,
   };
 }
+
+/** The routing dashboard filters by workspace and endpoint, so an endpoint without a workspace has none. */
+export const modelRoutingDashboardScope = (record: ExternalEndpoint) =>
+  record.metadata.workspace
+    ? { workspace: record.metadata.workspace, endpoint: record.metadata.name }
+    : null;

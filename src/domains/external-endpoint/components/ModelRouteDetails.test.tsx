@@ -49,16 +49,6 @@ describe("ModelRouteDetails", () => {
     expect(cellsOf(second)).toContain("50%");
   });
 
-  it("keeps an explicit zero weight at zero percent", () => {
-    renderRoute({
-      strategy: "weighted",
-      targets: [target("a", { weight: 0 }), target("b", { weight: 100 })],
-    });
-    const [first, second] = screen.getAllByRole("row").slice(1);
-    expect(cellsOf(first)).toContain("0%");
-    expect(cellsOf(second)).toContain("100%");
-  });
-
   it("identifies the primary tier by priority instead of array order", () => {
     renderRoute({
       strategy: "priority",

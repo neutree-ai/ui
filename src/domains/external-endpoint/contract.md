@@ -66,10 +66,19 @@ deviations 1, 2).
   else legacy `model_mapping` keys).
 - Show: header type (`getEndpointType`, empty marker without upstreams), exposed-model count and timeout
   (`formatTimeout`) are `externalEndpointHeaderFields` in `lib/detail-fields.ts`.
-  Tabs overview and monitor (`?tab=monitor`, `?model=`). Routes via `ModelRouteDetails`, falling back to
-  `routesFromLegacy` for specs without `model_routes`; per-upstream status and mapping (`getUpstreamModelMappings`);
-  `CurlExample` when serving and a service URL exists (models minus `getUnavailableModels`). No polling. Credentials
-  never shown.
+  Tabs overview and monitor (`?tab=monitor`, `?model=`; the dashboard needs a workspace,
+  `modelRoutingDashboardScope` in `lib/monitoring-state.ts`). The page reads its record through
+  `externalEndpointShowView` (`lib/external-endpoint-display-show.ts`): routes via `ModelRouteDetails`, falling back to
+  `routesFromLegacy` for specs without `model_routes` (only stored routes link to monitoring); per-upstream cards with
+  name (`provider-N` when unnamed), internal / external by `endpoint_ref` truthiness, the endpoint name or URL, status
+  and mapping (`getUpstreamModelMappings`); `CurlExample` when serving and a service URL exists (models minus
+  `getUnavailableModels`). No polling. Credentials never shown.
+- Route display (`lib/model-route-view.ts`, shared by `ModelRouteEditor` and `ModelRouteDetails`): `routeStrategyOf`
+  (unset = fixed), `ROUTE_STRATEGY_TEXT` labels and hints; weighted routes show weight, others
+  `max_inflight_requests`. Detail card rows (`routeTargetRows`): weight share of the total with unset weight counting
+  1, primary = lowest priority, `0` / unset cap = unlimited. Editor: weight total with unset = 0 (`routeWeightTotal`,
+  as validation), tiers by `priorityTargetIndices` (0 / unset primary, > 0 fallback), new targets `newRouteTarget`,
+  number inputs empty = unset (`withTargetNumber`), model source only once the route is named.
 - Create (`use-external-endpoint-form.tsx`): `mode: "all"`; one blank fixed route, no upstream; switching an upstream
   between external and endpoint_ref resets the other kind's fields.
 - Form rules live in `lib/external-endpoint-form-routes.ts` (routes, model sources) and

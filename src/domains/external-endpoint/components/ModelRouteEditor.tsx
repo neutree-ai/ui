@@ -11,15 +11,28 @@ import {
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/foundation/lib/i18n";
 import { useModelSourceLabel } from "@/foundation/model-reference/ModelSourceBadge";
-import {
-  type ModelSource,
-  type ModelSourceMap,
-  parseStoredModelSource,
+import type {
+  ModelSource,
+  ModelSourceMap,
 } from "@/foundation/model-reference/model-source";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
 import { FormSelect } from "@/foundation/role/FormSelect";
 import { ConfirmDialog } from "@/foundation/scene/ConfirmDialog";
 import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
+import {
+  canChooseModelSource,
+  newRouteTarget,
+  priorityTargetIndices,
+  ROUTE_STRATEGY_TEXT,
+  routeCardModel,
+  routeIndexOfModel,
+  routeModelSource,
+  routeStrategyOf,
+  routeWeightTotal,
+  targetNumberValue,
+  targetProvider,
+  withTargetNumber,
+} from "../lib/model-route-view";
 import {
   changeRouteStrategy,
   type EditableModelRoute,
@@ -80,7 +93,7 @@ export default function ModelRouteEditor({
   const nextRouteId = useRef(0);
   const editor = useRef<HTMLDivElement>(null);
   const focusedModel = useRef<string>();
-  const focusIndex = value.findIndex((route) => route.model === focusModel);
+  const focusIndex = routeIndexOfModel(value, focusModel);
 
   const ensureRouteIds = (length: number) => {
     while (routeIds.current.length < length) {
@@ -148,29 +161,19 @@ export default function ModelRouteEditor({
       />
       {value.map((route, index) => {
         const key = routeIds.current[index];
-        const mode = route.strategy ?? "fixed";
+        const mode = routeStrategyOf(route);
         const hasActions = mode !== "fixed";
-        const weightTotal = route.targets.reduce(
-          (sum, target) => sum + (target.weight ?? 0),
-          0,
-        );
+        const weightTotal = routeWeightTotal(route);
         const strategyError = getRouteStrategyError(route);
         const weightTotalId = `${editorId}-${key}-weight-total`;
         const modelInputId = `${editorId}-${key}-model`;
         const impliedSource = impliedModelSource?.(route);
-        const primaryTargetIndices = route.targets.flatMap(
-          (target, targetIndex) =>
-            (target.priority ?? 0) === 0 ? [targetIndex] : [],
-        );
-        const fallbackTargetIndices = route.targets.flatMap(
-          (target, targetIndex) =>
-            (target.priority ?? 0) > 0 ? [targetIndex] : [],
-        );
+        const {
+          primary: primaryTargetIndices,
+          fallback: fallbackTargetIndices,
+        } = priorityTargetIndices(route);
         const addTarget = (primary = false) => {
-          const target: ModelRouteTarget = { upstream: "", upstream_model: "" };
-          if (mode === "priority") {
-            target.priority = primary ? 0 : 1;
-          }
+          const target = newRouteTarget(mode, primary);
           commit(
             value.map((item, itemIndex) =>
               itemIndex === index
@@ -242,8 +245,9 @@ export default function ModelRouteEditor({
                     upstream: "",
                     upstream_model: "",
                   };
-                  const modelListRequest = providers.find(
-                    (provider) => provider.value === target.upstream,
+                  const modelListRequest = targetProvider(
+                    providers,
+                    target,
                   )?.modelListRequest;
                   return (
                     <tr key={targetIndex}>
@@ -317,15 +321,17 @@ export default function ModelRouteEditor({
                               max={100}
                               step={1}
                               required
-                              value={target.weight ?? ""}
+                              value={targetNumberValue(target, "weight")}
                               onChange={(event) =>
-                                updateTarget(index, targetIndex, {
-                                  ...target,
-                                  weight:
-                                    event.target.value === ""
-                                      ? undefined
-                                      : event.target.valueAsNumber,
-                                })
+                                updateTarget(
+                                  index,
+                                  targetIndex,
+                                  withTargetNumber(
+                                    target,
+                                    "weight",
+                                    event.target,
+                                  ),
+                                )
                               }
                               aria-label={t(
                                 "external_endpoints.fields.weightRatio",
@@ -346,7 +352,10 @@ export default function ModelRouteEditor({
                             required={requireCapacity}
                             max={2147483647}
                             step={1}
-                            value={target.max_inflight_requests ?? ""}
+                            value={targetNumberValue(
+                              target,
+                              "max_inflight_requests",
+                            )}
                             placeholder={t(
                               requireCapacity
                                 ? "external_endpoints.placeholders.primaryCapacity"
@@ -361,13 +370,15 @@ export default function ModelRouteEditor({
                                 : "external_endpoints.messages.maxInflightRequestsHint",
                             )}
                             onChange={(event) =>
-                              updateTarget(index, targetIndex, {
-                                ...target,
-                                max_inflight_requests:
-                                  event.target.value === ""
-                                    ? undefined
-                                    : event.target.valueAsNumber,
-                              })
+                              updateTarget(
+                                index,
+                                targetIndex,
+                                withTargetNumber(
+                                  target,
+                                  "max_inflight_requests",
+                                  event.target,
+                                ),
+                              )
                             }
                           />
                         )}
@@ -432,9 +443,7 @@ export default function ModelRouteEditor({
                   className="break-all text-base font-semibold text-foreground"
                 >
                   {t("external_endpoints.sections.routeConfiguration", {
-                    model:
-                      route.model ||
-                      t("external_endpoints.messages.unnamedModel"),
+                    model: routeCardModel(route, t),
                   })}
                 </h3>
               </div>
@@ -476,9 +485,7 @@ export default function ModelRouteEditor({
                   {t("modelSource.label")}
                 </FormLabel>
                 <FormCombobox
-                  value={
-                    parseStoredModelSource(modelSources?.[route.model]) ?? ""
-                  }
+                  value={routeModelSource(modelSources, route)}
                   onChange={(next) =>
                     onModelSourceChange?.(route.model, String(next))
                   }
@@ -488,7 +495,7 @@ export default function ModelRouteEditor({
                       : t("modelSource.placeholder")
                   }
                   options={modelSourceOptions ?? []}
-                  disabled={!route.model}
+                  disabled={!canChooseModelSource(route)}
                   allowCustomValue
                   asField={false}
                 />
@@ -501,30 +508,18 @@ export default function ModelRouteEditor({
                   value={mode}
                   disabled={route.strategyLocked}
                   onChange={(next) => setMode(index, next as Mode)}
-                  options={[
-                    {
-                      label: t("external_endpoints.options.fixedRouting"),
-                      value: "fixed",
-                    },
-                    {
-                      label: t("external_endpoints.options.priorityRouting"),
-                      value: "priority",
-                    },
-                    {
-                      label: t("external_endpoints.options.weightedRouting"),
-                      value: "weighted",
-                    },
-                  ]}
+                  options={Object.entries(ROUTE_STRATEGY_TEXT).map(
+                    ([strategy, text]) => ({
+                      label: t(text.label),
+                      value: strategy,
+                    }),
+                  )}
                 />
                 <p
                   className="text-xs leading-5 text-muted-foreground"
                   aria-live="polite"
                 >
-                  {mode === "fixed"
-                    ? t("external_endpoints.messages.fixedRoutingHint")
-                    : mode === "priority"
-                      ? t("external_endpoints.messages.priorityRoutingHint")
-                      : t("external_endpoints.messages.weightedRoutingHint")}
+                  {t(ROUTE_STRATEGY_TEXT[mode].hint)}
                 </p>
               </FormItem>
             </div>
@@ -632,6 +627,7 @@ export default function ModelRouteEditor({
                   mode === "fixed"
                     ? [0]
                     : route.targets.map((_, targetIndex) => targetIndex),
+                  // ddu-override: the target table is labelled by its route's model name
                   route.model,
                 )}
                 {mode === "weighted" && (

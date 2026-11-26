@@ -1,6 +1,9 @@
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { readMonitoringState } from "@/domains/external-endpoint/lib/monitoring-state";
+import {
+  modelRoutingDashboardScope,
+  readMonitoringState,
+} from "@/domains/external-endpoint/lib/monitoring-state";
 import type { ExternalEndpoint } from "@/domains/external-endpoint/types";
 import GrafanaDashboard from "@/foundation/grafana/GrafanaDashboard";
 import { GrafanaDashboardLink } from "@/foundation/grafana/GrafanaDashboardLink";
@@ -18,12 +21,12 @@ function useModelRoutingDashboard(record: ExternalEndpoint) {
   const [params] = useSearchParams();
   // Navigation only supplies initial context. Grafana owns subsequent changes.
   const state = readMonitoringState(params);
+  const scope = modelRoutingDashboardScope(record);
   const props =
-    grafanaUrl && record.metadata.workspace
+    grafanaUrl && scope
       ? getModelRoutingDashboardProps(grafanaUrl, {
           language: i18n.resolvedLanguage,
-          workspace: record.metadata.workspace,
-          endpoint: record.metadata.name,
+          ...scope,
           ...state,
         })
       : null;
