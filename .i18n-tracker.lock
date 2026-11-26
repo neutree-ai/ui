@@ -628,7 +628,7 @@
   "src/domains/log-sink/testing/visual-fixtures.ts": "509c35535b0fa0634f5eae5040c515c9",
   "src/domains/license/testing/visual-fixtures.ts": "5ea2ed09a6ffbb7731bda564ca5ac567",
   "src/domains/identity-source/testing/visual-fixtures.ts": "1933affad7b04bf626b69318ce028f8e",
-  "src/domains/cluster/testing/visual-fixtures.ts": "3d9aa71cbc82273107b5179a4449b3ec",
+  "src/domains/cluster/testing/visual-fixtures.ts": "5667e376453f1a749859cea886120041",
   "src/domains/api-key/testing/visual-fixtures.ts": "4c3dd79aaa8a4c5d22ac25e76e4471ae",
   "src/domains/api-key/lib/api-key-label.ts": "48d027db2dac110046b4e3f996beaf01",
   "src/foundation/scene/DetailFields.tsx": "b8df99322195682ad25d58cb3658ba7c",

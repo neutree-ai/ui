@@ -6,6 +6,7 @@ export type MockData = {
   /** Rows by PostgREST table name; every read of the table returns all of them. */
   tables?: Record<string, unknown[]>;
   /** Bodies by path under the API root, for the routes that are not tables. */
+  /** Bodies by path; a key with a query string ("path?a=b") wins for that exact query. */
   custom?: Record<string, unknown>;
   /** Results by function name, for `rpc/<name>` calls. */
   rpc?: Record<string, unknown>;
@@ -149,6 +150,8 @@ export async function installMockBackend(
       if (name in rpc) return json(route, rpc[name]);
     } else if (request.method() === "GET" || request.method() === "HEAD") {
       const custom = { ...SHELL_CUSTOM, ...data.custom };
+      const withQuery = `${path}${url.search}`;
+      if (withQuery in custom) return json(route, custom[withQuery]);
       if (path in custom) return json(route, custom[path]);
       if (path in tables) {
         const rows = tables[path];
