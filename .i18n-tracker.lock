@@ -335,7 +335,7 @@
   "src/domains/engine/components/ValueSchemaTable.tsx": "f1d77e8607c07516dc05e7c54cc33adc",
   "src/domains/external-endpoint/lib/convert-timeout.tsx": "a9c420a6b72fdfcc71c84a8002ff12c6",
   "src/domains/external-endpoint/lib/route-strategy.ts": "0fd034a72725d42b1f9a64726d594237",
-  "src/domains/external-endpoint/lib/routes-from-legacy.ts": "acde878c10669469c6e88b3dff2d1f59",
+  "src/domains/external-endpoint/lib/routes-from-legacy.ts": "ca3a9957e350fde4a58c60fd08472975",
   "src/pages/ai-traces/components/TraceExportButton.tsx": "4540a96a37cdb4a919b63e3e6b6e0770",
   "src/pages/ai-traces/components/TraceNameFilter.tsx": "ac4d9a7b7886d7fc6be94027b598e27b",
   "src/foundation/recipe/image-feature.ts": "4707e5c397be5d5e3ac9eb5783d8c412",
@@ -692,6 +692,7 @@
   "src/domains/api-key/lib/api-key-display-show.ts": "4bdad463ef8cb2931685a54ca104813e",
   "src/domains/external-endpoint/lib/external-endpoint-form-routes.ts": "f7b56fbb318ad10f8a0b26f5902cbc66",
   "src/domains/external-endpoint/lib/external-endpoint-form-upstreams.ts": "085be980454c5fe98145055aa412c139",
-  "src/domains/external-endpoint/lib/external-endpoint-display-show.ts": "15668300152b445ca716b67ec765621c",
-  "src/domains/external-endpoint/lib/model-route-view.ts": "fa882c7655687a29f893bc4dd3fd4f90"
+  "src/domains/external-endpoint/lib/external-endpoint-display-show.ts": "4272adffc444bda64fab830b26520dcd",
+  "src/domains/external-endpoint/lib/model-route-view.ts": "fa882c7655687a29f893bc4dd3fd4f90",
+  "src/domains/external-endpoint/testing/visual-fixtures.ts": "bab51b626e8b7dc02ef9fd91353e6ef4"
 }

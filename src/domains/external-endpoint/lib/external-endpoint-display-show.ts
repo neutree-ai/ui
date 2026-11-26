@@ -4,7 +4,7 @@ import { getUnavailableModels } from "./get-unavailable-models";
 import { getUpstreamModelMappings } from "./get-upstream-model-mappings";
 import { isServingPhase } from "./is-serving-phase";
 import { matchUpstreamStatuses } from "./match-upstream-statuses";
-import { routesFromLegacy } from "./routes-from-legacy";
+import { routesFromLegacy, upstreamNameAt } from "./routes-from-legacy";
 
 /**
  * What the detail page reads from its endpoint. Routes fall back to the legacy
@@ -49,7 +49,7 @@ function upstreamCard(
 ) {
   const mappings = getUpstreamModelMappings(record.spec, upstream);
   return {
-    name: upstream.name || `provider-${index + 1}`,
+    name: upstreamNameAt(upstream, index),
     internal: !!upstream.endpoint_ref,
     reference: upstream.endpoint_ref || upstream.upstream?.url || undefined,
     status,
