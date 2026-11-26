@@ -5,7 +5,9 @@ import { PhaseStatus } from "@/foundation/role/PhaseStatus";
 import { phases } from "@/foundation/role/phases";
 import type { BaseStatus } from "@/foundation/types/basic-types";
 
-const upstreamPhases = phases("status.phases.upstream", { Ready: "positive" });
+const upstreamPhases = phases("status.phases.externalEndpointUpstream", {
+  Ready: "positive",
+});
 
 describe("PhaseStatus", () => {
   it("renders a status that carries fields beyond the phase", () => {
@@ -21,6 +23,6 @@ describe("PhaseStatus", () => {
       </TooltipProvider>,
     );
 
-    screen.getByText("status.phases.upstream.Ready");
+    screen.getByText("status.phases.externalEndpointUpstream.Ready");
   });
 });
