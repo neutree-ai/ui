@@ -34,15 +34,54 @@ import {
   readCatalogOrigin,
 } from "@/domains/endpoint/lib/catalog-origin";
 import {
+  acceleratorChoiceValue,
+  endpointEditCredit,
+  endpointFormCluster,
+  endpointRequestCapacity,
+  type GpuAllocationMode,
+  gpuCapacityMessages,
+  reviewCapacityMetrics,
+} from "@/domains/endpoint/lib/endpoint-form-capacity";
+import {
   buildCatalogMergedSpec,
   defaultEndpointSpec,
-  isRequestWithinAllocation,
-  isResourceRequestExceeded,
   normalizeEndpointRecordForForm,
   normalizeEndpointResourcesForForm,
   transformEndpointValues,
   validateEndpointValues,
 } from "@/domains/endpoint/lib/endpoint-form-helpers";
+import {
+  alignTaskWithEngine,
+  applyDefaultEngine,
+  applyRegistryModelPreselection,
+  catalogVariantEstimate,
+  countModelChanges,
+  dropMissingModel,
+  engineChoice,
+  findRegistry,
+  hasDeploymentPreview,
+  type ModelIdentity,
+  modelIdentity,
+  modelNames,
+  pickModelName,
+  pickModelRegistry,
+  registryNames,
+} from "@/domains/endpoint/lib/endpoint-form-model";
+import {
+  acceleratorForOption,
+  alignedVgpuMemory,
+  clearVirtualization,
+  reconcileAccelerator,
+  renormalizeFormResources,
+  setDerivedVirtualization,
+  setUserVirtualization,
+  supportedVirtualization,
+  userSetValueOptions,
+  usesZCache,
+  virtualizationForCoreInput,
+  virtualizationForMemoryInput,
+  writeFormResources,
+} from "@/domains/endpoint/lib/endpoint-form-resources";
 import { endpointValuesEqual } from "@/domains/endpoint/lib/endpoint-review-changes";
 import { endpointStepCompletions } from "@/domains/endpoint/lib/endpoint-wizard";
 import {
@@ -56,19 +95,9 @@ import {
 } from "@/domains/endpoint/lib/estimate-weights";
 import { resolveModelInfoRead } from "@/domains/endpoint/lib/model-info-read";
 import {
-  type EndpointReviewCapacityMetric,
   type EndpointReviewContext,
   formatCapacityValue,
 } from "@/domains/endpoint/lib/review-context";
-import {
-  formatVgpuMemoryGiBInputValue,
-  getEffectiveVgpuMemoryMiB,
-  getRoundedVgpuMemoryGiBValue,
-  isVgpuVirtualizationResourceSupported,
-  normalizeVgpuMemoryGiBInput,
-  VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
-  VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
-} from "@/domains/endpoint/lib/vgpu";
 import { isValidKvCacheTimeout } from "@/domains/endpoint/lib/zcache";
 import type {
   Endpoint,
@@ -77,17 +106,7 @@ import type {
   EndpointModelCatalogRef,
   EndpointModelRegistryRef,
   ModelSpec,
-  ResourceSpec,
 } from "@/domains/endpoint/types";
-import {
-  addBackEndpointDeviceAllocationsToNodeResources,
-  calculateGpuPlacementCapacity,
-  calculatePhysicalCardUsageForRequest,
-  calculateVgpuCardCapacity,
-  calculateVgpuMemoryBoundaryMiB,
-  calculateVgpuPhysicalCardUsage,
-  sumMatchingDeviceAvailableResources,
-} from "@/foundation/accelerator/gpu-device-resources";
 import { useDebouncedValue } from "@/foundation/hooks/use-debounced-value";
 import {
   isValidWorkspace,
@@ -117,10 +136,7 @@ import type {
 } from "@/foundation/recipe/types";
 import { formatGb, matchesAcceleratorName } from "@/foundation/recipe/vram";
 import { FormCombobox } from "@/foundation/role/FormCombobox";
-import {
-  newestVersion,
-  sortVersionsNewestFirst,
-} from "@/foundation/role/version-order";
+import { sortVersionsNewestFirst } from "@/foundation/role/version-order";
 import WorkspaceField from "@/foundation/role/WorkspaceField";
 import { EmptyState } from "@/foundation/scene/EmptyState";
 import FormCardGrid from "@/foundation/scene/FormCardGrid";
@@ -129,7 +145,7 @@ import { nestFieldErrors } from "@/foundation/scene/form-errors";
 import { InfoHint } from "@/foundation/scene/InfoHint";
 import type { Schema } from "@/foundation/scene/use-variables-input";
 import { VariablesInput } from "@/foundation/scene/VariablesInput";
-import { EMPTY_VALUE, EmptyValue } from "@/foundation/type/EmptyValue";
+import { EmptyValue } from "@/foundation/type/EmptyValue";
 import { NumberInput } from "@/foundation/type/NumberInput";
 import { SegmentedControl } from "@/foundation/type/SegmentedControl";
 
@@ -155,11 +171,6 @@ type RegistryModelPreselection = {
   version?: string;
 };
 
-type ModelIdentity = Pick<
-  ModelSpec,
-  "registry" | "name" | "version" | "file" | "task"
->;
-
 type ModelSourceMode = "catalog" | "manual";
 
 type VariantResetSnapshot = {
@@ -175,13 +186,6 @@ type ModelSourceDraft = {
   customized: boolean;
 };
 
-const MODEL_OVERRIDE_KEYS = [
-  "registry",
-  "name",
-  "version",
-  "file",
-] as const satisfies ReadonlyArray<Exclude<keyof ModelIdentity, "task">>;
-
 const COMPOSED_SPEC_FIELD_KEYS = [
   "model",
   "engine",
@@ -189,22 +193,6 @@ const COMPOSED_SPEC_FIELD_KEYS = [
   "variables",
   "env",
 ] as const;
-
-const modelIdentity = (
-  model:
-    | Pick<ModelSpec, "registry" | "name" | "version" | "file" | "task">
-    | null
-    | undefined,
-): ModelIdentity => ({
-  registry: model?.registry ?? "",
-  name: model?.name ?? "",
-  version: model?.version ?? "",
-  file: model?.file ?? "",
-  task: model?.task ?? "",
-});
-
-const countModelChanges = (current: ModelIdentity, derived: ModelIdentity) =>
-  MODEL_OVERRIDE_KEYS.filter((key) => current[key] !== derived[key]).length;
 
 export function readRegistryModelQueryParams(): RegistryModelPreselection | null {
   const params = readHashQueryParams();
@@ -221,31 +209,9 @@ export function readRegistryModelQueryParams(): RegistryModelPreselection | null
   };
 }
 
-type AcceleratorVirtualization = NonNullable<
-  ResourceSpec["accelerator"]
->["virtualization"];
-type GpuAllocationMode = "full" | "vgpu";
-
 /** How many models the picker asks for. The dropdown searches server side, so
  * this bounds one response rather than the registry. */
 const MODEL_PICKER_PAGE_SIZE = 20;
-
-const hasVgpuVirtualizationValues = (
-  virtualization: AcceleratorVirtualization | undefined,
-) => Boolean(virtualization?.memory_mib);
-
-const userSetValueOptions = {
-  shouldDirty: true,
-  shouldTouch: true,
-  shouldValidate: true,
-} as const;
-
-const derivedValueOptions = (hasError: boolean) => ({
-  shouldDirty: true,
-  // A derived change may fill a field that already shows an error, but it must
-  // not surface a new required error merely because the field appeared.
-  shouldValidate: hasError,
-});
 
 const formatOneDecimal = (value: number | null | undefined) => {
   const numberValue = Number(value ?? 0);
@@ -454,7 +420,6 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const hidesModelFields = !engineNeedsModelSpec(engineSpec?.engine);
 
   const selectedAccelerator = normalizedResources?.accelerator;
-  const gpuUsage = normalizedResources?.gpu || 0;
   const replicaCount = Math.max(1, Number(watchedReplicaCount || 1));
 
   const meta = useMemo(
@@ -470,34 +435,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     meta,
   });
 
-  const cacheEnabled = form.watch("spec.kv_cache.provider") === "zcache";
-  const currentEndpointRuntimeResources = queryEndpoint?.status?.resources;
-  const canReuseCurrentEndpointResources = Boolean(
-    action === "edit" &&
-      queryEndpoint?.spec?.cluster === currentCluster &&
-      currentEndpointRuntimeResources != null,
-  );
+  const cacheEnabled = usesZCache(currentCache);
   // Capacity reuse is performed only on the node/device snapshot below. Do
   // not add the old Spec globally as a second credit path.
   const currentUsage = { cpu: 0, memory: 0, gpu: 0 };
-  // Static-node clusters report runtime placement only for replicas holding
-  // GPU devices, so a running CPU-only endpoint has no node to credit its own
-  // CPU/memory back to. A request that asks for nothing beyond what it already
-  // holds needs no new capacity, so placement is not checked for it.
-  const requestNeedsNoNewCapacity = Boolean(
-    action === "edit" &&
-      queryEndpoint?.status?.phase === "Running" &&
-      !currentEndpointRuntimeResources?.replicas?.length &&
-      queryEndpoint.spec?.cluster === currentCluster &&
-      !cacheChanged &&
-      isRequestWithinAllocation(
-        {
-          resources: normalizedQueryResources,
-          replicas: Math.max(1, Number(queryEndpoint.spec?.replicas?.num || 1)),
-        },
-        { resources: normalizedResources, replicas: replicaCount },
-      ),
-  );
+  const editCredit = endpointEditCredit({
+    editing: action === "edit",
+    endpoint: queryEndpoint,
+    currentCluster,
+    cacheChanged,
+    savedResources: normalizedQueryResources,
+    resources: normalizedResources,
+    replicaCount,
+  });
 
   const engines = useSelect<EndpointEngineRef>({
     resource: "engines",
@@ -521,8 +471,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // until one is in hand. Once one *is* in hand and still says nothing, that is
   // the forgotten-`select` case, and it gets said out loud below rather than
   // silently reading as "already local".
-  const selectedRegistry = (modelRegistries.query.data?.data ?? []).find(
-    (candidate) => candidate.metadata.name === currentRegistry,
+  const selectedRegistry = findRegistry(
+    modelRegistries.query.data?.data,
+    currentRegistry,
   );
   const selectedModelDelivery = selectedRegistry
     ? registryModelDelivery(selectedRegistry.visibility)
@@ -531,12 +482,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // The registries this workspace can offer, or null while the listing has not
   // arrived — which is not the same statement as "there are none".
   const modelRegistryNames = useMemo<string[] | null>(
-    () =>
-      modelRegistries.query.data?.data
-        ? modelRegistries.query.data.data.map(
-            (registry) => registry.metadata.name,
-          )
-        : null,
+    () => registryNames(modelRegistries.query.data?.data),
     [modelRegistries.query.data],
   );
 
@@ -589,16 +535,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     cacheStatusLoading: clusters.query.isFetching,
   });
   kvCacheUnavailableRef.current = kvCacheAvailability.unavailableReason;
-  const hasClusterCapacityEvidence = Boolean(
-    selectedCluster?.status?.resource_info,
-  );
-
-  const clusterType: "ssh" | "kubernetes" | undefined =
-    selectedCluster?.spec?.type === "ssh"
-      ? "ssh"
-      : selectedCluster?.spec?.type === "kubernetes"
-        ? "kubernetes"
-        : undefined;
+  const clusterFacts = endpointFormCluster(selectedCluster);
+  const {
+    clusterType,
+    hasCapacityEvidence: hasClusterCapacityEvidence,
+    vgpuEnabled: isSelectedClusterVgpuEnabled,
+    memorySupported: isVgpuMemoryResourceSupported,
+    coreSupported: isVgpuCoreResourceSupported,
+    nodeCount: selectedClusterNodeCount,
+  } = clusterFacts;
 
   const isEdit = action === "edit";
   const sectionVariant = "section";
@@ -621,515 +566,66 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   }, [clusters.query?.data?.data, currentCluster, isEdit]);
 
   const selectedVirtualization = selectedAccelerator?.virtualization;
-  const isSelectedClusterVgpuEnabled =
-    selectedCluster?.spec.type === "kubernetes" &&
-    selectedCluster.spec.accelerator_virtualization?.enabled === true;
   const hasResolvedClusterSelection = Boolean(
     currentCluster && selectedCluster,
   );
-  const showVgpuFields = Boolean(
-    isSelectedClusterVgpuEnabled &&
-      selectedAccelerator?.type &&
-      selectedAccelerator?.product,
-  );
-  // The cluster's accelerator virtualization status reports which virtualization
-  // resource keys its mode supports (backend AcceleratorVirtualizationStatus
-  // .supported_resources). Inputs for resources outside the supported set are
-  // disabled so the form cannot build a spec the backend would reject (e.g.
-  // core_percent when the list omits it). The UI gates on supported_resources
-  // only — not the mode name.
-  const supportedVirtualizationResources =
-    selectedCluster?.status?.accelerator_virtualization?.supported_resources;
-  const isVgpuMemoryResourceSupported = isVgpuVirtualizationResourceSupported(
-    supportedVirtualizationResources,
-    VGPU_VIRTUALIZATION_MEMORY_MIB_RESOURCE_KEY,
-  );
-  const isVgpuCoreResourceSupported = isVgpuVirtualizationResourceSupported(
-    supportedVirtualizationResources,
-    VGPU_VIRTUALIZATION_CORE_PERCENT_RESOURCE_KEY,
-  );
-  const selectedClusterNodeCount = useMemo(() => {
-    const nodeResources =
-      selectedCluster?.status?.resource_info?.node_resources;
-    if (nodeResources) {
-      return Object.keys(nodeResources).length;
-    }
-
-    return selectedCluster?.status?.ready_nodes ?? null;
-  }, [
-    selectedCluster?.status?.ready_nodes,
-    selectedCluster?.status?.resource_info?.node_resources,
-  ]);
-  const selectedMemoryTotalMiB = selectedAcceleratorOption?.memoryTotalMiB;
-  const effectiveVgpuMemoryMiB = getEffectiveVgpuMemoryMiB(
-    selectedVirtualization,
-    selectedMemoryTotalMiB,
-  );
-  const canUseVgpuAllocation = showVgpuFields && isVgpuMemoryResourceSupported;
-  const inferredGpuAllocationMode: GpuAllocationMode =
-    canUseVgpuAllocation && hasVgpuVirtualizationValues(selectedVirtualization)
-      ? "vgpu"
-      : "full";
-  const effectiveGpuAllocationMode: GpuAllocationMode =
-    canUseVgpuAllocation && gpuAllocationModeChoice === "vgpu"
-      ? "vgpu"
-      : inferredGpuAllocationMode;
-  effectiveGpuAllocationModeRef.current = effectiveGpuAllocationMode;
-  const isVgpuAllocationMode = effectiveGpuAllocationMode === "vgpu";
-  const isVgpuCapacityPending =
-    isVgpuAllocationMode && effectiveVgpuMemoryMiB === null;
-  let gpuInputStep = gpuStep;
-  if (isVgpuAllocationMode || gpuUsage >= 1) {
-    gpuInputStep = 1;
-  }
-  const vgpuCoreUnitsPerCard = Number(
-    selectedVirtualization?.core_percent || 0,
-  );
-  const reusableNodeResources = useMemo(
-    () =>
-      addBackEndpointDeviceAllocationsToNodeResources(
-        schedulingResourceInfo?.node_resources,
-        canReuseCurrentEndpointResources
-          ? currentEndpointRuntimeResources
-          : undefined,
-        undefined,
-        canReuseCurrentEndpointResources
-          ? {
-              cpuPerReplica: normalizedQueryResources?.cpu,
-              memoryPerReplica: normalizedQueryResources?.memory,
-            }
-          : undefined,
-      ),
-    [
-      currentEndpointRuntimeResources,
-      canReuseCurrentEndpointResources,
-      normalizedQueryResources?.cpu,
-      normalizedQueryResources?.memory,
-      schedulingResourceInfo?.node_resources,
-    ],
-  );
-  const matchingDeviceAvailableResources = useMemo(
-    () =>
-      sumMatchingDeviceAvailableResources(
-        reusableNodeResources,
-        selectedAccelerator,
-      ),
-    [reusableNodeResources, selectedAccelerator],
-  );
-  const vgpuCardCapacity = useMemo(
-    () =>
-      calculateVgpuCardCapacity(reusableNodeResources, {
-        selectedAccelerator,
-        memoryMiBPerCard: effectiveVgpuMemoryMiB,
-        coreUnitsPerCard: vgpuCoreUnitsPerCard,
-      }),
-    [
-      reusableNodeResources,
-      selectedAccelerator,
-      effectiveVgpuMemoryMiB,
-      vgpuCoreUnitsPerCard,
-    ],
-  );
-  const hasSelectedDeviceResources =
-    matchingDeviceAvailableResources.memoryMiB > 0 ||
-    matchingDeviceAvailableResources.coreUnits > 0 ||
-    vgpuCardCapacity.matchingDeviceCount > 0;
-  const hasNodeResourceSnapshot = Boolean(
-    selectedCluster?.status?.resource_info?.node_resources &&
-      Object.keys(selectedCluster.status.resource_info.node_resources).length >
-        0,
-  );
-  const requestedVirtualCards = gpuUsage * replicaCount;
-  const requestedFullGpuCards = gpuUsage * replicaCount;
-  const requestedVgpuMemoryMiB = effectiveVgpuMemoryMiB
-    ? requestedVirtualCards * effectiveVgpuMemoryMiB
-    : 0;
-  const requestedVgpuCoreUnits = vgpuCoreUnitsPerCard
-    ? requestedVirtualCards * vgpuCoreUnitsPerCard
-    : 0;
-  const isFractionalGpuAllocationMode =
-    !isVgpuAllocationMode && gpuUsage > 0 && gpuUsage < 1;
-  const nonVgpuPhysicalCardUsage = useMemo(
-    () =>
-      calculatePhysicalCardUsageForRequest(reusableNodeResources, {
-        allocationMode: isFractionalGpuAllocationMode ? "fractional" : "full",
-        selectedAccelerator,
-        requestedPerReplica: gpuUsage,
-        replicaCount,
-      }),
-    [
-      reusableNodeResources,
-      selectedAccelerator,
-      gpuUsage,
-      replicaCount,
-      isFractionalGpuAllocationMode,
-    ],
-  );
-  const placementCapacity = useMemo(() => {
-    if (
-      !currentCluster ||
-      !hasNodeResourceSnapshot ||
-      requestNeedsNoNewCapacity ||
-      (gpuUsage > 0 && (!selectedAccelerator?.product || isVgpuCapacityPending))
-    ) {
-      return null;
-    }
-
-    return calculateGpuPlacementCapacity(reusableNodeResources ?? {}, {
-      allocationMode: isVgpuAllocationMode
-        ? "vgpu"
-        : isFractionalGpuAllocationMode
-          ? "fractional"
-          : "full",
-      coreUnitsPerCard: vgpuCoreUnitsPerCard,
-      cpuPerReplica: normalizedResources?.cpu,
-      gpuPerReplica: gpuUsage,
-      memoryMiBPerCard: effectiveVgpuMemoryMiB,
-      memoryPerReplica: normalizedResources?.memory,
-      replicaCount,
-      selectedAccelerator,
-    });
-  }, [
+  const capacity = endpointRequestCapacity({
+    resources: normalizedResources,
+    replicaCount,
     currentCluster,
-    hasNodeResourceSnapshot,
-    requestNeedsNoNewCapacity,
-    effectiveVgpuMemoryMiB,
+    cluster: clusterFacts,
+    nodeResources: schedulingResourceInfo?.node_resources,
+    credit: editCredit,
+    option: selectedAcceleratorOption,
+    maxAvailable,
+    gpuStep,
+    allocationChoice: gpuAllocationModeChoice,
+  });
+  const {
     gpuUsage,
-    isFractionalGpuAllocationMode,
+    hasAccelerator,
+    showVgpuFields,
+    selectedMemoryTotalMiB,
+    canUseVgpuAllocation,
+    effectiveGpuAllocationMode,
     isVgpuAllocationMode,
     isVgpuCapacityPending,
-    normalizedResources?.cpu,
-    normalizedResources?.memory,
-    replicaCount,
-    reusableNodeResources,
-    selectedAccelerator,
+    gpuInputStep,
     vgpuCoreUnitsPerCard,
-  ]);
-  const vgpuPhysicalCardUsage = useMemo(
-    () =>
-      isVgpuAllocationMode
-        ? calculateVgpuPhysicalCardUsage(reusableNodeResources, {
-            allocationMode: "vgpu",
-            coreUnitsPerCard: vgpuCoreUnitsPerCard,
-            cpuPerReplica: normalizedResources?.cpu,
-            gpuPerReplica: gpuUsage,
-            memoryMiBPerCard: effectiveVgpuMemoryMiB,
-            memoryPerReplica: normalizedResources?.memory,
-            replicaCount,
-            selectedAccelerator,
-          })
-        : null,
-    [
-      effectiveVgpuMemoryMiB,
-      gpuUsage,
-      isVgpuAllocationMode,
-      normalizedResources?.cpu,
-      normalizedResources?.memory,
-      replicaCount,
-      reusableNodeResources,
-      selectedAccelerator,
-      vgpuCoreUnitsPerCard,
-    ],
-  );
-  const availableFullGpuCards = hasNodeResourceSnapshot
-    ? nonVgpuPhysicalCardUsage.available
-    : (selectedAcceleratorOption?.available ?? 0);
-  const maxFullGpuCards =
-    selectedAcceleratorOption?.total ?? maxAvailable.gpu.total;
-  const hasRawAvailableVgpuMemoryMiB =
-    hasSelectedDeviceResources ||
-    Number.isFinite(selectedAcceleratorOption?.virtualizationMemoryMiB);
-  const rawAvailableVgpuMemoryMiB = hasSelectedDeviceResources
-    ? matchingDeviceAvailableResources.memoryMiB
-    : Number(selectedAcceleratorOption?.virtualizationMemoryMiB || 0);
-  const rawAvailableVgpuCoreUnits = hasSelectedDeviceResources
-    ? matchingDeviceAvailableResources.coreUnits
-    : Number(selectedAcceleratorOption?.virtualizationCoreUnits || 0);
-  const fallbackVgpuAvailablePhysicalCards =
-    selectedAcceleratorOption?.available ?? maxAvailable.gpu.available;
-  const fallbackVgpuMaxPhysicalCards =
-    selectedAcceleratorOption?.total ||
-    maxAvailable.gpu.total ||
-    vgpuCardCapacity.matchingDeviceCount;
-  const availableVirtualPhysicalCards = hasSelectedDeviceResources
-    ? vgpuCardCapacity.totalCards
-    : fallbackVgpuAvailablePhysicalCards;
-  const totalVirtualCardCapacity =
-    fallbackVgpuMaxPhysicalCards > 0
-      ? Math.min(availableVirtualPhysicalCards, fallbackVgpuMaxPhysicalCards)
-      : availableVirtualPhysicalCards;
-  // Cards are requested across replicas (gpu per replica × replica count),
-  // so the displayed request and the capacity check must compare totals:
-  // a per-replica value alone stays under capacity while the summed request
-  // would leave one or more replicas unschedulable.
-  const displayedVirtualCards = requestedVirtualCards;
-  const displayedVgpuPhysicalCards =
-    vgpuPhysicalCardUsage ?? displayedVirtualCards;
-  const rawVgpuMemoryBoundaryMiB = (() => {
-    const rawMaxMiB =
-      typeof selectedMemoryTotalMiB === "number" &&
-      Number.isFinite(selectedMemoryTotalMiB)
-        ? selectedMemoryTotalMiB
-        : null;
-    const boundaryRequestedCardCount = requestedVirtualCards;
-    if (hasSelectedDeviceResources) {
-      const deviceBoundaryMiB = calculateVgpuMemoryBoundaryMiB(
-        reusableNodeResources,
-        {
-          selectedAccelerator,
-          requestedCardCount: boundaryRequestedCardCount,
-          coreUnitsPerCard: vgpuCoreUnitsPerCard,
-        },
-      );
-      if (deviceBoundaryMiB !== null) {
-        return rawMaxMiB === null
-          ? deviceBoundaryMiB
-          : Math.min(rawMaxMiB, deviceBoundaryMiB);
-      }
-    }
-    if (!hasRawAvailableVgpuMemoryMiB) {
-      return rawMaxMiB;
-    }
-    const requestedCardCount = Math.max(1, boundaryRequestedCardCount);
-    const perCardBoundaryMiB = Math.floor(
-      rawAvailableVgpuMemoryMiB / requestedCardCount,
-    );
-    if (!Number.isFinite(perCardBoundaryMiB)) {
-      return rawMaxMiB;
-    }
-    const boundedPerCardMiB = Math.max(0, perCardBoundaryMiB);
-    return rawMaxMiB === null
-      ? boundedPerCardMiB
-      : Math.min(rawMaxMiB, boundedPerCardMiB);
-  })();
-  const vgpuMemoryGiBMaxValue = getRoundedVgpuMemoryGiBValue(
+    reusableNodeResources,
+    requestedFullGpuCards,
+    availableFullGpuCards,
+    totalVirtualCardCapacity,
+    displayedVgpuPhysicalCards,
+    requestedVgpuMemoryMiB,
+    rawAvailableVgpuMemoryMiB,
     rawVgpuMemoryBoundaryMiB,
-  );
-  const vgpuMemoryGiBInputValue =
-    selectedVirtualization?.memory_mib !== undefined
-      ? formatVgpuMemoryGiBInputValue(
-          selectedVirtualization.memory_mib,
-          selectedMemoryTotalMiB,
-          rawVgpuMemoryBoundaryMiB,
-        )
-      : effectiveVgpuMemoryMiB
-        ? formatVgpuMemoryGiBInputValue(
-            effectiveVgpuMemoryMiB,
-            selectedMemoryTotalMiB,
-            rawVgpuMemoryBoundaryMiB,
-          )
-        : "";
-  const currentRequestAvailableCoreUnits = isVgpuAllocationMode
-    ? rawAvailableVgpuCoreUnits
-    : 0;
-  const currentRequestCoreUnitsPerCard = isVgpuAllocationMode
-    ? vgpuCoreUnitsPerCard
-    : 0;
-  const currentRequestCoreUnits = isVgpuAllocationMode
-    ? requestedVgpuCoreUnits
-    : 0;
+    vgpuMemoryGiBMaxValue,
+    vgpuMemoryGiBInputValue,
+    currentRequestAvailableCoreUnits,
+    currentRequestCoreUnitsPerCard,
+    currentRequestCoreUnits,
+    isFullGpuCapacityExceeded,
+    isVgpuCapacityExceeded,
+    isCpuCapacityExceeded,
+    isMemoryCapacityExceeded,
+    hasNodeCpuPlacementCapacityExceeded,
+    hasNodeMemoryPlacementCapacityExceeded,
+  } = capacity;
+  effectiveGpuAllocationModeRef.current = effectiveGpuAllocationMode;
   const handleGpuAllocationModeChange = (next: GpuAllocationMode) => {
     if (next === effectiveGpuAllocationMode) return;
 
     setGpuAllocationModeChoice(next);
-    if (next === "full") {
-      form.setValue("spec.resources.accelerator.virtualization", undefined, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-      form.clearErrors("spec.resources.accelerator.virtualization.memory_mib");
-      form.clearErrors(
-        "spec.resources.accelerator.virtualization.core_percent",
-      );
-    }
+    if (next === "full") clearVirtualization(form);
   };
-  const isLegacyVgpuCapacityExceeded = Boolean(
-    !hasNodeResourceSnapshot &&
-      isVgpuAllocationMode &&
-      !isVgpuCapacityPending &&
-      selectedAccelerator?.product &&
-      (requestedVirtualCards > availableVirtualPhysicalCards ||
-        (hasRawAvailableVgpuMemoryMiB &&
-          requestedVgpuMemoryMiB > rawAvailableVgpuMemoryMiB) ||
-        (vgpuCoreUnitsPerCard > 0 &&
-          Number.isFinite(selectedAcceleratorOption?.virtualizationCoreUnits) &&
-          requestedVgpuCoreUnits > rawAvailableVgpuCoreUnits)),
-  );
-  const isLegacyFullGpuCapacityExceeded = Boolean(
-    !hasNodeResourceSnapshot &&
-      !isVgpuAllocationMode &&
-      selectedAccelerator?.product &&
-      requestedFullGpuCards > availableFullGpuCards,
-  );
-  const hasNoEligibleNodes =
-    hasNodeResourceSnapshot &&
-    Object.keys(reusableNodeResources ?? {}).length === 0;
-  const isPlacementCapacityExceeded =
-    hasNoEligibleNodes || placementCapacity?.overall === "fail";
-  const isPlacementCpuCapacityExceeded =
-    placementCapacity?.cpu === "fail" ||
-    (hasNoEligibleNodes && Number(normalizedResources?.cpu) > 0);
-  const isPlacementMemoryCapacityExceeded =
-    placementCapacity?.memory === "fail" ||
-    (hasNoEligibleNodes && Number(normalizedResources?.memory) > 0);
-  const isPlacementGpuCapacityExceeded =
-    placementCapacity?.gpu === "fail" || (hasNoEligibleNodes && gpuUsage > 0);
-  const hasKnownGpuPlacement = Boolean(
-    hasNoEligibleNodes ||
-      (placementCapacity && placementCapacity.gpu !== "unknown"),
-  );
-  const isVgpuPlacementCapacityExceeded = Boolean(
-    isVgpuAllocationMode &&
-      !isVgpuCapacityPending &&
-      isPlacementGpuCapacityExceeded,
-  );
-  const isFullGpuPlacementCapacityExceeded = Boolean(
-    !isVgpuAllocationMode && isPlacementGpuCapacityExceeded,
-  );
-  const isVgpuCapacityExceeded = hasKnownGpuPlacement
-    ? isVgpuPlacementCapacityExceeded
-    : isLegacyVgpuCapacityExceeded;
-  const isFullGpuCapacityExceeded = hasKnownGpuPlacement
-    ? isFullGpuPlacementCapacityExceeded
-    : isLegacyFullGpuCapacityExceeded;
-  const hasNoMatchingAccelerator = Boolean(
-    hasKnownGpuPlacement && placementCapacity?.matchingDeviceCount === 0,
-  );
-  const hasVgpuMemoryCapacityExceeded = Boolean(
-    isVgpuAllocationMode &&
-      hasKnownGpuPlacement &&
-      !hasNoMatchingAccelerator &&
-      requestedVgpuMemoryMiB > 0 &&
-      placementCapacity &&
-      placementCapacity.totalAvailableMemoryMiB < requestedVgpuMemoryMiB,
-  );
-  const hasVgpuCoreCapacityExceeded = Boolean(
-    isVgpuAllocationMode &&
-      hasKnownGpuPlacement &&
-      !hasNoMatchingAccelerator &&
-      requestedVgpuCoreUnits > 0 &&
-      placementCapacity &&
-      placementCapacity.totalAvailableCoreUnits < requestedVgpuCoreUnits,
-  );
-  const hasFullGpuAggregateCardCapacityExceeded = Boolean(
-    !isVgpuAllocationMode &&
-      !isFractionalGpuAllocationMode &&
-      hasKnownGpuPlacement &&
-      !hasNoMatchingAccelerator &&
-      placementCapacity &&
-      placementCapacity.satisfyingDeviceCount < requestedFullGpuCards,
-  );
-  const hasNoNodeForFractionalGpuReplica = Boolean(
-    isFractionalGpuAllocationMode &&
-      isPlacementGpuCapacityExceeded &&
-      !hasNoMatchingAccelerator &&
-      placementCapacity?.maxGpuPlaceableReplicas === 0,
-  );
-  const hasNoNodeForFullGpuReplica = Boolean(
-    !isVgpuAllocationMode &&
-      !isFractionalGpuAllocationMode &&
-      placementCapacity?.gpu === "fail" &&
-      placementCapacity.requestedCardsPerReplica > 1 &&
-      !hasFullGpuAggregateCardCapacityExceeded &&
-      placementCapacity.maxGpuPlaceableReplicas === 0 &&
-      placementCapacity.maxFullGpuCardsPerNode <
-        placementCapacity.requestedCardsPerReplica,
-  );
-  const hasNoNodeForVgpuReplica = Boolean(
-    isVgpuAllocationMode &&
-      isPlacementGpuCapacityExceeded &&
-      !hasNoMatchingAccelerator &&
-      !hasVgpuMemoryCapacityExceeded &&
-      !hasVgpuCoreCapacityExceeded &&
-      placementCapacity?.maxGpuPlaceableReplicas === 0,
-  );
-  const hasPartialGpuReplicaPlacement = Boolean(
-    isPlacementGpuCapacityExceeded &&
-      !hasNoMatchingAccelerator &&
-      !hasFullGpuAggregateCardCapacityExceeded &&
-      !hasVgpuMemoryCapacityExceeded &&
-      !hasVgpuCoreCapacityExceeded &&
-      placementCapacity?.maxGpuPlaceableReplicas != null &&
-      placementCapacity.maxGpuPlaceableReplicas > 0 &&
-      placementCapacity.maxGpuPlaceableReplicas < replicaCount,
-  );
-  const hasNodeCpuPlacementCapacityExceeded = Boolean(
-    placementCapacity?.gpu === "pass" &&
-      placementCapacity.cpu === "pass" &&
-      placementCapacity.cpuPlacement === "fail",
-  );
-  const hasNodeMemoryPlacementCapacityExceeded = Boolean(
-    placementCapacity?.gpu === "pass" &&
-      placementCapacity.memory === "pass" &&
-      placementCapacity.memoryPlacement === "fail",
-  );
-  const hasCombinedNodePlacementCapacityExceeded = Boolean(
-    placementCapacity?.overall === "fail" &&
-      placementCapacity.gpu === "pass" &&
-      placementCapacity.cpu === "pass" &&
-      placementCapacity.memory === "pass" &&
-      placementCapacity.cpuPlacement === "pass" &&
-      placementCapacity.memoryPlacement === "pass",
-  );
-  const isVgpuCapacityExceededWithPlacement = isVgpuCapacityExceeded;
-  const isFullGpuCapacityExceededWithPlacement = isFullGpuCapacityExceeded;
-  // For known node topology, placementCapacity computes aggregate CPU/memory
-  // across all nodes while keeping each replica on a GPU node. maxAvailable is
-  // intentionally a single-node input limit, so using it for all replicas
-  // would incorrectly report CPU/memory exhaustion when only GPU capacity is
-  // exhausted. Retain that legacy check only while placement is unavailable.
-  const shouldUseLegacyCpuCapacityCheck = !hasNodeResourceSnapshot;
-  const shouldUseLegacyMemoryCapacityCheck = !hasNodeResourceSnapshot;
-  const requestedCpuTotal = (normalizedResources?.cpu || 0) * replicaCount;
-  const requestedMemoryTotal =
-    (normalizedResources?.memory || 0) * replicaCount;
-  const isCpuCapacityExceeded =
-    Boolean(
-      currentCluster &&
-        !hasCombinedNodePlacementCapacityExceeded &&
-        shouldUseLegacyCpuCapacityCheck &&
-        isResourceRequestExceeded(
-          requestedCpuTotal,
-          maxAvailable.cpu.available,
-          maxAvailable.cpu.total,
-        ),
-    ) ||
-    Boolean(isPlacementCpuCapacityExceeded) ||
-    hasNodeCpuPlacementCapacityExceeded;
-  const isMemoryCapacityExceeded =
-    Boolean(
-      currentCluster &&
-        !hasCombinedNodePlacementCapacityExceeded &&
-        shouldUseLegacyMemoryCapacityCheck &&
-        isResourceRequestExceeded(
-          requestedMemoryTotal,
-          maxAvailable.memory.available,
-          maxAvailable.memory.total,
-        ),
-    ) ||
-    Boolean(isPlacementMemoryCapacityExceeded) ||
-    hasNodeMemoryPlacementCapacityExceeded;
-  const isResourceCapacityExceeded =
-    hasClusterCapacityEvidence &&
-    (isCpuCapacityExceeded ||
-      isMemoryCapacityExceeded ||
-      isFullGpuCapacityExceededWithPlacement ||
-      isVgpuCapacityExceededWithPlacement ||
-      isPlacementCapacityExceeded);
   useEffect(() => {
     if (
       hasResolvedClusterSelection &&
       !isSelectedClusterVgpuEnabled &&
       selectedVirtualization
     ) {
-      form.setValue("spec.resources.accelerator.virtualization", undefined, {
-        ...derivedValueOptions(
-          Boolean(
-            form.getFieldState("spec.resources.accelerator.virtualization")
-              .error,
-          ),
-        ),
-      });
+      setDerivedVirtualization(form, undefined);
     }
   }, [
     form,
@@ -1138,39 +634,15 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedVirtualization,
   ]);
 
-  // Clear virtualization values the cluster's supported_resources no longer
-  // includes (backend AcceleratorVirtualizationStatus.supported_resources).
-  // Disabling the input alone would still submit a stale value that backend
-  // admission rejects (e.g. core_percent when the list omits it) and would
-  // keep the stale value driving the capacity math.
+  // Disabling an unsupported input alone would still submit its stale value,
+  // which admission rejects, and keep it driving the capacity math.
   useEffect(() => {
     if (!hasResolvedClusterSelection || !selectedVirtualization) return;
-
-    const next = { ...selectedVirtualization };
-    let changed = false;
-
-    for (const [key, supported] of [
-      ["core_percent", isVgpuCoreResourceSupported],
-      ["memory_mib", isVgpuMemoryResourceSupported],
-    ] as const) {
-      const value = (selectedVirtualization as Record<string, unknown>)[key];
-      if (!supported && value !== undefined && value !== null && value !== "") {
-        delete next[key];
-        changed = true;
-      }
-    }
-
-    if (!changed) return;
-
-    form.setValue(
-      "spec.resources.accelerator.virtualization",
-      Object.keys(next).length > 0 ? next : undefined,
-      derivedValueOptions(
-        Boolean(
-          form.getFieldState("spec.resources.accelerator.virtualization").error,
-        ),
-      ),
-    );
+    const next = supportedVirtualization(selectedVirtualization, {
+      core: isVgpuCoreResourceSupported,
+      memory: isVgpuMemoryResourceSupported,
+    });
+    if (next !== selectedVirtualization) setDerivedVirtualization(form, next);
   }, [
     form,
     hasResolvedClusterSelection,
@@ -1180,44 +652,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   ]);
 
   useEffect(() => {
-    const currentMemoryMiB = Number(selectedVirtualization?.memory_mib);
-    if (
-      !isVgpuAllocationMode ||
-      !Number.isFinite(currentMemoryMiB) ||
-      currentMemoryMiB <= 0 ||
-      rawVgpuMemoryBoundaryMiB === null ||
-      rawVgpuMemoryBoundaryMiB === undefined
-    ) {
-      return;
-    }
-
-    const displayedMemoryGiB = getRoundedVgpuMemoryGiBValue(currentMemoryMiB);
-    if (displayedMemoryGiB === null) return;
-
-    const alignedMemoryMiB = normalizeVgpuMemoryGiBInput(
-      displayedMemoryGiB,
+    if (!isVgpuAllocationMode) return;
+    const next = alignedVgpuMemory(
+      selectedVirtualization,
       selectedMemoryTotalMiB,
       rawVgpuMemoryBoundaryMiB,
     );
-    if (
-      alignedMemoryMiB === undefined ||
-      alignedMemoryMiB === currentMemoryMiB
-    ) {
-      return;
-    }
-
-    form.setValue(
-      "spec.resources.accelerator.virtualization",
-      {
-        ...(selectedVirtualization ?? {}),
-        memory_mib: alignedMemoryMiB,
-      },
-      derivedValueOptions(
-        Boolean(
-          form.getFieldState("spec.resources.accelerator.virtualization").error,
-        ),
-      ),
-    );
+    if (next !== selectedVirtualization) setDerivedVirtualization(form, next);
   }, [
     form,
     isVgpuAllocationMode,
@@ -1231,69 +672,18 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     // Clearing the field must not silently turn the request back into full
     // cards.
     setGpuAllocationModeChoice("vgpu");
-    const currentCorePercent = Number(selectedVirtualization?.core_percent);
-    const coreOnlyVirtualization =
-      Number.isFinite(currentCorePercent) && currentCorePercent > 0
-        ? { core_percent: currentCorePercent }
-        : undefined;
-
-    if (!rawValue.trim()) {
-      form.setValue(
-        "spec.resources.accelerator.virtualization",
-        coreOnlyVirtualization,
-        userSetValueOptions,
-      );
-      return;
-    }
-
-    const memoryGiB = Number.parseFloat(rawValue);
-    if (Number.isNaN(memoryGiB)) return;
-    if (memoryGiB <= 0) {
-      form.setValue(
-        "spec.resources.accelerator.virtualization",
-        coreOnlyVirtualization,
-        userSetValueOptions,
-      );
-      return;
-    }
-
-    const memoryMiB = normalizeVgpuMemoryGiBInput(
-      memoryGiB,
+    const next = virtualizationForMemoryInput(
+      rawValue,
+      selectedVirtualization,
       selectedMemoryTotalMiB,
       rawVgpuMemoryBoundaryMiB,
     );
-    if (memoryMiB === undefined) return;
-
-    form.setValue(
-      "spec.resources.accelerator.virtualization",
-      {
-        ...(coreOnlyVirtualization ?? {}),
-        memory_mib: memoryMiB,
-      },
-      userSetValueOptions,
-    );
+    if (next) setUserVirtualization(form, next.value);
   };
 
   const setCoreLimitPercent = (rawValue: string) => {
-    const corePercent = rawValue.trim() ? Number.parseFloat(rawValue) : 0;
-    if (Number.isNaN(corePercent)) return;
-
-    const nextVirtualization: AcceleratorVirtualization = {
-      ...(selectedVirtualization ?? {}),
-    };
-    if (corePercent > 0) {
-      nextVirtualization.core_percent = corePercent;
-    } else {
-      delete nextVirtualization.core_percent;
-    }
-
-    form.setValue(
-      "spec.resources.accelerator.virtualization",
-      Object.keys(nextVirtualization).length > 0
-        ? nextVirtualization
-        : undefined,
-      userSetValueOptions,
-    );
+    const next = virtualizationForCoreInput(rawValue, selectedVirtualization);
+    if (next) setUserVirtualization(form, next.value);
   };
 
   const effectiveModelSearch = modelSearch || "";
@@ -1322,9 +712,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   const modelExistenceNames = useMemo<string[] | null>(() => {
     // null while there is no answer, which is what makes the resolver skip the
     // containment check instead of deciding the model does not exist.
-    return modelExistenceQuery.page
-      ? modelExistenceQuery.page.models.map((m) => m.name)
-      : null;
+    return modelNames(modelExistenceQuery.page);
   }, [modelExistenceQuery.page]);
 
   // A registry change starts a new exact-name lookup. Keep the current model
@@ -1344,8 +732,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (modelExistenceNames === null) return;
 
     pendingRegistryModelPreservationRef.current = null;
-    if (!modelExistenceNames.includes(pending.model)) {
-      form.setValue("spec.model.name", "", userSetValueOptions);
+    if (dropMissingModel(form, modelExistenceNames, pending.model)) {
       setModelSearch("");
     }
   }, [currentModelName, currentRegistry, form, modelExistenceNames]);
@@ -1366,6 +753,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     if (!pickedModelSettled) return;
     // A failed read settles with nothing, which is the honest answer: the field
     // was cleared when the model was picked and stays cleared.
+    // ddu-override: writes the detail read's answer as read; the rule (only a pick sets it) is this effect's
     form.setValue("spec.model.info", pickedModelInfo);
     setPickedModelRef(null);
   }, [pickedModelSettled, pickedModelInfo, form]);
@@ -1451,40 +839,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       return;
     }
     defaultEngineInitialized.current = true;
-
-    if (form.getValues("spec.engine.engine") || !engineNames.includes("vllm")) {
-      return;
-    }
-
-    const version = newestVersion(engineVersions.vllm ?? []);
-    if (!version) return;
-
-    const tasks = engineTasks.vllm ?? [];
-    const task = tasks.includes("text-generation")
-      ? "text-generation"
-      : (tasks[0] ?? "");
-
-    form.setValue("spec.engine", {
-      engine: "vllm",
-      version: version.version,
-    });
-    if (!form.getValues("spec.model.task") && task) {
-      form.setValue("spec.model.task", task);
-    }
+    applyDefaultEngine(form, engineNames, engineVersions, engineTasks);
   }, [action, engineNames, engineTasks, engineVersions, form]);
 
   useEffect(() => {
-    if (!engineSpec.engine || engineTasksForVersion.length === 0) return;
-    const currentTask = form.getValues("spec.model.task");
-    if (engineTasksForVersion.includes(currentTask)) return;
-
-    form.setValue(
-      "spec.model.task",
-      engineTasksForVersion.includes("text-generation")
-        ? "text-generation"
-        : engineTasksForVersion[0],
-      derivedValueOptions(Boolean(form.getFieldState("spec.model.task").error)),
-    );
+    if (engineSpec.engine) alignTaskWithEngine(form, engineTasksForVersion);
   }, [engineSpec.engine, engineTasksForVersion, form]);
 
   // Set each key of obj as a separate form.setValue call, recursing into
@@ -1529,45 +888,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     const resourcesForForm = normalizeEndpointResourcesForForm(queryResources);
     if (!resourcesForForm) return;
     syncedQueryResourcesKeyRef.current = queryResourcesKey;
-
-    const currentResources = form.getValues("spec.resources") as
-      | Record<string, unknown>
-      | null
-      | undefined;
-    if (JSON.stringify(currentResources) === JSON.stringify(resourcesForForm)) {
-      return;
-    }
-
-    form.setValue("spec.resources", resourcesForForm as ResourceSpec, {
-      shouldDirty: false,
-      shouldValidate: false,
-    });
-    setLeafValues(
-      "spec.resources",
-      resourcesForForm as unknown as Record<string, unknown>,
-    );
+    writeFormResources(form, resourcesForForm, setLeafValues);
   }, [action, form, queryResources, setLeafValues]);
 
   useEffect(() => {
-    if (action !== "edit") return;
-
-    const currentResources = (form.getValues("spec.resources") ??
-      watchedResources) as Record<string, unknown> | null | undefined;
-    const resourcesForForm =
-      normalizeEndpointResourcesForForm(currentResources);
-    if (!resourcesForForm) return;
-    if (JSON.stringify(currentResources) === JSON.stringify(resourcesForForm)) {
-      return;
+    if (action === "edit") {
+      renormalizeFormResources(form, watchedResources, setLeafValues);
     }
-
-    form.setValue("spec.resources", resourcesForForm as ResourceSpec, {
-      shouldDirty: false,
-      shouldValidate: false,
-    });
-    setLeafValues(
-      "spec.resources",
-      resourcesForForm as unknown as Record<string, unknown>,
-    );
   }, [action, form, watchedResources, setLeafValues]);
 
   const applyCatalogSpec = (catalogSpec: Record<string, unknown> | null) => {
@@ -1726,12 +1053,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     }
 
     registryModelPreselectAppliedRef.current = true;
-    form.setValue("spec.model.registry", preselectRegistryModel.registry);
-    form.setValue("spec.model.name", preselectRegistryModel.model);
-    if (preselectRegistryModel.version) {
-      form.setValue("spec.model.version", preselectRegistryModel.version);
-    }
-    form.setValue("spec.model.info", null);
+    applyRegistryModelPreselection(form, preselectRegistryModel);
     setModelSourceMode("manual");
     setResolvedModelEditing(true);
     setResolvedModelCustomized(false);
@@ -1789,26 +1111,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       nodeCount={selectedClusterNodeCount}
       selectedAccelerator={selectedAccelerator}
       virtualizationEnabled={isSelectedClusterVgpuEnabled}
-      request={{
-        allocationMode: isFractionalGpuAllocationMode
-          ? "fractional"
-          : effectiveGpuAllocationMode,
-        gpuPerReplica: gpuUsage,
-        cpuPerReplica: normalizedResources?.cpu,
-        memoryPerReplica: normalizedResources?.memory,
-        requestedFullGpuCards,
-        fullGpuCardCapacity: availableFullGpuCards,
-        fullGpuCapacityExceeded: isFullGpuCapacityExceededWithPlacement,
-        requestedVirtualCards,
-        totalVirtualCardCapacity,
-        requestedVgpuMemoryMiB,
-        availableVgpuMemoryMiB: rawAvailableVgpuMemoryMiB,
-        requestedVgpuCoreUnits,
-        availableVgpuCoreUnits: rawAvailableVgpuCoreUnits,
-        memoryMiBPerCard: effectiveVgpuMemoryMiB,
-        coreUnitsPerCard: vgpuCoreUnitsPerCard,
-        vgpuCapacityExceeded: isVgpuCapacityExceededWithPlacement,
-      }}
+      request={capacity.panelRequest}
       t={t}
     />
   );
@@ -1861,11 +1164,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   };
 
   const handleResolvedModelRegistryChange = (value: string) => {
-    const previousModel = form.getValues("spec.model.name") ?? "";
-    form.setValue("spec.model.registry", value, userSetValueOptions);
-    form.setValue("spec.model.version", "", userSetValueOptions);
-    form.setValue("spec.model.file", "", userSetValueOptions);
-    form.setValue("spec.model.info", null);
+    const previousModel = pickModelRegistry(form, value);
     setPickedModelRef(null);
     pendingRegistryModelPreservationRef.current = previousModel
       ? { registry: value, model: previousModel }
@@ -1876,10 +1175,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
   const handleResolvedModelNameChange = (value: string) => {
     pendingRegistryModelPreservationRef.current = null;
-    form.setValue("spec.model.name", value, userSetValueOptions);
-    form.setValue("spec.model.version", "", userSetValueOptions);
-    form.setValue("spec.model.file", "", userSetValueOptions);
-    form.setValue("spec.model.info", null);
+    pickModelName(form, value);
     setPickedModelRef(
       workspace && currentRegistry && value
         ? {
@@ -1911,13 +1207,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     applyModelValues(variantResetSnapshot.model);
   };
 
-  const activeVariant =
-    modelSourceMode === "catalog"
-      ? (selectedCatalog?.spec.variants?.[selectedVariant] ??
-        selectedCatalog?.spec.variants?.default)
-      : null;
-  const activeVariantVram = activeVariant?.vram_minimum_gb ?? null;
-  const activeModelInfo = activeVariant?.model?.info ?? null;
+  const { vramGb: activeVariantVram, modelInfo: activeModelInfo } =
+    catalogVariantEstimate(
+      modelSourceMode === "catalog" ? selectedCatalog : undefined,
+      selectedVariant,
+    );
 
   // What the KV cache estimate is computed from. There is no second read for
   // it: picking a model already fetches the version detail above and lands its
@@ -1925,7 +1219,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // both routes are already answered by the time the panel needs them. The read
   // state comes from that same query, which is what separates "still reading"
   // and "the registry refused" from "the checkpoint omits this field".
-  const currentModelInfo = form.watch("spec.model.info") ?? null;
+  const currentModelInfo = form.watch("spec.model.info");
   const checkpointWeightsGb = estimateCheckpointWeightsGb(
     currentModelInfo ?? activeModelInfo,
   );
@@ -1941,16 +1235,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   // panel sees whatever will be deployed without knowing which route produced
   // it. A path that states neither flag reads as nothing and the panel falls
   // back to the checkpoint.
-  const engineCacheArgs = readEngineCacheArgs(
-    form.watch("spec.engine.engine"),
-    form.watch("spec.variables.engine_args"),
-  );
+  const engineArgs = form.watch("spec.variables.engine_args");
+  const engineCacheArgs = readEngineCacheArgs(engineSpec?.engine, engineArgs);
   // A recipe that exposes the context window as a feature gives the user one
   // place to set it; the estimate reads that rather than offering a second
   // field holding the same number. Read from the features rather than from
   // which group they were put in, so it holds however a catalog is organised.
   const engineCacheArgControls = findEngineCacheArgControls(
-    form.watch("spec.engine.engine"),
+    engineSpec?.engine,
     isRecipeCatalog ? selectedCatalog?.spec.features : null,
   );
   const modelInfoRead = resolveModelInfoRead({
@@ -2040,39 +1332,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       return;
     }
 
-    const current = form.getValues("spec.resources.accelerator");
-    const compatibleOptions = acceleratorOptions.filter(
-      (option) =>
-        engineAcceleratorTypes.length === 0 ||
-        engineAcceleratorTypes.includes(option.type),
-    );
-    const currentIsAvailable = Boolean(
-      current?.type &&
-        current.product &&
-        compatibleOptions.some(
-          (option) =>
-            option.type === current.type && option.product === current.product,
-        ),
-    );
-    if (currentIsAvailable) return;
-    if (!current && compatibleOptions.length !== 1) return;
-
-    const option = compatibleOptions.length === 1 ? compatibleOptions[0] : null;
-    const currentVirtualization = current?.virtualization;
-    form.setValue(
-      "spec.resources.accelerator",
-      option
-        ? {
-            type: option.type,
-            product: option.product,
-            ...(isSelectedClusterVgpuEnabled
-              ? { virtualization: currentVirtualization || {} }
-              : {}),
-          }
-        : null,
-      derivedValueOptions(
-        Boolean(form.getFieldState("spec.resources.accelerator").error),
-      ),
+    reconcileAccelerator(
+      form,
+      acceleratorOptions,
+      engineAcceleratorTypes,
+      isSelectedClusterVgpuEnabled,
     );
   }, [
     acceleratorOptions,
@@ -2209,23 +1473,13 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
             value: v,
           }))}
           onChange={(value) => {
-            const newest = newestVersion(engineVersions[String(value)] ?? []);
-            const tasks = engineTasks[String(value)] ?? [];
-            form.setValue(
-              "spec.engine",
-              {
-                engine: value,
-                version: newest?.version ?? "",
-              },
-              userSetValueOptions,
+            const choice = engineChoice(
+              value,
+              engineVersions[String(value)] ?? [],
+              engineTasks[String(value)] ?? [],
             );
-            form.setValue(
-              "spec.model.task",
-              tasks.includes("text-generation")
-                ? "text-generation"
-                : (tasks[0] ?? ""),
-              userSetValueOptions,
-            );
+            form.setValue("spec.engine", choice.engine, userSetValueOptions);
+            form.setValue("spec.model.task", choice.task, userSetValueOptions);
             form.trigger("spec.engine.engine");
           }}
         />
@@ -2276,6 +1530,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     selectedCatalog && modelSourceMode === "catalog"
       ? checkpointWeightsGb
       : null;
+  const watchedGpuCount = form.watch("spec.resources.gpu");
   const perReplicaWeights =
     weightsFromCatalog ?? weightsFromModelSize ?? weightsFromCheckpoint;
   const declaredWeights =
@@ -2300,7 +1555,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
               selectedMemoryTotalMiB != null
                 ? selectedMemoryTotalMiB / 1024
                 : undefined,
-            gpuCount: form.watch("spec.resources.gpu"),
+            gpuCount: watchedGpuCount,
           },
         };
   // An engine serving a model baked into its own image has no checkpoint to
@@ -2312,7 +1567,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
         engineArgs: engineCacheArgs,
         controls: engineCacheArgControls,
         modelKey: `${currentRegistry ?? ""}:${currentModelName ?? ""}:${
-          form.watch("spec.model.version") ?? ""
+          currentModelVersion ?? ""
         }`,
       };
   // The declared figure is weights alone; what a replica needs in VRAM also
@@ -2360,77 +1615,14 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
           featuresUnreadable: false,
         }
       : null;
-  const selectedProductResources =
-    selectedAccelerator?.type && selectedAccelerator.product
-      ? schedulingResourceInfo?.allocatable?.accelerator_groups?.[
-          selectedAccelerator.type
-        ]?.products?.[selectedAccelerator.product]
-      : undefined;
-  const selectedVgpuMemoryTotalMiB = Number(
-    selectedProductResources?.virtualization?.memory_mib,
-  );
-  const selectedVgpuCoreTotal = Number(
-    selectedProductResources?.virtualization?.core_units,
-  );
-  const reviewCapacity: EndpointReviewCapacityMetric[] | null =
-    hasClusterCapacityEvidence
-      ? [
-          {
-            key: "cpu",
-            requested: (normalizedResources?.cpu || 0) * replicaCount,
-            available:
-              placementCapacity?.totalAvailableCpu ??
-              maxAvailable.cpu.available,
-            total: clusterResources?.cpu.total ?? maxAvailable.cpu.total,
-          },
-          {
-            key: "memory",
-            requested: (normalizedResources?.memory || 0) * replicaCount,
-            available:
-              placementCapacity?.totalAvailableMemory ??
-              maxAvailable.memory.available,
-            total: clusterResources?.memory.total ?? maxAvailable.memory.total,
-          },
-          ...(selectedAccelerator?.type && selectedAccelerator.product
-            ? [
-                {
-                  key: "cards" as const,
-                  requested: isVgpuAllocationMode
-                    ? displayedVgpuPhysicalCards
-                    : requestedFullGpuCards,
-                  available: isVgpuAllocationMode
-                    ? totalVirtualCardCapacity
-                    : availableFullGpuCards,
-                  total: maxFullGpuCards,
-                },
-              ]
-            : []),
-          ...(isVgpuAllocationMode
-            ? [
-                {
-                  key: "vram" as const,
-                  requested: requestedVgpuMemoryMiB / 1024,
-                  available: rawAvailableVgpuMemoryMiB / 1024,
-                  total:
-                    Number.isFinite(selectedVgpuMemoryTotalMiB) &&
-                    selectedVgpuMemoryTotalMiB > 0
-                      ? selectedVgpuMemoryTotalMiB / 1024
-                      : null,
-                },
-                {
-                  key: "core" as const,
-                  requested: requestedVgpuCoreUnits,
-                  available: rawAvailableVgpuCoreUnits,
-                  total:
-                    Number.isFinite(selectedVgpuCoreTotal) &&
-                    selectedVgpuCoreTotal > 0
-                      ? selectedVgpuCoreTotal
-                      : null,
-                },
-              ]
-            : []),
-        ]
-      : null;
+  const reviewCapacity = reviewCapacityMetrics(capacity, {
+    resources: normalizedResources,
+    replicaCount,
+    cluster: clusterFacts,
+    resourceInfo: schedulingResourceInfo,
+    clusterResources,
+    maxAvailable,
+  });
   const reviewContext: EndpointReviewContext = {
     catalogOrigin: reviewCatalogOrigin,
     modelDelivery: selectedModelDelivery,
@@ -2443,14 +1635,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     ),
   };
   const currentDeploymentValues = form.watch() as unknown as Endpoint;
-  const hasDeploymentPreview = Boolean(
-    currentDeploymentValues.spec.model?.name ||
-      currentDeploymentValues.spec.engine?.engine ||
-      currentDeploymentValues.spec.cluster ||
-      currentDeploymentValues.spec.resources,
-  );
   const configurationSummaryFields =
-    hasDeploymentPreview || (composeResult && !composeResult.ok) ? (
+    hasDeploymentPreview(currentDeploymentValues.spec) ||
+    (composeResult && !composeResult.ok) ? (
       <EndpointConfigurationSummary
         values={currentDeploymentValues}
         reviewContext={reviewContext}
@@ -2689,107 +1876,19 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     </FormCardGrid>
   );
 
-  const gpuCapacityMessages: string[] = [];
-  if (
-    currentCluster &&
-    hasClusterCapacityEvidence &&
-    selectedAccelerator?.type &&
-    selectedAccelerator.product
-  ) {
-    if (isVgpuAllocationMode && isVgpuCapacityExceededWithPlacement) {
-      if (hasNoMatchingAccelerator) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.noMatchingAccelerator", {
-            product: selectedAccelerator.product ?? EMPTY_VALUE,
-          }),
-        );
-      } else if (!hasNoNodeForVgpuReplica) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.vgpuResourcesInsufficient"),
-        );
-      }
-      if (hasVgpuMemoryCapacityExceeded) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.vgpuMemoryResourcesInsufficient"),
-        );
-      }
-      if (hasVgpuCoreCapacityExceeded) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.vgpuCoreResourcesInsufficient"),
-        );
-      }
-      if (hasNoNodeForVgpuReplica) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.noNodeCanScheduleVgpuRequest"),
-        );
-      }
-      if (hasPartialGpuReplicaPlacement) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.partialGpuReplicaPlacement", {
-            available: placementCapacity?.maxGpuPlaceableReplicas ?? 0,
-            requested: replicaCount,
-          }),
-        );
-      }
-    } else if (
-      !isVgpuAllocationMode &&
-      isFullGpuCapacityExceededWithPlacement
-    ) {
-      if (hasNoMatchingAccelerator) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.noMatchingAccelerator", {
-            product: selectedAccelerator.product ?? EMPTY_VALUE,
-          }),
-        );
-      } else if (hasNoNodeForFullGpuReplica) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.noNodeCanScheduleFullGpuRequest", {
-            count: placementCapacity?.requestedCardsPerReplica,
-          }),
-        );
-      } else if (hasNoNodeForFractionalGpuReplica) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.noNodeCanScheduleFractionalGpuRequest"),
-        );
-      } else if (!hasFullGpuAggregateCardCapacityExceeded) {
-        gpuCapacityMessages.push(
-          t(
-            isFractionalGpuAllocationMode
-              ? "endpoints.messages.fractionalGpuResourcesInsufficient"
-              : "endpoints.messages.fullGpuResourcesInsufficient",
-          ),
-        );
-      }
-      if (hasFullGpuAggregateCardCapacityExceeded) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.fullGpuCardCapacityInsufficient", {
-            available: placementCapacity?.satisfyingDeviceCount ?? 0,
-            requested: requestedFullGpuCards,
-          }),
-        );
-      }
-      if (hasPartialGpuReplicaPlacement) {
-        gpuCapacityMessages.push(
-          t("endpoints.messages.partialGpuReplicaPlacement", {
-            available: placementCapacity?.maxGpuPlaceableReplicas ?? 0,
-            requested: replicaCount,
-          }),
-        );
-      }
-    }
-    if (hasCombinedNodePlacementCapacityExceeded) {
-      gpuCapacityMessages.push(
-        t("endpoints.messages.noNodeCanScheduleCombinedResourceRequest"),
-      );
-    }
-  }
+  const gpuCapacityMessageTexts = gpuCapacityMessages(capacity, {
+    currentCluster,
+    cluster: clusterFacts,
+    accelerator: selectedAccelerator,
+    replicaCount,
+  }).map(([key, params]) => t(key, params));
   const gpuCapacityMessageList =
-    gpuCapacityMessages.length > 0 ? (
+    gpuCapacityMessageTexts.length > 0 ? (
       <div
         data-testid="endpoint-gpu-capacity-messages"
         className="space-y-1 text-xs leading-4 text-destructive"
       >
-        {gpuCapacityMessages.map((message) => (
+        {gpuCapacityMessageTexts.map((message) => (
           <p key={message}>{message}</p>
         ))}
       </div>
@@ -2799,7 +1898,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     form: formWithTransformedOnFinish,
     editQuery: form.refineCore.query,
     currentWorkspace,
-    submitBlocked: isResourceCapacityExceeded,
+    submitBlocked: capacity.exceeded,
     metadataFields: (
       <FormCardGrid
         title={t("common.sections.basicInformation")}
@@ -3097,9 +2196,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         label={t("common.fields.cpu")}
                       >
                         <NumberInput
-                          value={formatInputNumber(
-                            normalizedResources?.cpu ?? 0,
-                          )}
+                          value={formatInputNumber(capacity.cpuInput.value)}
                           onValueChange={(value) =>
                             form.setValue(
                               "spec.resources.cpu",
@@ -3108,11 +2205,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             )
                           }
                           min={0}
-                          max={Math.max(
-                            normalizedResources?.cpu ?? 0,
-                            placementCapacity?.maxCpuPerReplica ??
-                              maxAvailable.cpu.available,
-                          )}
+                          max={capacity.cpuInput.max}
                           step={0.1}
                           disabled={!currentCluster}
                           className="h-9"
@@ -3136,9 +2229,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                         label={t("endpoints.fields.memoryGb")}
                       >
                         <NumberInput
-                          value={formatInputNumber(
-                            normalizedResources?.memory ?? 0,
-                          )}
+                          value={formatInputNumber(capacity.memoryInput.value)}
                           onValueChange={(value) =>
                             form.setValue(
                               "spec.resources.memory",
@@ -3147,11 +2238,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                             )
                           }
                           min={0}
-                          max={Math.max(
-                            normalizedResources?.memory ?? 0,
-                            placementCapacity?.maxMemoryPerReplica ??
-                              maxAvailable.memory.available,
-                          )}
+                          max={capacity.memoryInput.max}
                           step={0.5}
                           disabled={!currentCluster}
                           className="h-9"
@@ -3204,12 +2291,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               .filter(Boolean)
                               .join(" · "),
                           }))}
-                          value={
-                            selectedAccelerator?.type &&
-                            selectedAccelerator?.product
-                              ? `${selectedAccelerator.type}:${selectedAccelerator.product}`
-                              : ""
-                          }
+                          value={acceleratorChoiceValue(selectedAccelerator)}
                           onChange={(value) => {
                             const selectedOption =
                               displayedAcceleratorOptions.find(
@@ -3221,16 +2303,11 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                               );
                               form.setValue(
                                 "spec.resources.accelerator",
-                                {
-                                  type: selectedOption.type,
-                                  product: selectedOption.product,
-                                  ...(isSelectedClusterVgpuEnabled
-                                    ? {
-                                        virtualization:
-                                          currentVirtualization || {},
-                                      }
-                                    : {}),
-                                } satisfies ResourceSpec["accelerator"],
+                                acceleratorForOption(
+                                  selectedOption,
+                                  currentVirtualization,
+                                  isSelectedClusterVgpuEnabled,
+                                ),
                                 userSetValueOptions,
                               );
                             } else {
@@ -3307,45 +2384,44 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                       </div>
                     )}
 
-                    {selectedAccelerator?.type &&
-                      selectedAccelerator.product && (
-                        <div className="col-span-1 space-y-1">
-                          <FormFieldGroup
-                            {...form}
-                            name="spec.resources.gpu"
-                            label={t(
-                              isVgpuAllocationMode
-                                ? "endpoints.fields.vgpuCount"
-                                : "endpoints.fields.physicalGpuCount",
-                            )}
-                          >
-                            <NumberInput
-                              value={formatInputNumber(gpuUsage)}
-                              onValueChange={(value) =>
-                                form.setValue(
-                                  "spec.resources.gpu",
-                                  value,
-                                  userSetValueOptions,
-                                )
-                              }
-                              min={0}
-                              // Capacity is a cross-field constraint:
-                              // cardsPerReplica × replicas. Keeping it out of
-                              // the input max avoids lowering the ceiling to the
-                              // current value and lets the capacity message own
-                              // the verdict.
-                              // SSH clusters step by 0.1 below one card and by
-                              // whole cards at or above one, so the spinner never
-                              // lands on a value the precision rule rejects.
-                              // Kubernetes (and vGPU, which is Kubernetes-only)
-                              // always step by 1.
-                              step={gpuInputStep}
-                              className="h-9"
-                            />
-                          </FormFieldGroup>
-                          {gpuCapacityMessageList}
-                        </div>
-                      )}
+                    {hasAccelerator && (
+                      <div className="col-span-1 space-y-1">
+                        <FormFieldGroup
+                          {...form}
+                          name="spec.resources.gpu"
+                          label={t(
+                            isVgpuAllocationMode
+                              ? "endpoints.fields.vgpuCount"
+                              : "endpoints.fields.physicalGpuCount",
+                          )}
+                        >
+                          <NumberInput
+                            value={formatInputNumber(gpuUsage)}
+                            onValueChange={(value) =>
+                              form.setValue(
+                                "spec.resources.gpu",
+                                value,
+                                userSetValueOptions,
+                              )
+                            }
+                            min={0}
+                            // Capacity is a cross-field constraint:
+                            // cardsPerReplica × replicas. Keeping it out of
+                            // the input max avoids lowering the ceiling to the
+                            // current value and lets the capacity message own
+                            // the verdict.
+                            // SSH clusters step by 0.1 below one card and by
+                            // whole cards at or above one, so the spinner never
+                            // lands on a value the precision rule rejects.
+                            // Kubernetes (and vGPU, which is Kubernetes-only)
+                            // always step by 1.
+                            step={gpuInputStep}
+                            className="h-9"
+                          />
+                        </FormFieldGroup>
+                        {gpuCapacityMessageList}
+                      </div>
+                    )}
 
                     {/* Keep the split controls tied to the explicit mode.
                         Showing them while full-card allocation is selected made
@@ -3431,136 +2507,132 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
 
                   {/* Capacity feedback sits beside the card count so users do
                       not choose one without seeing whether it can be placed. */}
-                  {currentCluster &&
-                    selectedAccelerator?.type &&
-                    selectedAccelerator?.product && (
-                      <div
-                        data-testid="endpoint-current-request-panel"
-                        className="col-span-1 text-sm sm:col-span-2"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="font-medium">
-                            {t("endpoints.sections.currentRequest")}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge
-                              variant="outline"
-                              data-testid="endpoint-capacity-status"
-                              className={cn(
-                                "font-normal",
-                                !isVgpuCapacityPending &&
-                                  getCapacityBadgeClassName(
-                                    isVgpuAllocationMode
-                                      ? isVgpuCapacityExceededWithPlacement
-                                      : isFullGpuCapacityExceededWithPlacement,
-                                  ),
-                              )}
-                            >
-                              {isVgpuCapacityPending
-                                ? t("endpoints.messages.vgpuCapacityPending")
-                                : t("endpoints.messages.cardsAvailable", {
-                                    count: isVgpuAllocationMode
-                                      ? totalVirtualCardCapacity
-                                      : availableFullGpuCards,
-                                  })}
-                            </Badge>
-                            <InfoHint
-                              label={t("endpoints.messages.cardsAvailableHint")}
-                            />
-                          </div>
+                  {currentCluster && hasAccelerator && (
+                    <div
+                      data-testid="endpoint-current-request-panel"
+                      className="col-span-1 text-sm sm:col-span-2"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-medium">
+                          {t("endpoints.sections.currentRequest")}
                         </div>
-                        <div
-                          data-testid="endpoint-current-request-grid"
-                          className="mt-2 grid grid-cols-2 border-y border-[var(--nt-stroke-neutral-trans-2)] [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-[var(--nt-stroke-neutral-trans-2)]"
-                        >
-                          {[
-                            {
-                              key: "cards",
-                              label: t("endpoints.fields.virtualCardCount"),
-                              unit: undefined,
-                              value: isVgpuAllocationMode ? (
-                                isVgpuCapacityPending ? (
-                                  <EmptyValue />
-                                ) : (
-                                  `${formatOneDecimal(
-                                    displayedVgpuPhysicalCards,
-                                  )} / ${formatOneDecimal(
-                                    totalVirtualCardCapacity,
-                                  )}`
-                                )
-                              ) : (
-                                `${formatOneDecimal(
-                                  requestedFullGpuCards,
-                                )} / ${formatOneDecimal(availableFullGpuCards)}`
-                              ),
-                            },
-                            ...(isVgpuAllocationMode
-                              ? [
-                                  {
-                                    key: "memory",
-                                    label: t(
-                                      "endpoints.fields.vgpuMemoryCapacity",
-                                    ),
-                                    unit: "GiB",
-                                    value: isVgpuCapacityPending ? (
-                                      <EmptyValue />
-                                    ) : (
-                                      `${formatOneDecimal(
-                                        requestedVgpuMemoryMiB / 1024,
-                                      )} / ${formatOneDecimal(
-                                        rawAvailableVgpuMemoryMiB / 1024,
-                                      )}`
-                                    ),
-                                  },
-                                  {
-                                    key: "core",
-                                    label: t(
-                                      "endpoints.fields.vgpuCoreCapacity",
-                                    ),
-                                    unit: undefined,
-                                    value:
-                                      !isVgpuCapacityPending &&
-                                      currentRequestCoreUnitsPerCard > 0 ? (
-                                        `${formatOneDecimal(
-                                          currentRequestCoreUnits,
-                                        )} / ${formatOneDecimal(
-                                          currentRequestAvailableCoreUnits,
-                                        )}`
-                                      ) : (
-                                        <EmptyValue />
-                                      ),
-                                  },
-                                ]
-                              : []),
-                            {
-                              key: "scheduling",
-                              label: t("endpoints.fields.scheduling"),
-                              unit: undefined,
-                              value: t("common.fields.cluster"),
-                            },
-                          ].map((metric) => (
-                            <div
-                              key={metric.key}
-                              className="min-w-0 px-3 py-2 even:border-l even:border-[var(--nt-stroke-neutral-trans-2)]"
-                            >
-                              <div className="flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
-                                <span className="min-w-0 break-words">
-                                  {metric.label}
-                                </span>
-                                {metric.unit && (
-                                  <span className="shrink-0 text-[11px]">
-                                    {metric.unit}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
-                                {metric.value}
-                              </div>
-                            </div>
-                          ))}
+                        <div className="flex items-center gap-1">
+                          <Badge
+                            variant="outline"
+                            data-testid="endpoint-capacity-status"
+                            className={cn(
+                              "font-normal",
+                              !isVgpuCapacityPending &&
+                                getCapacityBadgeClassName(
+                                  isVgpuAllocationMode
+                                    ? isVgpuCapacityExceeded
+                                    : isFullGpuCapacityExceeded,
+                                ),
+                            )}
+                          >
+                            {isVgpuCapacityPending
+                              ? t("endpoints.messages.vgpuCapacityPending")
+                              : t("endpoints.messages.cardsAvailable", {
+                                  count: isVgpuAllocationMode
+                                    ? totalVirtualCardCapacity
+                                    : availableFullGpuCards,
+                                })}
+                          </Badge>
+                          <InfoHint
+                            label={t("endpoints.messages.cardsAvailableHint")}
+                          />
                         </div>
                       </div>
-                    )}
+                      <div
+                        data-testid="endpoint-current-request-grid"
+                        className="mt-2 grid grid-cols-2 border-y border-[var(--nt-stroke-neutral-trans-2)] [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-[var(--nt-stroke-neutral-trans-2)]"
+                      >
+                        {[
+                          {
+                            key: "cards",
+                            label: t("endpoints.fields.virtualCardCount"),
+                            unit: undefined,
+                            value: isVgpuAllocationMode ? (
+                              isVgpuCapacityPending ? (
+                                <EmptyValue />
+                              ) : (
+                                `${formatOneDecimal(
+                                  displayedVgpuPhysicalCards,
+                                )} / ${formatOneDecimal(
+                                  totalVirtualCardCapacity,
+                                )}`
+                              )
+                            ) : (
+                              `${formatOneDecimal(
+                                requestedFullGpuCards,
+                              )} / ${formatOneDecimal(availableFullGpuCards)}`
+                            ),
+                          },
+                          ...(isVgpuAllocationMode
+                            ? [
+                                {
+                                  key: "memory",
+                                  label: t(
+                                    "endpoints.fields.vgpuMemoryCapacity",
+                                  ),
+                                  unit: "GiB",
+                                  value: isVgpuCapacityPending ? (
+                                    <EmptyValue />
+                                  ) : (
+                                    `${formatOneDecimal(
+                                      requestedVgpuMemoryMiB / 1024,
+                                    )} / ${formatOneDecimal(
+                                      rawAvailableVgpuMemoryMiB / 1024,
+                                    )}`
+                                  ),
+                                },
+                                {
+                                  key: "core",
+                                  label: t("endpoints.fields.vgpuCoreCapacity"),
+                                  unit: undefined,
+                                  value:
+                                    !isVgpuCapacityPending &&
+                                    currentRequestCoreUnitsPerCard > 0 ? (
+                                      `${formatOneDecimal(
+                                        currentRequestCoreUnits,
+                                      )} / ${formatOneDecimal(
+                                        currentRequestAvailableCoreUnits,
+                                      )}`
+                                    ) : (
+                                      <EmptyValue />
+                                    ),
+                                },
+                              ]
+                            : []),
+                          {
+                            key: "scheduling",
+                            label: t("endpoints.fields.scheduling"),
+                            unit: undefined,
+                            value: t("common.fields.cluster"),
+                          },
+                        ].map((metric) => (
+                          <div
+                            key={metric.key}
+                            className="min-w-0 px-3 py-2 even:border-l even:border-[var(--nt-stroke-neutral-trans-2)]"
+                          >
+                            <div className="flex items-baseline gap-1.5 text-xs font-medium text-muted-foreground">
+                              <span className="min-w-0 break-words">
+                                {metric.label}
+                              </span>
+                              {metric.unit && (
+                                <span className="shrink-0 text-[11px]">
+                                  {metric.unit}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-1 whitespace-nowrap font-semibold tabular-nums">
+                              {metric.value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

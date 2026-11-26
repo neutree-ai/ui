@@ -182,7 +182,7 @@
   "src/foundation/types/resource-types.ts": "c634cc86a9c23e12774c44d81b949166",
   "src/domains/endpoint/lib/cluster-resources.ts": "673b5939fb6557ae9f74aebfae28a152",
   "src/domains/endpoint/lib/endpoint-form-helpers.ts": "b0c426c6a4092f3b1a906a4890839ec6",
-  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "f3068c29451d5a7dababc5ec4e3dcd22",
+  "src/domains/endpoint/hooks/use-endpoint-form.tsx": "54d953ca7fd2c3f87b763bf212d62642",
   "src/domains/endpoint/hooks/use-endpoint-cluster-resources.ts": "2459eb4e1b7fe47e61c34257af72ca91",
   "src/domains/endpoint/hooks/use-endpoint-engine-options.ts": "9f82f664fa7612f2515929787952dde7",
   "src/pages/external-endpoints/create.tsx": "d61af04e866926ba03637c9beefcfb3a",
@@ -680,5 +680,8 @@
   "src/domains/endpoint/lib/playground-target.ts": "794384f176290024a17d4a2d10506ada",
   "src/domains/endpoint/lib/endpoint-display-model.ts": "40cd95642e817d04b48a16a908cc6bb4",
   "src/domains/endpoint/lib/endpoint-display-show.ts": "3ab9261efc44890779f6388619025e63",
-  "src/domains/endpoint/lib/endpoint-display-summary.ts": "bdd20c990fa415353a8ae0523009b506"
+  "src/domains/endpoint/lib/endpoint-display-summary.ts": "bdd20c990fa415353a8ae0523009b506",
+  "src/domains/endpoint/lib/endpoint-form-capacity.ts": "d6b40c790a19f62833dd61867801ba23",
+  "src/domains/endpoint/lib/endpoint-form-model.ts": "b0d4ef3300ed1e0908f1d2acf1b69189",
+  "src/domains/endpoint/lib/endpoint-form-resources.ts": "330e56d416db0756aad84173c03ba792"
 }

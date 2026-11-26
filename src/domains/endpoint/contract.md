@@ -110,11 +110,16 @@ use response bounds. Backend `performanceTrendsHandler` / `performanceRange`
 (`internal/routes/observations/performance_trends.go`) return rolling series without summary; custom range maximum 30
 days.
 
-Shared placement/observations: `src/foundation/contract.md`, “Accelerator resources”. `useEndpointForm` credits only
-observed same-cluster allocations on eligible nodes/devices. A Running edit with no reported replica placement (static
-CPU-only replicas report none), same cluster and cache, and a request within its current allocation skips the placement
-check (`isRequestWithinAllocation`, tests beside it). Without snapshots, legacy aggregate checks apply. Empty
-cache pools fail positive requests. CPU/memory input ceilings retain values above the per-node maximum.
+Shared placement/observations: `src/foundation/contract.md`, “Accelerator resources”. The form's request rules live in
+`lib/endpoint-form-capacity.ts`: `endpointFormCluster` (cluster type, vGPU support, node count),
+`endpointEditCredit`, `endpointRequestCapacity` (allocation mode, card figures, verdicts, input ceilings),
+`gpuCapacityMessages` and `reviewCapacityMetrics`. Edits credit only observed same-cluster allocations on eligible
+nodes/devices. A Running edit with no reported replica placement (static CPU-only replicas report none), same cluster
+and cache, and a request within its current allocation skips the placement check (`isRequestWithinAllocation`).
+Without snapshots, legacy aggregate checks apply. Empty cache pools fail positive requests. CPU/memory input ceilings
+retain values above the per-node maximum. Virtualization edits (unsupported keys dropped, memory aligned to the shown
+GiB, typed memory/core) and accelerator reconciliation with the cluster inventory: `lib/endpoint-form-resources.ts`.
+Tests beside each; the hook tests prove the wiring.
 
 ## Submit and reopen
 
@@ -142,7 +147,8 @@ reported on `spec.model.name`, shown for both model sources. Model aliases label
 names. Registry changes retain the model name until a successful exact lookup disproves it; version/file/info are
 cleared. Model errors open the editor and optional fields. Feature number inputs allow decimals; integer inputs step by
 one. Engine selection chooses newest version and text-generation or first task; version tasks override engine tasks
-(`lib/endpoint-deploy-engine.ts`). Create prefers vLLM; engine images constrain accelerators. ZCache timeout: 0.1..60,
+(`lib/endpoint-deploy-engine.ts`). Create prefers vLLM; engine images constrain accelerators. Model and engine writes:
+`lib/endpoint-form-model.ts`. ZCache timeout: 0.1..60,
 switch default 5 seconds, a typed timeout kept when re-enabled (`lib/endpoint-deploy-kv-cache.ts`);
 `kvCacheUnavailableReason` / `checksZCacheRuntime` tests own availability. The review step summarises each step through
 `endpointReviewSummary` (`lib/endpoint-deploy-review.ts`): dashes for empty identities, zero resources, one replica.
