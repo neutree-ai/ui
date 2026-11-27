@@ -37,11 +37,19 @@ export function transformEntityForExport(
   entity: ResourceEntity,
   options: ExportOptions,
 ): Record<string, unknown> {
+  // Metadata holds no generated ids; the only one is the top-level `id`.
+  const metadata: Record<string, unknown> = { ...entity.metadata };
+  if (options.removeTimestamps) {
+    delete metadata.creation_timestamp;
+    delete metadata.update_timestamp;
+    delete metadata.deletion_timestamp;
+  }
+
   const yamlEntity: Record<string, unknown> = {
     ...(options.removeIds ? {} : { id: entity.id }),
     apiVersion: entity.api_version,
     kind: entity.kind,
-    metadata: { ...entity.metadata },
+    metadata,
   };
 
   if (entity.spec) {
@@ -50,43 +58,6 @@ export function transformEntityForExport(
 
   if (entity.status && !options.removeStatus) {
     yamlEntity.status = entity.status;
-  }
-
-  // Remove timestamps if requested
-  if (
-    options.removeTimestamps &&
-    yamlEntity.metadata &&
-    typeof yamlEntity.metadata === "object"
-  ) {
-    const metadata = yamlEntity.metadata as Record<string, unknown>;
-    delete metadata.creation_timestamp;
-    delete metadata.update_timestamp;
-    delete metadata.deletion_timestamp;
-  }
-
-  // Remove IDs if requested (but keep name)
-  if (
-    options.removeIds &&
-    yamlEntity.metadata &&
-    typeof yamlEntity.metadata === "object"
-  ) {
-    const metadata = yamlEntity.metadata as Record<string, unknown>;
-    const { name, workspace, display_name, labels, annotations } = metadata as {
-      name?: unknown;
-      workspace?: unknown;
-      display_name?: unknown;
-      labels?: unknown;
-      annotations?: unknown;
-      [key: string]: unknown;
-    };
-
-    yamlEntity.metadata = {
-      name,
-      workspace,
-      display_name,
-      labels,
-      annotations,
-    };
   }
 
   return yamlEntity;

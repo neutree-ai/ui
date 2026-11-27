@@ -568,7 +568,7 @@
   "src/foundation/scene/use-row-write.ts": "5f66e4e056e503f875fc1015f4cce4b3",
   "src/foundation/scene/use-yaml-export.ts": "0477dbd6219c281ce5081fb7d3d65503",
   "src/foundation/scene/use-yaml-import.ts": "c83ee0f31412256e727dbdc12b9be2b6",
-  "src/foundation/scene/yaml-transform.ts": "298412ae7c6f20095a7e4777ded2f19e",
+  "src/foundation/scene/yaml-transform.ts": "a1c36b8497ff1ad6f53b7d7317024697",
   "src/foundation/type/BreakableReference.tsx": "fa3ac0ab1cbd99466faac427cf695346",
   "src/foundation/type/EmptyValue.tsx": "3f27a00c39815a06bffb462c62204db3",
   "src/foundation/type/ExpandableCell.tsx": "2af68f5cdcd0ece064150e56b0360fe3",

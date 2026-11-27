@@ -75,22 +75,15 @@ describe("transformEntityForExport", () => {
     expect(result.spec).toEqual({ replicas: 3 });
   });
 
-  it("removes id and rebuilds metadata when removeIds is true", () => {
-    const result = transformEntityForExport(makeEntity(), {
+  it("removes only the id when removeIds is true", () => {
+    const entity = makeEntity();
+    const result = transformEntityForExport(entity, {
       ...ALL_OFF,
       removeIds: true,
     });
 
     expect(result.id).toBeUndefined();
-    const metadata = result.metadata as Record<string, unknown>;
-    expect(metadata.name).toBe("my-cluster");
-    expect(metadata.workspace).toBe("default");
-    expect(metadata.display_name).toBeUndefined();
-    expect(metadata.labels).toEqual({ env: "prod" });
-    expect(metadata.annotations).toEqual({ note: "test" });
-    // Auto-generated fields should be stripped
-    expect(metadata.creation_timestamp).toBeUndefined();
-    expect(metadata.update_timestamp).toBeUndefined();
+    expect(result.metadata).toEqual(entity.metadata);
   });
 
   it("removes timestamps when removeTimestamps is true", () => {
@@ -106,20 +99,6 @@ describe("transformEntityForExport", () => {
     // Other metadata fields preserved
     expect(metadata.name).toBe("my-cluster");
     expect(metadata.workspace).toBe("default");
-  });
-
-  it("removeIds strips timestamps regardless of removeTimestamps setting", () => {
-    // When removeIds is true, metadata is rebuilt with only {name, workspace, display_name, labels, annotations}
-    // so timestamps are gone even if removeTimestamps is false
-    const result = transformEntityForExport(makeEntity(), {
-      ...ALL_OFF,
-      removeIds: true,
-      removeTimestamps: false,
-    });
-
-    const metadata = result.metadata as Record<string, unknown>;
-    expect(metadata.creation_timestamp).toBeUndefined();
-    expect(metadata.update_timestamp).toBeUndefined();
   });
 
   it("applies all options together", () => {
