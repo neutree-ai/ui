@@ -54,6 +54,7 @@ export const makeReviewContext = (
   overrides: Partial<EndpointReviewContext> = {},
 ): EndpointReviewContext => ({
   catalogOrigin: null,
+  catalogAcceleratorMismatch: false,
   modelDelivery: null,
   noVerifiedAccelerator: false,
   requiredVramGb: null,

@@ -226,6 +226,22 @@ describe("EndpointDeploymentWizard", () => {
     screen.getByText("endpoints.messages.clusterResourcesUnavailable");
   });
 
+  it("warns when the selected accelerator differs from the catalog reference", () => {
+    render(
+      <Harness
+        reviewContext={makeReviewContext({
+          catalogAcceleratorMismatch: true,
+        })}
+      />,
+    );
+
+    openReview();
+
+    screen.getByText(
+      "endpoints.messages.catalogAcceleratorCompatibilityUnverified",
+    );
+  });
+
   it("omits the risks block and claims no checks before validation runs", () => {
     render(<Harness />);
 

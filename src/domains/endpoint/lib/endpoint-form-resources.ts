@@ -5,6 +5,7 @@ import {
   normalizeVgpuMemoryGiBInput,
 } from "@/domains/endpoint/lib/vgpu";
 import type { EndpointSpec, ResourceSpec } from "@/domains/endpoint/types";
+import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 
 type Accelerator = ResourceSpec["accelerator"];
 type Virtualization = NonNullable<Accelerator>["virtualization"] | undefined;
@@ -190,15 +191,13 @@ export const acceleratorForOption = (
 
 /**
  * Reconciles the accelerator with the cluster's inventory: keeps one that is
- * offered and compatible with the engine, picks the only compatible option,
- * and otherwise clears it; an unset accelerator with several options stays
- * unset for the user to choose.
+ * offered and compatible with the engine, clears one that is no longer valid,
+ * and leaves an unset accelerator for the user to choose.
  */
 export function reconcileAccelerator(
   form: EndpointForm,
   options: { type: string; product: string }[],
   engineAcceleratorTypes: string[],
-  vgpuEnabled: boolean,
 ) {
   const current = form.getValues(ACCELERATOR);
   const compatible = options.filter(
@@ -215,15 +214,42 @@ export function reconcileAccelerator(
       ),
   );
   if (available) return;
-  if (!current && compatible.length !== 1) return;
-  const option = compatible.length === 1 ? compatible[0] : null;
-  setDerived(
-    form,
-    ACCELERATOR,
-    option
-      ? acceleratorForOption(option, current?.virtualization, vgpuEnabled)
-      : null,
+  if (!current) return;
+  setDerived(form, ACCELERATOR, null);
+  form.clearErrors(`${VIRTUALIZATION}.memory_mib`);
+  form.clearErrors(`${VIRTUALIZATION}.core_percent`);
+}
+
+const acceleratorProductsMatch = (left: string, right: string) =>
+  left === right ||
+  matchesAcceleratorName(left, [right]) ||
+  matchesAcceleratorName(right, [left]);
+
+/**
+ * Whether a manually selected accelerator differs from the reference hardware
+ * carried by the Model Catalog. Missing catalog or selection data is not a
+ * mismatch and must not produce an unverified warning.
+ */
+export function catalogAcceleratorMismatch(
+  selected: Accelerator | undefined,
+  reference: Accelerator | undefined,
+): boolean {
+  if (!selected?.type && !selected?.product) return false;
+  if (!reference?.type && !reference?.product) return false;
+
+  const selectedProduct = selected.product;
+  const referenceProduct = reference.product;
+  const typeMismatch =
+    Boolean(selected.type) &&
+    Boolean(reference.type) &&
+    selected.type !== reference.type;
+  const productMismatch = Boolean(
+    selectedProduct &&
+      referenceProduct &&
+      !acceleratorProductsMatch(selectedProduct, referenceProduct),
   );
+
+  return typeMismatch || productMismatch;
 }
 
 /**

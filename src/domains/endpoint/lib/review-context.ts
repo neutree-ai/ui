@@ -15,6 +15,7 @@ export type EndpointReviewCapacityMetric = {
 
 export type EndpointReviewContext = {
   catalogOrigin: CatalogOrigin | null;
+  catalogAcceleratorMismatch: boolean;
   modelDelivery: EndpointModelDelivery;
   noVerifiedAccelerator: boolean;
   requiredVramGb: number | null;

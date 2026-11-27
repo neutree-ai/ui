@@ -70,6 +70,7 @@ import {
 import {
   acceleratorForOption,
   alignedVgpuMemory,
+  catalogAcceleratorMismatch,
   clearVirtualization,
   reconcileAccelerator,
   renormalizeFormResources,
@@ -944,6 +945,27 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
     );
   }, [selectedCatalog, isRecipeCatalog, selectedVariant, featureSelections]);
 
+  const catalogAccelerator = useMemo(() => {
+    if (modelSourceMode !== "catalog" || !selectedCatalog) return null;
+    const resources = isRecipeCatalog
+      ? composeResult?.ok
+        ? composeResult.spec.resources
+        : selectedCatalog.spec.variants?.[selectedVariant]?.resources
+      : selectedCatalog.spec.resources;
+    return resources?.accelerator ?? null;
+  }, [
+    composeResult,
+    isRecipeCatalog,
+    modelSourceMode,
+    selectedCatalog,
+    selectedVariant,
+  ]);
+
+  const catalogAcceleratorIsUnverified = catalogAcceleratorMismatch(
+    selectedAccelerator,
+    catalogAccelerator,
+  );
+
   // Apply a composed Recipe spec onto the form. Composition happens entirely
   // client-side, so the endpoint is written as a plain, concrete spec (model /
   // engine / resources / variables / env) — no recipe refs are persisted; the
@@ -1320,9 +1342,9 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   }, [acceleratorOptions, engineAcceleratorTypes, t, verifiedProducts]);
 
   // A catalog may carry reference hardware that does not exist on the cluster
-  // the user then chooses. Reconcile the dependent field as soon as the
-  // cluster's real accelerator inventory arrives: one option can be selected
-  // for the user; multiple options must be an explicit choice.
+  // the user then chooses. Once the real inventory is known, an unavailable
+  // selection is cleared for the user to replace; an empty selection stays
+  // empty because it may represent the CPU path.
   useEffect(() => {
     if (
       !currentCluster ||
@@ -1332,18 +1354,12 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
       return;
     }
 
-    reconcileAccelerator(
-      form,
-      acceleratorOptions,
-      engineAcceleratorTypes,
-      isSelectedClusterVgpuEnabled,
-    );
+    reconcileAccelerator(form, acceleratorOptions, engineAcceleratorTypes);
   }, [
     acceleratorOptions,
     engineAcceleratorTypes,
     currentCluster,
     form,
-    isSelectedClusterVgpuEnabled,
     selectedCluster?.status?.resource_info,
   ]);
 
@@ -1625,6 +1641,7 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
   });
   const reviewContext: EndpointReviewContext = {
     catalogOrigin: reviewCatalogOrigin,
+    catalogAcceleratorMismatch: catalogAcceleratorIsUnverified,
     modelDelivery: selectedModelDelivery,
     noVerifiedAccelerator: noVerifiedAcceleratorAvailable,
     requiredVramGb,
@@ -2335,26 +2352,40 @@ export const useEndpointForm = ({ action }: { action: "create" | "edit" }) => {
                           )}
                         />
                       </FormFieldGroup>
-                      {noVerifiedAcceleratorAvailable && (
-                        // The recipe's validated GPU list has no overlap with
-                        // this cluster — the picker above falls back to every
-                        // available accelerator; surface that plus the VRAM
-                        // floor so the fallback is an informed choice.
-                        <div
-                          data-testid="endpoint-accelerator-unverified-notice"
-                          className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
+                      {catalogAcceleratorIsUnverified ? (
+                        <Alert
+                          variant="warning"
+                          className="col-span-1 sm:col-span-2"
+                          data-testid="endpoint-catalog-accelerator-unverified"
                         >
-                          {t("endpoints.recipe.noVerifiedAccelerator")}
-                          {requiredVramGb != null && (
-                            <span className="ml-1">
-                              {t(
-                                "endpoints.recipe.requiredVram",
-                                "Requires ≥ {{gb}} GB VRAM.",
-                                { gb: formatGb(requiredVramGb) },
-                              )}
-                            </span>
-                          )}
-                        </div>
+                          <AlertDescription>
+                            {t(
+                              "endpoints.messages.catalogAcceleratorCompatibilityUnverified",
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        noVerifiedAcceleratorAvailable && (
+                          // The recipe's validated GPU list has no overlap with
+                          // this cluster — the picker above falls back to every
+                          // available accelerator; surface that plus the VRAM
+                          // floor so the fallback is an informed choice.
+                          <div
+                            data-testid="endpoint-accelerator-unverified-notice"
+                            className="col-span-1 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
+                          >
+                            {t("endpoints.recipe.noVerifiedAccelerator")}
+                            {requiredVramGb != null && (
+                              <span className="ml-1">
+                                {t(
+                                  "endpoints.recipe.requiredVram",
+                                  "Requires ≥ {{gb}} GB VRAM.",
+                                  { gb: formatGb(requiredVramGb) },
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        )
                       )}
                     </div>
 
