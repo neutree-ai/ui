@@ -1519,6 +1519,7 @@
 			"fetchingClusterResources": "Fetching cluster resources",
 			"failedToFetchClusterResources": "Failed to fetch cluster resources",
 			"clusterResourcesUnavailable": "Cluster resources unavailable",
+			"catalogAcceleratorCompatibilityUnverified": "The compatibility of this model with the selected accelerator has not been verified. Continuing the deployment may cause runtime issues.",
 			"acceleratorVirtualizationEnabled": "Accelerator virtualization enabled",
 			"acceleratorVirtualizationDisabled": "No accelerator virtualization",
 			"pauseSuccess": "Endpoint paused successfully",

@@ -198,7 +198,16 @@ function ReviewRisks({
       content: <p>{t("endpoints.messages.runtimeDownloadUnknown")}</p>,
     });
   }
-  if (reviewContext.noVerifiedAccelerator) {
+  if (reviewContext.catalogAcceleratorMismatch) {
+    risks.push({
+      key: "catalog-accelerator-unverified",
+      content: (
+        <p>
+          {t("endpoints.messages.catalogAcceleratorCompatibilityUnverified")}
+        </p>
+      ),
+    });
+  } else if (reviewContext.noVerifiedAccelerator) {
     const required =
       reviewContext.requiredVramGb == null
         ? ""

@@ -918,7 +918,7 @@ describe("capacity checks", () => {
 
   it("only shows the card count when an accelerator is selected", async () => {
     const { result } = renderEndpointForm("create", {
-      clusters: [plainGpuCluster({ extraProducts: { [L20]: 1 } })],
+      clusters: [plainGpuCluster()],
     });
     setValues(result, {
       "spec.cluster": "plain-gpu",
@@ -1686,6 +1686,52 @@ it("rejects a KV cache timeout outside 0.1 to 60 seconds", async () => {
   expect(
     formError(result, "spec.kv_cache.options.timeout_seconds")?.message,
   ).toBe("endpoints.kvCacheSettings.invalidTimeout");
+});
+
+describe("catalog accelerator compatibility", () => {
+  const catalogWithAccelerator = {
+    ...catalogA,
+    id: 4,
+    metadata: { name: "t4-catalog" },
+    spec: {
+      ...catalogA.spec,
+      resources: {
+        ...catalogA.spec.resources,
+        accelerator: { type: "nvidia_gpu", product: "H100" },
+      },
+    },
+  };
+
+  it("clears an incompatible catalog accelerator and warns after the user chooses another model", async () => {
+    const { result } = renderEndpointForm("create", {
+      catalogs: [catalogWithAccelerator],
+      clusters: [plainGpuCluster()],
+    });
+    selectCatalog("t4-catalog");
+    setValues(result, { "spec.cluster": "plain-gpu" });
+
+    await waitFor(() =>
+      expect(fieldValue(result, "spec.resources.accelerator")).toBeNull(),
+    );
+    expect(
+      screen.queryByTestId("endpoint-catalog-accelerator-unverified"),
+    ).toBeNull();
+
+    openCombobox("spec.resources.accelerator");
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: /Tesla-T4/,
+      }),
+    );
+
+    await screen.findByText(
+      "endpoints.messages.catalogAcceleratorCompatibilityUnverified",
+    );
+    expect(fieldValue(result, "spec.resources.accelerator")).toEqual({
+      type: "nvidia_gpu",
+      product: T4,
+    });
+  });
 });
 
 describe("unverified accelerator fallback", () => {
@@ -2551,7 +2597,7 @@ describe("endpoint write payloads", () => {
     {
       path: "spec.resources",
       value: null,
-      sent: { accelerator: { type: "nvidia_gpu", product: T4 } },
+      sent: null,
     },
     { path: "spec.kv_cache", value: null, sent: null },
     { path: "spec.env", value: { API_TOKEN: "" }, sent: { API_TOKEN: "" } },
@@ -2659,6 +2705,7 @@ describe("endpoint write payloads", () => {
     setValues(result, {
       "metadata.name": "new-chat",
       "spec.cluster": "plain-gpu",
+      "spec.resources.accelerator": { type: "nvidia_gpu", product: T4 },
     });
     const submitted = await submit(result);
 

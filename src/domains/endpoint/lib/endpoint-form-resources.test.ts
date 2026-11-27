@@ -4,6 +4,7 @@ import { type FieldValues, useForm } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 import {
   alignedVgpuMemory,
+  catalogAcceleratorMismatch,
   reconcileAccelerator,
   supportedVirtualization,
   virtualizationForCoreInput,
@@ -91,10 +92,9 @@ describe("reconcileAccelerator", () => {
     accelerator: unknown,
     options: (typeof T4)[],
     engineTypes: string[] = [],
-    vgpuEnabled = false,
   ) => {
     const form = resourcesForm(accelerator);
-    act(() => reconcileAccelerator(form, options, engineTypes, vgpuEnabled));
+    act(() => reconcileAccelerator(form, options, engineTypes));
     return form.getValues("spec.resources.accelerator");
   };
 
@@ -102,15 +102,18 @@ describe("reconcileAccelerator", () => {
     expect(reconciled(T4, [T4, L4])).toEqual(T4);
   });
 
-  it("picks the only compatible option, keeping the virtualization on a vGPU cluster", () => {
+  it("keeps a catalog's bare product name when the cluster reports the full name", () => {
     expect(
-      reconciled(
-        { ...L4, virtualization: { memory_mib: 1024 } },
-        [T4],
-        [],
-        true,
-      ),
-    ).toEqual({ ...T4, virtualization: { memory_mib: 1024 } });
+      reconciled({ type: "nvidia_gpu", product: "H100" }, [
+        { type: "nvidia_gpu", product: "NVIDIA-H100-80GB-HBM3" },
+      ]),
+    ).toEqual({ type: "nvidia_gpu", product: "H100" });
+  });
+
+  it("clears an unavailable selection instead of mapping to the only option", () => {
+    expect(
+      reconciled({ ...L4, virtualization: { memory_mib: 1024 } }, [T4]),
+    ).toBe(null);
   });
 
   it("clears an accelerator the cluster does not offer when several remain", () => {
@@ -119,11 +122,34 @@ describe("reconcileAccelerator", () => {
     );
   });
 
-  it("leaves an unset accelerator for the user among several options", () => {
-    expect(reconciled(null, [T4, L4])).toBe(null);
-  });
+  it.each([{ options: [T4] }, { options: [T4, L4] }])(
+    "leaves an unset accelerator for the user among %o",
+    ({ options }) => {
+      expect(reconciled(null, options)).toBe(null);
+    },
+  );
 
   it("drops an accelerator the engine ships no image for", () => {
     expect(reconciled(T4, [T4], ["amd_gpu"])).toBe(null);
   });
+});
+
+describe("catalogAcceleratorMismatch", () => {
+  it.each([
+    [null, { type: "nvidia_gpu", product: "H100" }, false],
+    [T4, null, false],
+    [T4, { type: "nvidia_gpu", product: "T4" }, false],
+    [T4, { type: "nvidia_gpu", product: "H100" }, true],
+    [T4, { type: "amd_gpu", product: "Tesla-T4" }, true],
+  ])(
+    "selected %o against catalog %o -> %s",
+    (selected, reference, expected) => {
+      expect(
+        catalogAcceleratorMismatch(
+          selected as Parameters<typeof catalogAcceleratorMismatch>[0],
+          reference as Parameters<typeof catalogAcceleratorMismatch>[1],
+        ),
+      ).toBe(expected);
+    },
+  );
 });
