@@ -5,7 +5,6 @@ import {
   normalizeVgpuMemoryGiBInput,
 } from "@/domains/endpoint/lib/vgpu";
 import type { EndpointSpec, ResourceSpec } from "@/domains/endpoint/types";
-import { matchesAcceleratorName } from "@/foundation/recipe/vram";
 
 type Accelerator = ResourceSpec["accelerator"];
 type Virtualization = NonNullable<Accelerator>["virtualization"] | undefined;
@@ -51,6 +50,25 @@ const setDerived = (
     value as never,
     derivedValueOptions(Boolean(form.getFieldState(path).error)),
   );
+
+const acceleratorProductTokens = (product: string) =>
+  product
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean);
+
+const tokenSetContains = (outer: string[], inner: string[]) =>
+  inner.length > 0 && inner.every((token) => outer.includes(token));
+
+const acceleratorProductsMatch = (left: string, right: string) => {
+  const leftTokens = acceleratorProductTokens(left);
+  const rightTokens = acceleratorProductTokens(right);
+  return (
+    left === right ||
+    tokenSetContains(leftTokens, rightTokens) ||
+    tokenSetContains(rightTokens, leftTokens)
+  );
+};
 
 /** Writes the virtualization as a change derived from the cluster or capacity. */
 export const setDerivedVirtualization = (
@@ -210,7 +228,8 @@ export function reconcileAccelerator(
       current.product &&
       compatible.some(
         (option) =>
-          option.type === current.type && option.product === current.product,
+          option.type === current.type &&
+          acceleratorProductsMatch(option.product, current.product),
       ),
   );
   if (available) return;
@@ -219,11 +238,6 @@ export function reconcileAccelerator(
   form.clearErrors(`${VIRTUALIZATION}.memory_mib`);
   form.clearErrors(`${VIRTUALIZATION}.core_percent`);
 }
-
-const acceleratorProductsMatch = (left: string, right: string) =>
-  left === right ||
-  matchesAcceleratorName(left, [right]) ||
-  matchesAcceleratorName(right, [left]);
 
 /**
  * Whether a manually selected accelerator differs from the reference hardware

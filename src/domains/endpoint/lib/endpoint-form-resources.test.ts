@@ -102,6 +102,14 @@ describe("reconcileAccelerator", () => {
     expect(reconciled(T4, [T4, L4])).toEqual(T4);
   });
 
+  it("keeps a catalog's bare product name when the cluster reports the full name", () => {
+    expect(
+      reconciled({ type: "nvidia_gpu", product: "H100" }, [
+        { type: "nvidia_gpu", product: "NVIDIA-H100-80GB-HBM3" },
+      ]),
+    ).toEqual({ type: "nvidia_gpu", product: "H100" });
+  });
+
   it("clears an unavailable selection instead of mapping to the only option", () => {
     expect(
       reconciled({ ...L4, virtualization: { memory_mib: 1024 } }, [T4]),

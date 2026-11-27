@@ -683,7 +683,7 @@
   "src/domains/endpoint/lib/endpoint-display-summary.ts": "bdd20c990fa415353a8ae0523009b506",
   "src/domains/endpoint/lib/endpoint-form-capacity.ts": "d6b40c790a19f62833dd61867801ba23",
   "src/domains/endpoint/lib/endpoint-form-model.ts": "b0d4ef3300ed1e0908f1d2acf1b69189",
-  "src/domains/endpoint/lib/endpoint-form-resources.ts": "6d1ab779d1cc010f7078c23f431aae11",
+  "src/domains/endpoint/lib/endpoint-form-resources.ts": "54bea1ee87520c5ee366bdb882a97113",
   "src/domains/endpoint/testing/visual-fixtures.ts": "fee0bb2a5d28cb92ff7f8777c29b5b08",
   "src/domains/api-key/lib/api-key-limits-view.ts": "c477a59f3dda9105c790c1484947aa64",
   "src/domains/api-key/lib/api-key-policy-form.ts": "c7bcd64ea1bb36883095faa629ad299f",
