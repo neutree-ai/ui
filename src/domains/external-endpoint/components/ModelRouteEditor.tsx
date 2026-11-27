@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/foundation/scene/ConfirmDialog";
 import type { getUpstreamModelRequest } from "../lib/get-upstream-model-request";
 import {
   canChooseModelSource,
+  canRemoveTarget,
   newRouteTarget,
   priorityTargetIndices,
   ROUTE_STRATEGY_TEXT,
@@ -182,11 +183,7 @@ export default function ModelRouteEditor({
             ),
           );
         };
-        const targetTable = (
-          targetIndices: number[],
-          label: string,
-          requireCapacity = false,
-        ) => (
+        const targetTable = (targetIndices: number[], label: string) => (
           <div className="overflow-x-auto">
             <table
               aria-label={label}
@@ -210,23 +207,13 @@ export default function ModelRouteEditor({
                       mode === "weighted"
                         ? undefined
                         : t(
-                            requireCapacity
-                              ? "external_endpoints.messages.primaryCapacityRequired"
-                              : "external_endpoints.messages.maxInflightRequestsHint",
+                            "external_endpoints.messages.maxInflightRequestsHint",
                           )
                     }
                   >
                     {mode === "weighted"
                       ? t("external_endpoints.fields.weightRatio")
                       : t("external_endpoints.fields.maxInflightRequests")}
-                    {requireCapacity && (
-                      <span
-                        className="ml-1 text-destructive"
-                        aria-hidden="true"
-                      >
-                        *
-                      </span>
-                    )}
                   </th>
                   {hasActions && (
                     <th scope="col" className="text-center">
@@ -348,8 +335,7 @@ export default function ModelRouteEditor({
                         ) : (
                           <Input
                             type="number"
-                            min={requireCapacity ? 1 : 0}
-                            required={requireCapacity}
+                            min={0}
                             max={2147483647}
                             step={1}
                             value={targetNumberValue(
@@ -357,17 +343,13 @@ export default function ModelRouteEditor({
                               "max_inflight_requests",
                             )}
                             placeholder={t(
-                              requireCapacity
-                                ? "external_endpoints.placeholders.primaryCapacity"
-                                : "external_endpoints.fields.unlimited",
+                              "external_endpoints.fields.unlimited",
                             )}
                             aria-label={t(
                               "external_endpoints.fields.maxInflightRequests",
                             )}
                             title={t(
-                              requireCapacity
-                                ? "external_endpoints.messages.primaryCapacityRequired"
-                                : "external_endpoints.messages.maxInflightRequestsHint",
+                              "external_endpoints.messages.maxInflightRequestsHint",
                             )}
                             onChange={(event) =>
                               updateTarget(
@@ -390,11 +372,7 @@ export default function ModelRouteEditor({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            disabled={
-                              route.targets.length <= 1 ||
-                              (requireCapacity &&
-                                primaryTargetIndices.length <= 1)
-                            }
+                            disabled={!canRemoveTarget(route, targetIndex)}
                             aria-label={t(
                               "external_endpoints.actions.removeTarget",
                             )}
@@ -553,7 +531,6 @@ export default function ModelRouteEditor({
                   {targetTable(
                     primaryTargetIndices,
                     t("external_endpoints.sections.primaryTargets"),
-                    true,
                   )}
                   <p
                     role={strategyError ? "alert" : undefined}
@@ -561,7 +538,7 @@ export default function ModelRouteEditor({
                   >
                     {t(
                       strategyError ??
-                        "external_endpoints.messages.primaryCapacityRequired",
+                        "external_endpoints.messages.maxInflightRequestsHint",
                     )}
                   </p>
                   <Button
@@ -629,6 +606,11 @@ export default function ModelRouteEditor({
                     : route.targets.map((_, targetIndex) => targetIndex),
                   // ddu-override: the target table is labelled by its route's model name
                   route.model,
+                )}
+                {mode === "fixed" && strategyError && (
+                  <p role="alert" className="mt-1 text-xs text-destructive">
+                    {t(strategyError)}
+                  </p>
                 )}
                 {mode === "weighted" && (
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-3">

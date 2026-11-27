@@ -169,8 +169,8 @@ describe("targets", () => {
     { strategy: "fixed", target: 0, value: "-1", valid: false },
     { strategy: "fixed", target: 0, value: "1.5", valid: false },
     { strategy: "fixed", target: 0, value: "2147483648", valid: false },
-    { strategy: "priority", target: 0, value: "", valid: false },
-    { strategy: "priority", target: 0, value: "0", valid: false },
+    { strategy: "priority", target: 0, value: "", valid: true },
+    { strategy: "priority", target: 0, value: "0", valid: true },
     { strategy: "priority", target: 1, value: "", valid: true },
   ] as const)(
     "$strategy target $target, limit $value -> valid: $valid",
@@ -193,6 +193,16 @@ describe("targets", () => {
       );
     },
   );
+
+  it("explains an invalid limit on a fixed route", () => {
+    renderEditor([makeRoute()]);
+
+    change(field("maxInflightRequests")[0], "-1");
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "external_endpoints.messages.maxInflightRequestsInvalid",
+    );
+  });
 
   it("offers no target removal on a fixed route", () => {
     renderEditor([makeRoute()]);

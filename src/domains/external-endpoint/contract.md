@@ -33,7 +33,7 @@ UI type: `src/domains/external-endpoint/types.ts`. Owner is user unless noted; "
 | `...targets[].{upstream,upstream_model}` | string | yes; `""` | no | yes | as above |
 | `...targets[].priority` | int >= 0 | no; `0` (`1` standby) | no | yes | gateway negative check; UI exposes two tiers |
 | `...targets[].weight` | int or null | no; `nil` defaults to `1`, or 0-100 summing to 100 (weighted) | no | yes | Go preserves explicit `0` as a disabled target and defaults `nil` to `1`; all-explicit-zero routes are rejected at compile time, while failed providers retain existing skip behavior; the 100-sum rule is UI-only |
-| `...targets[].max_inflight_requests` | int | no | no | yes | gateway negative check; UI requires 1..2147483647 for primary targets of `priority` routes |
+| `...targets[].max_inflight_requests` | int | no | no | yes | gateway negative check; UI requires an integer 0..2147483647 when set on a fixed or `priority` route (empty / 0 = unlimited) |
 | `...model_routes[].{retryable_conditions,max_attempts}` | string[] / int | no | no | no UI | in UI type, no form field; round-trips untouched |
 | `spec.model_sources` | `Record<model,string>` | no; absent | no | yes | trigger `validate_external_endpoint_model_source` (`098`, relaxed by `101`): object 10241, string values 10242; keys not served are pruned on every write |
 | `status.phase` | Pending / Running / Degraded / Failed / Deleted | server | no | no | controller |
@@ -72,12 +72,15 @@ deviations 1, 2).
   `routesFromLegacy` for specs without `model_routes` (only stored routes link to monitoring); per-upstream cards with
   name (`provider-N` when unnamed), internal / external by `endpoint_ref` truthiness, the endpoint name or URL, status
   and mapping (`getUpstreamModelMappings`); `CurlExample` when serving and a service URL exists (models minus
-  `getUnavailableModels`). No polling. Credentials never shown.
+  `getUnavailableModels`: models of a Failed upstream that no Ready upstream also lists). A Failed upstream's card
+  carries `failure` for `FailedUpstreamAlert`: its unavailable models, or `servedByOther` when other upstreams still
+  serve all of them. No polling. Credentials never shown.
 - Route display (`lib/model-route-view.ts`, shared by `ModelRouteEditor` and `ModelRouteDetails`): `routeStrategyOf`
   (unset = fixed), `ROUTE_STRATEGY_TEXT` labels and hints; weighted routes show weight, others
   `max_inflight_requests`. Detail card rows (`routeTargetRows`): weight share of the total with unset weight counting
   1, primary = lowest priority, `0` / unset cap = unlimited. Editor: weight total with unset = 0 (`routeWeightTotal`,
-  as validation), tiers by `priorityTargetIndices` (0 / unset primary, > 0 fallback), new targets `newRouteTarget`,
+  as validation), tiers by `priorityTargetIndices` (0 / unset primary, > 0 fallback), removal kept off for the last
+  target and a priority route's last primary (`canRemoveTarget`), new targets `newRouteTarget`,
   number inputs empty = unset (`withTargetNumber`), model source only once the route is named.
 - Create (`use-external-endpoint-form.tsx`): `mode: "all"`; one blank fixed route, no upstream; switching an upstream
   between external and endpoint_ref resets the other kind's fields.
@@ -114,8 +117,9 @@ deviations 1, 2).
 - `spec.timeout`: `NumberInput` min 0, unit s / min. `upstreams[].name`: unique at submit only. `upstream.url`: required
   (`validation.upstreamUrlRequired`). `endpoint_ref`: `EndpointRefSelect` over `useSelect("endpoints")`
   via `endpointRefOptions` (Running first; phase shown only when reported).
-- Routes: `getRouteStrategyError` (weight integer 0-100 summing to 100; priority needs a primary target with integer
-  `max_inflight_requests` 1..2147483647), shared by inline feedback, `submitBlocked` and the submit guard. Model name,
+- Routes: `getRouteStrategyError` (weight integer 0-100 summing to 100; on fixed and priority routes a set
+  `max_inflight_requests` is an integer 0..2147483647; priority needs a primary target), shared by inline feedback,
+  `submitBlocked` and the submit guard. Model name,
   target upstream, upstream model required; model names unique; target upstream must name a row (`routeTargetsError`,
   adapter).
 - Model source: free text with suggestions (presets plus this form's and sibling endpoints' values for models they
