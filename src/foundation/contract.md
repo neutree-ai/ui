@@ -78,10 +78,11 @@ are listed in its contract.
 
 Import (`foundation/scene/use-yaml-import.ts`) creates a record only when `getOne` finds none; an existing name is
 skipped, never updated. Export (`foundation/scene/use-yaml-export.ts`) offers `EXPORTABLE_RESOURCES`; options default
-to removing status, ids and timestamps. Only `CREDENTIAL_RESOURCES` (clusters, image registries, model registries) are
-fetched through `/credentials/<type>` (needs `<kind>:read-credentials`) so their secrets are included. External
-endpoints are exportable but carry no credential (the credentials route does not serve them); log sinks are not in
-the exportable set. Tests: `use-yaml-import.test.ts`, `use-yaml-export.test.ts`.
+to removing status, ids and timestamps, and each option acts alone: "ids" drops only the top-level `id` (metadata
+holds no generated ids), so timestamps stay unless their own option is on. Only `CREDENTIAL_RESOURCES` (clusters,
+image registries, model registries) are fetched through `/credentials/<type>` (needs `<kind>:read-credentials`) so
+their secrets are included. External endpoints are exportable but carry no credential (the credentials route does not
+serve them); log sinks are not in the exportable set. Tests: `use-yaml-import.test.ts`, `use-yaml-export.test.ts`.
 
 `serializeToYaml` drops null/undefined values recursively for every exported kind; explicit null entries in JSON maps
 therefore disappear. Model Catalog also seeds its editor through this serializer (see its contract).
